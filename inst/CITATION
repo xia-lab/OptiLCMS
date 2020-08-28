@@ -1,0 +1,16 @@
+citHeader("To cite OptiLCMS in publications use:")
+
+citEntry(
+  entry    = "Article",
+  title    = "Automatically Optimized Web-based Raw Spectra Processing Workflow in MetaboAnalyst",
+  author   = "Zhiqiang Pang et al.",
+  journal  = "FT1000 Research",
+  year     = "2020",
+  volume   = "",
+  number   = "",
+  pages    = "",
+  url      = "",
+  textVersion = paste(
+
+  )
+)
