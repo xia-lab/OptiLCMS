@@ -1,0 +1,939 @@
+#' Perform raw MS data trimming
+#' @description This function performs the raw data trimming. This function will output 
+#' an trimmed MSnExp file to memory or hardisk according to the choice of users must 
+#' provide the data path for 'datapath', and optionally provide other corresponding parameters.
+#' @param datapath Character, the path of the raw MS data files' folder/path (.mzXML, .CDF and .mzML) 
+#' for parameters training.
+#' @param mode Character, mode for data trimming to select the chraracteristic peaks. 
+#' Default is 'ssm'. Users could select random trimed according to mz value (mz_random) or 
+#' RT value (rt_random). Besides, specific peaks at certain mz (mz_specific) or 
+#' RT (rt_specific) could also be extracted. 'none' will not trim the data.
+#' @param mz Numeric, mz value(s) for specific selection. Positive values means including (the values 
+#' indicted) and negative value means excluding/removing.
+#' @param mzdiff Numeric, the deviation (ppm) of mz value(s).
+#' @param rt Numeric, rt value for specific selection. Positive values means including 
+#' and negative value means excluding.
+#' @param rtdiff Numeric, the deviation (seconds) of rt value(s).
+#' @param rt.idx Numeric, the relative rt (retention time) range, from 0 to 1. 1 means all retention time
+#' will be retained, while 0 means none. Default is 1/15. If default rt.idx produce too few peaks, 
+#' please consider increasing this value.
+#' @param write Logical, if true, will write the trimed data to the directory 'trimed' folder 
+#' in the datapath. The data in memory will be kept.
+#' @param plot Logical, if ture, will plot the chromatogram of the trimed data.
+#' @export
+#' @import MSnbase
+#' @import progress
+#' @import Biobase
+#' @author Zhiqiang Pang \email{zhiqiang.pang@mail.mcgill.ca} Jeff Xia \email{jeff.xia@mcgill.ca}
+#' Mcgill University
+#' License: GNU GPL (>= 2)
+
+PerformDataTrimming<-function(datapath, mode="ssm", write=F, mz, mzdiff, rt, rtdiff, 
+                              rt.idx=1/15, plot=T,running.controller=NULL){
+  
+  if (!dir.exists(datapath)){
+    datapath <- "upload/"
+    
+  }
+  datapath <- paste0(fullUserPath, datapath);
+  
+  if(!dir.exists(datapath)){
+    datapath <- "/home/glassfish/projects/MetaboDemoRawData/upload/QC/";
+    
+  }
+  
+  if(.on.public.web){
+    print_mes <- "Step 0/6: Scanning ROIs for parameters optimization...";    
+    write.table(print_mes,file="metaboanalyst_spec_proc.txt",append = T,row.names = F,col.names = F, quote = F, eol = "\n");
+  }
+  
+  suppressMessages(require(progress));suppressMessages(require(Biobase));suppressMessages(require(BiocParallel));
+  match.arg(mode,choices = c("ssm","mz_random","rt_random","mz_specific","rt_specific"));
+  start.time<-Sys.time();
+  
+  if (.on.public.web){   
+    write.table(1.0, file = paste0(fullUserPath, "log_progress.txt"),row.names = F,col.names = F);   
+  }
+  
+  function.name <- "datatrim";
+  if(is.null(running.controller)){
+    c1 <- c2 <- c3 <- c4 <- T
+  } else {
+    c1 <- running.controller[["data_trim"]][["c1"]];
+    c2 <- running.controller[["data_trim"]][["c2"]];
+    c3 <- running.controller[["data_trim"]][["c3"]];
+    c4 <- running.controller[["data_trim"]][["c4"]];
+  }
+  
+  if (c1){
+    
+    #Select first at least 2 QC data for optimization
+    
+    if(.on.public.web){
+      
+      dda_file <- list.files(datapath, recursive = T, full.names = TRUE);
+      
+      if(basename(datapath)=="QC"){
+        QC_uploaded_list <- basename(dda_file);
+        QC_index <- QC_uploaded_list %in% rawfilenms;
+        QC_count <- length(which(QC_index));
+        
+        if(QC_count > 1){ # deal with the case: 2 or more QC provided/included
+          
+          if (QC_count > 2){
+            dda_file1 <- dda_file[QC_index][1:3];
+          } else {
+            dda_file1 <- dda_file[QC_index];
+          };
+          
+        } else if(QC_count == 1) { # deal with the case: 1 QC provided/included
+          # List all samples uploaded
+          all_sample_list <- list.files(paste0(datapath,"/../"), recursive = T, full.names = T);
+          
+          # choose the included files
+          included_samples <- all_sample_list[basename(all_sample_list) %in% rawfilenms];
+          file_sizes <- sapply(included_samples, FUN = function(x){file.size(x)});
+          
+          largest_file <- basename(names(sort(file_sizes, decreasing = T)[c(1:2)]));
+          sample_index <- as.numeric(sapply(unique(c(basename(dda_file[QC_index]),largest_file)), FUN=function(x){grep(x,included_samples)}))
+          
+          dda_file1 <-included_samples[sample_index]
+        } else {# deal with the case: 0 QC provided/included
+          
+          # List all samples uploaded
+          all_sample_list <- list.files(paste0(datapath,"/../"), recursive = T, full.names = T);
+          
+          # choose the largest files
+          included_samples <- all_sample_list[basename(all_sample_list) %in% rawfilenms];
+          dda_file1 <- names(sort(sapply(included_samples, FUN = function(x){file.size(x)}),decreasing = T)[c(1:3)]);
+          
+        }
+        
+      } else if(basename(datapath) == "upload"){
+        
+        included_files <- dda_file[basename(dda_file) %in% rawfilenms]
+        
+        QC_index <- grep("QC_*", included_files);
+        
+        if(!identical(QC_index,integer(0)) & length(QC_index) > 1){
+          
+          dda_file1 <- included_files[QC_index][1:3];
+          
+        } else if(!identical(QC_index,integer(0)) & length(QC_index) == 1){
+          
+          file_sizes <- sapply(included_files, FUN = function(x){file.size(x)});
+          dda_file1 <- c(included_files[which(file_sizes == max(file_sizes))],included_files[QC_index]);
+          
+        } else {
+          
+          file_sizes <- sapply(included_files, FUN = function(x){file.size(x)});
+          dda_file1 <- names(sort(file_sizes, decreasing = T)[c(1:3)]);
+          
+        }
+        
+      }
+      
+      
+      # if (length(dda_file) < 2){
+      #     print_mes <- "STRONG WARNNING: At lease 2 QC samples need to be provided !";    
+      #     write.table(print_mes,file="metaboanalyst_spec_proc.txt",append = T,row.names = F,col.names = F, quote = F, eol = "\n");
+      # }
+    }
+    print(dda_file1);
+    pd <- data.frame(sample_name = sub(basename(dda_file1), pattern = ".mzXML",
+                                       replacement = "", fixed = TRUE),
+                     stringsAsFactors = FALSE)
+    
+    
+    if(.on.public.web){
+      print_mes <- "Data Loading...";    
+      write.table(print_mes,file="metaboanalyst_spec_proc.txt",append = T,row.names = F,col.names = F, quote = F, eol = "\n");
+    } else {
+      message("Data Loading...")
+    }
+    
+    
+    raw_data <- #suppressMessages(try(
+      read.MSdata(dda_file1, pdata = new("NAnnotatedDataFrame", pd), msLevel. = 1, mode = "inMemory")#,
+    # silent = T))
+    
+    
+    if(.on.public.web){
+      print_mes <- "Data Loaded !";    
+      write.table(print_mes,file="metaboanalyst_spec_proc.txt",append = T,row.names = F,col.names = F, quote = F, eol = "\n");
+    } else {
+      message("Data Loaded !")
+    }
+    
+    
+    if (running.as.plan){
+      cache.save(raw_data,paste0(function.name,"_c1"));
+      marker_record(paste0(function.name,"_c1"));
+    }
+    
+  } else {
+    raw_data <- cache.read(function.name, "c1");
+    marker_record(paste0(function.name,"_c1"));
+  }
+  
+  
+  if (c2){
+    
+    if (!mode=="none"){
+      ## Data Trim
+      a<-suppressMessages(unlist(lapply(ls(raw_data@assayData), FUN=function(x){unlockBinding(sym = x,env = raw_data@assayData)})))
+      ms_list<-sapply(ls(raw_data@assayData),FUN=function(x) raw_data@assayData[[x]]@mz)
+      
+      
+      if(.on.public.web){
+        print_mes <- "Empty Scan scanning...";    
+        write.table(print_mes,file="metaboanalyst_spec_proc.txt",append = T,row.names = F,col.names = F, quote = F, eol = "\n");
+      }
+      emptyScan <- vector();
+      for(i in 1:length(ms_list)){
+        if(identical(ms_list[[i]], numeric(0))){
+          emptyScan <- c(emptyScan, i)
+        }
+      }
+      
+      if(.on.public.web){
+        
+        if(!identical(emptyScan, logical(0))){
+          print_mes <- paste0("<font color=\"red\">","ERROR: ", length(emptyScan), " scans (", paste(head(emptyScan),collapse=" "), "...) are empty, please remove them first !","</font>");    
+          write.table(print_mes,file="metaboanalyst_spec_proc.txt",append = T,row.names = F,col.names = F, quote = F, eol = "\n");
+          stop(print_mes);
+        } else {
+          print_mes <- "No Empty scan found !";    
+          write.table(print_mes,file="metaboanalyst_spec_proc.txt",append = T,row.names = F,col.names = F, quote = F, eol = "\n");
+        }
+        
+        print_mes <- "Identifying regions of interest (ROI)...";    
+        write.table(print_mes,file="metaboanalyst_spec_proc.txt",append = T,row.names = F,col.names = F, quote = F, eol = "\n");
+        
+      } else {
+        message("Data Trimming...")
+      }
+      
+      if (missing(rt.idx)){
+        rt.idx <- 1; # include the whole RT range
+      };
+      
+      load("params.rda");
+      if(peakParams[["rmConts"]]){
+        
+        raw_data <- ContaminatsRemoval(raw_data, ms_list);
+        save(raw_data, file = "Contaminats_free_raw_data.rda");
+        
+      }
+      
+      
+      if (mode=="ssm"){
+        trimed_MSnExp<-ssm_trim(raw_data,ms_list,rt.idx=rt.idx)
+      }
+      
+      if (mode=="mz_random"){
+        suppressWarnings(try(trimed_MSnExp<-mz.trim_random(raw_data,ms_list),silent = T))
+      }
+      
+      if (mode=="rt_random"){
+        suppressWarnings(try(trimed_MSnExp<-rt.trim_random(raw_data,ms_list),silent = T))
+      }
+      
+      if (mode=="mz_specific"){
+        trimed_MSnExp<-mz.trim_specific(raw_data,ms_list,mz,mzdiff=mzdiff)
+      }
+      
+      if (mode=="rt_specific"){
+        trimed_MSnExp<-rt.trim_specific(raw_data,ms_list,rt,rtdiff=rtdiff)
+      }
+      
+      
+      # remove the empty scans in the ms data      
+      trimed_MSnExp<-.emptyscan.remove(trimed_MSnExp,ms_list)
+      
+    }else{
+      # keep the data without trimming.
+      trimed_MSnExp<-raw_data
+      
+    }
+    
+    if (running.as.plan){
+      cache.save(trimed_MSnExp,paste0(function.name,"_c2"));
+      marker_record(paste0(function.name,"_c2"));
+    }
+    
+  } else {
+    trimed_MSnExp <- cache.read(function.name, "c2");
+    marker_record(paste0(function.name,"_c2"));
+  };
+  
+  if (.on.public.web){   
+    write.table(4.0, file = paste0(fullUserPath, "log_progress.txt"),row.names = F,col.names = F);
+    write <- T;    
+  }
+  if (c3){
+    if (write==T){
+      message("Data Writing...")
+      
+      writenames<-paste0(datapath,"/trimmed/Trimmed_",pd$sample_name,".mzML",sep = "")
+      dir.create(paste0(datapath,"/trimmed",collapse = ""))
+      suppressMessages(writeMSData(trimed_MSnExp, writenames, outformat = "mzml"))
+      
+      message("Data Writing Finished !")
+    }
+    
+    if (running.as.plan){
+      #cache.save(trimed_MSnExp,paste0(function.name,"_c2"));
+      marker_record(paste0(function.name,"_c3"));
+    }
+    
+  };
+  
+  if (c4){
+    if (plot==T){
+      require(RColorBrewer);
+      
+      if(.on.public.web){
+        print_mes <- "Chromatogram Plotting Begin...";    
+        write.table(print_mes,file="metaboanalyst_spec_proc.txt",append = T,row.names = F,col.names = F, quote = F, eol = "\n");
+      } else {
+        message("Chromatogram Plotting Begin...")
+      }
+      
+      ch.xdata<-chromatogram(trimed_MSnExp)
+      group.col<-paste0(brewer.pal(length(trimed_MSnExp@processingData@files),"Blues"))
+      plot(ch.xdata,col=group.col[1:length(trimed_MSnExp@processingData@files)])
+    }
+    
+    
+    if (running.as.plan){
+      #cache.save(trimed_MSnExp,paste0(function.name,"_c2"));
+      marker_record(paste0(function.name,"_c4"));
+    }
+    
+  };
+  
+  if (.on.public.web){
+    
+    print_mes <- paste0("Identification on ROIs Finished! \n", "Optimization will be started soon...");
+    write.table(print_mes,file="metaboanalyst_spec_proc.txt",append = T,row.names = F,col.names = F, quote = F, eol = "\n");
+    
+  } else {
+    message("Identification on ROIs Finished!")
+    end.time<-Sys.time();
+    message("Time Spent In Total:",round((as.numeric(end.time) - as.numeric(start.time))/60, 1),"mins","\n");
+    
+  }  
+  save(trimed_MSnExp, file="raw_data.rda");
+  
+  return(trimed_MSnExp)
+}
+
+#' Standards Simulation Method
+#' @description Whole mass spectra will be divided as 4 bins according to the mz range. Trimming 
+#' the raw with slide window method in every bins and retained the windows with highest scan intensity
+#' and remove other scan signal in mz dimension. Then the data will be trimed again in the RT dimension
+#' with slide window method. The window with highest intensity scans will be kept. After the timming
+#' alongside mz and RT dimension, the peaks not only the high intensity peaks, but also the relatively 
+#' low intensity peaks will also be retained as the 'simulated standards' data for parameters optimization.
+#' @param raw_data MSnExp object, the raw data that has been read in memory.
+#' @param ms_list List, the names list of all scans.
+#' @param rt.idx Numeric, the retention time percentage, from 0 to 1. Default is 1/15.
+#' @import progress
+#' @import BiocParallel
+#' @import Biobase
+#' @author Zhiqiang Pang \email{zhiqiang.pang@mail.mcgill.ca} Jeff Xia \email{jeff.xia@mcgill.ca}
+#' Mcgill University
+#' License: GNU GPL (>= 2)
+
+ssm_trim <- function(raw_data, ms_list, rt.idx){
+  
+  # mzdata_points<-unique(unlist(ms_list))  
+  
+  # Slide window to choose the high abundance bins in every districts
+  
+  if(.on.public.web){
+    print_mes <- "MS data Preparing...";    
+    write.table(print_mes,file="metaboanalyst_spec_proc.txt",append = T,row.names = F,col.names = F, quote = F, eol = "\n");
+  } else {
+    message("MS data Parsing ...")
+  }  
+  
+  
+  #if(length(names(ms_list))>1000){
+  #  ms_list_s<-sort(sample(names(ms_list),1000))
+  #} else {
+  #  ms_list_s<-sort(names(ms_list))
+  #}
+  
+  if (.on.public.web){
+    load_msnbase();
+  }
+  
+  spectra_mz <- unlist(lapply(MSnbase::spectra(raw_data),mz))
+  
+  highestmz<-max(spectra_mz)
+  lowestmz<-min(spectra_mz)
+  
+  # Split MS into 5 large districts
+  bins.boundary<-seq(from=lowestmz, to= highestmz,length.out = 5)
+  
+  
+  if (length(spectra_mz)>1000000){
+    set.seed(222);
+    rannum<- sort(sample(length(spectra_mz),ceiling(length(spectra_mz)/50)),decreasing = F)
+  } else if (length(spectra_mz)>100000){
+    set.seed(222)
+    rannum<-sort(sample(length(spectra_mz),ceiling(length(spectra_mz)/5)),decreasing = F)
+  } else {
+    rannum<-seq(length(spectra_mz))
+  }
+  
+  spectra_abundance <- unlist(lapply(MSnbase::spectra(raw_data),intensity))[rannum]
+  spectra_mz <- spectra_mz[rannum]
+  
+  spectra_mz_set <- sapply(1:4,FUN=function(ii){
+    
+    spectra_mz[spectra_mz > bins.boundary[ii] & spectra_mz <  bins.boundary[ii+1]]
+    
+  })
+  
+  spectra_abundance_set <- sapply(1:4,FUN=function(ii){
+    
+    spectra_abundance[spectra_mz > bins.boundary[ii] &  spectra_mz  <  bins.boundary[ii+1]]
+    
+  })
+  
+  rm(spectra_abundance); rm(spectra_mz)
+  
+  good.bins.list<-bplapply(c(1:4),
+                           FUN = function(i,spectra_abundance_set,spectra_mz_set,bins.boundary){                             
+                             binsb.low<-bins.boundary[i];                             
+                             binsb.high<-bins.boundary[i+1];                             
+                             w<-1;                             
+                             bins.width<-(binsb.high-binsb.low)*0.1;                             
+                             wind.up<-wind.down<-0                             
+                             inten.sum.set<-numeric()
+                             
+                             while (!wind.up>binsb.high) {                               
+                               wind.down<-binsb.low+(w-1);                               
+                               wind.up<-binsb.low+bins.width+(w-1);                               
+                               #inten.sum<-numeric()                               
+                               
+                               inten.sum.set<-c(inten.sum.set,
+                                                sum (spectra_abundance_set[[i]]
+                                                     [spectra_mz_set[[i]] > wind.down & spectra_mz_set[[i]] < wind.up]))
+                               
+                               #for (j in 1:length(ms_list_s)){
+                               #  mz.set<-raw_data@assayData[[ms_list_s[j]]]@mz
+                               #  a1<-which(sapply(mz.set, FUN=function(x){x>wind.down && x<wind.up}))
+                               #  inten.sum<-c(inten.sum,sum(raw_data@assayData[[ms_list_s[j]]]@intensity[a1]))
+                               #}
+                               
+                               #inten.sum.set<-c(inten.sum.set,sum(inten.sum))
+                               w<-w+1;
+                             }
+                             
+                             selected.bin.down<-binsb.low+which(max(inten.sum.set)==inten.sum.set)-1;
+                             selected.bin.up<-binsb.low+which(max(inten.sum.set)==inten.sum.set)-1+bins.width
+                             
+                             return(list(selected.bin.down,selected.bin.up))
+                             
+                           },
+                           spectra_abundance_set=spectra_abundance_set,
+                           spectra_mz_set=spectra_mz_set,
+                           bins.boundary=bins.boundary,
+                           BPPARAM = SnowParam(type="SOCK"))
+  
+  if(.on.public.web){
+    print_mes <- "MS Data ready !";    
+    write.table(print_mes,file="metaboanalyst_spec_proc.txt",append = T,row.names = F,col.names = F, quote = F, eol = "\n");
+  } else {
+    message("MS Data Pasing Done !")
+  }  
+  
+  
+  # Remove the peaks out of the bins
+  
+  if(.on.public.web){
+    print_mes <- "Identifying ROIs in m/z dimensions...";   
+    write.table(print_mes,file="metaboanalyst_spec_proc.txt",append = T,row.names = F,col.names = F, quote = F, eol = "\n");
+  } else {
+    message("Identifying ROIs in m/z dimensions...")
+  }  
+  
+  pb <- progress_bar$new(format = "ROIs Identification in MZ Dimension [:bar] :percent Time left: :eta", total = length(ms_list), clear = T, width= 80)
+  
+  for (i in 1:length(ms_list)){
+    pb$tick();
+    
+    ms.set<-raw_data@assayData[[names(ms_list)[i]]]@mz
+    k<-which(sapply(ms.set,FUN = function(x){(x > good.bins.list[[1]][[1]] && x < good.bins.list[[1]][[2]]) | 
+        (x > good.bins.list[[2]][[1]] && x < good.bins.list[[2]][[2]]) | 
+        (x > good.bins.list[[3]][[1]] && x < good.bins.list[[3]][[2]]) | 
+        (x > good.bins.list[[4]][[1]] && x < good.bins.list[[4]][[2]])}))
+    
+    raw_data@assayData[[names(ms_list)[i]]]@mz<-raw_data@assayData[[names(ms_list)[i]]]@mz[k];
+    raw_data@assayData[[names(ms_list)[i]]]@intensity<-raw_data@assayData[[names(ms_list)[i]]]@intensity[k];
+    raw_data@assayData[[names(ms_list)[i]]]@tic<-sum(raw_data@assayData[[names(ms_list)[i]]]@intensity);
+    raw_data@assayData[[names(ms_list)[i]]]@peaksCount<-length(raw_data@assayData[[names(ms_list)[i]]]@mz)
+  }
+  
+  if(.on.public.web){
+    print_mes <- "Identifying ROIs in m/z dimensions Done !";   
+    write.table(print_mes,file="metaboanalyst_spec_proc.txt",append = T,row.names = F,col.names = F, quote = F, eol = "\n");
+  } else {
+    message("Identifying ROIs in m/z dimensions Done !")
+  }  
+  
+  ## Trimed data outside the RT bins
+  rt_set<-sapply(names(ms_list),FUN=function(x) raw_data@assayData[[x]]@rt)
+  rt.bin.width<-(max(rt_set)-min(rt_set))*rt.idx
+  
+  # Slide window to determin the location of the RT trim boundary
+  tic<-1;w<-0;rt.window.min<-min(rt_set);tic.sum<-numeric()
+  
+  while (!rt.window.min>max(rt_set)) {
+    rt.window.min<-min(rt_set)+w*0.75
+    rt.window.max<-min(rt_set)+rt.bin.width+w*0.75
+    rt.name.set<-names(which(sapply(rt_set,FUN = function(x){x>rt.window.min && x<rt.window.max})))
+    
+    if(!identical(rt.name.set,character(0))){
+      tic.sum<-c(tic.sum,sum(sapply(rt.name.set,FUN=function(x){raw_data@assayData[[x]]@tic})))
+    }
+    
+    w<-w+1
+  }
+  
+  rt.boundary.lowlimit<-min(rt_set)+which(max(tic.sum)==tic.sum)[ceiling(length(which(max(tic.sum)==tic.sum))/2)]*0.75
+  rt.boundary.uplimit<-min(rt_set)+which(max(tic.sum)==tic.sum)[ceiling(length(which(max(tic.sum)==tic.sum))/2)]*0.75+rt.bin.width
+  
+  if(.on.public.web){
+    print_mes <- "Identifying ROIs in RT dimensions...";    
+    write.table(print_mes,file="metaboanalyst_spec_proc.txt",append = T,row.names = F,col.names = F, quote = F, eol = "\n");
+  } else {
+    message("Trim data outside the RT bins...")
+  }  
+  
+  
+  pb <- progress_bar$new(format = "ROIs Identification in RT Dimension [:bar] :percent Time left: :eta", total = length(ms_list), clear = T, width= 80)
+  ncount<-numeric();
+  
+  for (w in 1:length(ms_list)){
+    pb$tick();
+    if (raw_data@assayData[[names(ms_list)[w]]]@rt>rt.boundary.lowlimit && raw_data@assayData[[names(ms_list)[w]]]@rt<rt.boundary.uplimit){
+      ncount<-c(ncount,w)
+    }
+  }
+  
+  for (j in 1:length(ms_list)){
+    if (!(j %in% ncount)){
+      raw_data@assayData[[names(ms_list)[j]]]@mz<-raw_data@assayData[[names(ms_list)[j]]]@intensity<-as.double();
+      raw_data@assayData[[names(ms_list)[j]]]@peaksCount<-as.integer(0);
+      raw_data@assayData[[names(ms_list)[j]]]@tic<-as.double(0);
+    }
+  }
+  
+  return(raw_data)
+}
+
+#' Data trimming Method Based on Random MS
+#' @description Trim raw data scan signal randomly in the mz dimension.
+#' @param raw_data MSnExp object, the raw data that has been read in memory.
+#' @param ms_list List, the names list of all scans.
+#' @import progress
+#' @author Zhiqiang Pang \email{zhiqiang.pang@mail.mcgill.ca} Jeff Xia \email{jeff.xia@mcgill.ca}
+#' Mcgill University
+#' License: GNU GPL (>= 2)
+
+mz.trim_random <- function(raw_data, ms_list){
+  
+  mzdata_points <- unique(unlist(ms_list))
+  highestmz <- max(mzdata_points)
+  lowestmz <- min(mzdata_points)
+  
+  # Randomly select 100 mz center points
+  set.seed(1233);
+  mzdata_points <- sample(unique(mzdata_points),size = 100)
+  
+  pb <- progress_bar$new(format = "Data Trimming [:bar] :percent Time left: :eta", total = length(raw_data@assayData), clear = T, width= 60)
+  
+  for (i in 1:length(raw_data@assayData)){
+    pb$tick();
+    mz.data<-ms_list[[i]];
+    remove.num.set<-numeric();k<-1
+    
+    for (j in 1:length(mz.data)){
+      if (!(T %in% (abs(mz.data[j]-mzdata_points)<=(highestmz-lowestmz)/10000))){
+        remove.num.set[k]<-j;
+        k<-k+1
+      }
+    }
+    raw_data@assayData[[names(ms_list[i])]]@mz<-mz.data[-remove.num.set];
+    raw_data@assayData[[names(ms_list[i])]]@intensity<-raw_data@assayData[[names(ms_list[i])]]@intensity[-remove.num.set];
+    raw_data@assayData[[names(ms_list[i])]]@tic<-sum(raw_data@assayData[[names(ms_list[i])]]@intensity);
+    raw_data@assayData[[names(ms_list[i])]]@peaksCount<-length(raw_data@assayData[[names(ms_list[i])]]@mz);
+  }
+  return(raw_data)
+}
+
+#' Data trimming Method Based on Random RT
+#' @description Trim raw data scan signal randomly in the RT dimension.
+#' @param raw_data MSnExp object, the raw data that has been read in memory.
+#' @param ms_list List, the names list of all scans.
+#' @import progress
+#' @author Zhiqiang Pang \email{zhiqiang.pang@mail.mcgill.ca} Jeff Xia \email{jeff.xia@mcgill.ca}
+#' Mcgill University
+#' License: GNU GPL (>= 2)
+
+rt.trim_random <- function(raw_data, ms_list){
+  
+  rt_set<-sapply(names(ms_list),FUN=function(x) raw_data@assayData[[x]]@rt)
+  rt_begin<-min(rt_set);
+  rt_end<-max(rt_set);
+  
+  xn2<-character();xn3<-xn<-xcount<-ncount<-rt_var_sum<-numeric();
+  rt_width_aver<-(rt_end-rt_begin)/200
+  xn_list<-list()
+  
+  pb <- progress_bar$new(format = "Data Trimming [:bar] :percent Time left: :eta", total = 200, clear = T, width= 60)
+  
+  for (w in 1:200){
+    pb$tick();
+    
+    rt_var<-rt_begin+rt_width_aver*(w-0.5);
+    rt_var_sum<-c(rt_var_sum,rt_var);
+    
+    xn_list[w][[1]]<-0
+  }
+  
+  xn<-sapply(names(ms_list),FUN= function(x) which(abs(raw_data@assayData[[x]]@rt-rt_var_sum)<=(rt_width_aver/2+0.000001)))
+  
+  for (i in 1:length(xn)){xn_list[[xn[i]]]<-sum(xn_list[[xn[i]]],raw_data@assayData[[names(xn[i])]]@peaksCount)}
+  
+  rt_peakcounts<-unlist(xn_list)
+  #rtslots<-rt_var_sum[sapply(tail(sort(unlist(xn_list)),10),FUN = function(x){which(x==rt_peakcounts)})]
+  
+  # randomly select 10 RT slots
+  set.seed(1244)
+  rtslots<-rt_var_sum[sapply(sample(unlist(xn_list),10),FUN = function(x){which(x==rt_peakcounts)})]
+  
+  for (j in 1:length(ms_list)){
+    
+    if (T %in% (abs(raw_data@assayData[[names(ms_list)[j]]]@rt-rtslots)<=(rt_width_aver/2+0.000001))){
+      xn2<-c(xn2,names(ms_list)[j]);xn3<-c(xn3,j)
+    }
+  }
+  
+  for (k in 1:length(ms_list))  {
+    
+    if (!(k %in% xn3)){
+      raw_data@assayData[[names(ms_list)[k]]]@peaksCount<-as.integer(0);
+      raw_data@assayData[[names(ms_list)[k]]]@mz<-as.double();
+      raw_data@assayData[[names(ms_list)[k]]]@intensity<-as.double();
+      raw_data@assayData[[names(ms_list)[k]]]@tic<-as.double(0);
+    }
+  }
+  return(raw_data)
+}
+
+#' Data trimming Method Based on Specific MS
+#' @description Trim data based on specific mz values. Positive values will be specially retained, 
+#' while the negative values will be removed.
+#' @param raw_data MSnExp object, the raw data that has been read in memory.
+#' @param ms_list List, the names list of all scans.
+#' @param mz Numeric, the specifric mz value that will be kept or removed.
+#' @param mzdiff Numeric, the deviation (ppm) for the 'mz' values. Default is 100.
+#' @import progress
+#' @author Zhiqiang Pang \email{zhiqiang.pang@mail.mcgill.ca} Jeff Xia \email{jeff.xia@mcgill.ca}
+#' Mcgill University
+#' License: GNU GPL (>= 2)
+
+mz.trim_specific<-function(raw_data, ms_list, mz, mzdiff=100){
+  
+  #mz<-c(72.323,100,120,240,360,480,720,780.524,1080);
+  if (missing(mz)){
+    stop("'mz' must be provided for mz_specific mode as a numeric vector!")
+  }
+  
+  if (missing(mzdiff)){
+    stop("'mzdiff' must be provided for mz_specific mode as a numeric value!")
+  }
+  
+  if (mz[1] == 0 | mzdiff==0){
+    stop("'mz' or 'mzdiff' cannot be zero!")
+  }
+  
+  mz.neg<-mz[which(mz<0)];
+  mz.pos<-mz[which(mz>0)];
+  
+  if (!identical(mz.pos,numeric(0))){
+    pb <- progress_bar$new(format = "Data Trimming_keeping [:bar] :percent Time left: :eta", total = length(ms_list), clear = T, width= 60)
+    
+    for (w in 1:length(ms_list)){
+      pb$tick();
+      xn<-unlist(sapply(mz.pos,FUN=function(x){which((abs(x-raw_data@assayData[[names(ms_list)[w]]]@mz)/(x)*1000000)<=mzdiff)}));
+      
+      raw_data@assayData[[names(ms_list)[w]]]@mz<-raw_data@assayData[[names(ms_list)[w]]]@mz[xn];
+      raw_data@assayData[[names(ms_list)[w]]]@intensity<-raw_data@assayData[[names(ms_list)[w]]]@intensity[xn];
+      raw_data@assayData[[names(ms_list)[w]]]@peaksCount<-length(raw_data@assayData[[names(ms_list)[w]]]@mz);
+      raw_data@assayData[[names(ms_list)[w]]]@tic<-sum(raw_data@assayData[[names(ms_list)[w]]]@intensity);
+    }
+    
+    for (w in 1:length(ms_list)){
+      if (identical(raw_data@assayData[[names(ms_list)[w]]]@mz,numeric(0))){
+        raw_data@assayData[[names(ms_list)[w]]]@mz<-as.double();
+        raw_data@assayData[[names(ms_list)[w]]]@intensity<-as.double();
+      }
+    }
+  } 
+  
+  if (!identical(mz.neg,numeric(0))){
+    
+    pb <- progress_bar$new(format = "Data Trimming_removing [:bar] :percent Time left: :eta", total = length(ms_list), clear = T, width= 60)
+    
+    for (w in 1:length(ms_list)){
+      pb$tick();
+      xn<-unlist(sapply(abs(mz.neg),FUN=function(x){which((abs(x-raw_data@assayData[[names(ms_list)[w]]]@mz)/(x)*1000000)<=mzdiff)}));
+      
+      if (!identical(xn, numeric(0))){
+        raw_data@assayData[[names(ms_list)[w]]]@mz<-raw_data@assayData[[names(ms_list)[w]]]@mz[-xn];
+        raw_data@assayData[[names(ms_list)[w]]]@intensity<-raw_data@assayData[[names(ms_list)[w]]]@intensity[-xn];
+        raw_data@assayData[[names(ms_list)[w]]]@peaksCount<-length(raw_data@assayData[[names(ms_list)[w]]]@mz);
+        raw_data@assayData[[names(ms_list)[w]]]@tic<-sum(raw_data@assayData[[names(ms_list)[w]]]@intensity);
+      }
+    }
+    
+    for (w in 1:length(ms_list)){
+      
+      if (identical(raw_data@assayData[[names(ms_list)[w]]]@mz,numeric(0))){
+        raw_data@assayData[[names(ms_list)[w]]]@mz<-as.double();
+        raw_data@assayData[[names(ms_list)[w]]]@intensity<-as.double();
+      }
+    }
+  }
+  return(raw_data)
+}
+
+#' Data trimming Method Based on Specific RT
+#' @description Trim data based on specific RT values. Positive values will be specially retained, 
+#' while the negative values will be removed.
+#' @param raw_data MSnExp object, the raw data that has been read in memory.
+#' @param ms_list List, the names list of all scans.
+#' @param mz Numeric, the specifric RT value that will be kept or removed.
+#' @param mzdiff Numeric, the deviation (ppm) for the 'rt' values. Default is 100.
+#' @import progress
+#' @author Zhiqiang Pang \email{zhiqiang.pang@mail.mcgill.ca} Jeff Xia \email{jeff.xia@mcgill.ca}
+#' Mcgill University
+#' License: GNU GPL (>= 2)
+
+rt.trim_specific<-function(raw_data,ms_list,rt,rtdiff=10){
+  
+  if (missing(rt)){
+    stop("'rt' must be provided for rt_specific mode with a vector !")
+  }
+  
+  if (missing(rtdiff)){
+    stop("'rtdiff' must be provided for rt_specific mode with a numeric !")
+  }
+  
+  if (rt[1] == 0 | rtdiff==0){
+    stop("'rt' or 'rtdiff' can not be zero !")
+  }
+  
+  if (rt[1] > 0){
+    pb <- progress_bar$new(format = "Data Trimming [:bar] :percent Time left: :eta", total = length(ms_list), clear = T, width= 60)
+    
+    ncount<-numeric();
+    for (w in 1:length(ms_list)){
+      pb$tick();
+      if (T %in% (abs(raw_data@assayData[[names(ms_list)[w]]]@rt-rt)<=rtdiff)){
+        ncount<-c(ncount,w)
+      }
+    }
+    
+    for (j in 1:length(ms_list)){
+      
+      if (!(j %in% ncount)){
+        raw_data@assayData[[names(ms_list)[j]]]@mz<-raw_data@assayData[[names(ms_list)[j]]]@intensity<-as.double();
+        raw_data@assayData[[names(ms_list)[j]]]@peaksCount<-as.integer(0);
+        raw_data@assayData[[names(ms_list)[j]]]@tic<-as.double(0);
+      }
+      
+    }
+  } else {
+    
+    pb <- progress_bar$new(format = "Data Trimming [:bar] :percent Time left: :eta", total = length(ms_list), clear = T, width= 60)
+    
+    ncount<-numeric();
+    for (w in 1:length(ms_list)){
+      pb$tick();
+      if (T %in% (abs(raw_data@assayData[[names(ms_list)[w]]]@rt-abs(rt))<=rtdiff)){
+        ncount<-c(ncount,w)
+      }
+      
+    }
+    for (j in 1:length(ms_list)){
+      
+      if (j %in% ncount){
+        raw_data@assayData[[names(ms_list)[j]]]@mz<-raw_data@assayData[[names(ms_list)[j]]]@intensity<-as.double();
+        raw_data@assayData[[names(ms_list)[j]]]@peaksCount<-as.integer(0);
+        raw_data@assayData[[names(ms_list)[j]]]@tic<-as.double(0);
+      }
+    }
+  }
+  return(raw_data)
+}
+
+#' Function for 'Empty scan' removal
+#' @description Function for 'Empty scan' removal (internal use only)
+#' @author Zhiqiang Pang \email{zhiqiang.pang@mail.mcgill.ca}
+.emptyscan.remove<-function(raw_data,ms_list){
+  
+  name.set<-sort(names(raw_data@assayData))
+  
+  sample.set<-unique(sapply(c(1:length(name.set)),FUN=function(x){sub(".[S][0-9]+","",name.set[x])}))
+  assayData<-list();assayData1<-new.env();ki<-k<-1
+  
+  df.data0<-raw_data@featureData@data;
+  df.data<-data.frame();
+  
+  nchar.num<-nchar(names(ms_list)[1])-4
+  suppressWarnings(for (i in 1:length(raw_data@assayData)){
+    
+    if (!raw_data@assayData[[name.set[i]]]@tic==0){
+      
+      if (!k==1){
+        if (!sample.set[which(sub(".[S][0-9]+","",name.set[i])==sample.set)]==sub(".[S][0-9]+","",names(assayData)[ki-1])){
+          k<-1
+        } 
+      }
+      
+      name0<-paste0(sample.set[which(sub(".[S][0-9]+","",name.set[i])==sample.set)],".S",formatC(k, width=nchar.num, digits = nchar.num, flag="0"))
+      
+      assayData[name0]<-raw_data@assayData[[name.set[i]]];
+      assayData[[name0]]@acquisitionNum<-as.integer(k);
+      assayData[[name0]]@scanIndex<-as.integer(k);
+      
+      df.data[ki,1]<-k;
+      row.names(df.data)[ki]<-name0;
+      
+      k<-k+1;ki<-ki+1;
+    }
+  })
+  
+  list2env(assayData,envir = assayData1)
+  raw_data@assayData<-assayData1
+  names(df.data)<-"spectrum"
+  
+  metaData<-raw_data@featureData@varMetadata;
+  featureData<-AnnotatedDataFrame(data=df.data, varMetadata=metaData);
+  raw_data@featureData<-featureData;
+  
+  return(raw_data)
+}
+
+#' Function MS Generation
+#' @description Output the MS data. This function will generate .mzML MS data in the working dirctory.
+#' @param raw_data MS data in R environment with "MSnExp" class.
+#' @import MSnbase
+#' @export
+#' @author Zhiqiang Pang \email{zhiqiang.pang@mail.mcgill.ca} Jeff Xia \email{jeff.xia@mcgill.ca}
+#' Mcgill University
+#' License: GNU GPL (>= 2)
+PerformMSDataOutput<-function(raw_data){
+  message("Data Writing...")
+  writenames<-paste0("new_",raw_data@phenoData@data[["sample_name"]],sep = "")
+  #dir.create(paste0(datapath,"/trimed",collapse = ""))
+  suppressMessages(writeMSData(raw_data, writenames, outformat = "mzML"))
+  message("Output Data:","\n");
+  message(writenames)
+  message(paste("Depositing Folder:",getwd()))
+  message("Data Writing Finished !")
+}
+
+#' Function for 3D ms plotting
+#' @description Function for 3D ms plotting (internal use only)
+#' @author Zhiqiang Pang \email{zhiqiang.pang@mail.mcgill.ca}
+plot.MS_3D<-function(object) {
+  
+  if (.on.public.web){load_lattice()};
+  
+  dd <- as(object, "data.frame")
+  
+  ms <- NULL ## get rid of 'no visible global function definition' note
+  par.set <- list(box.3d = list(lwd=.2))
+  
+  cloud(intensity ~ mz + rt , data = dd,
+        type="h",
+        scales= list(
+          arrows=FALSE,
+          cex=.65,
+          draw=TRUE),
+        aspect=c(.8, 1),
+        group = ms,
+        zoom = 1, 
+        par.settings = par.set,
+        axis.line = list(col = "transparent"),
+        xlab="M/Z", ylab="Retention time", zlab=NULL)
+  
+}
+
+ContaminatsRemoval <- function(raw_data, ms_list){
+  
+  scan_names <- sort(names(raw_data@assayData));
+  fre_stats <- plyr::count(round(unname(unlist(ms_list)), 2))
+  topScan_stats <- fre_stats[order(fre_stats$freq, decreasing = T),][c(1:300),] # get top 300 most frequent mz value
+  scan_totalLength <- length(raw_data@assayData)
+  top_mzs <- topScan_stats$x
+  topScan_stats[,4] <- topScan_stats[,3] <- 0;
+  colnames(topScan_stats)[c(3,4)] <- c("RT_ratio", "mz_mean");
+  
+  print_mes <- "Identifying regions of potential contaminants";    
+  write.table(print_mes,file="metaboanalyst_spec_proc.txt",append = T,row.names = F,col.names = F, quote = F, eol = " ");
+  k_count <- 0;
+  
+  for(i in 1:300){
+    
+    mzrange <- c(top_mzs[i]-0.005, top_mzs[i]+0.005);
+    RawData <- MSnbase::filterMz(raw_data, mzrange);
+    scan_count <- 0;
+    mz_vec <- vector();
+    
+    if ((i - k_count) > 0 ){
+      print_mes <- ".";  
+      write.table(print_mes,file="metaboanalyst_spec_proc.txt",append = T,row.names = F,col.names = F, quote = F, eol = "");
+      k_count <- k_count +10;
+    }
+    
+    for(j in scan_names){
+      if(!identical(RawData@assayData[[j]]@mz, numeric(0))){
+        scan_count <- scan_count +1;
+        mz_vec <- c(mz_vec, RawData@assayData[[j]]@mz)
+      }
+    }
+    
+    topScan_stats[i,3] <- scan_count/scan_totalLength;
+    topScan_stats[i,4] <- mean(mz_vec);
+    
+    if(topScan_stats[i,3] < 0.5){
+      break;
+    }
+    
+  }
+  
+  print_mes <- paste0("Done!");  
+  write.table(print_mes,file="metaboanalyst_spec_proc.txt",append = T,row.names = F,col.names = F, quote = F, eol = "\n");
+  save(topScan_stats, file = "topScan_stats.rda")
+  mzs_toRemove <- topScan_stats[topScan_stats[,3] > 0.5, 4]
+  
+  raw_data_clean <- mz.trim_specific(raw_data, ms_list, -mzs_toRemove, mzdiff=10)
+  
+  print_mes <- paste0(length(mzs_toRemove), " potential contaminamts will not be used for parameters optimization !");    
+  write.table(print_mes,file="metaboanalyst_spec_proc.txt",append = T,row.names = F,col.names = F, quote = F, eol = "\n");
+  
+  raw_data_clean <- .emptyscan.remove(raw_data_clean, ms_list);
+  
+  return(raw_data_clean);
+  
+}
