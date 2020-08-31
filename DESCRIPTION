@@ -20,7 +20,7 @@ Depends: R (>= 4.0.0), methods, Biobase, BiocParallel (>= 1.8.0), MSnbase (>= 2.
 Imports: mzR (>= 2.19.5), BiocGenerics, ProtGenerics (>= 1.17.2), lattice, RColorBrewer, plyr, RANN, MassSpecWavelet (>= 1.5.2), 
          RBGL, S4Vectors, robustbase, IRanges, SummarizedExperiment, ggplot2, graph, progress, rsm
 Suggests: knitr (>= 1.1.0), ncdf4, MALDIquant
-Enhances: Rgraphviz, Rmpi, XML, parallel
+Enhances: Rgraphviz, XML, parallel
 BugReports: https://github.com/xia-lab/OptiLCMS/issues/new
 biocViews: MassSpectrometry, Metabolomics, Malaria
 BiocType: Software
