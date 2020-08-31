@@ -11,34 +11,37 @@
 
 # Internal mSet Class for OptiLCMS
 setClass("mSet",
-         representation = representation(rawOnDisk = "OnDiskMSnExp",
+         representation = representation(rawfiles = "character",
+                                         rawOnDisk = "OnDiskMSnExp",
                                          rawInMemory = "MSnExp",
                                          params = "list",
-                                         peakpicking="list",
+                                         peakpicking ="list",
                                          peakgrouping = "list",
                                          peakRTcorrection = "list",
                                          peakfilling = "list",
-                                         peakTable = "data.frame",
+                                         dataSet = "data.frame",
                                          runningplan = "list",
-                                         errmes = "list",
-                                         xcmsSet="xcmsSet"),
-         prototype = prototype(rawOnDisk = new("OnDiskMSnExp"),
+                                         msgSet = "list",
+                                         userpath = "character",
+                                         xcmsSet = "xcmsSet",
+                                         WorkingDir = "character"),
+         prototype = prototype(rawfiles = vector("character"),
+                               rawOnDisk = new("OnDiskMSnExp"),
                                rawInMemory = new("MSnExp"),
                                params = vector("list"),
                                peakpicking = vector("list"),
                                peakgrouping = vector("list"),
                                peakRTcorrection = vector("list"),
                                peakfilling = vector("list"),
-                               peakTable = data.frame(),
+                               dataSet = data.frame(),
                                runningplan = vector("list"),
-                               errmes = vector("list"),
-                               xcmsSet = new("xcmsSet")),
+                               msgSet = vector("list"),
+                               userpath = character(0),
+                               xcmsSet = new("xcmsSet"),
+                               WorkingDir = vector("character")),
          validity = function(object) {
            return(TRUE)
          })
-
-
-
 
 ### Generic DataClass Defination----------
 # 1. This xcmsSet is defined as refereced to XCMS for CAMERA annotation but not completely same
