@@ -29,7 +29,7 @@ BiocManager::install("OptiLCMS")
 
 ```R
 # Latest features could only be obtained from this approach, make sure 'devtools' installed first
-devtools::install_github("xia-lab/MetaboAnalystR", build = TRUE, build_vignettes = TRUE, build_manual =T)
+devtools::install_github("xia-lab/OptiLCMS", build = TRUE, build_vignettes = TRUE, build_manual =T)
 
 ```
 

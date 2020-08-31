@@ -201,147 +201,71 @@ PeakPicking_centWave_slave <- function(x,param){
   
   
   ## If no ROIs are supplied then search for them.
-  roiList<-list()
+  roiList <- list()
   if (length(roiList) == 0) {
-    
-    if (.on.public.web & !optimize_switch){
-      
-      print_mes <- paste0("Searching under ", param$ppm, " ppm ... ");    
-      #write.table(print_mes,file="metaboanalyst_spec_proc.txt",append = T,row.names = F,col.names = F, quote = F, eol = "");
-      
+    if (.on.public.web & !optimize_switch) {
+      # Do nothing
     } else {
-      
       message("ROI searching under ", param$ppm, " ppm ... ", appendLF = FALSE)
-      
     }
     
-    if (!.on.public.web){
-      
-      withRestarts(
-        tryCatch({
-          
-          tmp <- capture.output(
-            roiList <- .Call(C_findmzROI,
-                             mz, int, scanindex,
-                             as.double(c(0.0, 0.0)),
-                             as.integer(scanrange),
-                             as.integer(length(scantime)),
-                             as.double(param$ppm * 1e-6),
-                             as.integer(minCentroids),
-                             as.integer(param$prefilter),
-                             as.integer(param$noise),PACKAGE = "MetaboAnalystR")
-            
-            #roiList <- findmzROI (mz, int, scanindex,scanrange,scantime,param$ppm,
-            #                      minCentroids,param$prefilter,param$noise)
-            
-          )
-          
-        },
-        error = function(e){
-          if (grepl("m/z sort assumption violated !", e$message)) {
-            invokeRestart("fixSort")
-          } else {
-            simpleError(e)
-          }
-        }),
-        fixSort = function() {
-          ## Force ordering of values within spectrum by mz:
-          ##  o split values into a list -> mz per spectrum, intensity per
-          ##    spectrum.
-          ##  o define the ordering.
-          ##  o re-order the mz and intensity and unlist again.
-          ## Note: the Rle split is faster than the "conventional" factor split.
-          splitF <- Rle(1:length(valsPerSpect), valsPerSpect)
-          mzl <- as.list(S4Vectors::split(mz, f = splitF))
-          oidx <- lapply(mzl, order)
-          mz <<- unlist(mapply(mzl, oidx, FUN = function(y, z) {
-            return(y[z])
-          }, SIMPLIFY = FALSE, USE.NAMES = FALSE), use.names = FALSE)
-          int <<- unlist(mapply(as.list(split(int, f = splitF)), oidx,
-                                FUN=function(y, z) {
-                                  return(y[z])
-                                }, SIMPLIFY = FALSE, USE.NAMES = FALSE),
-                         use.names = FALSE)
-          rm(mzl)
-          rm(splitF)
-          tmp <- capture.output(
-            roiList <<- .Call(C_findmzROI,
-                              mz, int, scanindex,
-                              as.double(c(0.0, 0.0)),
-                              as.integer(scanrange),
-                              as.integer(length(scantime)),
-                              as.double(param$ppm * 1e-6),
-                              as.integer(minCentroids),
-                              as.integer(param$prefilter),
-                              as.integer(param$noise),PACKAGE = "MetaboAnalystR")
-          )
+    withRestarts(
+      tryCatch({
+        tmp <- capture.output(roiList <-
+                                findmzROI (mz, int, scanindex, scanrange, scantime, param,
+                                           minCentroids))
+        
+      },
+      error = function(e) {
+        if (grepl("m/z sort assumption violated !", e$message)) {
+          invokeRestart("fixSort")
+        } else {
+          simpleError(e)
         }
-      )
-    } else {
-      
-      ### used for web deploy
-      withRestarts(
-        tryCatch({
-          
-          tmp <- capture.output(
-            roiList <- .Call("findmzROI",
-                             mz, int, scanindex,
-                             as.double(c(0.0, 0.0)),
-                             as.integer(scanrange),
-                             as.integer(length(scantime)),
-                             as.double(param$ppm * 1e-6),
-                             as.integer(minCentroids),
-                             as.integer(param$prefilter),
-                             as.integer(param$noise))
-            
-            #roiList <- findmzROI (mz, int, scanindex,scanrange,scantime,param$ppm,
-            #                      minCentroids,param$prefilter,param$noise)
-            
-          )
-          
-        },
-        error = function(e){
-          if (grepl("m/z sort assumption violated !", e$message)) {
-            invokeRestart("fixSort")
-          } else {
-            simpleError(e)
-          }
-        }),
-        fixSort = function() {
-          ## Force ordering of values within spectrum by mz:
-          ##  o split values into a list -> mz per spectrum, intensity per
-          ##    spectrum.
-          ##  o define the ordering.
-          ##  o re-order the mz and intensity and unlist again.
-          ## Note: the Rle split is faster than the "conventional" factor split.
-          splitF <- Rle(1:length(valsPerSpect), valsPerSpect)
-          mzl <- as.list(S4Vectors::split(mz, f = splitF))
-          oidx <- lapply(mzl, order)
-          mz <<- unlist(mapply(mzl, oidx, FUN = function(y, z) {
+      }),
+      fixSort = function() {
+        ## Force ordering of values within spectrum by mz:
+        ##  o split values into a list -> mz per spectrum, intensity per
+        ##    spectrum.
+        ##  o define the ordering.
+        ##  o re-order the mz and intensity and unlist again.
+        ## Note: the Rle split is faster than the "conventional" factor split.
+        splitF <- Rle(1:length(valsPerSpect), valsPerSpect)
+        mzl <- as.list(S4Vectors::split(mz, f = splitF))
+        oidx <- lapply(mzl, order)
+        mz <<- unlist(mapply(
+          mzl,
+          oidx,
+          FUN = function(y, z) {
             return(y[z])
-          }, SIMPLIFY = FALSE, USE.NAMES = FALSE), use.names = FALSE)
-          int <<- unlist(mapply(as.list(split(int, f = splitF)), oidx,
-                                FUN=function(y, z) {
-                                  return(y[z])
-                                }, SIMPLIFY = FALSE, USE.NAMES = FALSE),
-                         use.names = FALSE)
-          rm(mzl)
-          rm(splitF)
-          tmp <- capture.output(
-            roiList <<- .Call("findmzROI",
-                              mz, int, scanindex,
-                              as.double(c(0.0, 0.0)),
-                              as.integer(scanrange),
-                              as.integer(length(scantime)),
-                              as.double(param$ppm * 1e-6),
-                              as.integer(minCentroids),
-                              as.integer(param$prefilter),
-                              as.integer(param$noise))
+          },
+          SIMPLIFY = FALSE,
+          USE.NAMES = FALSE
+        ),
+        use.names = FALSE)
+        int <<-
+          unlist(
+            mapply(
+              as.list(split(int, f = splitF)),
+              oidx,
+              FUN = function(y, z) {
+                return(y[z])
+              },
+              SIMPLIFY = FALSE,
+              USE.NAMES = FALSE
+            ),
+            use.names = FALSE
           )
-        }
-      )
-      
-    }
+        rm(mzl)
+        rm(splitF)
+        tmp <- capture.output(
+          roiList <<- findmzROI (mz, int, scanindex, scanrange, scantime, param,
+                                 minCentroids)
+        )
+      }
+    )
+    
+    
     
   }
   
@@ -384,14 +308,8 @@ PeakPicking_centWave_slave <- function(x,param){
     sr <- c(max(scanrange[1], scrange[1] - max(noiserange)),
             min(scanrange[2], scrange[2] + max(noiserange)))
     
-    if (!.on.public.web){
-      eic <- .Call(C_getEIC, mz, int, scanindex, as.double(mzrange),
-                   as.integer(sr), as.integer(length(scanindex)),PACKAGE = "MetaboAnalystR")
-    } else {
-      eic <- .Call("getEIC", mz, int, scanindex, as.double(mzrange),
-                   as.integer(sr), as.integer(length(scanindex)))
-    }
-    
+    eic <- getEIC (mz, int, scanindex, mzrange, sr)
+  
     ## eic <- rawEIC(object,mzrange=mzrange,scanrange=sr)
     d <- eic$intensity
     td <- sr[1]:sr[2]
@@ -401,14 +319,7 @@ PeakPicking_centWave_slave <- function(x,param){
     mzROI.EIC <- list(scan=eic$scan[idxs], intensity=eic$intensity[idxs])
     ## mzROI.EIC <- rawEIC(object,mzrange=mzrange,scanrange=scrange)
     
-    if (!.on.public.web){
-      omz <- .Call(C_getMZ, mz, int, scanindex, as.double(mzrange),
-                   as.integer(scrange), as.integer(length(scantime)))
-    } else {
-      omz <- .Call("getMZ", mz, int, scanindex, as.double(mzrange),
-                   as.integer(scrange), as.integer(length(scantime)))
-    }
-    
+    omz <- getMZ (mz, int, scanindex, mzrange, scrange, scantime)
     
     ## omz <- rawMZ(object,mzrange=mzrange,scanrange=scrange)
     if (all(omz == 0)) {
@@ -432,21 +343,14 @@ PeakPicking_centWave_slave <- function(x,param){
     if (N >= 10*minPeakWidth) {
       ## in case of very long mass trace use full scan range
       ## for baseline detection
-      if (!.on.public.web){  
-        noised <- .Call(C_getEIC, mz, int, scanindex, as.double(mzrange),
-                        as.integer(scanrange), as.integer(length(scanindex)),PACKAGE = "MetaboAnalystR")$intensity
-      } else {
-        noised <- .Call("getEIC", mz, int, scanindex, as.double(mzrange),
-                        as.integer(scanrange), as.integer(length(scanindex)))$intensity
-      }                  
+      
+      noised <- getEIC(mz, int, scanindex, mzrange, scanrange)
       
       ## noised <- rawEIC(object,mzrange=mzrange,scanrange=scanrange)$intensity
     } else {
       noised <- d
     }
     ## 90% trimmed mean as first baseline guess
-    
-    
     gz <- which(noised > 0);
     
     if (length(gz) < 3*minPeakWidth){
@@ -825,25 +729,15 @@ PeakPicking_Massifquant_slave <- function(x,param){
   
   if (!is.double(scantime))
     scantime <- as.double(scantime)
-  
-  if(.on.public.web & !optimize_switch){
+
     tmp <- capture.output(
-      massifquantROIs <- .Call("massifquant", mz, int, scanindex, scantime,
-                               as.double(mzrange), as.integer(scanrange),
-                               as.integer(length(scantime)), as.double(minIntensity),
-                               as.integer(minCentroids), as.double(consecMissedLim),
-                               as.double(ppm), as.double(criticalVal), as.integer(segs),
-                               as.integer(scanBack)))
-    
-  } else {
-    tmp <- capture.output(
-      massifquantROIs <- .Call("massifquant", mz, int, scanindex, scantime,
-                               as.double(mzrange), as.integer(scanrange),
-                               as.integer(length(scantime)), as.double(minIntensity),
-                               as.integer(minCentroids), as.double(consecMissedLim),
-                               as.double(ppm), as.double(criticalVal), as.integer(segs),
-                               as.integer(scanBack), PACKAGE ='MetaboAnalystR' ))  }
-  
+      massifquantROIs <- massifquantROIs(mz, int, scanindex, scantime,
+                          mzrange, scanrange,
+                          scantime, minIntensity,
+                          minCentroids, consecMissedLim,
+                          ppm, criticalVal, segs,
+                          scanBack))
+
   #if (withWave) {
   if (F) {
     featlist <- do_findChromPeaks_centWave(mz = mz, int = int,
@@ -2028,16 +1922,7 @@ mSet.obiwarp <- function(mSet, object, param0) { ## Do not use the params define
     ## Done with preparatory stuff - now I can perform the alignment.
     
     rtadj <- R_set_obiwarp (valscantime1, scantime1, mzvals, mzs, cntrPr, valscantime2, scantime2, curP, parms);
-    
-    #rtadj <- .Call("R_set_from_xcms", valscantime1, scantime1, mzvals, mzs,
-    #               cntrPr$profMat, valscantime2, scantime2, mzvals, mzs,
-    #               curP$profMat, parms$response, parms$distFun,
-    #               parms$gapInit, parms$gapExtend, parms$factorDiag,
-    #               parms$factorGap, as.numeric(parms$localAlignment),
-    #               parms$initPenalty)
-    
-    #save(rtadj, file="rtadj.rda");
-    
+
     if (.on.public.web & !optimize_switch){
       
       write.table(print_mes,file="metaboanalyst_spec_proc.txt",append = T,row.names = F,col.names = F, quote = F, eol = "");
@@ -2734,26 +2619,7 @@ adjustRtimeSubset <- function(rtraw, rtadj, subset,
   rtadj
 }
 
-continuousPtsAboveThreshold <- function(y, threshold, num, istart = 1) {
-  if (!is.double(y)) y <- as.double(y)
-  if (!.on.public.web){
-    if (.C(C_continuousPtsAboveThreshold,
-           y,
-           as.integer(istart-1),
-           length(y),
-           threshold = as.double(threshold),
-           num = as.integer(num),
-           n = integer(1))$n > 0) TRUE else FALSE
-  } else {
-    if (.C("continuousPtsAboveThreshold",
-           y,
-           as.integer(istart-1),
-           length(y),
-           threshold = as.double(threshold),
-           num = as.integer(num),
-           n = integer(1))$n > 0) TRUE else FALSE
-  }
-}
+
 getLocalNoiseEstimate <- function(d, td, ftd, noiserange, Nscantime, threshold, num) {
   
   if (length(d) < Nscantime) {
@@ -2790,27 +2656,7 @@ getLocalNoiseEstimate <- function(d, td, ftd, noiserange, Nscantime, threshold, 
   
   c(min(baseline1,baseline2),min(sdnoise1,sdnoise2))
 }
-continuousPtsAboveThresholdIdx <- function(y, threshold, num, istart = 1) {
-  if (!is.double(y)) y <- as.double(y)
-  if (!.on.public.web){
-    as.logical(.C(C_continuousPtsAboveThresholdIdx,
-                  y,
-                  as.integer(istart-1),
-                  length(y),
-                  threshold = as.double(threshold),
-                  num = as.integer(num),
-                  n = integer(length(y)))$n)
-    
-  } else {
-    as.logical(.C("continuousPtsAboveThresholdIdx",
-                  y,
-                  as.integer(istart-1),
-                  length(y),
-                  threshold = as.double(threshold),
-                  num = as.integer(num),
-                  n = integer(length(y)))$n)
-  }
-}
+
 MSW.cwt <- function (ms, scales = 1, wavelet = "mexh") { ## modified from package MassSpecWavelet
   if (wavelet == "mexh") {
     psi_xval <- seq(-6, 6, length = 256)
@@ -3119,24 +2965,7 @@ MSW.getRidge <-  function(localMax, iInit=ncol(localMax), step=-1, iFinal=1, min
   attr(ridgeList, 'scales') <- scales
   return(ridgeList)
 }
-descendMin <- function(y, istart = which.max(y)) {
-  
-  if (!is.double(y)) y <- as.double(y)
-  if (!.on.public.web){  
-    unlist(.C(C_DescendMin,
-              y,
-              length(y),
-              as.integer(istart-1),
-              ilower = integer(1),
-              iupper = integer(1))[4:5]) + 1} else {
-                unlist(.C("DescendMin",
-                          y,
-                          length(y),
-                          as.integer(istart-1),
-                          ilower = integer(1),
-                          iupper = integer(1))[4:5]) + 1
-              }
-}
+
 descendMinTol <- function(d,startpos,maxDescOutlier) {
   l <- startpos[1]; r <- startpos[2]; outl <- 0; N <- length(d)
   ## left
@@ -3337,53 +3166,7 @@ trimm <- function(x, trim=c(0.05,0.95)) {
   quant <- round((Na*trim[1])+1):round(Na*trim[2])
   a[quant]
 }
-findEqualGreaterM <- function(x, values) {
-  
-  if (!is.double(x)) x <- as.double(x)
-  if (!is.double(values)) values <- as.double(values)
-  
-  if (!.on.public.web){  
-    .C(C_FindEqualGreaterM,
-       x,
-       length(x),
-       values,
-       length(values),
-       index = integer(length(values)))$index + 1 } else {
-         .C("FindEqualGreaterM",
-            x,
-            length(x),
-            values,
-            length(values),
-            index = integer(length(values)))$index + 1
-       }
-} 
-rectUnique <- function(m, order = seq(length = nrow(m)), xdiff = 0, ydiff = 0) {
-  
-  nr <- nrow(m)
-  nc <- ncol(m)
-  if (!is.double(m))
-    m <- as.double(m)
-  if (!.on.public.web){  
-    .C(C_RectUnique,
-       m,
-       as.integer(order-1),
-       nr,
-       nc,
-       as.double(xdiff),
-       as.double(ydiff),
-       logical(nrow(m)),
-       DUP = FALSE)[[7]]} else {
-         .C("RectUnique",
-            m,
-            as.integer(order-1),
-            nr,
-            nc,
-            as.double(xdiff),
-            as.double(ydiff),
-            logical(nrow(m)),
-            DUP = FALSE)[[7]]
-       }
-}
+
 na.flatfill <- function(x) {
   
   realloc <- which(!is.na(x))
@@ -3764,127 +3547,6 @@ SSgauss <- selfStart(~ h*exp(-(x-mu)^2/(2*sigma^2)), function(mCall, data, LHS) 
 
 
 ### ---- ===== MatchedFilter Sub Kit ==== ---- #####
-binYonX <- function(x, y, breaks, nBins, binSize, binFromX,
-                    binToX, fromIdx = 1L, toIdx = length(x),
-                    method = "max", baseValue,
-                    sortedX = !is.unsorted(x),
-                    shiftByHalfBinSize = FALSE,
-                    returnIndex = FALSE, returnX = TRUE) {
-  if (!missing(x) & missing(y))
-    y <- x
-  if (missing(x) | missing(y))
-    stop("Arguments 'x' and 'y' are mandatory!")
-  if (missing(nBins) & missing(binSize) & missing(breaks))
-    stop("One of 'breaks', 'nBins' or 'binSize' has to be defined!")
-  if (!sortedX) {
-    message("'x' is not sorted, will sort 'x' and 'y'.")
-    ## Sort method; see issue #180 for MSnbase
-    ## Note: order method = "radix" is considerably faster - but there is no
-    ## method argument for older R versions.
-    o <- order(x)
-    x <- x[o]
-    y <- y[o]
-  }
-  ## Check fromIdx and toIdx
-  if (any(fromIdx < 1) | any(toIdx > length(x)))
-    stop("'fromIdx' and 'toIdx' have to be within 1 and lenght(x)!")
-  if (length(toIdx) != length(fromIdx))
-    stop("'fromIdx' and 'toIdx' have to have the same length!")
-  if (missing(binFromX))
-    binFromX <- as.double(NA)
-  if (missing(binToX))
-    binToX <- as.double(NA)
-  ## For now we don't allow NAs in x
-  if (anyNA(x))
-    stop("No 'NA' values are allowed in 'x'!")
-  ## Check that input values have the correct data types.
-  if (!is.double(x)) x <- as.double(x)
-  if (!is.double(y)) y <- as.double(y)
-  if (!is.double(binFromX)) binFromX <- as.double(binFromX)
-  if (!is.double(binToX)) binToX <- as.double(binToX)
-  if (!is.integer(fromIdx)) fromIdx <- as.integer(fromIdx)
-  if (!is.integer(toIdx)) toIdx <- as.integer(toIdx)
-  ## breaks has precedence over nBins over binSize.
-  shiftIt <- 0L
-  if (!missing(breaks)) {
-    if (shiftByHalfBinSize)
-      warning("Argument 'shiftByHalfBinSize' is ignored if 'breaks'",
-              " are provided.")
-    if (!is.double(breaks)) breaks <- as.double(nBins)
-    nBins <- NA_integer_
-    binSize <- as.double(NA)
-  } else {
-    if (!missing(nBins)) {
-      breaks <- as.double(NA)
-      if (!is.integer(nBins)) nBins <- as.integer(nBins)
-      binSize <- as.double(NA)
-    } else{
-      breaks <- as.double(NA)
-      nBins <- NA_integer_
-      if (!is.double(binSize)) binSize <- as.double(binSize)
-    }
-  }
-  if (shiftByHalfBinSize)
-    shiftIt <- 1L
-  ## Define default value for baseValue
-  if (missing(baseValue)) {
-    baseValue = as.double(NA)
-  } else {
-    if (!is.double(baseValue)) baseValue <- as.double(baseValue)
-  }
-  
-  getIndex <- 0L
-  if (returnIndex)
-    getIndex <- 1L
-  getX <- 0L
-  if (returnX)
-    getX <- 1L
-  if (length(toIdx) > 1) {
-    if (!.on.public.web){
-      .Call(C_binYonX_multi, x, y, breaks, nBins, binSize,
-            binFromX, binToX, force(fromIdx - 1L), force(toIdx - 1L),
-            shiftIt,
-            as.integer(.aggregateMethod2int(method)),
-            baseValue,
-            getIndex,
-            getX,
-            PACKAGE = "MetaboAnalystR")
-      
-    } else {
-      .Call("binYonX_multi", x, y, breaks, nBins, binSize,
-            binFromX, binToX, force(fromIdx - 1L), force(toIdx - 1L),
-            shiftIt,
-            as.integer(.aggregateMethod2int(method)),
-            baseValue,
-            getIndex,
-            getX)
-    }
-    
-  } else {
-    
-    if (!.on.public.web){
-      
-      .Call(C_binYonX, x, y, breaks, nBins, binSize,
-            binFromX, binToX, force(fromIdx - 1L), force(toIdx - 1L),
-            shiftIt,
-            as.integer(.aggregateMethod2int(method)),
-            baseValue,
-            getIndex,
-            getX,
-            PACKAGE = "MetaboAnalystR")
-    }else{
-      
-      .Call("binYonX", x, y, breaks, nBins, binSize,
-            binFromX, binToX, force(fromIdx - 1L), force(toIdx - 1L),
-            shiftIt,
-            as.integer(.aggregateMethod2int(method)),
-            baseValue,
-            getIndex,
-            getX)
-    }
-    
-  }
-}
 
 .aggregateMethod2int <- function(method = "max") {
   .aggregateMethods <- c(1, 2, 3, 4);
@@ -3892,79 +3554,7 @@ binYonX <- function(x, y, breaks, nBins, binSize, binFromX,
   method <- match.arg(method, names(.aggregateMethods))
   return(.aggregateMethods[method])
 }
-imputeLinInterpol <- function(x, baseValue, method = "lin", distance = 1L,
-                              noInterpolAtEnds = FALSE) {
-  method <- match.arg(method, c("none", "lin", "linbase")) ## interDist? distance = 2
-  if (method == "none") {
-    return(x)
-  }
-  if (!is.double(x)) x <- as.double(x)
-  
-  if (method == "lin") {
-    noInter <- 0L
-    if (noInterpolAtEnds)
-      noInter <- 1L
-    
-    if (!.on.public.web){
-      res <- .Call(C_impute_with_linear_interpolation, x, noInter,
-                   PACKAGE = "MetaboAnalystR")
-    } else {
-      res <- .Call("impute_with_linear_interpolation", x, noInter)
-    }
-    
-    return(res)
-  }
-  
-  if (method == "linbase") {
-    if (missing(baseValue))
-      baseValue <- min(x, na.rm = TRUE) / 2
-    if (!is.double(baseValue)) baseValue <- as.double(baseValue)
-    if (!is.integer(distance)) distance <- as.integer(distance)
-    
-    if (!.on.public.web){
-      res <- .Call(C_impute_with_linear_interpolation_base, x, baseValue,
-                   distance, PACKAGE = "MetaboAnalystR")
-    } else {
-      res <- .Call("impute_with_linear_interpolation_base", x, baseValue, distance)
-    }
-    
-    return(res)
-  }
-}
-colMax <- function (x, na.rm = FALSE, dims = 1) {
-  
-  if (is.data.frame(x))
-    x <- as.matrix(x)
-  if (!is.array(x) || length(dn <- dim(x)) < 2)
-    stop("`x' must be an array of at least two dimensions")
-  if (dims < 1 || dims > length(dn) - 1)
-    stop("invalid `dims'")
-  n <- prod(dn[1:dims])
-  dn <- dn[-(1:dims)]
-  if (!is.double(x)) x <- as.double(x)
-  
-  if (!.on.public.web){
-    z <- .C(C_ColMax,
-            x,
-            as.integer(n),
-            as.integer(prod(dn)),
-            double(prod(dn)),
-            PACKAGE = "MetaboAnalystR")[[4]]
-  } else {
-    z <- .C("ColMax",
-            x,
-            as.integer(n),
-            as.integer(prod(dn)),
-            double(prod(dn)))[[4]]
-  }
-  
-  if (length(dn) > 1) {
-    dim(z) <- dn
-    dimnames(z) <- dimnames(x)[-(1:dims)]
-  }
-  else names(z) <- dimnames(x)[[dims + 1]]
-  z
-}
+
 filtfft <- function(y, filt) {
   
   yfilt <- numeric(length(filt))
@@ -3973,83 +3563,7 @@ filtfft <- function(y, filt) {
   
   Re(yfilt[1:length(y)])
 }
-descendZero <- function(y, istart = which.max(y)) {
-  
-  if (!is.double(y)) y <- as.double(y)
-  
-  if (!.on.public.web){
-    unlist(.C(C_DescendZero,
-              y,
-              length(y),
-              as.integer(istart-1),
-              ilower = integer(1),
-              iupper = integer(1),
-              PACKAGE = "MetaboAnalystR")[4:5]) + 1
-  }else{
-    unlist(.C("DescendZero",
-              y,
-              length(y),
-              as.integer(istart-1),
-              ilower = integer(1),
-              iupper = integer(1))[4:5]) + 1
-  }
-  
-}
-which.colMax <- function (x, na.rm = FALSE, dims = 1) {
-  
-  if (is.data.frame(x))
-    x <- as.matrix(x)
-  if (!is.array(x) || length(dn <- dim(x)) < 2)
-    stop("`x' must be an array of at least two dimensions")
-  if (dims < 1 || dims > length(dn) - 1)
-    stop("invalid `dims'")
-  n <- prod(dn[1:dims])
-  dn <- dn[-(1:dims)]
-  if (!is.double(x)) x <- as.double(x)
-  
-  if (!.on.public.web){
-    z <- .C(C_WhichColMax,
-            x,
-            as.integer(n),
-            as.integer(prod(dn)),
-            integer(prod(dn)),
-            PACKAGE = "MetaboAnalystR")[[4]]
-    
-  } else {
-    z <- .C("WhichColMax",
-            x,
-            as.integer(n),
-            as.integer(prod(dn)),
-            integer(prod(dn)))[[4]]
-    
-  }
-  
-  
-  if (length(dn) > 1) {
-    dim(z) <- dn
-    dimnames(z) <- dimnames(x)[-(1:dims)]
-  }
-  else names(z) <- dimnames(x)[[dims + 1]]
-  z
-}
-breaks_on_nBins <- function(fromX, toX, nBins, shiftByHalfBinSize = FALSE) {
-  if(missing(fromX) | missing(toX) | missing(nBins))
-    stop("'fromX', 'toX' and 'nBins' are required!")
-  if (!is.double(fromX)) fromX <- as.double(fromX)
-  if (!is.double(toX)) toX <- as.double(toX)
-  if (!is.integer(nBins)) nBins <- as.integer(nBins)
-  shiftIt <- 0L;
-  if (shiftByHalfBinSize){shiftIt <- 1L}
-  
-  if (!.on.public.web){
-    res <- .Call(C_breaks_on_nBins, fromX, toX, nBins, shiftIt,
-                 PACKAGE = "MetaboAnalystR")
-  } else {
-    res <- .Call("breaks_on_nBins", fromX, toX, nBins, shiftIt)
-  }
-  
-  return(res)
-}
+
 
 ### ---- ==== Botthom of this sub Kit ==== --- ####
 
@@ -4622,20 +4136,14 @@ findIsotopesPspec <- function(isomatrix, mz, ipeak, int, params){
   
   return(isomatrix)
 }
-getEICs <- function(xraw,peaks,maxscans=length(xraw@scantime)) {
-  npeaks <- dim(peaks)[1]; scans <- length(xraw@scantime)
-  eics <- matrix(as.numeric(0),npeaks,maxscans)
-  for (p in 1:npeaks) {
-    eics[p,1:scans] <- as.integer(getEIC(xraw,massrange=c(peaks[p,"mzmin"],peaks[p,"mzmax"]))$intensity)
-  }
-  eics
-}
+
 create.matrix <- function(dim1,dim2) {
   x <- matrix()
   length(x) <- dim1*dim2
   dim(x) <- c(dim1,dim2)
   x
 }
+
 getAllPeakEICs <- function(mSet, index=NULL){
   
   #Checking parameter index
@@ -4776,68 +4284,6 @@ getAllPeakEICs <- function(mSet, index=NULL){
 }
 
 
-getEIC4Peaks <- function(mset,peaks,maxscans){
-  
-  mset$env$mz <- lapply(MSnbase::spectra(mset$onDiskData, BPPARAM = SerialParam()), mz)
-  mset$env$intensity <- MSnbase::intensity(mset$onDiskData, BPPARAM = SerialParam())
-  
-  mset$scantime <- MSnbase::rtime(mset$onDiskData)
-  
-  valCount <- cumsum(lengths(mset$env$mz, FALSE))
-  mset$scanindex <- as.integer(c(0, valCount[-length(valCount)])) ## Get index vector for C calls
-  
-  npeaks <- dim(peaks)[1]; 
-  scans  <- length(mset$scantime);
-  eics <- matrix(NA,npeaks,maxscans);
-  
-  mset$env$mz <- as.double(unlist(mset$env$mz))
-  mset$env$intensity <- as.double(unlist(mset$env$intensity))
-  scan_time_leng <- as.integer(length(mset$scantime))
-  
-  if (.on.public.web){
-    print_mes <- paste0(npeaks," peaks found!");
-    write.table(print_mes,file="metaboanalyst_spec_proc.txt",append = T,row.names = F,col.names = F, quote = F, eol = "\n");
-  } else {
-    message(npeaks," peaks found ! ");
-  }
-  
-  for (p in 1:npeaks) {
-    
-    timerange <- c(peaks[p,"rtmin"],peaks[p,"rtmax"]);
-    tidx <- which((mset$scantime >= timerange[1]) & (mset$scantime <= timerange[2]));
-    
-    if(length(tidx)>0){
-      scanrange <- range(tidx);
-    }else{
-      scanrange <- 1:scans;
-    }
-    massrange <- c(peaks[p,"mzmin"],peaks[p,"mzmax"]);
-    
-    if (!.on.public.web){
-      eic <- .Call(C_getEIC,
-                   mset$env$mz,
-                   mset$env$intensity,
-                   as.integer(mset$scanindex),
-                   as.double(massrange),
-                   as.integer(scanrange),
-                   scan_time_leng, 
-                   PACKAGE ='MetaboAnalystR' )$intensity;
-    } else {
-      eic <- .Call("getEIC",
-                   mset$env$mz,
-                   mset$env$intensity,
-                   as.integer(mset$scanindex),
-                   as.double(massrange),
-                   as.integer(scanrange),
-                   scan_time_leng)$intensity;
-    }
-    eic[eic==0] <- NA;
-    eics[p,scanrange[1]:scanrange[2]] <- eic; 
-  }
-  
-  eics
-  
-}
 
 calcCiS<- function(mSet, EIC=EIC, corval=0.75, pval=0.05, psg_list=NULL ){
   
@@ -5091,7 +4537,6 @@ findAdducts <- function(mSet, ppm=5, mzabs=0.015, multiplier=3, polarity=NULL, r
       
     }
     
-    
     mint     <- groupval(mSet$xcmsSet,value=intval)[, index, drop=FALSE];
     peakmat  <- mSet$xcmsSet@peaks;
     groupmat <- mSet$xcmsSet@groups;
@@ -5145,7 +4590,6 @@ findAdducts <- function(mSet, ppm=5, mzabs=0.015, multiplier=3, polarity=NULL, r
           print("Ruleset could not read from object! Recalculate");
           
         }
-        
         
         rules <- calcRules(maxcharge=maxcharge, mol=3, nion=2, nnloss=1, nnadd=1, nh=2,
                            polarity=mSet$AnnotateObject$polarity, 
@@ -7163,18 +6607,4 @@ SetUserPath<-function(path){
 }
 
 
-R_set_obiwarp <- function(valscantime1, scantime1, mzvals, mzs, cntrPr, valscantime2, scantime2, curP, parms) {
-  
-  if(.on.public.web){
-    dyn.load(.getDynLoadPath());
-  }
-  
-  rtadj <- .Call("R_set_from_xcms", valscantime1, scantime1, mzvals, mzs,
-                 cntrPr$profMat, valscantime2, scantime2, mzvals, mzs,
-                 curP$profMat, parms$response, parms$distFun,
-                 parms$gapInit, parms$gapExtend, parms$factorDiag,
-                 parms$factorGap, as.numeric(parms$localAlignment),
-                 parms$initPenalty);
-  
-  return (rtadj);
-}
+

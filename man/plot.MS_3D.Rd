@@ -4,7 +4,7 @@
 \alias{plot.MS_3D}
 \title{Function for 3D ms plotting}
 \usage{
-\method{plot}{MS_3D}(object)
+plot.MS_3D(object)
 }
 \description{
 Function for 3D ms plotting (internal use only)

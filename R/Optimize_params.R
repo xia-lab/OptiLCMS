@@ -2439,6 +2439,17 @@ findTruePeaks <- function(truePeaks, sortedAllEIC) {
 estimatePPM <- function(first, second) {
   abs(first-second)/first * 10 ^ 6
 }
+
+#' Title
+#'
+#' @param no_match 
+#' @param sortedAllEIC 
+#' @param approvedPeaks 
+#'
+#' @return
+#' @importFrom stats var
+#'
+#' @examples
 estimateSNThresh <- function(no_match, sortedAllEIC, approvedPeaks) {
   
   noisePeakTable <- sortedAllEIC[no_match,]
@@ -2602,6 +2613,22 @@ estimateSNThresh <- function(no_match, sortedAllEIC, approvedPeaks) {
   
   return(unlist(SN))
 }
+
+
+#' Title
+#'
+#' @param approvedPeaks 
+#' @param useGap 
+#' @param varExpThresh 
+#' @param returnPpmPlots 
+#' @param plotDir 
+#' @param observedPeak 
+#' @param filename 
+#'
+#' @return
+#' @importFrom stats density
+#'
+#' @examples
 filterPpmError <- function(approvedPeaks, useGap, varExpThresh,
                            returnPpmPlots, plotDir, observedPeak,
                            filename) {
