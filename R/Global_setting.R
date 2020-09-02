@@ -1,6 +1,6 @@
 
 # Setting .on.public.web
-.on.public.web <- FALSE;
+.on.public.web <<- FALSE;
 
 # OTHER SETTINGS
 

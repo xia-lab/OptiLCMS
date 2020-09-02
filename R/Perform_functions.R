@@ -1781,7 +1781,12 @@ MessageOutput <- function(mes, ecol, progress) {
       )
     } else {
       # print message
-      message(mes)
+      if(ecol == "\n"){
+        message(mes)
+      } else {
+        message(mes,appendLF = FALSE)
+      }
+      
     }
   }
   
