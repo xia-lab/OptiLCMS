@@ -332,7 +332,6 @@ ImportRawMSData <-
       load_msnbase();
     }
     
-    
     if(missing(mSet)){
       mSet <- new("mSet")
     }
@@ -690,7 +689,7 @@ read.MSdata <- function(files,
   files <- normalizePath(files)
   suppressWarnings(.hasChroms <- MSnbase::hasChromatograms(files))
   
-  write.table("Raw file import begin...",file="metaboanalyst_spec_proc.txt",append = T,row.names = F,col.names = F, quote = F, eol = "\n");
+  MessageOutput ("Raw file import begin...", "\n", NULL)
   
   if (!length(files)) {
     process <- new("MSnProcess",

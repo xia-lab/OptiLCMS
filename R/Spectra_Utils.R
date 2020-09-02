@@ -23,7 +23,10 @@
 #'@export
 #'@ref Smith, C.A. et al. 2006. Analytical Chemistry, 78, 779-787
 #'
-PerformPeakPicking<-function(object,param,BPPARAM = bpparam()){
+PerformPeakPicking<-function(mSet, BPPARAM = bpparam()){
+  
+  object <- mSet@rawOnDisk;
+  param <- mSet@params;
   
   object_mslevel <- MSnbase::filterMsLevel(
     MSnbase::selectFeatureData(object,
@@ -54,7 +57,6 @@ PerformPeakPicking<-function(object,param,BPPARAM = bpparam()){
   
   # Peak picking runnning - MatchedFilter mode
   if (param$Peak_method == "matchedFilter"){
-    
     resList <- bplapply(object_mslevel,
                         FUN = PeakPicking_MatchedFilter_slave, # slave Function of MatchedFilter
                         param = param, BPPARAM = BPPARAM)
@@ -95,12 +97,9 @@ PerformPeakPicking<-function(object,param,BPPARAM = bpparam()){
                                               row.names = rownames(pks))
   
   ## mSet Generation
-  mSet<-list()
-  mSet$msFeatureData <- newFd
-  mSet$onDiskData <- object
+  mSet@peakpicking <- newFd
   
   return(mSet)
-  
 }
 
 #'PeakPicking_centWave_slave
@@ -203,7 +202,7 @@ PeakPicking_centWave_slave <- function(x,param){
   ## If no ROIs are supplied then search for them.
   roiList <- list()
   if (length(roiList) == 0) {
-    if (.on.public.web & !optimize_switch) {
+    if (.on.public.web & !.optimize_switch) {
       # Do nothing
     } else {
       message("ROI searching under ", param$ppm, " ppm ... ", appendLF = FALSE)
@@ -1011,31 +1010,34 @@ PeakPicking_MatchedFilter_slave <- function(x,param){
 #'License: GNU GPL (>= 2)
 #'@ref Smith, C.A. et al. 2006. Analytical Chemistry, 78, 779-787
 #'
-PerformPeakGrouping<-function(mSet,param){
-  
+PerformPeakGrouping<-function(mSet){
   
   if(.on.public.web){
     dyn.load(.getDynLoadPath());
   }
   
+  param <- mSet@params;
+  
   ## 1. Extract Information-------
-  peaks_0 <- mSet[["msFeatureData"]][["chromPeaks"]]
+  peaks_0 <- mSet@peakpicking$chromPeaks;
   
   peaks <- cbind(peaks_0[, c("mz", "rt", "sample", "into"), drop = FALSE],
                  index = seq_len(nrow(peaks_0)))
   
-  if (!is.null(mSet[["onDiskData"]])){
-    sample_group<-as.character(mSet[["onDiskData"]]@phenoData@data[["sample_group"]]);
+  if (length(mSet@rawOnDisk) != 0) {
     
+    sample_group<-as.character(mSet@rawOnDisk@phenoData@data[["sample_group"]]);
     if (identical(sample_group,character(0))){
-      sample_group<-as.character(mSet[["onDiskData"]]@phenoData@data[["sample_name"]]);
+      sample_group<-as.character(mSet@rawOnDisk@phenoData@data[["sample_name"]]);
     }
     
-  } else if (!is.null(mSet[["inMemoryData"]])) {
-    sample_group<-as.character(mSet[["inMemoryData"]]@phenoData@data[["sample_group"]]);   
+  } else if (length(mSet@rawInMemory) != 0) {
+    
+    sample_group<-as.character(mSet@rawInMemory@phenoData@data[["sample_group"]]);   
     if (identical(sample_group,character(0))){
-      sample_group<-as.character(mSet[["inMemoryData"]]@phenoData@data[["sample_name"]]);
+      sample_group<-as.character(mSet@rawInMemory@phenoData@data[["sample_name"]]);
     }
+    
   } else {
     stop("Exceptions occurs during data import process. Please check your data carefully!")
   }
@@ -1057,23 +1059,15 @@ PerformPeakGrouping<-function(mSet,param){
   densFrom <- rtRange[1] - 3 * param$bw
   densTo <- rtRange[2] + 3 * param$bw
   
-  
   ## 4. Increase the number of sampling points for the density distribution.-------
   densN <- max(512, 2 * 2^(ceiling(log2(diff(rtRange) / (param$bw / 2)))))
   endIdx <- 0
   
-  if (.on.public.web & !optimize_switch){
+  if (!.optimize_switch){
     
-    print_mes <- paste0("Total of ", length(mass) - 1, " slices detected for processing... ");    
-    #write.table(print_mes,file="metaboanalyst_spec_proc.txt",append = T,row.names = F,col.names = F, quote = F, eol = " ");
-    
-  } else {
-    
-    message("Total of ", length(mass) - 1, " slices detected for processing... ",
-            appendLF = FALSE)
+    print_mes <- paste0("Total of ", length(mass) - 1, " slices detected for processing... ");
     
   }
-  
   
   resL <- vector("list", (length(mass) - 2))
   
@@ -1093,13 +1087,10 @@ PerformPeakGrouping<-function(mSet,param){
                                        maxFeatures = param$maxFeatures)
   }
   
-  if (.on.public.web & !optimize_switch){
+  if (!.optimize_switch){
     
-    print_mes_tmp <- paste("Done ! \nGoing to the next step...");    
-    write.table(paste0(print_mes,print_mes_tmp),file="metaboanalyst_spec_proc.txt",append = T,row.names = F,col.names = F, quote = F, eol = "\n");
-    
-  } else {
-    message("Done !")
+    print_mes_tmp <- paste("Done ! \nGoing to the next step...");
+    MessageOutput(mes = paste0(print_mes,print_mes_tmp), ecol = "\n", NULL)
     
   }
   
@@ -1123,10 +1114,10 @@ PerformPeakGrouping<-function(mSet,param){
   rownames(df) <- sprintf(paste0("FT", "%0", ceiling(log10(nrow(df) + 1L)), "d"),
                           seq(from = 1, length.out = nrow(df)))
   
+  FeatureGroupTable <- df;
+  mSet@peakgrouping <- FeatureGroupTable;
   
-  mSet$FeatureGroupTable <- df
-  
-  mSet
+  return(mSet)
 }
 
 #'Densitygrouping_slave
@@ -1192,16 +1183,17 @@ Densitygrouping_slave <- function(x, bw, densFrom, densTo, densN, sampleGroups,
 #'@ref Smith, C.A. et al. 2006. Analytical Chemistry, 78, 779-787
 #'
 
-PerformPeakAlignment<-function(mSet,param){
-  ## 1~4. Peak Grouping---------
-  mSet<-PerformPeakGrouping(mSet,param);
+PerformPeakAlignment<-function(mSet){
+  ## 1~4. Peak Grouping ---------
+  mSet<-PerformPeakGrouping(mSet);
   
-  ## 5. Perform RT correction
-  mSet<-PerformRTcorrection(mSet,param)
+  ## 5. Perform RT correction ---------
+  mSet<-PerformRTcorrection(mSet)
   
-  ## 6~9. Peak Grouping Again---------
-  mSet<-PerformPeakGrouping(mSet,param)
-  ## 10. Return------
+  ## 6~9. Peak Grouping Again ---------
+  mSet<-PerformPeakGrouping(mSet)
+  
+  ## 10. Return ------
   return(mSet)
 }
 
@@ -1213,6 +1205,8 @@ PerformRTcorrection <- function(mSet, param){
   if(.on.public.web){
     dyn.load(.getDynLoadPath());
   }
+  
+  param <- mSet@params;
   
   if (.on.public.web & !optimize_switch){
     
@@ -2467,7 +2461,7 @@ updateRawSpectraParam <- function (Params){
     
     param$binSize <- 0.1;
     
-  } else if(param$Peak_method == "Massifquant"){
+  } else if (param$Peak_method == "Massifquant") {
     
     param$ppm <- as.numeric(Params[["ppm"]]);
     param$peakwidth <- c(as.numeric(Params[["min_peakwidth"]]),
@@ -2492,7 +2486,6 @@ updateRawSpectraParam <- function (Params){
     
     param$binSize <-0.25; # density Param
     
-    
     # Specific Parameters
     param$criticalValue <- as.numeric(Params[["criticalValue"]]);
     param$consecMissedLimit <- as.numeric(Params[["consecMissedLimit"]]);
@@ -2508,7 +2501,7 @@ updateRawSpectraParam <- function (Params){
   param$minSamples <- as.numeric(Params[["minSamples"]]);
   param$maxFeatures <- as.numeric(Params[["maxFeatures"]]);
   
-  if (param[["minFraction"]][1] > 1.0){
+  if (param[["minFraction"]][1] > 1.0) {
     stop("minFraction can not be larger than 1.0 ! Please adjust ...");
   };  
   
@@ -2523,7 +2516,7 @@ updateRawSpectraParam <- function (Params){
   param$subsetAdjust <- "average";
   
   # Finished !
-  if (.on.public.web & !optimize_switch){
+  if (.on.public.web & !.optimize_switch){
     print_mes <- paste("Parameters for",param$Peak_method, "have been successfully parsed!")
     write.table(print_mes,file="metaboanalyst_spec_proc.txt",append = T,row.names = F,col.names = F, quote = F, eol = "\n");
     

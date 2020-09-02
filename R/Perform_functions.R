@@ -170,13 +170,16 @@ peakTableSUM <- function(peak_table) {
 
 
 PerformPeakProfiling <-
-  function(rawData,
+  function(mSet,
            Params,
            plotSettings,
            ncore,
            running.controller = NULL) {
+    
+    require(BiocParallel)
+    
     #Build Running plan for data import - Indentify the controller
-    function.name <- "peak_profiling"
+    function.name <- "peak_profiling";
     
     if (is.null(running.controller)) {
       c1 <- c2 <- c3 <- c4 <- T
@@ -200,7 +203,7 @@ PerformPeakProfiling <-
       quote = F
     )
     
-    param <- updateRawSpectraParam (Params)
+    mSet@params <- updateRawSpectraParam (Params)
     
     ### Setting the different parallel method for linux or windows
     MessageOutput(mes = NULL,
@@ -237,11 +240,11 @@ PerformPeakProfiling <-
     if (c1) {
       MessageOutput(mes = "Step 3/6: Started peak picking! This step will take some time...",
                     ecol = "\n",
-                    progress = NULL)
+                    progress = NULL);
       
       mSet <-
         tryCatch(
-          PerformPeakPicking(rawData, param = param),
+          PerformPeakPicking(mSet),
           error = function(e) {
             e
           }
@@ -291,7 +294,7 @@ PerformPeakProfiling <-
       
       mSet <-
         tryCatch(
-          PerformPeakAlignment(mSet, param),
+          PerformPeakAlignment(mSet),
           error = function(e) {
             e
           }
@@ -310,13 +313,7 @@ PerformPeakProfiling <-
     }
     
     if (.on.public.web) {
-      write.table(
-        73.0,
-        file = paste0(fullUserPath, "log_progress.txt"),
-        row.names = F,
-        col.names = F
-      )
-      
+
       if (class(mSet)[1] == "simpleError") {
         MessageOutput(
           mes = paste0(
@@ -350,7 +347,7 @@ PerformPeakProfiling <-
       
       mSet <-
         tryCatch(
-          PerformPeakFiling (mSet, param),
+          PerformPeakFiling (mSet),
           error = function(e) {
             e
           }
