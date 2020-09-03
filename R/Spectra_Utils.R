@@ -7,9 +7,6 @@
 # 4. Peak Annotation - CAMERA
 # 5. MS File Reading - MSnbase
 
-
-
-
 # --------------------1. Raw spectra processing_Section using the xcms way---------------------------------------------
 
 #'PerformPeakPicking
@@ -1224,7 +1221,7 @@ PerformRTcorrection <- function(mSet){
   } else {
     
     if (!.optimize_switch){
-      MessageOutput(mes = paste("\nPeakGroup -- loess is used for retention time correction."),
+      MessageOutput(mes = paste("PeakGroup -- loess is used for retention time correction."),
                     ecol = "",
                     progress = NULL)
     }
@@ -1596,6 +1593,7 @@ adjustRtime_obiwarp <- function(mSet, param, msLevel = 1L) {
   if (length(unique(msLevel(object))) !=
       length(unique(msLevel(object_sub)))) {
     
+
     if (!.optimize_switch){
       MessageOutput(
         mes = paste0("Apply retention time correction performed on MS",
@@ -1604,6 +1602,21 @@ adjustRtime_obiwarp <- function(mSet, param, msLevel = 1L) {
         progress = NULL
       )
     } 
+
+    if (.on.public.web & !.optimize_switch){
+      
+      print_mes <- paste0("Apply retention time correction performed on MS",
+                          msLevel, " to spectra from all MS levels - obiwarp");    
+      write.table(print_mes,file="metaboanalyst_spec_proc.txt",append = T,row.names = F,col.names = F, quote = F, eol = "");
+      #write.table(66.0, file = paste0(fullUserPath, "log_progress.txt"),row.names = F,col.names = F);
+      
+    } else {
+      
+      message("Apply retention time correction performed on MS",
+              msLevel, " to spectra from all MS levels")
+      
+    }
+
     
     ## I need raw and adjusted rt for the adjusted spectra
     ## and the raw rt of all.
@@ -1687,10 +1700,23 @@ mSet.obiwarp <- function(mSet, object, param0) { ## Do not use the params define
   
   centerSample <- floor(median(1:nSamples));
   
+
   if (!.optimize_switch){
     MessageOutput(paste0("Sample number ", centerSample, " used as center sample.\n"), "", NULL)
   }
-  
+
+  if (.on.public.web & !.optimize_switch){
+    
+    print_mes <- paste0("Sample number ", centerSample, " used as center sample.\n");    
+    write.table(print_mes,file="metaboanalyst_spec_proc.txt",append = T,row.names = F,col.names = F, quote = F, eol = "");
+    #write.table(66.0, file = paste0(fullUserPath, "log_progress.txt"),row.names = F,col.names = F);
+    
+  } else {
+    
+    message("Sample number ", centerSample, " used as center sample.")
+    
+  } 
+
   rtraw <- split(rtime(object), fromFile(object))
   object <- filterFile(object, file = subs)
   ## Get the profile matrix of the center sample:
@@ -1732,20 +1758,48 @@ mSet.obiwarp <- function(mSet, object, param0) { ## Do not use the params define
     mst1 <- which(diff(scantime1) > 5 * mstdiff)[1]
     if (!is.na(mst1)) {
       scantime1 <- scantime1[seq_len((mst1 - 1))]
+
       if (!.optimize_switch){
         MessageOutput(paste0("Found gaps in scan times of the center sample: cut ", "scantime-vector at ", scantime1[mst1]," seconds."),
                       "", NULL)
       } 
+
+      if (.on.public.web & !.optimize_switch){
+        
+        print_mes <- paste0("Found gaps in scan times of the center sample: cut ", "scantime-vector at ", scantime1[mst1]," seconds.");    
+        write.table(print_mes,file="metaboanalyst_spec_proc.txt",append = T,row.names = F,col.names = F, quote = F, eol = "");
+        #write.table(66.0, file = paste0(fullUserPath, "log_progress.txt"),row.names = F,col.names = F);
+        
+      } else {
+        
+        message("Found gaps in scan times of the center sample: cut ",
+                "scantime-vector at ", scantime1[mst1]," seconds.")
+      }
+      
     }
     
     mst2 <- which(diff(scantime2) > 5 * mstdiff)[1]
     
     if(!is.na(mst2)) {
       scantime2 <- scantime2[seq_len((mst2 - 1))]
+
       if (!.optimize_switch){
         MessageOutput(paste0("Found gaps in scan time of file ", basename(fileNames(z)), ": cut scantime-vector at ", scantime2[mst2]," seconds."),
                       "", NULL)
       } 
+
+      if (.on.public.web & !.optimize_switch){
+        
+        print_mes <- paste0("Found gaps in scan time of file ", basename(fileNames(z)), ": cut scantime-vector at ", scantime2[mst2]," seconds.");    
+        write.table(print_mes,file="metaboanalyst_spec_proc.txt",append = T,row.names = F,col.names = F, quote = F, eol = "");
+        #write.table(66.0, file = paste0(fullUserPath, "log_progress.txt"),row.names = F,col.names = F);
+        
+      } else {
+        
+        message("Found gaps in scan time of file ", basename(fileNames(z)),
+                ": cut scantime-vector at ", scantime2[mst2]," seconds.")
+      }
+
     }
     ## Drift of measured scan times - expected to be largest at the end.
     rtmaxdiff <- abs(diff(c(scantime1[length(scantime1)],
@@ -1840,10 +1894,26 @@ mSet.obiwarp <- function(mSet, object, param0) { ## Do not use the params define
       stop("Dimensions of profile matrices of files ",
            basename(fileNames(cntr)), " and ", basename(fileNames(z)),
            " do not match!")
-   
+
+    if (.on.public.web & !.optimize_switch){
+      
+      write.table(print_mes,file="metaboanalyst_spec_proc.txt",append = T,row.names = F,col.names = F, quote = F, eol = "");
+      #write.table(66.0, file = paste0(fullUserPath, "log_progress.txt"),row.names = F,col.names = F);
+      
+    }
+    
+
     ## Done with preparatory stuff - now I can perform the alignment.
     rtadj <- R_set_obiwarp (valscantime1, scantime1, mzvals, mzs, cntrPr, valscantime2, scantime2, curP, parms);
 
+
+    if (.on.public.web & !.optimize_switch){
+      
+      write.table(print_mes,file="metaboanalyst_spec_proc.txt",append = T,row.names = F,col.names = F, quote = F, eol = "");
+      #write.table(66.0, file = paste0(fullUserPath, "log_progress.txt"),row.names = F,col.names = F);
+      
+    }
+ 
     if (length(rtime(z)) != valscantime2) {
       nrt <- length(rtime(z))
       adj_starts_at <- which(rtime(z) == scantime2[1])
@@ -1859,9 +1929,15 @@ mSet.obiwarp <- function(mSet, object, param0) { ## Do not use the params define
     MessageOutput("OK", "\n", NULL)
     
     if (.on.public.web & !.optimize_switch){
+
       MessageOutput(paste0("Aligning ", basename(fileNames(z)), " against ", basename(fileNames(cntr)), " ... OK\n"), 
                     "", 
                     NULL)
+
+      print_mes <- paste0("Aligning ", basename(fileNames(z)), " against ", basename(fileNames(cntr)), " ... OK\n");    
+      write.table(print_mes,file="metaboanalyst_spec_proc.txt",append = T,row.names = F,col.names = F, quote = F, eol = "");
+      #write.table(66.0, file = paste0(fullUserPath, "log_progress.txt"),row.names = F,col.names = F);
+
     }
     
     return(unname(rtadj))
@@ -1888,20 +1964,13 @@ mSet.obiwarp <- function(mSet, object, param0) { ## Do not use the params define
 #'@export
 #'@ref Smith, C.A. et al. 2006. Analytical Chemistry, 78, 779-787
 #'
-PerformPeakFiling <- function(mSet,param,BPPARAM=bpparam()){
+PerformPeakFiling <- function(mSet,BPPARAM=bpparam()){
   
+  param <- mSet@params;
   ## Preparing Something
-  if (.on.public.web & !.optimize_switch){
-    
-    print_mes <- paste("Starting peak filling!");    
-    write.table(print_mes,file="metaboanalyst_spec_proc.txt",append = T,row.names = F,col.names = F, quote = F, eol = "\n");
-    write.table(74.0, file = paste0(fullUserPath, "log_progress.txt"),row.names = F,col.names = F);
-  } else {
-    
-    print("Starting peak filling!");
-    
-  }
-  
+  if (!.optimize_switch) {
+    MessageOutput(paste("Starting peak filling!"), ecol = "\n", 74)
+  } 
   
   fixedRt <- fixedMz <- expandRt <- expandMz <- 0
   
@@ -1911,22 +1980,17 @@ PerformPeakFiling <- function(mSet,param,BPPARAM=bpparam()){
     ppm <- param$ppm;
   }
   
-  if (.on.public.web & !.optimize_switch){
-    
-    print_mes <- paste("Defining peak areas for filling-in...");    
-    write.table(print_mes,file="metaboanalyst_spec_proc.txt",append = T,row.names = F,col.names = F, quote = F, eol = "");
-    
-  } else {
-    message("Defining peak areas for filling-in...",appendLF = FALSE)
-    
-  }
-  
+  if (!.optimize_switch){
+    MessageOutput(paste("Defining peak areas for filling-in..."), ecol = "", NULL)
+  } 
   
   aggFunLow <- median
-  aggFunHigh <- median
+  aggFunHigh <- median;
   
-  tmp_pks <- mSet$msFeatureData$chromPeaks[, c("rtmin", "rtmax", "mzmin", "mzmax")]
-  fdef <- mSet$FeatureGroupTable
+  ngroup <- length(mSet@peakgrouping);
+  #tmp_pks <- mSet$msFeatureData$chromPeaks[, c("rtmin", "rtmax", "mzmin", "mzmax")];
+  tmp_pks <- mSet@peakRTcorrection$chromPeaks[, c("rtmin", "rtmax", "mzmin", "mzmax")];
+  fdef <- mSet@peakgrouping[[ngroup]]
   
   pkArea <- do.call(rbind,lapply(fdef$peakidx, function(z) {
     pa <- c(aggFunLow(tmp_pks[z, 1]),
@@ -1966,91 +2030,72 @@ PerformPeakFiling <- function(mSet,param,BPPARAM=bpparam()){
   
   rm(tmp_pks)
   
-  if (.on.public.web & !.optimize_switch){
-    
-    print_mes <- paste(".");    
-    write.table(print_mes,file="metaboanalyst_spec_proc.txt",append = T,row.names = F,col.names = F, quote = F, eol = "");
-    write.table(75.0, file = paste0(fullUserPath, "log_progress.txt"),row.names = F,col.names = F);
-    
-  } else {
-    message(".", appendLF = FALSE)
-    
+  if (!.optimize_switch){
+    MessageOutput(".", ecol = "", 75)
   }
-  
   
   colnames(pkArea) <- c("rtmin", "rtmax", "mzmin", "mzmax")
   ## Add mzmed column - needed for MSW peak filling.
   pkArea <- cbind(group_idx = 1:nrow(pkArea), pkArea,
                   mzmed = as.numeric(fdef$mzmed))
   
-  if (class(mSet[[2]]) == "OnDiskMSnExp"){
-    format <- "onDiskData"
+  if (length(mSet@rawOnDisk) != 0){
+    specdata <- mSet@rawOnDisk;
   } else {
-    format <- "inMemoryData"
+    specdata <- mSet@rawInMemory;
   }
   
-  fNames <- mSet[[format]]@phenoData@data[["sample_name"]]
-  pks <- mSet$msFeatureData$chromPeaks
+  fNames <- specdata@phenoData@data[["sample_name"]]
+  #pks <- mSet$msFeatureData$chromPeaks
+  pks <- mSet@peakRTcorrection[["chromPeaks"]]
   
   pkGrpVal <-
-    .feature_values(pks = pks, fts = mSet$FeatureGroupTable,
+    .feature_values(pks = pks, fts = mSet@peakgrouping[[ngroup]],
                     method = "medret", value = "into",
                     intensity = "into", colnames = fNames,
                     missing = NA)
   
-  if (.on.public.web & !.optimize_switch){
-    
-    print_mes <- paste(".");    
-    write.table(print_mes,file="metaboanalyst_spec_proc.txt",append = T,row.names = F,col.names = F, quote = F, eol = "");
-    write.table(76.0, file = paste0(fullUserPath, "log_progress.txt"),row.names = F,col.names = F);
-    
-  } else {
-    message(".", appendLF = FALSE)
-    
+  if (!.optimize_switch){
+    MessageOutput(".","",76)
   }
   
   ## Check if there is anything to fill...
   if (!any(is.na(rowSums(pkGrpVal)))) {
-    message("No missing peaks present.")
+    MessageOutput("\nNo missing peaks present.","\n",76)
+    mSet@peakfilling <-""; # need to save something there
     return(mSet)
   }
-  if (.on.public.web & !.optimize_switch){
-    
-    print_mes <- paste(".");    
-    write.table(print_mes,file="metaboanalyst_spec_proc.txt",append = T,row.names = F,col.names = F, quote = F, eol = "");
-    
-  } else {
-    message(".", appendLF = FALSE)
-    
+  
+  if (!.optimize_switch){
+    MessageOutput(".","",76)
   }
   
   ## Split the object by file and define the peaks for which
   pkAreaL <- objectL <- vector("list", length(fNames))
   
-  
   ## We need "only" a list of OnDiskMSnExp, one for each file but
   ## instead of filtering by file we create small objects to keep
   ## memory requirement to a minimum.
-  if (format == "onDiskData"){
+  if (class(specdata) == "OnDiskMSnExp"){
     
     req_fcol <- requiredFvarLabels("OnDiskMSnExp")
-    min_fdata <- mSet[[format]]@featureData@data[, req_fcol]
+    min_fdata <- specdata@featureData@data[, req_fcol]
     
     ###
-    res <- mSet[["msFeatureData"]][["adjustedRT"]]
+    res <- mSet@peakRTcorrection$adjustedRT
     res <- unlist(res, use.names = FALSE)
     
-    fidx <- fData(mSet[[format]])$fileIdx # a issue for inmemory data
-    names(fidx) <- featureNames(mSet[[format]])
-    sNames <- unlist(split(featureNames(mSet[[format]]), fidx),
+    fidx <- fData(specdata)$fileIdx # a issue for inmemory data
+    names(fidx) <- featureNames(specdata)
+    sNames <- unlist(split(featureNames(specdata), fidx),
                      use.names = FALSE)
     
     names(res) <- sNames
-    res <- res[featureNames(mSet[[format]])]
+    res <- res[featureNames(specdata)]
     
     min_fdata$retentionTime <- res
     
-    for (i in 1:length(mSet[[format]]@phenoData@data[["sample_name"]])) {
+    for (i in 1:length(specdata@phenoData@data[["sample_name"]])) {
       
       fd <- min_fdata[min_fdata$fileIdx == i, ]
       fd$fileIdx <- 1
@@ -2058,7 +2103,7 @@ PerformPeakFiling <- function(mSet,param,BPPARAM=bpparam()){
       objectL[[i]] <- new(
         "OnDiskMSnExp",
         processingData = new("MSnProcess",
-                             files = mSet[[format]]@processingData@files[i]),
+                             files = specdata@processingData@files[i]),
         featureData = new("AnnotatedDataFrame", fd),
         phenoData = new("NAnnotatedDataFrame",
                         data.frame(sampleNames = "1")),
@@ -2075,15 +2120,11 @@ PerformPeakFiling <- function(mSet,param,BPPARAM=bpparam()){
       pkAreaL[[i]] <- pkArea[is.na(pkGrpVal[, i]), , drop = FALSE]
     }
     
-    if (.on.public.web & !.optimize_switch){
-      print_mes <- paste(" OK\nStart integrating peak areas from original files...");    
-      write.table(print_mes,file="metaboanalyst_spec_proc.txt",append = T,row.names = F,col.names = F, quote = F, eol = "\n");
-      write.table(77.0, file = paste0(fullUserPath, "log_progress.txt"),row.names = F,col.names = F);
-    } else {
-      message(" OK\nStart integrating peak areas from original files")
-    }
+    if (!.optimize_switch){
+      MessageOutput(paste(" OK\nStart integrating peak areas from original files..."), "\n", 77)
+    } 
     
-    cp_colnames <- colnames(mSet[["msFeatureData"]][["chromPeaks"]])
+    cp_colnames <- colnames(mSet@peakRTcorrection[["chromPeaks"]])
     
     ## Extraction designed for centWave
     res <- bpmapply(FUN = .getChromPeakData, 
@@ -2096,27 +2137,24 @@ PerformPeakFiling <- function(mSet,param,BPPARAM=bpparam()){
                     SIMPLIFY = FALSE)    
     
   } else {
-    
-    message(" OK\nStart integrating peak areas from original files")
-    
-    mzCenterFun = "weighted.mean"
-    
-    scan_set<-names(mSet[[format]]@assayData);
+
+    mzCenterFun = "weighted.mean";
+    scan_set<-names(specdata@assayData);
     scan_set_ordered <- sort(scan_set);
     
-    assayData <- sapply(scan_set_ordered, FUN = function(x){mSet[[format]]@assayData[[x]]})
+    assayData <- sapply(scan_set_ordered, FUN = function(x){specdata@assayData[[x]]})
     
     #assayData <- lapply(scan_set,FUN=function(x){mSet[[format]]@assayData[[x]]});
-    assayData <- split(assayData,fromFile(mSet[[format]]));
+    assayData <- split(assayData,fromFile(specdata));
     
-    
-    rtim_all <- split(rtime(mSet[[format]]),fromFile(mSet[[format]]))
-    filesname <- basename(MSnbase::fileNames(mSet[[format]]))
+    #rtim_all <- split(rtime(specdata),fromFile(specdata)) has to used the corrected RT
+    rtim_all <- mSet@peakRTcorrection$adjustedRT
+    filesname <- basename(MSnbase::fileNames(specdata))
     res_new <-list()
     
-    for (ii in 1:length(mSet[[format]]@phenoData@data[["sample_name"]])){
+    for (ii in 1:length(specdata@phenoData@data[["sampleNames"]])) {
       
-      cn <-colnames(mSet[["msFeatureData"]][["chromPeaks"]])
+      cn <-colnames(mSet@peakRTcorrection$chromPeaks)
       peakArea <- pkArea[is.na(pkGrpVal[, ii]), , drop = FALSE];
       
       ncols <- length(cn)
@@ -2126,20 +2164,16 @@ PerformPeakFiling <- function(mSet,param,BPPARAM=bpparam()){
       res[, "sample"] <- ii
       res[, c("mzmin", "mzmax")] <- peakArea[, c("mzmin", "mzmax")]
       ## Load the data
+
+      if (!.optimize_switch){
+        MessageOutput(mes = paste0("Requesting ", nrow(res), " peaks from ", filesname[ii], " ... "), "", NULL)          
+      } 
       
-      if (.on.public.web & !.optimize_switch){
-        print_mes_tmp <- paste0("Requesting ", nrow(res), " peaks from ", filesname[ii], " ... ");    
-        #write.table(print_mes,file="metaboanalyst_spec_proc.txt",append = T,row.names = F,col.names = F, quote = F, eol = "");            
-      } else {
-        message("Requesting ", nrow(res), " peaks from ", filesname[ii], " ... ", appendLF = FALSE)
-      }
-      
-      spctr <- assayData[[ii]]
-      
-      mzs <- lapply(spctr, mz)
-      valsPerSpect <- lengths(mzs)
-      ints <- unlist(lapply(spctr, intensity), use.names = FALSE)
-      rm(spctr)
+      spctr <- assayData[[ii]];
+      mzs <- lapply(spctr, mz);
+      valsPerSpect <- lengths(mzs);
+      ints <- unlist(lapply(spctr, intensity), use.names = FALSE);
+      rm(spctr);
       
       mzs <- unlist(mzs, use.names = FALSE)
       mzs_range <- range(mzs)
@@ -2163,9 +2197,9 @@ PerformPeakFiling <- function(mSet,param,BPPARAM=bpparam()){
         mtx <- .rawMat(mz = mzs, int = ints, scantime = rtim,
                        valsPerSpect = valsPerSpect, rtrange = rtr,
                        mzrange = mzr)
+        
         if (length(mtx)) {
           if (any(!is.na(mtx[, 3]))) {
-            
             res[i, "into"] <- sum(mtx[, 3], na.rm = TRUE) *
               ((rtr[2] - rtr[1]) /
                  max(1, (sum(rtim >= rtr[1] & rtim <= rtr[2]) - 1)))
@@ -2184,32 +2218,25 @@ PerformPeakFiling <- function(mSet,param,BPPARAM=bpparam()){
         }
       }
       
-      if (.on.public.web & !.optimize_switch){
-        print_mes <- paste0(print_mes_tmp, "got ", sum(!is.na(res[, "into"])), ".");    
-        write.table(print_mes,file="metaboanalyst_spec_proc.txt",append = T,row.names = F,col.names = F, quote = F, eol = "\n");
-        write.table(77+ii/length(mSet[[format]]@phenoData@data[["sample_name"]])*10, file = paste0(fullUserPath, "log_progress.txt"),row.names = F,col.names = F);
-      } else {
-        message("got ", sum(!is.na(res[, "into"])), ".")
+      if (!.optimize_switch) {
+        MessageOutput(
+          paste0("got ", sum(!is.na(res[, "into"])), "."),
+          "\n",
+          77 + ii / length(specdata@phenoData@data[["sample_name"]]) * 10
+        )
       }
-      
-      res_new[[ii]] <- res
-      pkAreaL[[ii]] <- pkArea[is.na(pkGrpVal[, ii]), , drop = FALSE]
-      
+      res_new[[ii]] <- res;
+      pkAreaL[[ii]] <- pkArea[is.na(pkGrpVal[, ii]), , drop = FALSE];
     }
     
-    res <-res_new
-    
-    
+    res <-res_new;
   }
-  
   
   res <- do.call(rbind, res)
   ## cbind the group_idx column to track the feature/peak group.
   res <- cbind(res, group_idx = do.call(rbind, pkAreaL)[, "group_idx"])
   ## Remove those without a signal
   res <- res[!is.na(res[, "into"]), , drop = FALSE]
-  
-  
   
   if (nrow(res) == 0) {
     warning("Could not integrate any signal for the missing ",
@@ -2218,16 +2245,16 @@ PerformPeakFiling <- function(mSet,param,BPPARAM=bpparam()){
   }
   
   ## Get the msFeatureData:
-  newFd <- mSet$msFeatureData
+  newFd <- mSet@peakRTcorrection
   
-  incr <- nrow(mSet$msFeatureData$chromPeaks)
+  incr <- nrow(mSet@peakRTcorrection[["chromPeaks"]])
   for (i in unique(res[, "group_idx"])) {
     fdef$peakidx[[i]] <- c(fdef$peakidx[[i]],
                            (which(res[, "group_idx"] == i) + incr))
   }
   ## Define IDs for the new peaks; include fix for issue #347
   maxId <- max(as.numeric(sub("^CP", "",
-                              rownames(mSet[["msFeatureData"]][["chromPeaks"]]))))
+                              rownames(mSet@peakRTcorrection[["chromPeaks"]]))))
   if (maxId < 1)
     stop("chromPeaks matrix lacks rownames; please update ",
          "'object' with the 'updateObject' function.")
@@ -2237,24 +2264,23 @@ PerformPeakFiling <- function(mSet,param,BPPARAM=bpparam()){
     paste0("CP", "%0", ceiling(log10(toId + 1L)), "d"),
     (maxId + 1L):toId)
   
-  newFd[["chromPeaks"]] <- rbind(mSet[["msFeatureData"]][["chromPeaks"]],
+  newFd[["chromPeaks"]] <- rbind(mSet@peakRTcorrection[["chromPeaks"]],
                                  res[, -ncol(res)])
   
-  cpd <- newFd$chromPeakData[rep(1L, nrow(res)), , drop = FALSE]
+  cpd <- mSet@peakpicking[["chromPeakData"]][rep(1L, nrow(res)), , drop = FALSE]
   cpd[,] <- NA
   cpd$ms_level <- as.integer(1)
   cpd$is_filled <- TRUE
   
-  newFd$chromPeakData <- rbind(newFd$chromPeakData, cpd)
-  rownames(newFd$chromPeakData) <- rownames(newFd$chromPeaks)
+  newFd$chromPeakData <- rbind(mSet@peakpicking[["chromPeakData"]], cpd)
+  rownames(newFd$chromPeakData) <- rownames(newFd$chromPeaks);
   
-  mSet$msFeatureData <- newFd
-  mSet$FeatureGroupTable <- fdef
+  mSet@peakfilling$msFeatureData <- newFd;
+  mSet@peakfilling$FeatureGroupTable <- fdef;
   
-  mSet$xcmsSet <- mSet2xcmsSet(mSet)
+  #mSet$xcmsSet <- mSet2xcmsSet(mSet)
   
   return(mSet)
-  
 }
 
 #'mSet2xcmsSet
@@ -2265,12 +2291,13 @@ PerformPeakFiling <- function(mSet,param,BPPARAM=bpparam()){
 #'@ref Smith, C.A. et al. 2006. Analytical Chemistry, 78, 779-787
 #'
 mSet2xcmsSet <- function(mSet) {
+  
   xs <- new("xcmsSet")
+  #xs@peaks <- mSet[["msFeatureData"]][["chromPeaks"]]
   
-  xs@peaks <- mSet[["msFeatureData"]][["chromPeaks"]]
-  
-  fgs <- mSet$FeatureGroupTable
-  
+  xs@peaks <- mSet@peakRTcorrection$chromPeaks;
+  #fgs <- mSet$FeatureGroupTable
+  fgs <- mSet@peakfilling$FeatureGroupTable
   xs@groups <- S4Vectors::as.matrix(fgs[, -ncol(fgs)])
   rownames(xs@groups) <- NULL
   xs@groupidx <- fgs$peakidx
@@ -2282,7 +2309,6 @@ mSet2xcmsSet <- function(mSet) {
   } else {
     format <- "inMemoryData"
   }
-  
   
   ## Ensure we're getting the raw rt
   rts$raw <- rtime(mSet[[format]])
@@ -3733,18 +3759,18 @@ PlotMS2Spectra <- function(ms2, spectra = 1){
 ##' http://pubs.acs.org/doi/abs/10.1021/ac202450g.
 
 ####### ---------- ====== Function Kit From CAMERA ======= ----------- ######/
-getPeaks_selection <- function(xs, method="medret", value="into"){
+getPeaks_selection <- function(mSet, method="medret", value="into"){
   
-  if (!class(xs) == "xcmsSet") {
-    stop ("Parameter xs is no xcmsSet object\n")
+  if (!class(mSet) == "mSet") {
+    stop ("Parameter mSet is no mSet object\n")
   }
-  
-  # Testing if xcmsSet is grouped
-  if (nrow(xs@groups) > 0 && length(xs@filepaths) > 1) {
+ 
+  # Testing if mSet is grouped
+  if (nrow(mSet@peakAnnotation$peaks) > 0 && length(fileNames(mSet@rawOnDisk)) > 1) {
     # get grouping information
-    groupmat <- xs@groups
+    groupmat <- mSet@peakAnnotation$groupmat;
     # generate data.frame for peaktable
-    ts <- data.frame(cbind(groupmat, groupval(xs, method=method, value=value)), row.names = NULL)
+    ts <- data.frame(cbind(groupmat, groupval(mSet, method=method, value=value)), row.names = NULL)
     #rename column names
     cnames <- colnames(ts)
     if (cnames[1] == 'mzmed') {
@@ -3768,15 +3794,13 @@ getPeaks_selection <- function(xs, method="medret", value="into"){
 }
 groupval <- function(object, method = c("medret", "maxint"), value = "index", intensity = "into") {
   
-  if ( nrow(object@groups)<1 || length(object@groupidx) <1) {
-    stop("mSet$xcmsSet is not been grouped.")
-  }
+  method <- match.arg(method);
   
-  method <- match.arg(method)
+  peakmat <- mSet@peakRTcorrection$chromPeaks;
+  groupmat <- mSet@peakAnnotation$groupmat;  
+  groupindex <- mSet@peakfilling$FeatureGroupTable$peakidx;
   
-  peakmat <- object@peaks;  groupmat <- object@groups;  groupindex <- object@groupidx
-  
-  sampnum <- seq(length = length(rownames(object@phenoData)))
+  sampnum <- seq(length = length(rownames(mSet@rawOnDisk@phenoData)))
   retcol <- match("rt", colnames(peakmat))
   intcol <- match(intensity, colnames(peakmat))
   sampcol <- match("sample", colnames(peakmat))

@@ -602,10 +602,11 @@ PlotSpectraInsensityStistics <-
            format = "png",
            dpi = 72,
            width = NA) {
-    sample_idx <- mSet[["onDiskData"]]@phenoData@data[["sample_group"]]
+    
+    sample_idx <- mSet@rawOnDisk@phenoData@data[["sample_group"]]
     
     sample_num <-
-      mSet[["onDiskData"]]@phenoData@data[["sample_name"]]
+      mSet@rawOnDisk@phenoData@data[["sample_name"]]
     
     Cairo::Cairo(
       file = imgName,
@@ -628,8 +629,8 @@ PlotSpectraInsensityStistics <-
     }
     
     ints <-
-      split(log2(mSet[["msFeatureData"]][["chromPeaks"]][, "into"]),
-            f = mSet[["msFeatureData"]][["chromPeaks"]][, "sample"])
+      split(log2(mSet@peakfilling$msFeatureData$chromPeaks[, "into"]),
+            f = mSet@peakfilling$msFeatureData$chromPeaks[, "sample"])
     
     names(ints) <- as.character(sample_num)
     
@@ -691,16 +692,16 @@ PlotSpectraPCA <-
     )
     
     sample_idx <-
-      mSet[["onDiskData"]]@phenoData@data[["sample_group"]]
+      mSet@rawOnDisk@phenoData@data[["sample_group"]]
     
     feature_value <-
       .feature_values(
-        pks = mSet[["msFeatureData"]][["chromPeaks"]],
-        fts = mSet[["FeatureGroupTable"]],
+        pks = mSet@peakfilling$msFeatureData$chromPeaks,
+        fts = mSet@peakfilling$FeatureGroupTable,
         method = "medret",
         value = "into",
         intensity = "into",
-        colnames = mSet[["onDiskData"]]@phenoData@data[["sample_name"]],
+        colnames = mSet@rawOnDisk@phenoData@data[["sample_name"]],
         missing = NA
       )
     
@@ -807,7 +808,8 @@ PlotSpectraRTadj <-
            format = "png",
            dpi = 72,
            width = NA) {
-    sample_idx <- mSet[["onDiskData"]]@phenoData@data[["sample_group"]]
+    
+    sample_idx <- mSet@rawOnDisk@phenoData@data[["sample_group"]];
     
     Cairo::Cairo(
       file = imgName,
@@ -832,11 +834,11 @@ PlotSpectraRTadj <-
     
     ## Extract RT information
     rt.set <-
-      list(mSet[["xcmsSet"]]@rt$raw, unlist(mSet[["xcmsSet"]]@rt$corrected))
+      list(rtime(mSet@rawOnDisk), unlist(mSet@peakRTcorrection$adjustedRT))
     
     diffRt <- rt.set[[2]] - rt.set[[1]]
-    diffRt <- split(diffRt, fromFile(mSet$onDiskData))
-    xRt <- mSet[["msFeatureData"]][["adjustedRT"]]
+    diffRt <- split(diffRt, fromFile(mSet@rawOnDisk))
+    xRt <- mSet@peakRTcorrection$adjustedRT
     col = group_colors[sample_idx]
     lty = 1
     lwd = 1
@@ -867,16 +869,16 @@ PlotSpectraRTadj <-
     }
     
     rawRt <-
-      split(mSet[["xcmsSet"]]@rt$raw, fromFile(mSet$onDiskData))
+      split(rtime(mSet@rawOnDisk), fromFile(mSet@rawOnDisk))
     
     adjRt <- xRt
     
     ####
-    peaks_0 <- mSet[["msFeatureData"]][["chromPeaks"]]
+    peaks_0 <- mSet@peakfilling$msFeatureData$chromPeaks;
     subs <-
-      seq_along(mSet[["onDiskData"]]@phenoData@data[["sample_name"]])
+      seq_along(mSet@rawOnDisk@phenoData@data[["sample_name"]]);
     ####
-    pkGroup <- mSet[["msFeatureData"]][["pkGrpMat_Raw"]]
+    pkGroup <- mSet@peakRTcorrection[["pkGrpMat_Raw"]];
     ####
     
     rawRt <- rawRt[subs]
@@ -935,6 +937,7 @@ PlotSpectraBPIadj <-
            format = "png",
            dpi = 72,
            width = NA) {
+    
     Cairo::Cairo(
       file = imgName,
       unit = "in",
@@ -946,8 +949,7 @@ PlotSpectraBPIadj <-
     )
     
     sample_idx <-
-      mSet[["onDiskData"]]@phenoData@data[["sample_group"]]
-    
+      mSet@rawOnDisk@phenoData@data[["sample_group"]]
     
     if (length(unique(sample_idx)) > 9) {
       col.fun <-
@@ -958,10 +960,9 @@ PlotSpectraBPIadj <-
       group_colors <-
         paste0(RColorBrewer::brewer.pal(9, "Set1")[1:length(unique(sample_idx))], "60")
     }
+    
     group_colors2 <- group_colors
-    
     names(group_colors2) <- unique(sample_idx)
-    
     
     group_colors <-
       sapply(
@@ -971,8 +972,8 @@ PlotSpectraBPIadj <-
         }
       )
     
-    object_od <- mSet$onDiskData
-    adj_rt <- unlist(mSet$msFeatureData$adjustedRT)
+    object_od <- mSet@rawOnDisk
+    adj_rt <- unlist(mSet@peakRTcorrection$adjustedRT)
     
     object_od <- selectFeatureData(
       object_od,
@@ -993,7 +994,7 @@ PlotSpectraBPIadj <-
       object_od,
       aggregationFun = "max",
       missing = NA_real_,
-      msLevel = 1,
+      msLevel = 1L,
       BPPARAM = bpparam()
     )
     

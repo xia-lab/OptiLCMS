@@ -971,6 +971,7 @@ read.OnDiskMS.data <- function(files,
                                msLevel., 
                                centroided., 
                                smoothed.) {
+  
   MSnbase:::.testReadMSDataInput(environment())
   stopifnot(is.logical(centroided.))
   

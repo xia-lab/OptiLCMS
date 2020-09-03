@@ -168,10 +168,9 @@ peakTableSUM <- function(peak_table) {
 #' @import BiocParallel
 #' @import ggplot2
 
-
 PerformPeakProfiling <-
   function(mSet,
-           Params,
+           Params = NULL,
            plotSettings,
            ncore,
            running.controller = NULL) {
@@ -194,16 +193,20 @@ PerformPeakProfiling <-
         running.controller[["peak_profiling"]][["c4"]] # used to control plotting
     }
     
-    ### Update parameters' style
-    write.table(
-      unlist(Params),
-      file = "param_optimized.txt",
-      row.names = T,
-      col.names = F,
-      quote = F
-    )
-    
-    mSet@params <- updateRawSpectraParam (Params)
+    if(.on.public.web){
+      ### Update parameters' style
+      write.table(
+        unlist(Params),
+        file = "param_optimized.txt",
+        row.names = T,
+        col.names = F,
+        quote = F
+      )
+    }
+
+    if(!is.null(Params)){
+      mSet@params <- updateRawSpectraParam (Params)
+    }
     
     ### Setting the different parallel method for linux or windows
     MessageOutput(mes = NULL,
@@ -252,7 +255,7 @@ PerformPeakProfiling <-
       
       gc()
       
-      if (running.as.plan & class(mSet)[1] != "simpleError") {
+      if (.running.as.plan & class(mSet)[1] != "simpleError") {
         cache.save(mSet, paste0(function.name, "_c1"))
         marker_record(paste0(function.name, "_c1"))
       }
@@ -302,7 +305,7 @@ PerformPeakProfiling <-
       
       gc()
       
-      if (running.as.plan & class(mSet)[1] != "simpleError") {
+      if (.running.as.plan & class(mSet)[1] != "simpleError") {
         cache.save(mSet, paste0(function.name, "_c2"))
         marker_record(paste0(function.name, "_c2"))
       }
@@ -355,7 +358,7 @@ PerformPeakProfiling <-
       
       gc()
       
-      if (running.as.plan & class(mSet)[1] != "simpleError") {
+      if (.running.as.plan & class(mSet)[1] != "simpleError") {
         cache.save(mSet, paste0(function.name, "_c3"))
         marker_record(paste0(function.name, "_c3"))
       }
@@ -401,7 +404,8 @@ PerformPeakProfiling <-
     
     #  ---------------====------IV. Plotting Results --------========-----------
     if (c4) {
-      sample_idx <- mSet[["onDiskData"]]@phenoData@data[["sample_group"]]
+      
+      sample_idx <- mSet@rawOnDisk@phenoData@data[["sample_group"]]
       
       if (missing(plotSettings)) {
         plotSettings <- SetPlotParam(
@@ -459,7 +463,9 @@ PerformPeakProfiling <-
         )
       }
       
-      marker_record(paste0(function.name, "_c4"))
+      if(.running.as.plan){
+        marker_record(paste0(function.name, "_c4"))
+      }
       
     }
     
@@ -551,6 +557,7 @@ PerformPeakAnnotation <-
            annotaParam,
            ncore = 1,
            running.controller = NULL) {
+    
     MessageOutput(
       mes = paste0("Step 6/6: Starting Peak Annotation..."),
       ecol = "\n",
@@ -558,18 +565,18 @@ PerformPeakAnnotation <-
     )
     
     if (.on.public.web) {
-      dyn.load(.getDynLoadPath())
+      dyn.load(.getDynLoadPath());
+      
+      load_progress()
+      load_graph()
+      load_RBGL()
     }
     
     if (ncore > 1) {
       print("Only single core mode is supported now. Parallel will be supported later !")
       ncore <- 1
     }
-    
-    load_progress()
-    load_graph()
-    load_RBGL()
-    
+
     function.name <- "peak_annotation"
     
     if (is.null(running.controller) | plan_count == 1) {
@@ -580,22 +587,30 @@ PerformPeakAnnotation <-
     
     if (operators_4) {
       ## 1. Prepare the Annotation Object-------
-      xs <- mSet$xcmsSet
+      #xs <- mSet$xcmsSet
       
-      if (is.null(xs)) {
-        stop("No xcmsSet object in 'mSet' was given !")
-      } else if (!class(xs) == "xcmsSet") {
-        stop("There is correct xcmsSet object in mSet !")
+      if (is.null(mSet)) {
+        stop("No mSet object was given !")
+      } else if (!class(mSet) == "mSet") {
+        stop("There is correct mSet object !")
       }
       
-      mSet$AnnotateObject <- list()
+      mSet@peakAnnotation$AnnotateObject <- list();
+      fgs <- mSet@peakfilling$FeatureGroupTable
+      #xs@groups <- S4Vectors::as.matrix(fgs[, -ncol(fgs)])
       
-      if (length(xs@phenoData[["sample_name"]]) > 1 &&
-          !nrow(xs@groups) > 0) {
+      if (length(mSet@rawOnDisk@phenoData[["sample_name"]]) > 1 &&
+          !nrow(fgs) > 0) {
         stop ('No group information found or contain only one sample.')
       }
-      mSet$AnnotateObject$sample   <-  as.numeric(NA)
-      mSet$AnnotateObject$groupInfo <- getPeaks_selection(xs)
+      
+      mSet@peakAnnotation$peaks <- mSet@peakRTcorrection$chromPeaks;
+      mSet@peakAnnotation$groups <- S4Vectors::as.matrix(fgs[, -ncol(fgs)])
+      rownames(mSet@peakAnnotation$groups) <- NULL;
+      mSet@peakAnnotation$groupmat <- groups;
+      
+      mSet@peakAnnotation$AnnotateObject$sample   <-  as.numeric(NA);
+      mSet@peakAnnotation$AnnotateObject$groupInfo <- getPeaks_selection(mSet);
       runParallel <- list()
       runParallel$enable   <-  0
       
@@ -1365,7 +1380,7 @@ PerformPeakAnnotation <-
       
       ## 0. Final Output -----
       
-      if (running.as.plan) {
+      if (.running.as.plan) {
         cache.save(mSet, paste0(function.name, "_0"))
         marker_record(paste0(function.name, "_0"))
       }
