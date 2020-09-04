@@ -393,8 +393,9 @@ PerformPeakProfiling <-
       ecol = "\n",
       progress = 88
     )
-    
-    save(mSet, file = "mSet.rda")
+    if(.on.public.web){
+      save(mSet, file = "mSet.rda")
+    }
     
     MessageOutput(
       mes = paste0("Begin to plotting figures..."),
@@ -604,10 +605,11 @@ PerformPeakAnnotation <-
         stop ('No group information found or contain only one sample.')
       }
       
-      mSet@peakAnnotation$peaks <- mSet@peakRTcorrection$chromPeaks;
+      mSet@peakAnnotation$peaks <- mSet@peakfilling$msFeatureData$chromPeaks;
+      #mSet@peakAnnotation$peaks <- mSet@peakRTcorrection$chromPeaks;
       mSet@peakAnnotation$groups <- S4Vectors::as.matrix(fgs[, -ncol(fgs)])
       rownames(mSet@peakAnnotation$groups) <- NULL;
-      mSet@peakAnnotation$groupmat <- groups;
+      mSet@peakAnnotation$groupmat <- mSet@peakAnnotation$groups;
       
       mSet@peakAnnotation$AnnotateObject$sample   <-  as.numeric(NA);
       mSet@peakAnnotation$AnnotateObject$groupInfo <- getPeaks_selection(mSet);
@@ -676,22 +678,22 @@ PerformPeakAnnotation <-
         if (is.na(match.arg(annotaParam[["polarity"]], c("positive", "negative")))) {
           stop("Parameter polarity has to be 'positive' or 'negative' !")
         } else{
-          mSet$AnnotateObject$polarity <- annotaParam[["polarity"]]
+          mSet@peakAnnotation$AnnotateObject$polarity <- annotaParam[["polarity"]]
         }
       }
       
-      mSet$AnnotateObject$runParallel <- runParallel
-      mSet$AnnotateObject$annoID <- matrix(ncol = 4, nrow = 0)
-      mSet$AnnotateObject$annoGrp <- matrix(ncol = 4, nrow = 0)
-      mSet$AnnotateObject$isoID <- matrix(ncol = 4, nrow = 0)
+      mSet@peakAnnotation$AnnotateObject$runParallel <- runParallel
+      mSet@peakAnnotation$AnnotateObject$annoID <- matrix(ncol = 4, nrow = 0)
+      mSet@peakAnnotation$AnnotateObject$annoGrp <- matrix(ncol = 4, nrow = 0)
+      mSet@peakAnnotation$AnnotateObject$isoID <- matrix(ncol = 4, nrow = 0)
       
-      colnames(mSet$AnnotateObject$annoID) <-
+      colnames(mSet@peakAnnotation$AnnotateObject$annoID) <-
         c("id", "grpID", "ruleID", "parentID")
       
-      colnames(mSet$AnnotateObject$annoGrp) <-
+      colnames(mSet@peakAnnotation$AnnotateObject$annoGrp) <-
         c("id", "mass", "ips", "psgrp")
       
-      colnames(mSet$AnnotateObject$isoID)  <-
+      colnames(mSet@peakAnnotation$AnnotateObject$isoID)  <-
         c("mpeak", "isopeak", "iso", "charge")
       
       MessageOutput(mes = NULL,
@@ -703,7 +705,7 @@ PerformPeakAnnotation <-
       intval <- "maxo"
       perfwhm <- annotaParam$perf.whm
       sigma <- 6
-      sample    <- mSet$AnnotateObject$sample
+      sample    <- mSet@peakAnnotation$AnnotateObject$sample
       pspectra  <- list()
       psSamples <- NA
       
@@ -713,23 +715,23 @@ PerformPeakAnnotation <-
         progress = NULL
       )
       
-      if (mSet$AnnotateObject$groupInfo[1, "rt"] == -1) {
+      if (mSet@peakAnnotation$AnnotateObject$groupInfo[1, "rt"] == -1) {
         # Like FTICR Data
         warning("Warning: no retention times avaiable. Do nothing\n")
-        return(invisible(mSet$AnnotateObject))
+        return(invisible(mSet@peakAnnotation$AnnotateObject))
         
       } else{
-        if (is.na(sample[1]) || length(mSet$xcmsSet@filepaths) > 1) {
+        if (is.na(sample[1]) || length(mSet@rawOnDisk@processingData@files) > 1) {
           # grouped peaktable within automatic selection or sub selection
           if (is.na(sample[1])) {
-            index <- 1:length(mSet$xcmsSet@filepaths)
+            index <- 1:length(mSet@rawOnDisk@processingData@files)
           } else{
             index <- sample
           }
           
-          gvals    <- groupval(mSet$xcmsSet)[, index, drop = FALSE]
-          peakmat  <- mSet$xcmsSet@peaks
-          groupmat <- mSet$xcmsSet@groups
+          gvals    <- groupval(mSet)[, index, drop = FALSE]
+          peakmat  <- mSet@peakAnnotation$peaks
+          groupmat <- mSet@peakAnnotation$groupmat
           
           #calculate highest peaks
           maxo      <-
@@ -820,7 +822,7 @@ PerformPeakAnnotation <-
           
         } else{
           #One sample experiment
-          peakmat <- mSet$xcmsSet@peaks
+          peakmat <- mSet@peakAnnotation$peaks
           maxo    <- peakmat[, intval]
           #max intensities of all peaks
           maxo    <- cbind(1:length(maxo), maxo)
@@ -873,13 +875,13 @@ PerformPeakAnnotation <-
           psSamples <- rep(sample, length(pspectra))
         }
         
-        mSet$AnnotateObject$pspectra  <- pspectra
-        mSet$AnnotateObject$psSamples <- psSamples
+        mSet@peakAnnotation$AnnotateObject$pspectra  <- pspectra
+        mSet@peakAnnotation$AnnotateObject$psSamples <- psSamples
         
         MessageOutput(
           mes = paste(
             "Created",
-            length(mSet$AnnotateObject$pspectra),
+            length(mSet@peakAnnotation$AnnotateObject$pspectra),
             "pseudospectra."
           ),
           ecol = "\n",
@@ -933,7 +935,7 @@ PerformPeakAnnotation <-
       
       npeaks.global <- 0
       #Counter for % bar
-      npspectra <- length(mSet$AnnotateObject$pspectra)
+      npspectra <- length(mSet@peakAnnotation$AnnotateObject$pspectra)
       
       # scaling
       devppm <- ppm / 1000000
@@ -956,21 +958,21 @@ PerformPeakAnnotation <-
         cat("xsAnnotate contains no pseudospectra. Regroup all peaks into one!\n")
         npspectra <- 1
         
-        mSet$AnnotateObject$pspectra[[1]] <-
-          seq(1:nrow(mSet$AnnotateObject$groupInfo))
-        mSet$AnnotateObject$psSamples  <- 1
+        mSet@peakAnnotation$AnnotateObject$pspectra[[1]] <-
+          seq(1:nrow(mSet@peakAnnotation$AnnotateObject$groupInfo))
+        mSet@peakAnnotation$AnnotateObject$psSamples  <- 1
       }
       
       #number of peaks in pseudospectra
-      ncl <- sum(sapply(mSet$AnnotateObject$pspectra, length))
+      ncl <- sum(sapply(mSet@peakAnnotation$AnnotateObject$pspectra, length))
       
       # get mz,rt and intensity values from peaktable
-      if (nrow(mSet$xcmsSet@groups) > 0) {
+      if (nrow(mSet@peakAnnotation$groups) > 0) {
         ##multiple sample or grouped single sample
-        if (is.na(mSet$AnnotateObject$sample[1])) {
-          index <- 1:length(mSet$xcmsSet@filepaths)
+        if (is.na(mSet@peakAnnotation$AnnotateObject$sample[1])) {
+          index <- 1:length(mSet@rawOnDisk@processingData@files)
         } else{
-          index <- mSet$AnnotateObject$sample
+          index <- mSet@peakAnnotation$AnnotateObject$sample
         }
         
         MessageOutput(
@@ -980,9 +982,9 @@ PerformPeakAnnotation <-
         )
         
         mint <-
-          groupval(mSet$xcmsSet, value = intval)[, index, drop = FALSE]
-        imz <- mSet$AnnotateObject$groupInfo[, "mz", drop = FALSE]
-        irt <- mSet$AnnotateObject$groupInfo[, "rt", drop = FALSE]
+          groupval(mSet, value = intval)[, index, drop = FALSE]
+        imz <- mSet@peakAnnotation$AnnotateObject$groupInfo[, "mz", drop = FALSE]
+        irt <- mSet@peakAnnotation$AnnotateObject$groupInfo[, "rt", drop = FALSE]
         
       } else{
         ##one sample case
@@ -992,10 +994,10 @@ PerformPeakAnnotation <-
           progress = NULL
         )
         
-        imz  <- mSet$AnnotateObject$groupInfo[, "mz", drop = FALSE]
-        irt  <- mSet$AnnotateObject$groupInfo[, "rt", drop = FALSE]
+        imz  <- mSet@peakAnnotation$AnnotateObject$groupInfo[, "mz", drop = FALSE]
+        irt  <- mSet@peakAnnotation$AnnotateObject$groupInfo[, "rt", drop = FALSE]
         mint <-
-          mSet$AnnotateObject$groupInfo[, intval, drop = FALSE]
+          mSet@peakAnnotation$AnnotateObject$groupInfo[, intval, drop = FALSE]
         
       }
       
@@ -1011,7 +1013,7 @@ PerformPeakAnnotation <-
       )
       
       lp <- -1
-      along = mSet$AnnotateObject$pspectra
+      along = mSet@peakAnnotation$AnnotateObject$pspectra
       
       pb <-
         progress_bar$new(
@@ -1024,7 +1026,7 @@ PerformPeakAnnotation <-
       #look for isotopes in every pseudospectra
       for (i in seq(along)) {
         #get peak indizes for i-th pseudospectrum
-        ipeak <- mSet$AnnotateObject$pspectra[[i]]
+        ipeak <- mSet@peakAnnotation$AnnotateObject$pspectra[[i]]
         #Ouput counter
         pb$tick()
         
@@ -1164,14 +1166,14 @@ PerformPeakAnnotation <-
       
       isomatrix <- isomatrix[order(isomatrix[, 1]), , drop = FALSE]
       #Create isotope matrix within object
-      mSet$AnnotateObject$isoID <- matrix(nrow = 0, ncol = 4)
+      mSet@peakAnnotation$AnnotateObject$isoID <- matrix(nrow = 0, ncol = 4)
       
-      colnames(mSet$AnnotateObject$isoID)  <-
+      colnames(mSet@peakAnnotation$AnnotateObject$isoID)  <-
         c("mpeak", "isopeak", "iso", "charge")
       
       #Add isomatrix to object
-      mSet$AnnotateObject$isoID <-
-        rbind(mSet$AnnotateObject$isoID, isomatrix[, 1:4])
+      mSet@peakAnnotation$AnnotateObject$isoID <-
+        rbind(mSet@peakAnnotation$AnnotateObject$isoID, isomatrix[, 1:4])
       
       # counter for isotope groups
       globalcnt <- 0
@@ -1203,7 +1205,7 @@ PerformPeakAnnotation <-
           
         }
       }
-      cnt <- nrow(mSet$AnnotateObject$isoID)
+      cnt <- nrow(mSet@peakAnnotation$AnnotateObject$isoID)
       
       MessageOutput(
         mes = paste0("Found isotopes:", cnt),
@@ -1211,7 +1213,7 @@ PerformPeakAnnotation <-
         progress = 96
       )
       
-      mSet$AnnotateObject$isotopes <- isotope
+      mSet@peakAnnotation$AnnotateObject$isotopes <- isotope
       
       ## 4. Peak grouping with information -----
       
@@ -1231,7 +1233,7 @@ PerformPeakAnnotation <-
         stop ("Parameter cor_eic_th must be numeric and between 0 and 1.\n")
       }
       
-      npspectra <- length(mSet$AnnotateObject$pspectra)
+      npspectra <- length(mSet@peakAnnotation$AnnotateObject$pspectra)
       
       MessageOutput(
         mes = paste0("Start grouping after correlation..."),
@@ -1252,33 +1254,33 @@ PerformPeakAnnotation <-
         #Group all peaks into one group
         npspectra <- 1
         
-        mSet$AnnotateObject$pspectra[[1]] <-
-          seq(1:nrow(mSet$AnnotateObject$groupInfo))
+        mSet@peakAnnotation$AnnotateObject$pspectra[[1]] <-
+          seq(1:nrow(mSet@peakAnnotation$AnnotateObject$groupInfo))
         
-        if (is.na(mSet$AnnotateObject$sample[1])) {
-          mSet$AnnotateObject$psSamples <-
-            rep(1, nrow(mSet$AnnotateObject$groupInfo))
+        if (is.na(mSet@peakAnnotation$AnnotateObject$sample[1])) {
+          mSet@peakAnnotation$AnnotateObject$psSamples <-
+            rep(1, nrow(mSet@peakAnnotation$AnnotateObject$groupInfo))
           ##TODO: Change if sample=NA or sample=number
         } else{
-          mSet$AnnotateObject$psSamples <-
-            rep(mSet$AnnotateObject$sample,
-                nrow(mSet$AnnotateObject$groupInfo))
+          mSet@peakAnnotation$AnnotateObject$psSamples <-
+            rep(mSet@peakAnnotation$AnnotateObject$sample,
+                nrow(mSet@peakAnnotation$AnnotateObject$groupInfo))
           
         }
       }
       
       #save number of pspectra before groupCorr
-      cnt <- length(mSet$AnnotateObject$pspectra)
+      cnt <- length(mSet@peakAnnotation$AnnotateObject$pspectra)
       res <- list()
       
       # Check LC information and calcCorr was selected
       
       #Autoselect sample path for EIC correlation
-      index <- rep(0, nrow(mSet$AnnotateObject$groupInfo))
+      index <- rep(0, nrow(mSet@peakAnnotation$AnnotateObject$groupInfo))
       
       for (i in 1:npspectra) {
-        index[mSet$AnnotateObject$pspectra[[i]]] <-
-          mSet$AnnotateObject$psSamples[[i]]
+        index[mSet@peakAnnotation$AnnotateObject$pspectra[[i]]] <-
+          mSet@peakAnnotation$AnnotateObject$psSamples[[i]]
       }
       
       #Generate EIC data
@@ -1320,7 +1322,7 @@ PerformPeakAnnotation <-
       MessageOutput(
         mes = paste(
           "mSet has now",
-          length(mSet$AnnotateObject$pspectra),
+          length(mSet@peakAnnotation$AnnotateObject$pspectra),
           "groups, instead of",
           cnt,
           "!"
@@ -1330,7 +1332,7 @@ PerformPeakAnnotation <-
       )
       
       ## 5. Annotate adducts (and fragments) -----
-      mSet$AnnotateObject$ruleset <- NULL
+      mSet@peakAnnotation$AnnotateObject$ruleset <- NULL
       mSet <-
         findAdducts (
           mSet,
@@ -1345,24 +1347,27 @@ PerformPeakAnnotation <-
       
       ## 6. Data Organization -----
       camera_output <- getPeaklist(mSet)
-      
-      sample_names <- mSet$xcmsSet@phenoData[[1]]
+
+      sample_names <- pData(mSet@rawOnDisk)[[1]]
       sample_names_ed <-
         gsub(".mzML|.mzData|.mzXML|.cdf|.CDF", "", sample_names)
-      
+
       # Account for multiple groups
       length <- ncol(camera_output)
       end <- length - 3
       camnames <- colnames(camera_output)
       groupNum <-
-        nlevels(mSet[["xcmsSet"]]@phenoData[["sample_group"]])
+        nlevels(pData(mSet@rawOnDisk)[["sample_group"]])
       start <- groupNum + 8
       camnames[start:end] <- sample_names_ed
       colnames(camera_output) <- camnames
       
       endGroup <- 7 + groupNum
       camera_output <- camera_output[,-c(7:endGroup)]
-      
+      fullUserPath <- mSet@WorkingDir;
+      if(is.null(fullUserPath) | length(fullUserPath) == 0){
+        fullUserPath <- getwd();
+      }
       saveRDS(camera_output,
               paste0(fullUserPath, "annotated_peaklist.rds"))
       fast.write(camera_output,
@@ -1523,7 +1528,7 @@ FormatPeakList <-
                        rowMeans(is.na(ma_feats[, (ma_feats[1, ] == as.character(unique(group_info[2])))])) < missPercent),]
     
     fast.write(ma_feats_miss,
-               paste0(fullUserPath, "metaboanalyst_input.csv"),
+               paste0(fullUserPath, "/metaboanalyst_input.csv"),
                row.names = FALSE)
     
     # provide index for CAMERA output
@@ -1531,7 +1536,7 @@ FormatPeakList <-
     ma_feats_miss_inx <- cbind(ma_feats_miss, Pklist_inx)
     
     fast.write(ma_feats_miss_inx,
-               paste0(fullUserPath, "filtered_peaklist.csv"),
+               paste0(fullUserPath, "/filtered_peaklist.csv"),
                row.names = FALSE)
     
     # generate peak summary results
