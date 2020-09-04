@@ -1703,6 +1703,9 @@ GeneratePeakList <- function(userPath) {
 }
 
 #' Verify the data is centroid or not
+#'
+#' @param filename single file name, should contain the absolute path
+#'
 #' @author Zhiqiang Pang \email{zhiqiang.pang@mail.mcgill.ca} and Jeff Xia \email{jeff.xia@mcgill.ca}
 #' McGill University, Canada
 #' License: GNU GPL (>= 2)

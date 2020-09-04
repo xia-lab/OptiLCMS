@@ -1120,7 +1120,7 @@ PerformPeakGrouping<-function(mSet){
 #'McGill University, Canada
 #'License: GNU GPL (>= 2)
 #'@ref Smith, C.A. et al. 2006. Analytical Chemistry, 78, 779-787
-#'
+#'@noRd
 Densitygrouping_slave <- function(x, bw, densFrom, densTo, densN, sampleGroups,
                                   sampleGroupTable, minFraction,
                                   minSamples, maxFeatures) {
