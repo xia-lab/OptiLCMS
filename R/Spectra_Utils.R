@@ -4184,7 +4184,6 @@ getAllPeakEICs <- function(mSet, index=NULL){
 }
 
 
-
 #' Title
 #'
 #' @param mSet 
@@ -4197,6 +4196,7 @@ getAllPeakEICs <- function(mSet, index=NULL){
 #' @export
 #' @importFrom Hmisc rcorr
 #' @examples
+
 calcCiS<- function(mSet, EIC=EIC, corval=0.75, pval=0.05, psg_list=NULL ){
   
   #Columns Peak 1, Peak 2, correlation coefficienct, Pseudospectrum Index
@@ -4690,7 +4690,7 @@ findAdducts <- function(mSet, ppm=5, mzabs=0.015, multiplier=3, polarity=NULL, r
     }
     
     derivativeIons <- getderivativeIons(annoID, annoGrp, rules, length(imz));
-    
+
     mSet@peakAnnotation$AnnotateObject$derivativeIons <- derivativeIons;
     mSet@peakAnnotation$AnnotateObject$annoID  <- annoID;
     mSet@peakAnnotation$AnnotateObject$annoGrp <- annoGrp;
