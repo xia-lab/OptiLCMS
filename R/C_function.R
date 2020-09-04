@@ -335,41 +335,20 @@ getEIC4Peaks <-
     mset$env$intensity <- as.double(unlist(mset$env$intensity))
     scan_time_leng <- as.integer(length(mset$scantime))
     
-    if (.on.public.web) {
-      print_mes <- paste0(npeaks, " peaks found!")
-      
-      write.table(
-        print_mes,
-        file = "metaboanalyst_spec_proc.txt",
-        append = T,
-        row.names = F,
-        col.names = F,
-        quote = F,
-        eol = "\n"
-      )
-      
-    } else {
-      message(npeaks, " peaks found ! ")
-      
-    }
+    MessageOutput(paste0(npeaks, " peaks found!"), "\n", NULL)
     
     for (p in 1:npeaks) {
       timerange <- c(peaks[p, "rtmin"], peaks[p, "rtmax"])
-      
       tidx <-
         which((mset$scantime >= timerange[1]) &
                 (mset$scantime <= timerange[2]))
       
-      
       if (length(tidx) > 0) {
         scanrange <- range(tidx)
-        
       } else{
         scanrange <- 1:scans
-        
       }
       massrange <- c(peaks[p, "mzmin"], peaks[p, "mzmax"])
-      
       
       if (!.on.public.web) {
         eic <- .Call(
@@ -395,14 +374,11 @@ getEIC4Peaks <-
         )$intensity
         
       }
-      eic[eic == 0] <- NA
-      
-      eics[p, scanrange[1]:scanrange[2]] <- eic
-      
+      eic[eic == 0] <- NA;
+      eics[p, scanrange[1]:scanrange[2]] <- eic;
     }
     
     eics
-    
   }
 
 breaks_on_nBins <-

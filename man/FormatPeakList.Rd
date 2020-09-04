@@ -19,12 +19,12 @@ FormatPeakList(
 containing user's specified or default parameters for downstream
 raw MS data pre-processing.}
 
-\item{filtIso}{Logical, filter out all isotopes except for \link{M}+ for
-positive ion mode and \link{M}- for negative ion mode. By default it is
+\item{filtIso}{Logical, filter out all isotopes except for \verb{[M]}+ for
+positive ion mode and \verb{[M]}- for negative ion mode. By default it is
 set to true.}
 
-\item{filtAdducts}{Logical, filter out all adducts except \link{M+H}+ for
-positive ion more and \link{M-H}- for negative ion mode. By default it is set to false.}
+\item{filtAdducts}{Logical, filter out all adducts except \verb{[M+H]}+ for
+positive ion more and \verb{[M-H]}- for negative ion mode. By default it is set to false.}
 
 \item{missPercent}{Numeric, specify the threshold to remove features
 missing in X\\% of samples. For instance, 0.5 specifies to remove features

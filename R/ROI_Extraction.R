@@ -24,6 +24,7 @@
 #' @import MSnbase
 #' @import progress
 #' @import Biobase
+#' @import RColorBrewer
 #' @author Zhiqiang Pang \email{zhiqiang.pang@mail.mcgill.ca} Jeff Xia \email{jeff.xia@mcgill.ca}
 #' Mcgill University
 #' License: GNU GPL (>= 2)
@@ -47,7 +48,6 @@ PerformDataTrimming<-function(datapath, mode="ssm", write=F, mz, mzdiff, rt, rtd
     write.table(print_mes,file="metaboanalyst_spec_proc.txt",append = T,row.names = F,col.names = F, quote = F, eol = "\n");
   }
   
-  suppressMessages(require(progress));suppressMessages(require(Biobase));suppressMessages(require(BiocParallel));
   match.arg(mode,choices = c("ssm","mz_random","rt_random","mz_specific","rt_specific"));
   start.time<-Sys.time();
   
@@ -291,9 +291,9 @@ PerformDataTrimming<-function(datapath, mode="ssm", write=F, mz, mzdiff, rt, rtd
   
   if (c4){
     if (plot==T){
-      require(RColorBrewer);
       
       if(.on.public.web){
+        load_RColorBrewer();
         print_mes <- "Chromatogram Plotting Begin...";    
         write.table(print_mes,file="metaboanalyst_spec_proc.txt",append = T,row.names = F,col.names = F, quote = F, eol = "\n");
       } else {

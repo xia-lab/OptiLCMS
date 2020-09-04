@@ -7,17 +7,14 @@ This function performs feature extraction of user's raw MS data using
 the rawData object created using the ImportRawMSData function.}
 \usage{
 PerformPeakProfiling(
-  rawData,
-  Params,
+  mSet,
+  Params = NULL,
   plotSettings,
   ncore,
   running.controller = NULL
 )
 }
 \arguments{
-\item{rawData}{The object created using the ImportRawMSData function,
-containing the raw MS data.}
-
 \item{Params}{The object created using the SetPeakParam function,
 containing user's specified or default parameters for downstream
 raw MS data pre-processing.}
@@ -26,6 +23,9 @@ raw MS data pre-processing.}
 Defaut is set to true.}
 
 \item{ncore}{Numeric, used to define the cores' number for Peak Profiling.}
+
+\item{rawData}{The object created using the ImportRawMSData function,
+containing the raw MS data.}
 }
 \description{
 Perform peak profiling

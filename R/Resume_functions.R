@@ -1,6 +1,10 @@
 ## Perform Running Pipeline - script
 
-# Initializing running plan
+#' Initializing running plan
+#' @param type 
+#'
+#' @param path 
+#'
 #' @export
 InitializaPlan <- function(type="spec", path){
   if(path != ""){
@@ -206,7 +210,11 @@ InitializaPlan <- function(type="spec", path){
   #return(.set.mSet(plan))
 }
 
-# running.plan
+#' running.plan
+#' @param plan 
+#'
+#' @param ... 
+#'
 #' @export
 running.plan <- function(plan=NULL,...){
   
@@ -244,7 +252,9 @@ running.plan <- function(plan=NULL,...){
   
 }
 
-# plan Perform
+#' ExecutePlan
+#' @param plan 
+#'
 #' @export
 ExecutePlan <- function(plan=NULL){
   print(getwd());

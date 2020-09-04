@@ -13,6 +13,7 @@
 #' The default value is 100. This value is usually clearly enough and also give consideration to the speed.
 #' @export
 #' @import MSnbase
+#' @importFrom Cairo Cairo
 #' @author Zhiqiang Pang \email{zhiqiang.pang@mail.mcgill.ca} Jeff Xia \email{jeff.xia@mcgill.ca}
 #' Mcgill University
 #' License: GNU GPL (>= 2)
@@ -57,7 +58,9 @@ PerformDataInspect <-
       
     }
     
-    suppressMessages(require("MSnbase"))
+    if(on.public.web){
+      load_MSnbase()
+    }
     
     if (basename(datapath) == "NA") {
       # Handle the example issue - default showing
@@ -281,6 +284,7 @@ SetPlotParam <-
 #' @param format Character, input the format of the image to create.
 #' @param dpi Numeric, input the dpi of the image to create.
 #' @param width Numeric, input the width of the image to create.
+#' @importFrom Cairo Cairo
 #' @export
 PlotXIC <-
   function(featureNum,
@@ -313,8 +317,9 @@ PlotXIC <-
     # Load data results
     load("mSet.rda")
     
-    require("MSnbase")
-    
+    if(on.public.web){
+      load_MSnbase()
+    }
     
     raw_data <- mSet[["onDiskData"]]
     raw_data@featureData$retentionTime <-
@@ -450,10 +455,12 @@ PlotXIC <-
     colnames(res) <-
       c("RT", "Intensity", "Samples", "Groups", "Labels")
     
-    peak_width <- max(res$RT) - min(res$RT)
+    peak_width <- max(res$RT) - min(res$RT);
     
-    require(ggplot2)
-    require(ggrepel)
+    if(on.public.web){
+      load_ggplot2();
+      load_ggrepel();
+    }
     
     Cairo::Cairo(
       file = paste0("EIC_", title, "_sample_", dpi, ".", format),
@@ -594,7 +601,7 @@ PlotXIC <-
 #'
 #' @return
 #' @export
-#'
+#' @importFrom Cairo Cairo
 #' @examples
 PlotSpectraInsensityStistics <-
   function(mSet,
@@ -739,7 +746,10 @@ PlotSpectraPCA <-
     df <- as.data.frame(mSet_pca$x)
     df$group <- sample_idx
     
-    require("ggrepel")
+    if(on.public.web){
+      load_ggplot2();
+      load_ggrepel();
+    }
     
     if (nrow(df) < 30) {
       if (length(unique(sample_idx)) > 9) {
@@ -800,7 +810,7 @@ PlotSpectraPCA <-
 #'
 #' @return
 #' @export
-#'
+#' @importFrom Cairo Cairo
 #' @examples
 PlotSpectraRTadj <-
   function(mSet,
@@ -929,7 +939,7 @@ PlotSpectraRTadj <-
 #'
 #' @return
 #' @export
-#'
+#' @importFrom Cairo Cairo
 #' @examples
 PlotSpectraBPIadj <-
   function(mSet,
@@ -1018,16 +1028,18 @@ PlotSpectraBPIadj <-
 #'
 #' @return
 #' @export
-#'
+#' @importFrom Cairo Cairo
 #' @examples
 plotMSfeature <- function(FeatureNM,
                           dpi = 72,
                           format = "png") {
-  require(ggplot2)
-  require(RColorBrewer)
+  if(on.public.web){
+    load_ggplot2();
+    load_ggrepel();
+    load_RColorBrewer();
+  }
   
-  peakdata <- readRDS("annotated_peaklist.rds")
-  
+  peakdata <- readRDS("annotated_peaklist.rds");
   peakdata1 <-
     peakdata[, c(-1:-6,-ncol(peakdata),-ncol(peakdata) + 1,-ncol(peakdata) + 2)]
   
@@ -1138,7 +1150,7 @@ plotMSfeature <- function(FeatureNM,
 #'
 #' @return
 #' @export
-#'
+#' @importFrom Cairo Cairo
 #' @examples
 plotSingleTIC <- function(filename, imagename) {
   load_msnbase()

@@ -4,7 +4,7 @@
 \alias{PerformPeakGrouping}
 \title{PerformPeakGrouping}
 \usage{
-PerformPeakGrouping(mSet, param)
+PerformPeakGrouping(mSet)
 }
 \description{
 PerformPeakGrouping

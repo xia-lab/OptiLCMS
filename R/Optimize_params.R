@@ -541,6 +541,7 @@ optimizxcms.doe.peakpicking <- function(object = NULL, params = params,
 #' @importFrom rsm decode.data ccd rsm
 #' @import progress
 #' @import parallel
+#' @importFrom parallel clusterExport
 #' @author Zhiqiang Pang \email{zhiqiang.pang@mail.mcgill.ca} Jeff Xia \email{jeff.xia@mcgill.ca}
 #' Mcgill University
 #' License: GNU GPL (>= 2)
@@ -962,10 +963,10 @@ calculatePPKs<-function(object, object_mslevel,param,
 
 calculateGPRT<-function (mSet,param){
   
-  mSet <- try(PerformPeakAlignment(mSet, param),silent = T);
+  mSet <- try(PerformPeakAlignment(mSet),silent = T);
   
   gc();
-  mSet <- try(PerformPeakFiling (mSet, param),silent = T);
+  mSet <- try(PerformPeakFiling (mSet),silent = T);
   gc();
   if (class(mSet)=="try-error"){
     mSet<-"Xset_NA";
@@ -2144,7 +2145,7 @@ createModel <- function(design, params, resp) {
                        paste("x", 1:length(params), 
                              sep="", collapse=","),
                        ")", sep=""))
-    model <- rsm:::rsm(formula, data=design) 
+    model <- rsm::rsm(formula, data=design) 
   } else {
     # create full second order model with one parameter
     # here: use parameter name in model
@@ -2627,7 +2628,8 @@ estimateSNThresh <- function(no_match, sortedAllEIC, approvedPeaks) {
 #'
 #' @return
 #' @importFrom stats density
-#'
+#' @importFrom entropy KL.empirical
+#' @importFrom cluster clusGap
 #' @examples
 filterPpmError <- function(approvedPeaks, useGap, varExpThresh,
                            returnPpmPlots, plotDir, observedPeak,

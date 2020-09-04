@@ -13,6 +13,7 @@
 #'License: GNU GPL (>= 2)
 #'@export
 #'@import methods
+#'@importFrom  Cairo CairoFonts
 
 InitDataObjects <- function(data.type, anal.type, paired=FALSE){
   
@@ -66,7 +67,7 @@ InitDataObjects <- function(data.type, anal.type, paired=FALSE){
   
   if(.on.public.web){
     # disable parallel prcessing for public server
-    library(BiocParallel);
+    load_BiocParallel();
     register(SerialParam());
   }else{
     if("stat" %in% anal.type | "msetqea" %in% anal.type | "pathqea" %in% anal.type | "roc" %in% anal.type)
@@ -130,6 +131,7 @@ InitDataObjects <- function(data.type, anal.type, paired=FALSE){
 #' @import MSnbase
 #' @import BiocParallel
 #' @import parallel
+#' @importFrom Cairo Cairo
 
 ImportRawMSDataList <-
   function(dataset.meta,
@@ -311,6 +313,7 @@ ImportRawMSDataList <-
 #' @import MSnbase
 #' @import BiocParallel
 #' @import parallel
+#' @importFrom Cairo Cairo
 
 ImportRawMSData <-
   function(mSet,
@@ -326,11 +329,9 @@ ImportRawMSData <-
                   ecol = "\n",
                   progress = 21.0)
     
-    if(!.on.public.web){
-      require(MSnbase); require(MetaboAnalystR);
-    } else {
+    if(.on.public.web){
       load_msnbase();
-    }
+    } 
     
     if(missing(mSet)){
       mSet <- new("mSet")
