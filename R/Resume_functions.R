@@ -2328,8 +2328,12 @@ FastRunningShow_customized <- function(fullUserPath){
   Sys.sleep(time_interval1);
 }
 
+
+#' @param folderPath guest folder
+#'
 #' @title Cache Update
 #' @author Zhiqiang Pang
+#' @noRd
 CachePathCorrection <- function(folderPath){
   
   cacheFiles <- list.files(paste0(folderPath,"/temp"),all.files = T, full.names = T, recursive = T);

@@ -6,6 +6,9 @@
 \usage{
 CentroidCheck(filename)
 }
+\arguments{
+\item{filename}{single file name, should contain the absolute path}
+}
 \description{
 Verify the data is centroid or not
 }

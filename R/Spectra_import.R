@@ -649,7 +649,7 @@ ImportRawMSData <-
     } else if( mode == "inMemory"){
       mSet@rawInMemory <- raw_data;
     }
-    
+      
     return(mSet)
   }
 

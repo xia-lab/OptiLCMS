@@ -1,4 +1,12 @@
-#' Perform raw MS data trimming
+PerformDataTrimming<- function(datapath, mode="ssm", write=F, mz, mzdiff, rt, rtdiff, 
+                                 rt.idx=1/15, plot=T,running.controller=NULL){
+  
+  PerformROIExtraction(datapath, mode=mode, write, mz, mzdiff, rt, rtdiff, 
+                       rt.idx, plot,running.controller);
+  
+}
+
+#' Perform ROI Extraction from raw MS data
 #' @description This function performs the raw data trimming. This function will output 
 #' an trimmed MSnExp file to memory or hardisk according to the choice of users must 
 #' provide the data path for 'datapath', and optionally provide other corresponding parameters.
@@ -25,309 +33,354 @@
 #' @import progress
 #' @import Biobase
 #' @import RColorBrewer
+#' @import tools
 #' @author Zhiqiang Pang \email{zhiqiang.pang@mail.mcgill.ca} Jeff Xia \email{jeff.xia@mcgill.ca}
 #' Mcgill University
 #' License: GNU GPL (>= 2)
 
-PerformDataTrimming<-function(datapath, mode="ssm", write=F, mz, mzdiff, rt, rtdiff, 
-                              rt.idx=1/15, plot=T,running.controller=NULL){
-  
-  if (!dir.exists(datapath)){
-    datapath <- "upload/"
+PerformROIExtraction <-
+  function(datapath,
+           mode = "ssm",
+           write = F,
+           mz,
+           mzdiff,
+           rt,
+           rtdiff,
+           rt.idx = 1 / 15,
+           plot = T,
+           running.controller = NULL) {
+    if (!dir.exists(datapath)) {
+      datapath <- "upload/"
+    }
     
-  }
-  datapath <- paste0(fullUserPath, datapath);
-  
-  if(!dir.exists(datapath)){
-    datapath <- "/home/glassfish/projects/MetaboDemoRawData/upload/QC/";
+    datapath <- tools::file_path_as_absolute(datapath);
     
-  }
-  
-  if(.on.public.web){
-    print_mes <- "Step 0/6: Scanning ROIs for parameters optimization...";    
-    write.table(print_mes,file="metaboanalyst_spec_proc.txt",append = T,row.names = F,col.names = F, quote = F, eol = "\n");
-  }
-  
-  match.arg(mode,choices = c("ssm","mz_random","rt_random","mz_specific","rt_specific"));
-  start.time<-Sys.time();
-  
-  if (.on.public.web){   
-    write.table(1.0, file = paste0(fullUserPath, "log_progress.txt"),row.names = F,col.names = F);   
-  }
-  
-  function.name <- "datatrim";
-  if(is.null(running.controller)){
-    c1 <- c2 <- c3 <- c4 <- T
-  } else {
-    c1 <- running.controller[["data_trim"]][["c1"]];
-    c2 <- running.controller[["data_trim"]][["c2"]];
-    c3 <- running.controller[["data_trim"]][["c3"]];
-    c4 <- running.controller[["data_trim"]][["c4"]];
-  }
-  
-  if (c1){
+    if (!dir.exists(datapath)) {
+      datapath <- "/home/glassfish/projects/MetaboDemoRawData/upload/QC/"
+    }
+    MessageOutput(
+      "Step 0/6: Scanning ROIs for parameters optimization...",
+      ecol = "\n",
+      progress = 1.0
+    )
     
-    #Select first at least 2 QC data for optimization
+    match.arg(mode,
+              choices = c(
+                "ssm",
+                "mz_random",
+                "rt_random",
+                "mz_specific",
+                "rt_specific"
+              ))
     
-    if(.on.public.web){
+    start.time <- Sys.time();
+    function.name <- "datatrim";
+    
+    if (is.null(running.controller)) {
+      c1 <- c2 <- c3 <- c4 <- TRUE;
+      running.as.plan <- FALSE;
+    } else {
+      c1 <- running.controller[["data_trim"]][["c1"]];
+      c2 <- running.controller[["data_trim"]][["c2"]];
+      c3 <- running.controller[["data_trim"]][["c3"]];
+      c4 <- running.controller[["data_trim"]][["c4"]];
+    }
+    
+    if (c1) {
+      #Select first at least 2 QC data for optimization
       
-      dda_file <- list.files(datapath, recursive = T, full.names = TRUE);
-      
-      if(basename(datapath)=="QC"){
-        QC_uploaded_list <- basename(dda_file);
-        QC_index <- QC_uploaded_list %in% rawfilenms;
-        QC_count <- length(which(QC_index));
+      if (.on.public.web) {
+        dda_file <- list.files(datapath, recursive = T, full.names = TRUE);
         
-        if(QC_count > 1){ # deal with the case: 2 or more QC provided/included
+        if (basename(datapath) == "QC") {
+          QC_uploaded_list <- basename(dda_file);
+          QC_index <- QC_uploaded_list %in% rawfilenms;
+          QC_count <- length(which(QC_index));
           
-          if (QC_count > 2){
-            dda_file1 <- dda_file[QC_index][1:3];
+          if (QC_count > 1) {
+            # deal with the case: 2 or more QC provided/included
+            if (QC_count > 2) {
+              dda_file1 <- dda_file[QC_index][1:3]
+            } else {
+              dda_file1 <- dda_file[QC_index]
+            }
+            
+          } else if (QC_count == 1) {
+            # deal with the case: 1 QC provided/included
+            # List all samples uploaded
+            all_sample_list <-
+              list.files(paste0(datapath, "/../"),
+                         recursive = T,
+                         full.names = T)
+            
+            # choose the included files
+            included_samples <-
+              all_sample_list[basename(all_sample_list) %in% rawfilenms]
+            
+            file_sizes <-
+              sapply(
+                included_samples,
+                FUN = function(x) {
+                  file.size(x)
+                }
+              )
+            
+            largest_file <-
+              basename(names(sort(file_sizes, decreasing = T)[c(1:2)]))
+            
+            sample_index <-
+              as.numeric(sapply(
+                unique(c(
+                  basename(dda_file[QC_index]), largest_file
+                )),
+                FUN = function(x) {
+                  grep(x, included_samples)
+                }
+              ))
+            
+            dda_file1 <- included_samples[sample_index]
           } else {
-            dda_file1 <- dda_file[QC_index];
-          };
+            # deal with the case: 0 QC provided/included
+            # List all samples uploaded
+            all_sample_list <-
+              list.files(paste0(datapath, "/../"),
+                         recursive = T,
+                         full.names = T)
+            
+            # choose the largest files
+            included_samples <-
+              all_sample_list[basename(all_sample_list) %in% rawfilenms]
+            
+            dda_file1 <-
+              names(sort(
+                sapply(
+                  included_samples,
+                  FUN = function(x) {
+                    file.size(x)
+                  }
+                ),
+                decreasing = T
+              )[c(1:3)])
+          }
           
-        } else if(QC_count == 1) { # deal with the case: 1 QC provided/included
-          # List all samples uploaded
-          all_sample_list <- list.files(paste0(datapath,"/../"), recursive = T, full.names = T);
+        } else if (basename(datapath) == "upload") {
+          included_files <- dda_file[basename(dda_file) %in% rawfilenms]
+          QC_index <- grep("QC_*", included_files)
           
-          # choose the included files
-          included_samples <- all_sample_list[basename(all_sample_list) %in% rawfilenms];
-          file_sizes <- sapply(included_samples, FUN = function(x){file.size(x)});
-          
-          largest_file <- basename(names(sort(file_sizes, decreasing = T)[c(1:2)]));
-          sample_index <- as.numeric(sapply(unique(c(basename(dda_file[QC_index]),largest_file)), FUN=function(x){grep(x,included_samples)}))
-          
-          dda_file1 <-included_samples[sample_index]
-        } else {# deal with the case: 0 QC provided/included
-          
-          # List all samples uploaded
-          all_sample_list <- list.files(paste0(datapath,"/../"), recursive = T, full.names = T);
-          
-          # choose the largest files
-          included_samples <- all_sample_list[basename(all_sample_list) %in% rawfilenms];
-          dda_file1 <- names(sort(sapply(included_samples, FUN = function(x){file.size(x)}),decreasing = T)[c(1:3)]);
-          
+          if (!identical(QC_index, integer(0)) &
+              length(QC_index) > 1) {
+            dda_file1 <- included_files[QC_index][1:3]
+            
+          } else if (!identical(QC_index, integer(0)) &
+                     length(QC_index) == 1) {
+            file_sizes <-
+              sapply(
+                included_files,
+                FUN = function(x) {
+                  file.size(x)
+                }
+              )
+            
+            dda_file1 <-
+              c(included_files[which(file_sizes == max(file_sizes))], included_files[QC_index])
+            
+          } else {
+            
+            file_sizes <-
+              sapply(
+                included_files,
+                FUN = function(x) {
+                  file.size(x)
+                }
+              )
+            
+            dda_file1 <-
+              names(sort(file_sizes, decreasing = T)[c(1:3)])
+          }
         }
-        
-      } else if(basename(datapath) == "upload"){
-        
-        included_files <- dda_file[basename(dda_file) %in% rawfilenms]
-        
-        QC_index <- grep("QC_*", included_files);
-        
-        if(!identical(QC_index,integer(0)) & length(QC_index) > 1){
-          
-          dda_file1 <- included_files[QC_index][1:3];
-          
-        } else if(!identical(QC_index,integer(0)) & length(QC_index) == 1){
-          
-          file_sizes <- sapply(included_files, FUN = function(x){file.size(x)});
-          dda_file1 <- c(included_files[which(file_sizes == max(file_sizes))],included_files[QC_index]);
-          
-        } else {
-          
-          file_sizes <- sapply(included_files, FUN = function(x){file.size(x)});
-          dda_file1 <- names(sort(file_sizes, decreasing = T)[c(1:3)]);
-          
-        }
-        
-      }
-      
-      
-      # if (length(dda_file) < 2){
-      #     print_mes <- "STRONG WARNNING: At lease 2 QC samples need to be provided !";    
-      #     write.table(print_mes,file="metaboanalyst_spec_proc.txt",append = T,row.names = F,col.names = F, quote = F, eol = "\n");
-      # }
-    }
-    print(dda_file1);
-    pd <- data.frame(sample_name = sub(basename(dda_file1), pattern = ".mzXML",
-                                       replacement = "", fixed = TRUE),
-                     stringsAsFactors = FALSE)
-    
-    
-    if(.on.public.web){
-      print_mes <- "Data Loading...";    
-      write.table(print_mes,file="metaboanalyst_spec_proc.txt",append = T,row.names = F,col.names = F, quote = F, eol = "\n");
-    } else {
-      message("Data Loading...")
-    }
-    
-    
-    raw_data <- #suppressMessages(try(
-      read.MSdata(dda_file1, pdata = new("NAnnotatedDataFrame", pd), msLevel. = 1, mode = "inMemory")#,
-    # silent = T))
-    
-    
-    if(.on.public.web){
-      print_mes <- "Data Loaded !";    
-      write.table(print_mes,file="metaboanalyst_spec_proc.txt",append = T,row.names = F,col.names = F, quote = F, eol = "\n");
-    } else {
-      message("Data Loaded !")
-    }
-    
-    
-    if (running.as.plan){
-      cache.save(raw_data,paste0(function.name,"_c1"));
-      marker_record(paste0(function.name,"_c1"));
-    }
-    
-  } else {
-    raw_data <- cache.read(function.name, "c1");
-    marker_record(paste0(function.name,"_c1"));
-  }
-  
-  
-  if (c2){
-    
-    if (!mode=="none"){
-      ## Data Trim
-      a<-suppressMessages(unlist(lapply(ls(raw_data@assayData), FUN=function(x){unlockBinding(sym = x,env = raw_data@assayData)})))
-      ms_list<-sapply(ls(raw_data@assayData),FUN=function(x) raw_data@assayData[[x]]@mz)
-      
-      
-      if(.on.public.web){
-        print_mes <- "Empty Scan scanning...";    
-        write.table(print_mes,file="metaboanalyst_spec_proc.txt",append = T,row.names = F,col.names = F, quote = F, eol = "\n");
-      }
-      emptyScan <- vector();
-      for(i in 1:length(ms_list)){
-        if(identical(ms_list[[i]], numeric(0))){
-          emptyScan <- c(emptyScan, i)
-        }
-      }
-      
-      if(.on.public.web){
-        
-        if(!identical(emptyScan, logical(0))){
-          print_mes <- paste0("<font color=\"red\">","ERROR: ", length(emptyScan), " scans (", paste(head(emptyScan),collapse=" "), "...) are empty, please remove them first !","</font>");    
-          write.table(print_mes,file="metaboanalyst_spec_proc.txt",append = T,row.names = F,col.names = F, quote = F, eol = "\n");
-          stop(print_mes);
-        } else {
-          print_mes <- "No Empty scan found !";    
-          write.table(print_mes,file="metaboanalyst_spec_proc.txt",append = T,row.names = F,col.names = F, quote = F, eol = "\n");
-        }
-        
-        print_mes <- "Identifying regions of interest (ROI)...";    
-        write.table(print_mes,file="metaboanalyst_spec_proc.txt",append = T,row.names = F,col.names = F, quote = F, eol = "\n");
         
       } else {
-        message("Data Trimming...")
+        dda_file1 <- list.files(datapath,
+                                recursive = T,
+                                full.names = T)
+      }
+      print(dda_file1)
+      
+      pd <-
+        data.frame(
+          sample_name = sub(
+            basename(dda_file1),
+            pattern = ".mzXML",
+            replacement = "",
+            fixed = TRUE
+          ),
+          stringsAsFactors = FALSE
+        )
+      
+      MessageOutput("Data Loading...", "\n", NULL)
+      
+      raw_data <-
+        read.MSdata(
+          dda_file1,
+          pdata = new("NAnnotatedDataFrame", pd),
+          msLevel. = 1,
+          mode = "inMemory"
+        )
+      
+      MessageOutput("Data Loaded !", "\n", NULL)
+
+      if (running.as.plan) {
+        cache.save(raw_data, paste0(function.name, "_c1"));
+        marker_record(paste0(function.name, "_c1"));
       }
       
-      if (missing(rt.idx)){
-        rt.idx <- 1; # include the whole RT range
-      };
-      
-      load("params.rda");
-      if(peakParams[["rmConts"]]){
+    } else {
+      raw_data <- cache.read(function.name, "c1");
+      marker_record(paste0(function.name, "_c1"));
+    }
+    
+    if (c2) {
+      if (!mode == "none") {
+        ## Data Trim
+        a <-
+          suppressMessages(unlist(lapply(
+            ls(raw_data@assayData),
+            FUN = function(x) {
+              unlockBinding(sym = x, env = raw_data@assayData)
+            }
+          )))
+        ms_list <-
+          sapply(
+            ls(raw_data@assayData),
+            FUN = function(x)
+              raw_data@assayData[[x]]@mz
+          )
+        MessageOutput("Empty Scan detecting...","\n",NULL)
+        emptyScan <- vector()
         
-        raw_data <- ContaminatsRemoval(raw_data, ms_list);
-        save(raw_data, file = "Contaminats_free_raw_data.rda");
+        for (i in 1:length(ms_list)) {
+          if (identical(ms_list[[i]], numeric(0))) {
+            emptyScan <- c(emptyScan, i)
+          }
+        }
         
+        if (!identical(emptyScan, logical(0))) {
+          MessageOutput(paste0("Empty Scans Found. Removing..."), "\n", NULL);
+          raw_data <- .emptyscan.remove(raw_data, ms_list);
+        } else {
+          MessageOutput(paste0("No Empty scan found !"), "\n", NULL);
+        }
+        
+        MessageOutput("Identifying regions of interest (ROI)...", "\n", NULL);
+        
+        if (missing(rt.idx)) {
+          rt.idx <- 0.9
+          # include the whole RT range
+        }
+        
+        tmp_mes <- try(suppressWarnings(load("params.rda")),silent = T)
+        
+        if(class(tmp_mes) == "try-error"){
+          raw_data <- ContaminatsRemoval(raw_data, ms_list);
+          save(raw_data, file = "Contaminats_free_raw_data.rda");
+        } else if (peakParams[["rmConts"]]) {
+          raw_data <- ContaminatsRemoval(raw_data, ms_list);
+          save(raw_data, file = "Contaminats_free_raw_data.rda");
+        }
+        
+        if (mode == "ssm") {
+          trimed_MSnExp <- ssm_trim(raw_data, ms_list, rt.idx = rt.idx);
+        }
+        
+        if (mode == "mz_random") {
+          try(trimed_MSnExp <- mz.trim_random(raw_data, ms_list), silent = T);
+        }
+        
+        if (mode == "rt_random") {
+          try(trimed_MSnExp <- rt.trim_random(raw_data, ms_list), silent = T)
+        }
+        
+        if (mode == "mz_specific") {
+          trimed_MSnExp <- mz.trim_specific(raw_data, ms_list, mz, mzdiff = mzdiff)
+        }
+        
+        if (mode == "rt_specific") {
+          trimed_MSnExp <- rt.trim_specific(raw_data, ms_list, rt, rtdiff = rtdiff)
+        }
+        
+        # remove the empty scans in the ms data
+        trimed_MSnExp <- .emptyscan.remove(trimed_MSnExp, ms_list);
+        
+      } else{
+        # keep the data without trimming.
+        trimed_MSnExp <- raw_data;
       }
       
-      
-      if (mode=="ssm"){
-        trimed_MSnExp<-ssm_trim(raw_data,ms_list,rt.idx=rt.idx)
+      if (running.as.plan) {
+        cache.save(trimed_MSnExp, paste0(function.name, "_c2"));
+        marker_record(paste0(function.name, "_c2"));
       }
       
-      if (mode=="mz_random"){
-        suppressWarnings(try(trimed_MSnExp<-mz.trim_random(raw_data,ms_list),silent = T))
+    } else {
+      trimed_MSnExp <- cache.read(function.name, "c2");
+      marker_record(paste0(function.name, "_c2"));
+    }
+    
+    MessageOutput(NULL, NULL, 4);
+
+    if (c3) {
+      if (write == T) {
+        MessageOutput("Data Writing...",ecol = "\n",NULL);
+        writenames <-
+          paste0(datapath,
+                 "/trimmed/Trimmed_",
+                 pd$sample_name,
+                 ".mzML",
+                 sep = "")
+        dir.create(paste0(datapath, "/trimmed", collapse = ""))
+        suppressMessages(writeMSData(trimed_MSnExp, writenames, outformat = "mzml"))
+        MessageOutput("Data Writing Finished !",ecol = "\n",NULL);
       }
       
-      if (mode=="rt_random"){
-        suppressWarnings(try(trimed_MSnExp<-rt.trim_random(raw_data,ms_list),silent = T))
+      if (running.as.plan) {
+        #cache.save(trimed_MSnExp,paste0(function.name,"_c2"));
+        marker_record(paste0(function.name, "_c3"));
+      }
+    }
+    
+    if (c4) {
+      if (plot == T) {
+        MessageOutput("Chromatogram Plotting Begin...",ecol = "\n",NULL);
+        
+        if (.on.public.web) {
+          load_RColorBrewer();
+        } 
+        
+        ch.xdata <- chromatogram(trimed_MSnExp)
+        group.col <-
+          paste0(brewer.pal(length(
+            trimed_MSnExp@processingData@files
+          ), "Blues"))
+        plot(ch.xdata, col = group.col[1:length(trimed_MSnExp@processingData@files)])
       }
       
-      if (mode=="mz_specific"){
-        trimed_MSnExp<-mz.trim_specific(raw_data,ms_list,mz,mzdiff=mzdiff)
+      if (running.as.plan) {
+        #cache.save(trimed_MSnExp,paste0(function.name,"_c2"));
+        marker_record(paste0(function.name, "_c4"));
       }
-      
-      if (mode=="rt_specific"){
-        trimed_MSnExp<-rt.trim_specific(raw_data,ms_list,rt,rtdiff=rtdiff)
-      }
-      
-      
-      # remove the empty scans in the ms data      
-      trimed_MSnExp<-.emptyscan.remove(trimed_MSnExp,ms_list)
-      
-    }else{
-      # keep the data without trimming.
-      trimed_MSnExp<-raw_data
       
     }
     
-    if (running.as.plan){
-      cache.save(trimed_MSnExp,paste0(function.name,"_c2"));
-      marker_record(paste0(function.name,"_c2"));
-    }
+    MessageOutput(paste0("Identification on ROIs Finished! \n",
+                         "Optimization will be started soon...")
+                  ,ecol = "\n",NULL);
+
+    save(trimed_MSnExp, file = "raw_data.rda");
+    mSet <- new("mSet");
+    mSet@rawInMemory <- trimed_MSnExp;
     
-  } else {
-    trimed_MSnExp <- cache.read(function.name, "c2");
-    marker_record(paste0(function.name,"_c2"));
-  };
-  
-  if (.on.public.web){   
-    write.table(4.0, file = paste0(fullUserPath, "log_progress.txt"),row.names = F,col.names = F);
-    write <- T;    
+    return(mSet)
   }
-  if (c3){
-    if (write==T){
-      message("Data Writing...")
-      
-      writenames<-paste0(datapath,"/trimmed/Trimmed_",pd$sample_name,".mzML",sep = "")
-      dir.create(paste0(datapath,"/trimmed",collapse = ""))
-      suppressMessages(writeMSData(trimed_MSnExp, writenames, outformat = "mzml"))
-      
-      message("Data Writing Finished !")
-    }
-    
-    if (running.as.plan){
-      #cache.save(trimed_MSnExp,paste0(function.name,"_c2"));
-      marker_record(paste0(function.name,"_c3"));
-    }
-    
-  };
-  
-  if (c4){
-    if (plot==T){
-      
-      if(.on.public.web){
-        load_RColorBrewer();
-        print_mes <- "Chromatogram Plotting Begin...";    
-        write.table(print_mes,file="metaboanalyst_spec_proc.txt",append = T,row.names = F,col.names = F, quote = F, eol = "\n");
-      } else {
-        message("Chromatogram Plotting Begin...")
-      }
-      
-      ch.xdata<-chromatogram(trimed_MSnExp)
-      group.col<-paste0(brewer.pal(length(trimed_MSnExp@processingData@files),"Blues"))
-      plot(ch.xdata,col=group.col[1:length(trimed_MSnExp@processingData@files)])
-    }
-    
-    
-    if (running.as.plan){
-      #cache.save(trimed_MSnExp,paste0(function.name,"_c2"));
-      marker_record(paste0(function.name,"_c4"));
-    }
-    
-  };
-  
-  if (.on.public.web){
-    
-    print_mes <- paste0("Identification on ROIs Finished! \n", "Optimization will be started soon...");
-    write.table(print_mes,file="metaboanalyst_spec_proc.txt",append = T,row.names = F,col.names = F, quote = F, eol = "\n");
-    
-  } else {
-    message("Identification on ROIs Finished!")
-    end.time<-Sys.time();
-    message("Time Spent In Total:",round((as.numeric(end.time) - as.numeric(start.time))/60, 1),"mins","\n");
-    
-  }  
-  save(trimed_MSnExp, file="raw_data.rda");
-  
-  return(trimed_MSnExp)
-}
 
 #' Standards Simulation Method
 #' @description Whole mass spectra will be divided as 4 bins according to the mz range. Trimming 
