@@ -17,21 +17,23 @@
 #' Mcgill University
 #' License: GNU GPL (>= 2)
 
-PerformParamsOptimization <- function(raw_data, param=p0, method="DoE", ncore=4,running.controller=NULL){
+PerformParamsOptimization <- function(mSet, param=p0, method="DoE", ncore=4, running.controller=NULL){
+  
+  if (class(mSet) == "mSet") {
+    raw_data <- mSet@rawInMemory;
+  } else if (class(mSet) == "MSnExp") {
+    raw_data <- mSet;
+  } else {
+    stop("Wrong mSet object provided !")
+  }
   
   #Build Running plan for optimization - Indentify the controller
   if (is.null(running.controller)) {c1 <- T} else {
     c1 <- running.controller[["others_1"]][["c1"]]
   }
   
-  if (.on.public.web){
-    
-    print_mes <- "Step 1/6: Start to optimize parameters! \nThis step may take a long time...";    
-    write.table(print_mes,file="metaboanalyst_spec_proc.txt",append = T,row.names = F,col.names = F, quote = F, eol = "\n");
-    
-  };
-  
-  
+  MessageOutput("Step 1/6: Start to optimize parameters! \nThis step may take a long time...", "\n", NULL)
+
   start.time<-Sys.time();
   
   if (c1){
@@ -42,21 +44,16 @@ PerformParamsOptimization <- function(raw_data, param=p0, method="DoE", ncore=4,
       stop("Please provide the data of MSnExp format!" )
     } else if (missing(method)){
       method<-"DoE";
-      print("DoE Optimization Starting Now!")
     };
     
+    MessageOutput("DoE Optimization Starting Now...", "\n", NULL)
     
     if (.on.public.web){
-      
-      print_mes <- "DoE Optimization Starting Now...";    
-      write.table(print_mes,file="metaboanalyst_spec_proc.txt",append = T,row.names = F,col.names = F, quote = F, eol = "\n");
-      ncore<-2;
-      
+      ncore <- 2;
     } else if (missing(ncore)){
-      ncore<-detectCores();
+      ncore <- ceiling(detectCores()*2/3);
       message("'ncore' is absent, will use 2/3 CPU threads of total!")
     };
-    
     
     # Define the global Parallel cores for Single Core function mode
     if (ncore == 1){
@@ -69,33 +66,20 @@ PerformParamsOptimization <- function(raw_data, param=p0, method="DoE", ncore=4,
     
     ## Optimize the noise and prefilter indexes with AutoTuner
     if (param[["Peak_method"]] == "centWave"){
-      
-      if (.on.public.web){
-        
-        print_mes <- "Evaluating Noise level...";    
-        write.table(print_mes,file="metaboanalyst_spec_proc.txt",append = T,row.names = F,col.names = F, quote = F, eol = "");
-        
-      } else {
-        print("Evaluating Noise level...");
-      }
+      MessageOutput("Evaluating Noise level...", "\n", NULL)
+
       save(raw_data, file = "raw_data.rda");
-      p2<-tryCatch(Noise_evaluate(raw_data), error = function(e){e}); 
-      
+      p2<-tryCatch(Noise_evaluate(raw_data), error = function(e){e});
       
       if (.on.public.web){
         
         if (class(p2)[1]=="simpleError"){
-          #write.table(0.0, file = paste0(fullUserPath, "log_progress.txt"),row.names = F,col.names = F);
           print_mes_tmp <- paste0("\n","<font color=\"red\">","ERROR:",p2$message,"</font>","\n");
           print_mes_tmp2 <- paste0("<font color=\"orange\">","Don't worry: Will use default noise parameters instead!","</font>");
           print_mes<- paste0(print_mes_tmp,print_mes_tmp2);
-          
-          write.table(print_mes,file="metaboanalyst_spec_proc.txt",append = T,row.names = F,col.names = F, quote = F, eol = "\n");
-          
+          MessageOutput(print_mes, "\n", NULL);
         }
-        
-        print_mes <- "Done!";    
-        write.table(print_mes,file="metaboanalyst_spec_proc.txt",append = T,row.names = F,col.names = F, quote = F, eol = "\n");
+        MessageOutput("Done!", "\n", NULL);
       }
       
       if(class(p2)[1]=="simpleError"){
@@ -117,10 +101,9 @@ PerformParamsOptimization <- function(raw_data, param=p0, method="DoE", ncore=4,
         } else {
           param[["ppm"]] <- round(p2$ppm,2);
         }
-        
       }
-      write.table(5.00, file = "log_progress.txt",row.names = F,col.names = F);
       
+      MessageOutput(NULL, NULL, 5.00);
     }
     
     if (method=="DoE"){
@@ -139,20 +122,14 @@ PerformParamsOptimization <- function(raw_data, param=p0, method="DoE", ncore=4,
     marker_record("optimized_results_c1");
   }
   
-  
-  
   if (.on.public.web){
-    
-    write.table(20.0, file = paste0(fullUserPath, "log_progress.txt"),row.names = F,col.names = F);
-    
-    #write.table(as.matrix(p1$best_parameters), file = paste0(fullUserPath, "opt_param.txt"),row.names = F,col.names = F);
+    MessageOutput(NULL, NULL, 20.00);
     
     if (class(p1)[1]=="simpleError"){
-      #write.table(0.0, file = paste0(fullUserPath, "log_progress.txt"),row.names = F,col.names = F);
       print_mes <- paste0("<font color=\"red\">","\nERROR:",p1$message,"</font>","\n");
       print_mes_tmp2 <- paste0("<font color=\"orange\">","ADVICE: Please follow the methods above to correct or use the default instead!","</font>");
       print_mes <- paste0(print_mes,print_mes_tmp2);
-      write.table(print_mes,file="metaboanalyst_spec_proc.txt",append = T,row.names = F,col.names = F, quote = F, eol = "\n");
+      MessageOutput(print_mes, "\n", NULL);
       stop("EXCEPTION POINT CODE: PO2");
     }
     
@@ -234,13 +211,8 @@ optimize.xcms.doe <- function(raw_data, param, ncore = 8){
           stop("There must be something wrong about the Peak_method value in your primary params set !")
         };
   
-  if (.on.public.web){
-    
-    print_mes <- "Preparing Parameters for optimization finished !";    
-    write.table(print_mes,file="metaboanalyst_spec_proc.txt",append = T,row.names = F,col.names = F, quote = F, eol = "\n");
-    
-  }
-  
+  MessageOutput("Preparing Parameters for optimization finished !", "\n", NULL);
+
   #### Start to Optimize !
   result <- optimizxcms.doe.peakpicking(object = raw_data, params = Parameters, 
                                         BPPARAM = bpparam(),
@@ -253,16 +225,8 @@ optimize.xcms.doe <- function(raw_data, param, ncore = 8){
   peakParams2$best_parameters <- result[["best_settings"]][["parameters"]];
   peakParams2$data<-optimizedxcmsObject;
   
-  if (.on.public.web){
-    
-    print_mes <- paste0("Step 1/6: Parameters Optimization Finished ! (", Sys.time(),")");    
-    write.table(print_mes,file="metaboanalyst_spec_proc.txt",append = T,row.names = F,col.names = F, quote = F, eol = "\n");
-    
-  } else {
-    
-    message("Parameters Optimization Finished !");
-  }
-  
+  MessageOutput(paste0("Step 1/6: Parameters Optimization Finished ! (", Sys.time(),")"), "\n", NULL);
+
   return(peakParams2)
 }
 
@@ -294,22 +258,8 @@ optimizxcms.doe.peakpicking <- function(object = NULL, params = params,
   object_mslevel<-PeakPicking_prep(object);
   
   while(iterator < 20) {#Forcely stop to ensure the reasonability!
-    if (.on.public.web){
-      
-      print_mes <- paste0("Round:",iterator);    
-      write.table(print_mes,file="metaboanalyst_spec_proc.txt",append = T,row.names = F,col.names = F, quote = F, eol = "\n");
-      
-      print_mes <- "DoE Running Begin...";    
-      write.table(print_mes,file="metaboanalyst_spec_proc.txt",append = T,row.names = F,col.names = F, quote = F, eol = "\n");
-      
-    } else {
-      
-      print(paste0("Round:",iterator));
-      message("DoE Running Begin...");
-      
-    }
-    
-    
+    MessageOutput(paste0("Round:",iterator, "\nDoE Running Begin..."), "\n", NULL)
+
     # Parallel is unstable for matchedFilter Method, force to use only ne core
     #if (params[["Peak_method"]]=="matchedFilter"){
     #  nSlaves<-1;
@@ -327,12 +277,7 @@ optimizxcms.doe.peakpicking <- function(object = NULL, params = params,
         iterator = iterator
       )
     
-    if (.on.public.web){
-      
-      print_mes <- paste0("Done!");    
-      write.table(print_mes,file="metaboanalyst_spec_proc.txt",append = T,row.names = F,col.names = F, quote = F, eol = "\n");
-      
-    }
+    MessageOutput(paste0("Done!"), "\n", NULL);
     
     ### Normalize the PPS and CV in mSet_OPT
     PPS.set<-as.numeric(sapply(1:nrow(mSet_OPT[["response"]]),FUN=function(x){
@@ -367,21 +312,14 @@ optimizxcms.doe.peakpicking <- function(object = NULL, params = params,
     QCoE<-CV.set.normalized*0.2+RCS.set.normalized*0.4+
       GS.set.normalized*0.4
     # Calculate QS
-    QS<-PPS.set*QCoE*GaussianSI.set.normalized
+    QS<-PPS.set*QCoE*GaussianSI.set.normalized;
     
-    tmp_matrix<-mSet_OPT[["response"]]
+    tmp_matrix<-mSet_OPT[["response"]];
     tmp_matrix<-cbind(tmp_matrix,PPS.set,CV.set.normalized,RCS.set.normalized,GS.set.normalized,
                       GaussianSI.set.normalized,QCoE,QS)
-    mSet_OPT[["response"]]<-tmp_matrix
+    mSet_OPT[["response"]]<-tmp_matrix;
     
-    if (.on.public.web){
-      
-      print_mes <- paste0("Round ",iterator," Finished !");    
-      write.table(print_mes,file="metaboanalyst_spec_proc.txt",append = T,row.names = F,col.names = F, quote = F, eol = "\n");
-      
-    } else {
-      message("Round ",iterator," Finished !")
-    }
+    MessageOutput(paste0("Round ",iterator," Finished !"), "\n", NULL)
     
     mSet_OPT <-
       Statistic_doe(
@@ -523,11 +461,10 @@ optimizxcms.doe.peakpicking <- function(object = NULL, params = params,
     
   }
   
-  write.table(19.0, file = paste0(fullUserPath, "log_progress.txt"),row.names = F,col.names = F);
+  MessageOutput(NULL, NULL, 19);
   params <- attachList(params$to_optimize, params$no_optimization)	    
   
   return(history)
-  
 }
 
 #' @title Experiment Functions of DoE
@@ -622,12 +559,17 @@ ExperimentsCluster_doe <-function(object, object_mslevel,params,
     #  unloadNamespace("snow")
     #}
     
-    cl_type<-getClusterType()
+    cl_type <- getClusterType()
     cl <- parallel::makeCluster(nSlaves,type = cl_type)
     
     response <- matrix(0, nrow=length(design[[1]]), ncol=9)
     
-    parallel::clusterExport(cl, optimize_function_list)
+    if(.on.public.web){
+      parallel::clusterExport(cl, .optimize_function_list)
+    } else {
+      parallel::clusterExport(cl, .optimize_function_list, envir = asNamespace("OptiLCMS"))
+    }
+    
     # Setting progress bar and start the running loop
     pb <- progress_bar$new(format = "DoE Running [:bar] :percent Time left: :eta", total = nstep, clear = T, width= 75)
     
@@ -916,7 +858,7 @@ calculateSet_doe <- function(object, object_mslevel, Set_parameters, task = 1,
   
   mSet <- calculatePPKs(object, object_mslevel, param, BPPARAM = bpparam())
   
-  mSet <- calculateGPRT(mSet,param)
+  mSet <- calculateGPRT(mSet, param)
   
   return(mSet)
 }

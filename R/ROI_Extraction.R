@@ -46,7 +46,7 @@ PerformROIExtraction <-
            mzdiff,
            rt,
            rtdiff,
-           rt.idx = 1 / 15,
+           rt.idx = 1/15,
            plot = T,
            running.controller = NULL) {
     if (!dir.exists(datapath)) {
@@ -275,7 +275,7 @@ PerformROIExtraction <-
         
         if (missing(rt.idx)) {
           rt.idx <- 0.9
-          # include the whole RT range
+          # include the 90% RT range
         }
         
         tmp_mes <- try(suppressWarnings(load("params.rda")),silent = T)
@@ -405,14 +405,8 @@ ssm_trim <- function(raw_data, ms_list, rt.idx){
   
   # Slide window to choose the high abundance bins in every districts
   
-  if(.on.public.web){
-    print_mes <- "MS data Preparing...";    
-    write.table(print_mes,file="metaboanalyst_spec_proc.txt",append = T,row.names = F,col.names = F, quote = F, eol = "\n");
-  } else {
-    message("MS data Parsing ...")
-  }  
-  
-  
+  MessageOutput("MS data Preparing...", "\n", NULL);
+ 
   #if(length(names(ms_list))>1000){
   #  ms_list_s<-sort(sample(names(ms_list),1000))
   #} else {
@@ -498,23 +492,11 @@ ssm_trim <- function(raw_data, ms_list, rt.idx){
                            bins.boundary=bins.boundary,
                            BPPARAM = SnowParam(type="SOCK"))
   
-  if(.on.public.web){
-    print_mes <- "MS Data ready !";    
-    write.table(print_mes,file="metaboanalyst_spec_proc.txt",append = T,row.names = F,col.names = F, quote = F, eol = "\n");
-  } else {
-    message("MS Data Pasing Done !")
-  }  
-  
+  MessageOutput("MS Data ready !", "\n", NULL);
   
   # Remove the peaks out of the bins
-  
-  if(.on.public.web){
-    print_mes <- "Identifying ROIs in m/z dimensions...";   
-    write.table(print_mes,file="metaboanalyst_spec_proc.txt",append = T,row.names = F,col.names = F, quote = F, eol = "\n");
-  } else {
-    message("Identifying ROIs in m/z dimensions...")
-  }  
-  
+  MessageOutput("Identifying ROIs in m/z dimensions...", "\n", NULL);
+
   pb <- progress_bar$new(format = "ROIs Identification in MZ Dimension [:bar] :percent Time left: :eta", total = length(ms_list), clear = T, width= 80)
   
   for (i in 1:length(ms_list)){
@@ -531,13 +513,7 @@ ssm_trim <- function(raw_data, ms_list, rt.idx){
     raw_data@assayData[[names(ms_list)[i]]]@tic<-sum(raw_data@assayData[[names(ms_list)[i]]]@intensity);
     raw_data@assayData[[names(ms_list)[i]]]@peaksCount<-length(raw_data@assayData[[names(ms_list)[i]]]@mz)
   }
-  
-  if(.on.public.web){
-    print_mes <- "Identifying ROIs in m/z dimensions Done !";   
-    write.table(print_mes,file="metaboanalyst_spec_proc.txt",append = T,row.names = F,col.names = F, quote = F, eol = "\n");
-  } else {
-    message("Identifying ROIs in m/z dimensions Done !")
-  }  
+  MessageOutput("Identifying ROIs in m/z dimensions Done !", "\n", NULL);
   
   ## Trimed data outside the RT bins
   rt_set<-sapply(names(ms_list),FUN=function(x) raw_data@assayData[[x]]@rt)
@@ -561,14 +537,8 @@ ssm_trim <- function(raw_data, ms_list, rt.idx){
   rt.boundary.lowlimit<-min(rt_set)+which(max(tic.sum)==tic.sum)[ceiling(length(which(max(tic.sum)==tic.sum))/2)]*0.75
   rt.boundary.uplimit<-min(rt_set)+which(max(tic.sum)==tic.sum)[ceiling(length(which(max(tic.sum)==tic.sum))/2)]*0.75+rt.bin.width
   
-  if(.on.public.web){
-    print_mes <- "Identifying ROIs in RT dimensions...";    
-    write.table(print_mes,file="metaboanalyst_spec_proc.txt",append = T,row.names = F,col.names = F, quote = F, eol = "\n");
-  } else {
-    message("Trim data outside the RT bins...")
-  }  
-  
-  
+  MessageOutput("Identifying ROIs in RT dimensions...", "\n", NULL);
+ 
   pb <- progress_bar$new(format = "ROIs Identification in RT Dimension [:bar] :percent Time left: :eta", total = length(ms_list), clear = T, width= 80)
   ncount<-numeric();
   
@@ -942,20 +912,19 @@ ContaminatsRemoval <- function(raw_data, ms_list){
   topScan_stats[,4] <- topScan_stats[,3] <- 0;
   colnames(topScan_stats)[c(3,4)] <- c("RT_ratio", "mz_mean");
   
-  print_mes <- "Identifying regions of potential contaminants";    
-  write.table(print_mes,file="metaboanalyst_spec_proc.txt",append = T,row.names = F,col.names = F, quote = F, eol = " ");
+  MessageOutput("Identifying regions of potential contaminants", "", NULL);
+  
   k_count <- 0;
   
   for(i in 1:300){
     
     mzrange <- c(top_mzs[i]-0.005, top_mzs[i]+0.005);
-    RawData <- MSnbase::filterMz(raw_data, mzrange);
+    RawData <- suppressWarnings(MSnbase::filterMz(raw_data, mzrange));
     scan_count <- 0;
     mz_vec <- vector();
     
     if ((i - k_count) > 0 ){
-      print_mes <- ".";  
-      write.table(print_mes,file="metaboanalyst_spec_proc.txt",append = T,row.names = F,col.names = F, quote = F, eol = "");
+      MessageOutput(".", "", NULL);
       k_count <- k_count +10;
     }
     
@@ -975,15 +944,14 @@ ContaminatsRemoval <- function(raw_data, ms_list){
     
   }
   
-  print_mes <- paste0("Done!");  
-  write.table(print_mes,file="metaboanalyst_spec_proc.txt",append = T,row.names = F,col.names = F, quote = F, eol = "\n");
+  MessageOutput("Done!", "\n", NULL)
   save(topScan_stats, file = "topScan_stats.rda")
   mzs_toRemove <- topScan_stats[topScan_stats[,3] > 0.5, 4]
   
   raw_data_clean <- mz.trim_specific(raw_data, ms_list, -mzs_toRemove, mzdiff=10)
-  
-  print_mes <- paste0(length(mzs_toRemove), " potential contaminamts will not be used for parameters optimization !");    
-  write.table(print_mes,file="metaboanalyst_spec_proc.txt",append = T,row.names = F,col.names = F, quote = F, eol = "\n");
+  MessageOutput(paste0(length(mzs_toRemove), " potential contaminamts will not be used for parameters optimization !"), 
+                "\n",
+                NULL)
   
   raw_data_clean <- .emptyscan.remove(raw_data_clean, ms_list);
   

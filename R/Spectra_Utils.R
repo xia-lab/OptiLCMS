@@ -289,7 +289,6 @@ PeakPicking_centWave_slave <- function(x,param){
   
   for (f in  1:lf) {
     
-    
     feat <- roiList[[f]]
     N <- feat$scmax - feat$scmin + 1
     peaks <- peakinfo <- NULL
@@ -336,7 +335,7 @@ PeakPicking_centWave_slave <- function(x,param){
       ## in case of very long mass trace use full scan range
       ## for baseline detection
       
-      noised <- getEIC(mz, int, scanindex, mzrange, scanrange)
+      noised <- getEIC(mz, int, scanindex, mzrange, scanrange)$intensity
       
       ## noised <- rawEIC(object,mzrange=mzrange,scanrange=scanrange)$intensity
     } else {
@@ -2502,7 +2501,6 @@ creatPeakTable <- function(xset){
   colnames(ts) <- cnames
   
   return(ts)
-  
 }
 
 
@@ -3530,7 +3528,7 @@ filtfft <- function(y, filt) {
 #' @author Zhiqiang Pang \email{zhiqiang.pang@mail.mcgill.ca}
 #' Mcgill University
 #' License: GNU GPL (>= 2)
-PeakPicking_prep <-function(object){
+PeakPicking_prep <- function(object){
   
   ## Check if the data is centroided
   centroided <- all(centroided(object))

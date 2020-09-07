@@ -718,7 +718,7 @@ getEIC <-
         as.integer(scanrange),
         as.integer(length(scanindex)),
         PACKAGE = "OptiLCMS"
-      )$intensity
+      )
     } else {
       noised <- .Call(
         "getEIC",
@@ -728,7 +728,7 @@ getEIC <-
         as.double(mzrange),
         as.integer(scanrange),
         as.integer(length(scanindex))
-      )$intensity
+      )
     }
     
     return(noised)

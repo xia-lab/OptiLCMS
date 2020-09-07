@@ -5,7 +5,7 @@
 # OTHER SETTINGS
 
 # Used to defined the parallel namespace for peak picking
-peak_function_list <- list("PerformPeakPicking",
+.peak_function_list <- list("PerformPeakPicking",
                            "PeakPicking_centWave_slave",
                            "PerformPeakGrouping",
                            "Densitygrouping_slave",
@@ -59,7 +59,7 @@ peak_function_list <- list("PerformPeakPicking",
 )
 
 # Used to defined the parallel namespace for parameters optimization
-optimize_function_list <- c(list("PeakPicking_prep",
+.optimize_function_list <- c(list("PeakPicking_prep",
                                  "Statistic_doe",
                                  "SlaveCluster_doe",
                                  "calculateSet_doe",
@@ -90,7 +90,7 @@ optimize_function_list <- c(list("PeakPicking_prep",
                                  "encode",
                                  "attachList",
                                  "checkParams"),
-                            peak_function_list)
+                            .peak_function_list)
 
 ####Scheduler
 
@@ -136,4 +136,51 @@ GetRawClassNms <- function(){
   return(rawClassNms)
 }
 
+
+#' Title
+#'
+#' @param mes 
+#' @param ecol 
+#' @param progress 
+#'
+#' @return
+#'
+#' @examples
+MessageOutput <- function(mes, ecol, progress) {
+  if (!is.null(mes)) {
+    if (.on.public.web) {
+      # write down message
+      write.table(
+        mes,
+        file = "metaboanalyst_spec_proc.txt",
+        append = T,
+        row.names = F,
+        col.names = F,
+        quote = F,
+        eol = ecol
+      )
+    } else {
+      # print message
+      if(ecol == "\n"){
+        message(mes)
+      } else {
+        message(mes,appendLF = FALSE)
+      }
+      
+    }
+  }
+  
+  # write down progress
+  if (.on.public.web & !is.null(progress)) {
+    progress <- as.numeric(progress)
+    
+    write.table(
+      progress,
+      file = paste0(fullUserPath, "log_progress.txt"),
+      row.names = F,
+      col.names = F
+    )
+  }
+  
+}
 
