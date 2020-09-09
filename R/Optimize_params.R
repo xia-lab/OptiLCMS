@@ -27,6 +27,8 @@ PerformParamsOptimization <- function(mSet, param=p0, method="DoE", ncore=4, run
     stop("Wrong mSet object provided !")
   }
   
+  .optimize_switch <- TRUE;
+  
   #Build Running plan for optimization - Indentify the controller
   if (is.null(running.controller)) {c1 <- T} else {
     c1 <- running.controller[["others_1"]][["c1"]]
@@ -68,17 +70,36 @@ PerformParamsOptimization <- function(mSet, param=p0, method="DoE", ncore=4, run
     if (param[["Peak_method"]] == "centWave"){
       MessageOutput("Evaluating Noise level...", "\n", NULL)
 
-      save(raw_data, file = "raw_data.rda");
-      p2<-tryCatch(Noise_evaluate(raw_data), error = function(e){e});
+      p2 <- tryCatch(
+        Noise_evaluate(raw_data),
+        error = function(e) {
+          e
+        }
+      )
       
-      if (.on.public.web){
-        
-        if (class(p2)[1]=="simpleError"){
-          print_mes_tmp <- paste0("\n","<font color=\"red\">","ERROR:",p2$message,"</font>","\n");
-          print_mes_tmp2 <- paste0("<font color=\"orange\">","Don't worry: Will use default noise parameters instead!","</font>");
-          print_mes<- paste0(print_mes_tmp,print_mes_tmp2);
+      
+      if (.on.public.web) {
+        if (class(p2)[1] == "simpleError") {
+          print_mes_tmp <-
+            paste0("\n",
+                   "<font color=\"red\">",
+                   "ERROR:",
+                   p2$message,
+                   "</font>",
+                   "\n")
+          
+          print_mes_tmp2 <-
+            paste0(
+              "<font color=\"orange\">",
+              "Don't worry: Will use default noise parameters instead!",
+              "</font>"
+            )
+          
+          print_mes <- paste0(print_mes_tmp, print_mes_tmp2)
+          
           MessageOutput(print_mes, "\n", NULL);
         }
+        
         MessageOutput("Done!", "\n", NULL);
       }
       
@@ -110,13 +131,11 @@ PerformParamsOptimization <- function(mSet, param=p0, method="DoE", ncore=4, run
       p1 <- optimize.xcms.doe(raw_data,param=param,ncore=ncore); 
     };
     
-    if (method=="OVAT"){
-      stop("Only DoE is supported for now. Other Optimization Model will be supported later.")
-      p1<-optimize.xcms.ovat(raw_data,param=param,ncore=ncore)
-    };
-    
-    cache.save(p1, funpartnm= "optimized_results_c1");
-    marker_record("optimized_results_c1");
+    if(.running.as.plan){
+      cache.save(p1, funpartnm= "optimized_results_c1");
+      marker_record("optimized_results_c1");
+    }
+
   } else {
     p1 <- cache.read ("optimized_results","c1");
     marker_record("optimized_results_c1");
@@ -125,12 +144,27 @@ PerformParamsOptimization <- function(mSet, param=p0, method="DoE", ncore=4, run
   if (.on.public.web){
     MessageOutput(NULL, NULL, 20.00);
     
-    if (class(p1)[1]=="simpleError"){
-      print_mes <- paste0("<font color=\"red\">","\nERROR:",p1$message,"</font>","\n");
-      print_mes_tmp2 <- paste0("<font color=\"orange\">","ADVICE: Please follow the methods above to correct or use the default instead!","</font>");
-      print_mes <- paste0(print_mes,print_mes_tmp2);
-      MessageOutput(print_mes, "\n", NULL);
-      stop("EXCEPTION POINT CODE: PO2");
+    if (class(p1)[1] == "simpleError") {
+      print_mes <-
+        paste0("<font color=\"red\">",
+               "\nERROR:",
+               p1$message,
+               "</font>",
+               "\n")
+      
+      print_mes_tmp2 <-
+        paste0(
+          "<font color=\"orange\">",
+          "ADVICE: Please follow the methods above to correct or use the default instead!",
+          "</font>"
+        )
+      
+      print_mes <- paste0(print_mes, print_mes_tmp2)
+      
+      MessageOutput(print_mes, "\n", NULL)
+      
+      stop("EXCEPTION POINT CODE: PO2")
+      
     }
     
     optimize_switch <<-F;
@@ -665,21 +699,9 @@ Statistic_doe <-function(object, object_mslevel, isotopeIdentification,
                          BPPARAM = bpparam(), mSet_OPT, subdir = NULL ,plot = F,iterator, 
                          index.set,useNoise) {
   
-  #save(object, file = "object.rda");
-  #save(object_mslevel, file = "object_mslevel.rda");
-  #save(mSet_OPT, file = "mSet_OPT.rda");
-  #save(iterator, file = "iterator.rda");
-  #save(index.set, file = "index.set.rda");
-  
-  if (.on.public.web){
-    
-    print_mes <- paste0("Model Parsing...");    
-    write.table(print_mes,file="metaboanalyst_spec_proc.txt",append = T,row.names = F,col.names = F, quote = F, eol = "\n");
-    
-  } else {
-    message("Model Parsing...")
-  } 
-  
+
+  MessageOutput(paste0("Model Parsing..."), "\n", NULL)
+
   # Prepare parameters for model prediction
   params <- mSet_OPT$params
   resp <- mSet_OPT$response[, "QS"]
@@ -701,13 +723,12 @@ Statistic_doe <-function(object, object_mslevel, isotopeIdentification,
   if(!is.list(xcms_parameters))
     xcms_parameters <- as.list(xcms_parameters)
   
-  
   # Detect the peak features with the predicted best parameters
   mSet <- suppressMessages(calculateSet_doe(object = object, object_mslevel=object_mslevel, 
                                             Set_parameters = xcms_parameters,
                                             task = 1, BPPARAM = BPPARAM));
   
-  if(mSet == "Xset_NA"){ # All params failed - avoid this corner case
+  if(class(mSet) != "mSet"){ # All params failed - avoid this corner case
     mSet_OPT$QS <- 0;
     mSet_OPT$PPS <- 0;
     
@@ -721,36 +742,28 @@ Statistic_doe <-function(object, object_mslevel, isotopeIdentification,
     return(mSet_OPT)
   }
   
-  xset <- mSet[["xcmsSet"]]
+  # xset <- mSet[["xcmsSet"]]
   # Calculate the various indexes
   
-  mSet_OPT$xset <- xset
-  mSet_OPT$PPS <- calcPPS2(xset, isotopeIdentification)
-  suppressWarnings(mSet_OPT$PPS$CV <- suppressMessages(calcCV(xset)))
-  mSet_OPT$PPS$RCS <-suppressMessages(calcRCS_GSValues(xset)$RCS)
-  mSet_OPT$PPS$GS <-suppressMessages(calcRCS_GSValues(xset)$GS)
-  mSet_OPT$PPS$GaussianSI <-calcGaussianS(mSet,object,useNoise=useNoise)
+  #mSet_OPT$xset <- xset
+  mSet_OPT$PPS <- calcPPS2(mSet, isotopeIdentification)
+  suppressWarnings(mSet_OPT$PPS$CV <- suppressMessages(calcCV(mSet)));
+  mSet_OPT$PPS$RCS <-suppressMessages(calcRCS_GSValues(mSet)$RCS);
+  mSet_OPT$PPS$GS <-suppressMessages(calcRCS_GSValues(mSet)$GS);
+  mSet_OPT$PPS$GaussianSI <-calcGaussianS(mSet,object,useNoise=useNoise);
   
   ## Normalize the CV, RCS, GS, GaussianSI
-  normalized.CV<-(mSet_OPT$PPS$CV-min(index.set$CV))/(max(index.set$CV)-min(index.set$CV))
-  normalized.RCS<-(mSet_OPT$PPS$RCS-min(index.set$RCS))/(max(index.set$RCS)-min(index.set$RCS))
-  normalized.GS<-(mSet_OPT$PPS$GS-min(index.set$GS))/(max(index.set$GS)-min(index.set$GS))
-  normalized.GaussianSI<-mSet_OPT$PPS$GaussianSI
+  normalized.CV<-(mSet_OPT$PPS$CV-min(index.set$CV))/(max(index.set$CV)-min(index.set$CV));
+  normalized.RCS<-(mSet_OPT$PPS$RCS-min(index.set$RCS))/(max(index.set$RCS)-min(index.set$RCS));
+  normalized.GS<-(mSet_OPT$PPS$GS-min(index.set$GS))/(max(index.set$GS)-min(index.set$GS));
+  normalized.GaussianSI<-mSet_OPT$PPS$GaussianSI;
   
   ## Calculate the QS for the best combination in current iterator!
-  QCoE<-0.2*(normalized.CV)+0.4*(normalized.GS+normalized.RCS)
+  QCoE<-0.2*(normalized.CV)+0.4*(normalized.GS+normalized.RCS);
+  mSet_OPT$QS<-as.numeric(mSet_OPT$PPS[5])*QCoE*normalized.GaussianSI^2;
   
-  mSet_OPT$QS<-as.numeric(mSet_OPT$PPS[5])*QCoE*normalized.GaussianSI^2
-  
-  if (.on.public.web){
-    
-    print_mes <- paste0("Model Parsing Done !");    
-    write.table(print_mes,file="metaboanalyst_spec_proc.txt",append = T,row.names = F,col.names = F, quote = F, eol = "\n");
-    
-  } else {
-    message("Model Parsing Done !")
-  } 
-  
+  MessageOutput(paste0("Model Parsing Done !"), "\n", NULL)
+
   return(mSet_OPT)
 }
 
@@ -783,35 +796,28 @@ SlaveCluster_doe <-function(task, Set_parameters, object, object_mslevel,
   if (!class(mSet)=="character"){
     print("Peak Feature Analyzing...")
     
-    xset <- mSet[["xcmsSet"]]
+    #xset <- mSet[["xcmsSet"]]
     
-    result <- calcPPS2(xset, isotopeIdentification)
+    result <- calcPPS2(mSet, isotopeIdentification)
     result[1] <- task   
     
-    tmp_cv<- try(suppressMessages(calcCV(xset)),silent = T);
+    tmp_cv<- try(suppressMessages(calcCV(mSet)),silent = T);
     if (class(tmp_cv)=="try-error"){
       result[6]<-0;
     } else {
-      result[6]<-tmp_cv
-    };
+      result[6] <- tmp_cv;
+    }
     
-    tmp_RCS<-try(suppressMessages(calcRCS_GSValues(xset)$RCS),silent = T);
-    if (class(tmp_RCS)=="try-error"){
-      result[7]<-0;
+    tmp_RCS_GS <- try(suppressMessages(calcRCS_GSValues(mSet)),silent = T);
+    
+    if (class(tmp_RCS_GS)=="try-error"){
+      result[8] <- result[7] <- 0;
     } else {
-      result[7]<-tmp_RCS
+      result[7] <- tmp_RCS_GS$RCS;
+      result[8] <- tmp_RCS_GS$GS;
     };
-    
-    tmp_GS<-try(suppressMessages(calcRCS_GSValues(xset)$GS),
-                silent = T);
-    
-    if (class(tmp_GS)=="try-error"){
-      result[8]<-0;
-    } else {
-      result[8]<-tmp_GS
-    };
-    
-    tmp_GaussianSI<-try(calcGaussianS(mSet,object,
+
+    tmp_GaussianSI <- try(calcGaussianS(mSet,object,
                                       useNoise = as.numeric(Set_parameters[[task]]$noise)),
                         silent = T);
     
@@ -822,8 +828,6 @@ SlaveCluster_doe <-function(task, Set_parameters, object, object_mslevel,
     };
     
     names(result)[c(6,7,8,9)]<-c("CV","RCS","GS","GaussianSI")
-    
-    rm(xset)
     
     #result
     print("Peak Feature Analyzing Done !")
@@ -905,13 +909,22 @@ calculatePPKs<-function(object, object_mslevel,param,
 
 calculateGPRT<-function (mSet,param){
   
-  mSet <- try(PerformPeakAlignment(mSet),silent = T);
+  mSetTmp <- new("mSet");
+  mSetTmp@params <- param;
+  if(class(mSet) != "try-error"){
+    mSetTmp@peakpicking <- mSet$msFeatureData;
+    mSetTmp@rawInMemory <- mSet$inMemoryData;
+  }
+
+  mSetTmp <- try(PerformPeakAlignment(mSetTmp),silent = T);
   
   gc();
-  mSet <- try(PerformPeakFiling (mSet),silent = T);
+  mSetTmp <- try(PerformPeakFiling (mSetTmp),silent = T);
   gc();
-  if (class(mSet)=="try-error"){
+  if (class(mSetTmp)=="try-error") {
     mSet<-"Xset_NA";
+  } else {
+    mSet <- mSetTmp;
   }
   return(mSet)
 }
@@ -960,38 +973,38 @@ calculateGPRT_old<-function(xdata,Set_parameters,task){
 }
 
 #' @title Calculate PPS method
-#' @param xset xcmsSet Object, this object is produced by 'calculateSet_doe' function, and transformed 
+#' @param mSet xcmsSet Object, this object is produced by 'calculateSet_doe' function, and transformed 
 #' with as(objec,'xcmsSet') function.
 #' @param isotopeIdentification Character, IsotopeIdentidication method, usually includes 'IPO' and 'CAMERA'.
 #' @author Zhiqiang Pang \email{zhiqiang.pang@mail.mcgill.ca} Jeff Xia \email{jeff.xia@mcgill.ca}
 #' Mcgill University
 #' License: GNU GPL (>= 2)
 
-calcPPS2 <- function(xset, isotopeIdentification=c("IPO", "CAMERA"), ...) {
+calcPPS2 <- function(mSet, isotopeIdentification=c("IPO", "CAMERA"), ...) {
   
-  isotopeIdentification <- match.arg(isotopeIdentification)
+  isotopeIdentification <- match.arg(isotopeIdentification);
   
-  ret <- vector(mode="numeric", 5) #array(0, dim=c(1,5)) 
-  names(ret) <- c("ExpId", "#peaks", "#NonRP", "#RP", "PPS")
-  if(is.null(xset)) {
+  ret <- vector(mode="numeric", 5); #array(0, dim=c(1,5)) 
+  names(ret) <- c("ExpId", "#peaks", "#NonRP", "#RP", "PPS");
+  if(is.null(mSet)) {
     return(ret)
   } 
   
-  if(nrow(peaks_IPO(xset)) == 0) {
+  if(nrow(peaks_IPO(mSet)) == 0) {
     return(ret)
   }
   
-  peak_source <- peaks_IPO(xset)[,c("mz", "rt", "sample", "into", "mzmin", 
+  peak_source <- peaks_IPO(mSet)[,c("mz", "rt", "sample", "into", "mzmin", 
                                     "mzmax", "rtmin", "rtmax"),drop=FALSE]
   ret[2] <- nrow(peak_source)
   
   if(isotopeIdentification == "IPO")
-    iso_mat <- findIsotopes.IPO(xset, ...)  
+    iso_mat <- findIsotopes.IPO(mSet, ...)  
   else
-    iso_mat <- findIsotopes.CAMERA(xset, ...)
+    iso_mat <- findIsotopes.CAMERA(mSet, ...)
   
-  samples <- unique(peak_source[,"sample"])
-  isotope_abundance = 0.01108    
+  samples <- unique(peak_source[,"sample"]);
+  isotope_abundance = 0.01108;
   
   #calculating low intensity peaks
   for(sample in samples) {
@@ -1039,11 +1052,11 @@ calcPPS2 <- function(xset, isotopeIdentification=c("IPO", "CAMERA"), ...) {
 #' Mcgill University
 #' License: GNU GPL (>= 2)
 
-calcCV<-function(xset){
+calcCV<-function(mSet){
   
-  ncount<-length(xset@phenoData[["sample_name"]])
+  ncount<-length(mSet@rawInMemory@phenoData[["sample_name"]])
   
-  table.data<-creatPeakTable(xset);
+  table.data<-creatPeakTable(mSet);
   
   table.data$abundance.mean <- apply(table.data[, 9:(8 + ncount)],1, FUN = mean, na.rm = T);
   table.data$abundance.sd <- apply(table.data[, 9:(8 + ncount)],1, FUN = sd, na.rm = T);
@@ -1057,7 +1070,6 @@ calcCV<-function(xset){
   cv.score<-1/(0.75*cv.med+0.25*(cv.max-cv.med))
   
   return(cv.score)
-  
 }
 
 #' @title Calculatre RCS and GS method
@@ -1066,8 +1078,8 @@ calcCV<-function(xset){
 #' Mcgill University
 #' License: GNU GPL (>= 2)
 
-calcRCS_GSValues<-function(xset){
-  score.ret<-getRGTVValues(xset)
+calcRCS_GSValues<-function(mSet){
+  score.ret<-getRGTVValues(mSet)
   return(list(GS=score.ret[["GS"]],RCS=score.ret[["RCS"]]))
 }
 
@@ -1086,13 +1098,14 @@ calcGaussianS<-function(mSet, object, useNoise, BPPARAM = bpparam()){
   if (identical(useNoise, numeric(0))) {
     useNoise <- 0
   }
-  peakmat <- mSet$msFeatureData$chromPeaks
+  peakmat <- mSet@peakfilling$msFeatureData$chromPeaks;
   peakmat_set <- split.data.frame(peakmat, peakmat[, "sample"])
   
+  object <- mSet@rawInMemory;
   
   ## Adjusted RT application
   scan_names <- sort(names(object@assayData));
-  adjRTs <- unname(unlist(mSet[["msFeatureData"]][["adjustedRT"]]))
+  adjRTs <- unname(unlist(mSet@peakfilling[["msFeatureData"]][["adjustedRT"]]))
   
   for(s in 1:length(object)){
     scanNM <- scan_names[s];
@@ -1101,18 +1114,21 @@ calcGaussianS<-function(mSet, object, useNoise, BPPARAM = bpparam()){
   
   ## select different platforms
   if (.Platform$OS.type == "unix") {
+    
     BPPARAM = MulticoreParam()
+    
     extFUN <- function(z, object, useNoise) {
+      
       if (nrow(z) > 150) {
         z <- z[sort(sample(1:nrow(z), 150)), ]
       }
       currentSample <- suppressMessages(MSnbase::filterRt(MSnbase::filterFile(object, 
                                                                               z[1, "sample"]), rt = range(z[, c("rtmin", "rtmax")])))
       corr <- unlist(sapply(seq_len(nrow(z)), FUN = function(i) {
-        corr <- 0.1
-        mzRange <- z[i, c("mzmin", "mzmax")] + c(-0.001, 
-                                                 0.001)
-        rtRange <- z[i, c("rtmin", "rtmax")]
+        
+        corr <- 0.1;
+        mzRange <- z[i, c("mzmin", "mzmax")] + c(-0.001, 0.001);
+        rtRange <- z[i, c("rtmin", "rtmax")];
         suppressWarnings(ints <- MSnbase::intensity(MSnbase::filterMz(MSnbase::filterRt(currentSample, 
                                                                                         rtRange), mzRange)))
         ints[lengths(ints) == 0] <- 0
@@ -1156,8 +1172,10 @@ calcGaussianS<-function(mSet, object, useNoise, BPPARAM = bpparam()){
       gaussian.peak.ratio <- nrow(z[corr >= 0.9, , drop = FALSE])/nrow(z)
       return(gaussian.peak.ratio)
     }
+    
     res <- bplapply(peakmat_set, extFUN, object = object, 
                     useNoise = useNoise, BPPARAM = BPPARAM)
+    
   }
   if (.Platform$OS.type == "windows") {
     extFUN <- function(z, object, useNoise) {
@@ -1221,7 +1239,6 @@ calcGaussianS<-function(mSet, object, useNoise, BPPARAM = bpparam()){
   return(mean(sapply(res, FUN = function(x) {
     x
   })))
-  
   
 }
 
@@ -1530,9 +1547,9 @@ getClusterType <- function() {
   }
   return("PSOCK")
 }
-peaks_IPO <- function(xset) {
+peaks_IPO <- function(mSet) {
   
-  peaks_act <-xset@peaks
+  peaks_act <-mSet@peakfilling$msFeatureData$chromPeaks;
   if (!("sample" %in% colnames(peaks_act))) {
     colnames(peaks_act)[colnames(peaks_act) == ""] <- "sample"
   }
@@ -1769,26 +1786,32 @@ combineParams <- function(params_1, params_2) {
   return(params_1)
   
 }
-getRGTVValues <- function(xset, exp_index=1, retcor_penalty=1) {
+getRGTVValues <- function(mSet, exp_index=1, retcor_penalty=1) {
   
-  relative_rt_diff <- c()
+  relative_rt_diff <- c();
+  peaks <- mSet@peakfilling$msFeatureData$chromPeaks;
+  #fgs <- mSet$FeatureGroupTable
+  fgs <- mSet@peakfilling$FeatureGroupTable
+  groups <- S4Vectors::as.matrix(fgs[, -ncol(fgs)])
+  rownames(groups) <- NULL
+  groupidx <- fgs$peakidx
   
-  if(nrow(xset@groups) > 0) {
-    for(i in 1:nrow(xset@groups)) {
-      feature_rtmed <- xset@groups[i, "rtmed"]
+  if(nrow(groups) > 0) {
+    for(i in 1:nrow(groups)) {
+      feature_rtmed <- groups[i, "rtmed"]
       relative_rt_diff <- 
         c(relative_rt_diff, 
           mean(abs(feature_rtmed - 
-                     peaks_IPO(xset)[xset@groupidx[[i]], "rt"]) / feature_rtmed))
+                     peaks_IPO(mSet)[groupidx[[i]], "rt"]) / feature_rtmed))
     }
     good_groups <- 
-      sum(unlist(lapply(X=xset@groupidx, FUN = function(x, xset) {
-        ifelse(length(unique(peaks_IPO(xset)[x,"sample"])) == 
-                 length(xset@filepaths) & 
-                 length(peaks_IPO(xset)[x,"sample"]) == 
-                 length(xset@filepaths), 1, 0)
-      }, xset)))
-    bad_groups <- nrow(xset@groups) - good_groups
+      sum(unlist(lapply(X=groupidx, FUN = function(x, mSet) {
+        ifelse(length(unique(peaks_IPO(mSet)[x,"sample"])) == 
+                 length(fileNames(mSet@rawInMemory)) & 
+                 length(peaks_IPO(mSet)[x,"sample"]) == 
+                 length(fileNames(mSet@rawInMemory)), 1, 0)
+      }, mSet)))
+    bad_groups <- nrow(groups) - good_groups
   } else {
     relative_rt_diff <- 1
     good_groups <- 0
@@ -1810,17 +1833,17 @@ getRGTVValues <- function(xset, exp_index=1, retcor_penalty=1) {
   
   return(ret)  
 }
-findIsotopes.IPO <- function(xset, checkPeakShape=c("none", "borderIntensity", "sinusCurve", "normalDistr")) {
+findIsotopes.IPO <- function(mSet, checkPeakShape=c("none", "borderIntensity", "sinusCurve", "normalDistr")) {
   
   checkPeakShape <- match.arg(checkPeakShape)
   
   iso_mat <- matrix(0, nrow=0, ncol=2)
-  if(is.null(xset)) {
+  if(is.null(mSet)) {
     return(iso_mat)
   }
   
   colnames(iso_mat) <- c("12C", "13C")
-  peak_source <- peaks_IPO(xset)[,c("mz", "rt", "sample", "into", "maxo", "mzmin",
+  peak_source <- peaks_IPO(mSet)[,c("mz", "rt", "sample", "into", "maxo", "mzmin",
                                     "mzmax", "rtmin", "rtmax"), drop=FALSE]
   
   for(i in 1:ncol(peak_source)) {
@@ -2055,20 +2078,20 @@ testSinusDistribution <- function(rawdata, peak) {
   correlation > 0.7
   
 }
-findIsotopes.CAMERA <-  function(xset, ...) {
+findIsotopes.CAMERA <-  function(mSet, ...) {
   
   iso_mat <- matrix(0, nrow=0, ncol=2)
-  if(is.null(xset)) {
+  if(is.null(mSet)) {
     return(iso_mat)
   }
   
-  ids <- peaks_IPO(xset)[,"sample", drop=FALSE]
+  ids <- peaks_IPO(mSet)[,"sample", drop=FALSE]
   ids <- cbind(1:length(ids), ids)
   
-  xsets <- split(xset, unique(peaks_IPO(xset)[,"sample"]))
-  samples <- unique(peaks_IPO(xset)[,"sample"])
+  xsets <- split(mSet, unique(peaks_IPO(mSet)[,"sample"]))
+  samples <- unique(peaks_IPO(mSet)[,"sample"])
   for(sample in samples) {
-    an <- xsAnnotate(xset, sample=sample)
+    an <- xsAnnotate(mSet, sample=sample)
     isos <- findIsotopes(an, ...)@isoID[,c("mpeak", "isopeak"), drop=FALSE]
     #start_id <- ids[ids[,2]==sample,,drop=FALSE][1,1] - 1
     iso_mat <- rbind(iso_mat, matrix(ids[ids[,2]==sample,1][isos], ncol=2))

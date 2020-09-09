@@ -1,6 +1,8 @@
 
 # Setting .on.public.web
-.on.public.web <<- FALSE;
+.on.public.web <- FALSE;
+.optimize_switch <- FALSE;
+.running.as.plan <- FALSE;
 
 # OTHER SETTINGS
 

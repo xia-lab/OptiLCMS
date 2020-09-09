@@ -371,9 +371,12 @@ PerformROIExtraction <-
       
     }
     
-    MessageOutput(paste0("Identification on ROIs Finished! \n",
-                         "Optimization will be started soon...")
-                  ,ecol = "\n",NULL);
+    MessageOutput(paste0("Identification on ROIs Finished!"),
+                  ecol = "\n",
+                  NULL);
+    if(.running.as.plan){
+      MessageOutput("Optimization will be started soon...", "\n", NULL);
+    }
 
     save(trimed_MSnExp, file = "raw_data.rda");
     mSet <- new("mSet");
@@ -949,7 +952,7 @@ ContaminatsRemoval <- function(raw_data, ms_list){
   mzs_toRemove <- topScan_stats[topScan_stats[,3] > 0.5, 4]
   
   raw_data_clean <- mz.trim_specific(raw_data, ms_list, -mzs_toRemove, mzdiff=10)
-  MessageOutput(paste0(length(mzs_toRemove), " potential contaminamts will not be used for parameters optimization !"), 
+  MessageOutput(paste0(length(mzs_toRemove), " potential contaminamts will not be used for parameters optimization !\nGoing to the next step..."), 
                 "\n",
                 NULL)
   

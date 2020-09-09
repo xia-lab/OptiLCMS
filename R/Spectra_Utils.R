@@ -1978,7 +1978,7 @@ PerformPeakFiling <- function(mSet,BPPARAM=bpparam()){
   }
   
   if (!.optimize_switch){
-    MessageOutput(paste("Defining peak areas for filling-in..."), ecol = "", NULL)
+    MessageOutput(paste("Defining peak areas for filling-in."), ecol = "", NULL)
   } 
   
   aggFunLow <- median
@@ -2064,7 +2064,7 @@ PerformPeakFiling <- function(mSet,BPPARAM=bpparam()){
   }
   
   if (!.optimize_switch){
-    MessageOutput(".","",76)
+    MessageOutput(".","\n",76)
   }
   
   ## Split the object by file and define the peaks for which
@@ -2145,21 +2145,21 @@ PerformPeakFiling <- function(mSet,BPPARAM=bpparam()){
     assayData <- split(assayData,fromFile(specdata));
     
     #rtim_all <- split(rtime(specdata),fromFile(specdata)) has to used the corrected RT
-    rtim_all <- mSet@peakRTcorrection$adjustedRT
-    filesname <- basename(MSnbase::fileNames(specdata))
-    res_new <-list()
+    rtim_all <- mSet@peakRTcorrection$adjustedRT;
+    filesname <- basename(MSnbase::fileNames(specdata));
+    res_new <-list();
     
-    for (ii in 1:length(specdata@phenoData@data[["sampleNames"]])) {
+    for (ii in 1:length(specdata@phenoData@data[["sample_name"]])) {
       
-      cn <-colnames(mSet@peakRTcorrection$chromPeaks)
+      cn <-colnames(mSet@peakRTcorrection$chromPeaks);
       peakArea <- pkArea[is.na(pkGrpVal[, ii]), , drop = FALSE];
       
-      ncols <- length(cn)
-      res <- matrix(ncol = ncols, nrow = nrow(peakArea))
-      colnames(res) <- cn
+      ncols <- length(cn);
+      res <- matrix(ncol = ncols, nrow = nrow(peakArea));
+      colnames(res) <- cn;
       
-      res[, "sample"] <- ii
-      res[, c("mzmin", "mzmax")] <- peakArea[, c("mzmin", "mzmax")]
+      res[, "sample"] <- ii;
+      res[, c("mzmin", "mzmax")] <- peakArea[, c("mzmin", "mzmax")];
       ## Load the data
 
       if (!.optimize_switch){
@@ -2456,17 +2456,12 @@ updateRawSpectraParam <- function (Params){
   param$subsetAdjust <- "average";
   
   # Finished !
+  
   if (.on.public.web & !.optimize_switch){
-    print_mes <- paste("Parameters for",param$Peak_method, "have been successfully parsed!")
-    write.table(print_mes,file="metaboanalyst_spec_proc.txt",append = T,row.names = F,col.names = F, quote = F, eol = "\n");
-    
-  } else {
-    print(paste("Parameters for",param$Peak_method, "have been successfully parsed!"))
-    
+    MessageOutput(paste("Parameters for",param$Peak_method, "have been successfully parsed!"), "\n", NULL);
   }
   
   return(param)
-  
 }
 
 #'creatPeakTable
@@ -2475,15 +2470,17 @@ updateRawSpectraParam <- function (Params){
 #'McGill University, Canada
 #'License: GNU GPL (>= 2)
 #'
-creatPeakTable <- function(xset){
+creatPeakTable <- function(mSet){
   
-  if (length(xset@phenoData[["sample_name"]]) == 1) {
-    return(xset@peaks)
+  if (length(mSet@rawInMemory@phenoData[["sample_name"]]) == 1) {
+    return(mSet@peakfilling$msFeatureData$chromPeaks)
   }
   
-  groupmat <- xset@groups
+  fgs <- mSet@peakfilling$FeatureGroupTable;
+  groupmat <- S4Vectors::as.matrix(fgs[, -ncol(fgs)]);
+  rownames(groupmat) <- NULL;
   
-  ts <- data.frame(cbind(groupmat,.groupval(xset, value="into")), row.names = NULL)
+  ts <- data.frame(cbind(groupmat,.groupval(mSet, value="into")), row.names = NULL)
   
   cnames <- colnames(ts)
   
@@ -3425,24 +3422,30 @@ SSgauss <- selfStart(~ h*exp(-(x-mu)^2/(2*sigma^2)), function(mCall, data, LHS) 
   rownames(vals) <- rownames(fts)
   vals
 }
-.groupval <-function(xset, method = c("medret", "maxint"),value = "into", intensity = "into"){
+.groupval <-function(mSet, method = c("medret", "maxint"), value = "into", intensity = "into"){
   
-  if ( nrow(xset@groups)<1 || length(xset@groupidx) <1) {
+  fgs <- mSet@peakfilling$FeatureGroupTable;
+  groups <- S4Vectors::as.matrix(fgs[, -ncol(fgs)]);
+  rownames(groups) <- NULL;
+  groupidx <- fgs$peakidx;
+  peaks <- mSet@peakfilling$msFeatureData$chromPeaks;
+  
+  if (nrow(groups)<1 || length(groupidx) <1) {
     stop("xcmsSet is not been grouped.")
   }
   
   method <- match.arg(method)
   
-  peakmat <- xset@peaks
-  groupmat <- xset@groups
-  groupindex <- xset@groupidx
+  peakmat <- peaks
+  groupmat <- groups
+  groupindex <- groupidx
   
-  sampnum <- seq(length = length(rownames(xset@phenoData)))
-  retcol <- match("rt", colnames(peakmat))
-  intcol <- match(intensity, colnames(peakmat))
-  sampcol <- match("sample", colnames(peakmat))
+  sampnum <- seq(length = length(rownames(mSet@rawInMemory@phenoData)));
+  retcol <- match("rt", colnames(peakmat));
+  intcol <- match(intensity, colnames(peakmat));
+  sampcol <- match("sample", colnames(peakmat));
   
-  values <- matrix(nrow = length(groupindex), ncol = length(sampnum))
+  values <- matrix(nrow = length(groupindex), ncol = length(sampnum));
   
   if (method == "medret") {
     for (i in seq(along = groupindex)) {
@@ -3460,7 +3463,7 @@ SSgauss <- selfStart(~ h*exp(-(x-mu)^2/(2*sigma^2)), function(mCall, data, LHS) 
     values <- peakmat[values,value]
     dim(values) <- c(length(groupindex), length(sampnum))
   }
-  colnames(values) <- rownames(xset@phenoData)
+  colnames(values) <- rownames(mSet@rawInMemory@phenoData)
   rownames(values) <- paste(round(groupmat[,"mzmed"],1), round(groupmat[,"rtmed"]), sep = "/")
   
   values
@@ -3629,7 +3632,9 @@ PeakPicking_core <-function(object,object_mslevel,param, BPPARAM = bpparam(), ms
     
   }
   
-  print("Peak Profiling Finished !")
+  if(!.optimize_switch){
+    MessageOutput("Peak Profiling Finished !", "\n", NULL)
+  }
   
   rm(object_mslevel)
   ## (3) PEAK SUMMARY------------
