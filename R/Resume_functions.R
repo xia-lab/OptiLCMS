@@ -26,13 +26,14 @@ InitializaPlan <- function(type="spec", path){
                  recursive = T)
     }
     
-    .running.as.plan <<- T
-    plan <- list()
-    .plan_count <<- 0
+    .running.as.plan <<- T;
+    plan <- new("ResumingePlan");
+    .plan_count <<- plan@PlanNumber <- 0;
+    plan@WorkingDir <- fullUserPath;
     
-    saveRDS(plan, file = paste0(plan.path, "/plan.rds"))
-    saveRDS(.running.as.plan, file = paste0(plan.path, "/running.as.plan.rds"))
-    saveRDS(.plan_count, file = paste0(plan.path, "/plan_count.rds"))
+    saveRDS(plan, file = paste0(plan.path, "/plan.rds"));
+    saveRDS(.running.as.plan, file = paste0(plan.path, "/running.as.plan.rds"));
+    saveRDS(.plan_count, file = paste0(plan.path, "/plan_count.rds"));
     #----------------------
     .optimize_switch <<- T
     switch.path <- paste0(getwd(), "/temp/plan")
@@ -71,19 +72,19 @@ InitializaPlan <- function(type="spec", path){
     }
     
     #---------------
-    .running.as.plan <<- T
-    plan <- list()
-    .plan_count <<- 0
+    .running.as.plan <<- T;
+    plan <- new("ResumingePlan");
+    .plan_count <<- plan@PlanNumber <- 0;
+    plan@WorkingDir <- fullUserPath;
     
-    saveRDS(plan, file = paste0(plan.path, "/plan.rds"))
-    saveRDS(.running.as.plan, file = paste0(plan.path, "/running.as.plan.rds"))
-    saveRDS(.plan_count, file = paste0(plan.path, "/plan_count.rds"))
-    
+    saveRDS(plan, file = paste0(plan.path, "/plan.rds"));
+    saveRDS(.running.as.plan, file = paste0(plan.path, "/running.as.plan.rds"));
+    saveRDS(.plan_count, file = paste0(plan.path, "/plan_count.rds"));
     #----------------------
-    .optimize_switch <<- F
-    switch.path <- paste0(getwd(), "/temp/plan")
+    .optimize_switch <<- F;
+    switch.path <- paste0(getwd(), "/temp/plan");
     saveRDS(.optimize_switch,
-            file = paste0(switch.path, "/optimize_switch_", .plan_count, ".rds"))
+            file = paste0(switch.path, "/optimize_switch_", .plan_count, ".rds"));
     
     #----------------------
     envir.path <- paste0(getwd(), "/temp/envir")
@@ -92,7 +93,7 @@ InitializaPlan <- function(type="spec", path){
                  recursive = T)
     }
     
-    envir <<- new.env()
+    envir <<- new.env();
     saveRDS(envir, file = paste0(envir.path, "/envir.rds"))
     #----------------------
     rawFileNames <- paste0(getwd(), "/temp/plan")
@@ -134,19 +135,21 @@ InitializaPlan <- function(type="spec", path){
 running.plan <- function(plan=NULL,...){
   
   #plan <- .get.current.plan(plan);
-  commands <- match.call(expand.dots = FALSE)$...
+  commands <<- match.call(expand.dots = FALSE)$...
   
   ## Declare controller
-  plan$running.controller <- controller.resetter();
+  plan@running.controller <- controller.resetter();
   ##
   
   if (!length(commands)) {
     stop("No command provided to run !");
   }
   
-  .plan_count <<- .plan_count + 1;
+  plan@PlanNumber <- .plan_count <<- .plan_count + 1;
   
-  plan[[paste0("command_set_",.plan_count)]] <- commands;
+  CommandsVerified <- CommandsVerify(commands);
+  
+  plan@CommandSet[[paste0("command_set_",.plan_count)]] <- CommandsVerified;
   
   plan.path <- paste0(getwd(), "/temp/plan");
   saveRDS(plan, file = paste0(plan.path, "/plan.rds"));
@@ -875,20 +878,30 @@ marker_record <- function(functionNM){
 }
 
 controller.resetter <- function() {
+  running.controller <- new("controller");
   
-  points <- list(rep(T,4));
-  names(points[[1]]) <- c("c1","c2","c3","c4");
-  running.controller <- rep(points,3);
+  points <- rep(T, 4);
+  names(points) <- c("c1", "c2", "c3", "c4");
   
-  operators <- c(F,F,F,F,F,F,F,F);
-  names(operators) <- c("operators_1","operators_2","operators_3","operators_4",
-                        "operators_5","operators_6","operators_7","operators_8");
-  running.controller[[4]] <- operators;
+  running.controller@data_trim <-
+    running.controller@peak_profiling <-
+    running.controller@others_1 <- points;
   
-  names(running.controller) <- c("data_trim","peak_profiling","others_1","operators");
+  running.controller@operators <- c(F, F, F, F, F, F, F, F);
   
-  return(running.controller);
+  names(running.controller@operators) <-
+    c(
+      "operators_1",
+      "operators_2",
+      "operators_3",
+      "operators_4",
+      "operators_5",
+      "operators_6",
+      "operators_7",
+      "operators_8"
+    );
   
+  return(running.controller)
 }
 
 perform.plan <- function(plan.set){
@@ -979,6 +992,117 @@ profiling_param_identifier <- function(new_command,last_command){
   };
   return(diff.names)
   
+}
+
+CommandsVerify <- function(commands){
+  
+  OptiPipeline <- FALSE;
+  OCP1 <- OCP2 <- OCP3 <- OCP4 <- OCP5 <- OCP6 <- OCP7 <- OCP8 <- FALSE;
+
+  # Identify if the commandset is automated optimization
+  OptiPipeline <- any(unlist(lapply(
+    commands,
+    FUN = function(x) {
+      if (class(x[[3]]) == "call") {
+        if (x[[3]][[1]] == "PerformParamsOptimization") {
+          return(TRUE)
+        }
+      }
+    }
+  )))
+  
+  # Organize the commands as a standard commandset for next step
+  # including folowing parts:
+  
+  # 1. PerformROIExtraction / PerformDataTrimming;
+  # 2. PerformParamsOptimization;
+  # 3. ImportRawMSData;
+  # 4. PerformPeakProfiling;
+  # 5. PerformPeakAnnotation;
+  # 6. FormatPeakList;
+  
+  if(OptiPipeline){
+    
+    VARCommandArray <- NULL;
+    FUNCommandArray <- NULL;
+    StandCommand <- new("OptiCommandSet");
+    
+    for (i in seq_along(commands)){
+
+      if(class(commands[[i]][[3]]) == "call"){
+        
+        if(commands[[i]][[3]][[1]] == "PerformDataTrimming" | commands[[i]][[3]][[1]] == "PerformROIExtraction"){
+          FUNCommandArray <- c(FUNCommandArray, i);
+          StandCommand@ROIExtraction <- CommandOrganize(commands[[i]], commands, i);
+        }
+        
+        if(commands[[i]][[3]][[1]] == "PerformParamsOptimization"){
+          FUNCommandArray <- c(FUNCommandArray, i);
+          StandCommand@ParamsOptimization <- CommandOrganize(commands[[i]], commands, i);
+        }
+        
+        if(commands[[i]][[3]][[1]] == "ImportRawMSData"){
+          FUNCommandArray <- c(FUNCommandArray, i);
+          StandCommand@ImportRawMSData <- CommandOrganize(commands[[i]], commands, i);
+        }
+        
+        if(commands[[i]][[3]][[1]] == "PerformPeakProfiling"){
+          FUNCommandArray <- c(FUNCommandArray, i);
+          StandCommand@PeakProfiling <- CommandOrganize(commands[[i]], commands, i);
+        }
+        
+        if(commands[[i]][[3]][[1]] == "PerformPeakAnnotation"){
+          FUNCommandArray <- c(FUNCommandArray, i);
+          StandCommand@PeakAnnotation <- CommandOrganize(commands[[i]], commands, i);
+        }
+        
+        if(commands[[i]][[3]][[1]] == "FormatPeakList"){
+          FUNCommandArray <- c(FUNCommandArray, i);
+          StandCommand@FormatPeakList <- CommandOrganize(commands[[i]], commands, i);
+        }
+        
+      }
+      
+      
+    }
+    
+    
+  }
+  
+  
+}
+
+CommandOrganize <- function(command, commands, FUNPos){
+  
+  varNMs <- as.character(command[[3]]);
+  if(varNMs[1] == "PerformROIExtraction"){
+    Vars <- varNMs[-1];
+  } else {
+    Vars <- varNMs[c(-1,-2)];
+  }
+  
+  for (i in Vars){
+    
+    VARDefinedPos <- NULL;
+    VarPos <- which(varNMs == i);
+    
+    for (j in seq_len(FUNPos)){
+      if (commands[[j]][[2]] == i){
+        VARDefinedPos <- c(VARDefinedPos, j);
+      }
+    }
+    
+    if (is.null(VARDefinedPos)) {
+      next()
+    } else if(length(VARDefinedPos) == 1) {
+      command[[3]][[VarPos]]<- commands[[VARDefinedPos]][[3]];
+    } else if(length(VARDefinedPos) > 1) {
+      VARDefinedPos <- VARDefinedPos[which.min(abs(VARDefinedPos - FUNPos))];
+      command[[3]][[VarPos]]<- commands[[VARDefinedPos]][[3]];
+    }
+  }
+  
+  return(command)
 }
 
 CreateRawRscript <- function(guestName, planString, planString2, rawfilenms.vec){
