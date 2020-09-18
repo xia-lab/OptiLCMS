@@ -6,44 +6,39 @@ testOptiLCMS <- function(){
   print("Running Successfully !")
 }
 
-# MessageOutput(
-#   mes = paste0("Run isotope peak annotation.."),
-#   ecol = "\n",
-#   progress = NULL
-# )
-# 
-# .running.as.plan <- .optimize_switch <<- .on.public.web <<- F;
-# plan_count <<- 1;
-# Params <- SetPeakParam();
-# library(BiocParallel);library(MetaboAnalystR);library(progress);library(MSnbase)
+# Reguler part ----
+# library(OptiLCMS);
 # mSet<-InitDataObjects("spec", "raw", FALSE)
-# rawfilenmsIncluded <- c('0-5_16_1_vq_002.mzXML','0-5_16_1_vq_006.mzXML','0-5_16_1_vq_004.mzXML','0-13_100q3_002.mzXML','0-1_100v8_006.mzXML','0-1_100v8_004.mzXML','0-13_100q3_006.mzXML','0-13_100q3_004.mzXML','0-1_100v8_002.mzXML','0-11_1_256_vq_006.mzXML','0-11_1_256_vq_002.mzXML','0-11_1_256_vq_004.mzXML','0-6_4_1_vq_004.mzXML','0-6_4_1_vq_002.mzXML','0-6_4_1_vq_006.mzXML','0-10_1_64_vq_002.mzXML','0-10_1_64_vq_006.mzXML','0-10_1_64_vq_004.mzXML','0-7_1_1_vq_004.mzXML','0-7_1_1_vq_002.mzXML','0-7_1_1_vq_006.mzXML','0-2_1024_1_vq_004.mzXML','0-2_1024_1_vq_006.mzXML','0-2_1024_1_vq_002.mzXML','0-9_1_16_vq_006.mzXML','0-9_1_16_vq_004.mzXML','0-9_1_16_vq_002.mzXML','0-4_64_1_vq_002.mzXML','0-4_64_1_vq_004.mzXML','0-4_64_1_vq_006.mzXML','0-3_256_1_vq_004.mzXML','0-3_256_1_vq_002.mzXML','0-3_256_1_vq_006.mzXML','0-12_1_1024_vq_006.mzXML','0-12_1_1024_vq_002.mzXML','0-12_1_1024_vq_004.mzXML','0-8_1_4_vq_004.mzXML','0-8_1_4_vq_002.mzXML','0-8_1_4_vq_006.mzXML')
-# mSet <- updateSpectraFiles(mSet, "/home/glassfish/projects/MetaboDemoRawData");
-# 
-# mSet <- ImportRawMSData(mSet, "/home/glassfish/projects/MetaboDemoRawData/upload/",ncores = 10, plotSettings = SetPlotParam(Plot = F))
-# mSet@params <- updateRawSpectraParam (Params)
-# PeakPicking_centWave_slave <- MetaboAnalystR:::PeakPicking_centWave_slave
-# 
-# mSet <- PerformPeakPicking(mSet = mSet)
-# findEqualGreaterM <- MetaboAnalystR:::findEqualGreaterM;
-# Densitygrouping_slave <- MetaboAnalystR:::Densitygrouping_slave;
-# rectUnique <- MetaboAnalystR:::rectUnique;
-# na.flatfill <- MetaboAnalystR:::na.flatfill
-# 
-# mSet <- PerformPeakGrouping(mSet = mSet);
-# mSet<-PerformRTcorrection(mSet);
-# mSet <- PerformPeakGrouping(mSet = mSet);
-# mSet <- PerformPeakFiling(mSet = mSet);
-# 
-# mSet <- PerformPeakProfiling(mSet,ncore = 10,plotSettings = SetPlotParam(Plot = F))
-# 
-# save(mSet, file = "mSet.rda")
-# 
-# annParams <- SetAnnotationParam(polarity = 'negative', mz_abs_add = 0.015)
-# annotPeaks2 <- PerformPeakAnnotation(mSet, annParams,running.controller=NULL)
-# 
-# load("mSet.rda");library(OptiLCMS)
 # mSet <- PerformROIExtraction("/home/glassfish/projects/MetaboDemoRawData/upload/QC/",rt.idx = 0.9);
 # param_initial <- SetPeakParam(platform = "UPLC-Q/E");
-# param_optimized <- PerformParamsOptimization(mSet, param = SetPeakParam(), ncore = 8)
+# param_optimized <- PerformParamsOptimization(mSet, ncore = 8)
 
+# mSet <- ImportRawMSData(mSet, "/home/glassfish/projects/MetaboDemoRawData/upload/",ncores = 10, plotSettings = SetPlotParam(Plot = F))
+# mSet@params <- updateRawSpectraParam (param_optimized$best_parameters);
+# mSet <- PerformPeakProfiling(mSet,ncore = 10,plotSettings = SetPlotParam(Plot = F))
+# annParams <- SetAnnotationParam(polarity = 'negative', mz_abs_add = 0.015)
+# mSet <- PerformPeakAnnotation(mSet, annParams)
+# maPeaks <- FormatPeakList(mSet, annParams, filtIso =F, filtAdducts = FALSE,missPercent = 1)
+
+# remove.packages("OptiLCMS", lib="~/R/x86_64-pc-linux-gnu-library/4.0")
+
+# Resumming Running ----
+# plan <- InitializaPlan("raw_opt","/home/glassfish/projects/MetaboDemoRawData/")
+# plan <- running.plan(plan,
+#                      data_folder_QC <- 'upload/QC/',
+#                      mSet <- PerformROIExtraction(datapath = data_folder_QC, rt.idx = 0.9, plot = F, running.controller = rc),
+#                      param_initial <- SetPeakParam(),
+#                      param_optimized <- PerformParamsOptimization(mSet = mSet, param = param_initial, ncore = 4, running.controller = rc),
+#                      data_folder_Sample <- 'upload/',
+#                      param <- param_optimized$best_parameters,
+#                      plotSettings1 <- SetPlotParam(Plot=T),
+#                      plotSettings2 <- SetPlotParam(Plot=T),
+#                      mSet <- ImportRawMSData(mSet = mSet, foldername = data_folder_Sample, plotSettings = plotSettings1, running.controller = rc),
+#                      mSet <- PerformPeakProfiling(mSet = mSet, param, plotSettings = plotSettings2, running.controller = rc),
+#                      annParams <- SetAnnotationParam(polarity = 'negative', mz_abs_add = 0.015),
+#                      mSet <- PerformPeakAnnotation(mSet = mSet, annotaParam = annParams, ncore =1, running.controller = rc),
+#                      maPeaks <- FormatPeakList(mSet = mSet, annParams, filtIso =F, filtAdducts = FALSE,missPercent = 1));
+# ExecutePlan(plan)
+
+
+# load("mSet.rda") # load mSet for further analysis, e.g. Statistics/ Mummichog etc.

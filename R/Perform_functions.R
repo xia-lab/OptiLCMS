@@ -190,7 +190,8 @@ PerformPeakProfiling <-
     function.name <- "peak_profiling";
     
     if (is.null(running.controller)) {
-      c1 <- c2 <- c3 <- c4 <- T
+      c1 <- c2 <- c3 <- c4 <- T;
+      .running.as.plan <<- FALSE;
     } else {
       c1 <-
         running.controller[["peak_profiling"]][["c1"]] # used to control peak picking
@@ -201,6 +202,8 @@ PerformPeakProfiling <-
       c4 <-
         running.controller[["peak_profiling"]][["c4"]] # used to control plotting
     }
+    
+    .optimize_switch <<- FALSE;
     
     if(.on.public.web){
       ### Update parameters' style
@@ -214,7 +217,7 @@ PerformPeakProfiling <-
     }
 
     if(!is.null(Params)){
-      mSet@params <- updateRawSpectraParam (Params)
+      mSet@params <- updateRawSpectraParam (Params);
     }
     
     ### Setting the different parallel method for linux or windows
@@ -589,10 +592,12 @@ PerformPeakAnnotation <-
 
     function.name <- "peak_annotation"
     
-    if (is.null(running.controller) | plan_count == 1) {
-      operators_4 <- T
+    if (is.null(running.controller) | .plan_count == 1) {
+      operators_4 <- T;
+      .running.as.plan <<- FALSE;
     } else {
-      operators_4 <- running.controller[["operators"]][["operators_4"]]
+      operators_4 <- running.controller[["operators"]][["operators_4"]];
+      .running.as.plan <<- TRUE;
     }
     
     if (operators_4) {
@@ -606,7 +611,7 @@ PerformPeakAnnotation <-
       }
       
       mSet@peakAnnotation$AnnotateObject <- list();
-      fgs <- mSet@peakfilling$FeatureGroupTable
+      fgs <- mSet@peakfilling$FeatureGroupTable;
       #xs@groups <- S4Vectors::as.matrix(fgs[, -ncol(fgs)])
       
       if (length(mSet@rawOnDisk@phenoData[["sample_name"]]) > 1 &&
@@ -659,8 +664,8 @@ PerformPeakAnnotation <-
           } else {
             #And now??
             warning("DLL mpi_initialize is not loaded. Run single core mode!\n")
-            
           }
+          
         } else {
           #try local sockets using snow package
           snow = "snow"
@@ -675,11 +680,11 @@ PerformPeakAnnotation <-
           }
         }
         
-        options("warn" = opt.warn)
+        options("warn" = opt.warn);
         
         MessageOutput(mes = "Run cleanParallel after processing to remove the spawned slave processes!",
                       ecol = "\n",
-                      progress = NULL)
+                      progress = NULL);
         
       }
       
@@ -691,38 +696,38 @@ PerformPeakAnnotation <-
         }
       }
       
-      mSet@peakAnnotation$AnnotateObject$runParallel <- runParallel
-      mSet@peakAnnotation$AnnotateObject$annoID <- matrix(ncol = 4, nrow = 0)
-      mSet@peakAnnotation$AnnotateObject$annoGrp <- matrix(ncol = 4, nrow = 0)
-      mSet@peakAnnotation$AnnotateObject$isoID <- matrix(ncol = 4, nrow = 0)
+      mSet@peakAnnotation$AnnotateObject$runParallel <- runParallel;
+      mSet@peakAnnotation$AnnotateObject$annoID <- matrix(ncol = 4, nrow = 0);
+      mSet@peakAnnotation$AnnotateObject$annoGrp <- matrix(ncol = 4, nrow = 0);
+      mSet@peakAnnotation$AnnotateObject$isoID <- matrix(ncol = 4, nrow = 0);
       
       colnames(mSet@peakAnnotation$AnnotateObject$annoID) <-
-        c("id", "grpID", "ruleID", "parentID")
+        c("id", "grpID", "ruleID", "parentID");
       
       colnames(mSet@peakAnnotation$AnnotateObject$annoGrp) <-
-        c("id", "mass", "ips", "psgrp")
+        c("id", "mass", "ips", "psgrp");
       
       colnames(mSet@peakAnnotation$AnnotateObject$isoID)  <-
-        c("mpeak", "isopeak", "iso", "charge")
+        c("mpeak", "isopeak", "iso", "charge");
       
       MessageOutput(mes = NULL,
                     ecol = "\n",
-                    progress = 92)
+                    progress = 92);
       
       ## 2. Group peaks according to their retention time into pseudospectra-groups-----
       
-      intval <- "maxo"
-      perfwhm <- annotaParam$perf.whm
-      sigma <- 6
-      sample    <- mSet@peakAnnotation$AnnotateObject$sample
-      pspectra  <- list()
-      psSamples <- NA
+      intval <- "maxo";
+      perfwhm <- annotaParam$perf.whm;
+      sigma <- 6;
+      sample    <- mSet@peakAnnotation$AnnotateObject$sample;
+      pspectra  <- list();
+      psSamples <- NA;
       
       MessageOutput(
         mes = paste0("Start grouping after retention time."),
         ecol = "\n",
         progress = NULL
-      )
+      );
       
       if (mSet@peakAnnotation$AnnotateObject$groupInfo[1, "rt"] == -1) {
         # Like FTICR Data
@@ -1003,26 +1008,25 @@ PerformPeakAnnotation <-
           progress = NULL
         )
         
-        imz  <- mSet@peakAnnotation$AnnotateObject$groupInfo[, "mz", drop = FALSE]
-        irt  <- mSet@peakAnnotation$AnnotateObject$groupInfo[, "rt", drop = FALSE]
+        imz  <- mSet@peakAnnotation$AnnotateObject$groupInfo[, "mz", drop = FALSE];
+        irt  <- mSet@peakAnnotation$AnnotateObject$groupInfo[, "rt", drop = FALSE];
         mint <-
-          mSet@peakAnnotation$AnnotateObject$groupInfo[, intval, drop = FALSE]
-        
+          mSet@peakAnnotation$AnnotateObject$groupInfo[, intval, drop = FALSE];
       }
       
-      isotope   <- vector("list", length(imz))
-      isomatrix <- matrix(ncol = 5, nrow = 0)
+      isotope   <- vector("list", length(imz));
+      isomatrix <- matrix(ncol = 5, nrow = 0);
       colnames(isomatrix) <-
-        c("mpeak", "isopeak", "iso", "charge", "intrinsic")
+        c("mpeak", "isopeak", "iso", "charge", "intrinsic");
       
       MessageOutput(
         mes = paste0("Run isotope peak annotation.."),
         ecol = "\n",
         progress = NULL
-      )
+      );
       
-      lp <- -1
-      along = mSet@peakAnnotation$AnnotateObject$pspectra
+      lp <- -1;
+      along = mSet@peakAnnotation$AnnotateObject$pspectra;
       
       pb <-
         progress_bar$new(
@@ -1030,7 +1034,7 @@ PerformPeakAnnotation <-
           total = length(along),
           clear = T,
           width = 75
-        )
+        );
       
       #look for isotopes in every pseudospectra
       for (i in seq(along)) {
@@ -1378,9 +1382,9 @@ PerformPeakAnnotation <-
         fullUserPath <- getwd();
       }
       saveRDS(camera_output,
-              paste0(fullUserPath, "annotated_peaklist.rds"))
-      fast.write(camera_output,
-                 paste0(fullUserPath, "annotated_peaklist.csv"))
+              paste0(fullUserPath, "/annotated_peaklist.rds"))
+      fast.write.csv(camera_output,
+                 paste0(fullUserPath, "/annotated_peaklist.csv"))
       
       MessageOutput(
         mes = paste0(
@@ -1428,27 +1432,34 @@ PerformPeakAnnotation <-
 #' License: GNU GPL (>= 2)
 #' @export
 FormatPeakList <-
-  function(annotPeaks,
+  function(mSet,
            annParams,
            filtIso = TRUE,
            filtAdducts = FALSE,
            missPercent = 0.75) {
-    camera_output <- readRDS("annotated_peaklist.rds")
     
-    length <- ncol(camera_output)
-    end <- length - 3
+    fullUserPath <- mSet@WorkingDir;
+    if(is.null(fullUserPath) | length(fullUserPath) == 0){
+      fullUserPath <- getwd();
+    }
+    camera_output <- readRDS("annotated_peaklist.rds");
+    
+    length <- ncol(camera_output);
+    end <- length - 3;
     
     # Format peaklist for MetaboAnalyst
-    camera_ma <- camera_output[,-length]
+    camera_ma <- camera_output[,-length];
     
     if (filtAdducts == TRUE) {
       if (annParams$polarity == "positive") {
+        
         if (filtIso == TRUE) {
           camera_isotopes <-
             camera_ma[grepl("\\[M\\]\\+", camera_ma$isotopes), ]
         } else{
           camera_isotopes <- camera_ma[(camera_ma$isotopes != ""), ]
         }
+        
         camera_adducts <-
           camera_ma[grepl("\\[M\\+H\\]\\+", camera_ma$adduct), ]
         camera_feats <-
@@ -1458,6 +1469,7 @@ FormatPeakList <-
           unique(rbind(camera_isotopes, camera_adducts, camera_feats))
         
       } else{
+        
         # negative polarity
         if (filtIso == TRUE) {
           camera_isotopes <-
@@ -1465,6 +1477,7 @@ FormatPeakList <-
         } else{
           camera_isotopes <- camera_ma[(camera_ma$isotopes != ""), ]
         }
+        
         camera_adducts <-
           camera_ma[grepl("\\[M-H\\]-", camera_ma$adduct), ]
         camera_feats <-
@@ -1473,7 +1486,9 @@ FormatPeakList <-
         unique_feats <-
           unique(rbind(camera_isotopes, camera_adducts, camera_feats))
       }
+      
     } else{
+      
       if (annParams$polarity == "positive") {
         if (filtIso == TRUE) {
           camera_isotopes <-
@@ -1481,6 +1496,7 @@ FormatPeakList <-
         } else{
           camera_isotopes <- camera_ma[(camera_ma$isotopes != ""), ]
         }
+        
         camera_adducts <- camera_ma[(camera_ma$adduct != ""), ]
         camera_feats <- camera_ma[(camera_ma$isotopes == ""), ]
         unique_feats <-
@@ -1495,28 +1511,30 @@ FormatPeakList <-
         } else{
           camera_isotopes <- camera_ma[(camera_ma$isotopes != ""), ]
         }
+        
         camera_adducts <- camera_ma[(camera_ma$adduct != ""), ]
         camera_feats <- camera_ma[(camera_ma$isotopes == ""), ]
         unique_feats <-
           unique(rbind(camera_isotopes, camera_adducts, camera_feats))
       }
-    }
+      
+    };
     
-    unique_feats <- unique_feats[order(unique_feats[, 1]), ]
+    unique_feats <- unique_feats[order(unique_feats[, 1]), ];
     
     # adjust decimal places, feats_info contains all samples
-    feats_info <- unique_feats[, 7:end]
-    feats_digits <- round(feats_info, 5)
+    feats_info <- unique_feats[, 7:end];
+    feats_digits <- round(feats_info, 5);
     
-    group_info <- annotPeaks$xcmsSet@phenoData[[2]]
-    combo_info <- rbind(as.character(group_info), feats_digits)
+    group_info <- mSet@rawOnDisk@phenoData@data[["sample_group"]];
+    combo_info <- rbind(as.character(group_info), feats_digits);
     
     mzs_rd <-
-      paste0(round(unique_feats[, 1], 4), "@", round(unique_feats[, 4], 2))
-    mzs <- data.frame(c("Label", mzs_rd), stringsAsFactors = FALSE)
+      paste0(round(unique_feats[, 1], 4), "@", round(unique_feats[, 4], 2));
+    mzs <- data.frame(c("Label", mzs_rd), stringsAsFactors = FALSE);
     
     # ensure features are unique
-    mzs_unq <- mzs[duplicated(mzs), ]
+    mzs_unq <- mzs[duplicated(mzs), ];
     
     while (length(mzs_unq) > 0) {
       mzs[duplicated(mzs), ] <-
@@ -1524,33 +1542,32 @@ FormatPeakList <-
           paste0(x, sample(1:999, 1, replace = FALSE)))
       
       mzs_unq <- mzs[duplicated(mzs), ]
-    }
+    };
     
-    colnames(mzs) <- "Sample"
-    ma_feats <- cbind(mzs, combo_info)
+    colnames(mzs) <- "Sample";
+    ma_feats <- cbind(mzs, combo_info);
     
     # remove features missing in over X% of samples per group
     # only valid for 2 group comparisons!!
     ma_feats_miss <-
       ma_feats[which(rowMeans(is.na(ma_feats[, (ma_feats[1, ] == as.character(unique(group_info[1])))]))
-                     |
-                       rowMeans(is.na(ma_feats[, (ma_feats[1, ] == as.character(unique(group_info[2])))])) < missPercent),]
+                     | rowMeans(is.na(ma_feats[, (ma_feats[1, ] == as.character(unique(group_info[2])))])) < missPercent),];
     
-    fast.write(ma_feats_miss,
+    fast.write.csv(ma_feats_miss,
                paste0(fullUserPath, "/metaboanalyst_input.csv"),
-               row.names = FALSE)
+               row.names = FALSE);
     
     # provide index for CAMERA output
-    Pklist_inx <- row.names(ma_feats_miss)
-    ma_feats_miss_inx <- cbind(ma_feats_miss, Pklist_inx)
+    Pklist_inx <- row.names(ma_feats_miss);
+    ma_feats_miss_inx <- cbind(ma_feats_miss, Pklist_inx);
     
-    fast.write(ma_feats_miss_inx,
+    fast.write.csv(ma_feats_miss_inx,
                paste0(fullUserPath, "/filtered_peaklist.csv"),
-               row.names = FALSE)
+               row.names = FALSE);
     
     # generate peak summary results
     peaksum <-
-      camera_output[, -c(1:6, (ncol(camera_output) - 2):ncol(camera_output))]
+      camera_output[, -c(1:6, (ncol(camera_output) - 2):ncol(camera_output))];
     
     rt_info_min <-
       round(apply(
@@ -1559,7 +1576,7 @@ FormatPeakList <-
         FUN = function(x) {
           min(camera_output[!is.na(x), 4])
         }
-      ), digits = 2)
+      ), digits = 2);
     
     rt_info_max <-
       round(apply(
@@ -1568,9 +1585,9 @@ FormatPeakList <-
         FUN = function(x) {
           max(camera_output[!is.na(x), 4])
         }
-      ), digits = 2)
+      ), digits = 2);
     
-    rt_range <- paste0(rt_info_min, "~", rt_info_max)
+    rt_range <- paste0(rt_info_min, "~", rt_info_max);
     
     mz_info_min <-
       round(apply(
@@ -1579,7 +1596,7 @@ FormatPeakList <-
         FUN = function(x) {
           min(camera_output[!is.na(x), 1])
         }
-      ), digits = 3)
+      ), digits = 3);
     
     mz_info_max <-
       round(apply(
@@ -1588,7 +1605,7 @@ FormatPeakList <-
         FUN = function(x) {
           max(camera_output[!is.na(x), 1])
         }
-      ), digits = 3)
+      ), digits = 3);
     
     mz_range <- paste0(mz_info_min, "~", mz_info_max)
     Group_detail <- ma_feats_miss[1, -1]
@@ -1601,19 +1618,18 @@ FormatPeakList <-
         FUN = function(x) {
           length(which(!is.na(x)))
         }
-      )
+      );
     
     missing_perc <-
-      round((nrow(peaksum) - peak_number) / nrow(peaksum) * 100, digits = 2)
+      round((nrow(peaksum) - peak_number) / nrow(peaksum) * 100, digits = 2);
+    datam <- matrix(nrow = length(sample_names), ncol = 6);
     
-    datam <- matrix(nrow = length(sample_names), ncol = 6)
-    
-    datam[, 1] <- sample_names
-    datam[, 2] <- as.matrix(unname(Group_detail))
-    datam[, 3] <- rt_range
-    datam[, 4] <- mz_range
-    datam[, 5] <- peak_number
-    datam[, 6] <- missing_perc
+    datam[, 1] <- sample_names;
+    datam[, 2] <- as.matrix(unname(Group_detail));
+    datam[, 3] <- rt_range;
+    datam[, 4] <- mz_range;
+    datam[, 5] <- peak_number;
+    datam[, 6] <- missing_perc;
     
     write.table(
       datam,
@@ -1621,7 +1637,7 @@ FormatPeakList <-
       row.names = F,
       col.names = F,
       quote = F
-    )
+    );
     
     MessageOutput(
       mes = paste0("Everything has been finished Successfully ! (",
@@ -1629,7 +1645,10 @@ FormatPeakList <-
                    ")"),
       ecol = "\n",
       progress = 100
-    )
+    );
+    
+    mSet@dataSet <- ma_feats_miss;
+    save(mSet, file = "mSet.rda");
     
     return(ma_feats_miss)
   }

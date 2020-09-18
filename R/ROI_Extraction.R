@@ -78,12 +78,13 @@ PerformROIExtraction <-
     
     if (is.null(running.controller)) {
       c1 <- c2 <- c3 <- c4 <- TRUE;
-      running.as.plan <- FALSE;
+      .running.as.plan <<- FALSE;
     } else {
       c1 <- running.controller[["data_trim"]][["c1"]];
       c2 <- running.controller[["data_trim"]][["c2"]];
       c3 <- running.controller[["data_trim"]][["c3"]];
       c4 <- running.controller[["data_trim"]][["c4"]];
+      .running.as.plan <<- TRUE;
     }
     
     if (c1) {
@@ -229,7 +230,7 @@ PerformROIExtraction <-
       
       MessageOutput("Data Loaded !", "\n", NULL)
 
-      if (running.as.plan) {
+      if (.running.as.plan) {
         cache.save(raw_data, paste0(function.name, "_c1"));
         marker_record(paste0(function.name, "_c1"));
       }
@@ -316,7 +317,7 @@ PerformROIExtraction <-
         trimed_MSnExp <- raw_data;
       }
       
-      if (running.as.plan) {
+      if (.running.as.plan) {
         cache.save(trimed_MSnExp, paste0(function.name, "_c2"));
         marker_record(paste0(function.name, "_c2"));
       }
@@ -342,7 +343,7 @@ PerformROIExtraction <-
         MessageOutput("Data Writing Finished !",ecol = "\n",NULL);
       }
       
-      if (running.as.plan) {
+      if (.running.as.plan) {
         #cache.save(trimed_MSnExp,paste0(function.name,"_c2"));
         marker_record(paste0(function.name, "_c3"));
       }
@@ -364,7 +365,7 @@ PerformROIExtraction <-
         plot(ch.xdata, col = group.col[1:length(trimed_MSnExp@processingData@files)])
       }
       
-      if (running.as.plan) {
+      if (.running.as.plan) {
         #cache.save(trimed_MSnExp,paste0(function.name,"_c2"));
         marker_record(paste0(function.name, "_c4"));
       }

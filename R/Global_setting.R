@@ -1,10 +1,9 @@
 
 # Setting .on.public.web
 .on.public.web <- FALSE;
-.optimize_switch <- FALSE;
-.running.as.plan <- FALSE;
 
 # OTHER SETTINGS
+# NA
 
 # Used to defined the parallel namespace for peak picking
 .peak_function_list <- list("PerformPeakPicking",
@@ -185,4 +184,24 @@ MessageOutput <- function(mes, ecol, progress) {
   }
   
 }
+
+fast.write.csv <- function(dat, file, row.names=TRUE){
+  tryCatch(
+    {
+      if(is.data.frame(dat)){
+        # there is a rare bug in data.table (R 3.6) which kill the R process in some cases 
+        data.table::fwrite(dat, file, row.names=row.names);
+      }else{
+        write.csv(dat, file, row.names=row.names);  
+      }
+    }, error=function(e){
+      print(e);
+      write.csv(dat, file, row.names=row.names);   
+    }, warning=function(w){
+      print(w);
+      write.csv(dat, file, row.names=row.names); 
+    });
+}
+
+
 

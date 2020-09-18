@@ -7,6 +7,7 @@
 #'
 #' @export
 InitializaPlan <- function(type="spec", path){
+  
   if(path != ""){
     setwd(path);
     fullUserPath <<- path;
@@ -14,197 +15,111 @@ InitializaPlan <- function(type="spec", path){
     fullUserPath <<- "";
   };
   
-  if (.on.public.web){
-    
-    if (!file.exists(paste0(fullUserPath, "log_progress.txt"))){
-      write.table(0.0, file = paste0(fullUserPath, "log_progress.txt"),row.names = F,col.names = F);
-    }
-    if (!file.exists(paste0(fullUserPath, "opt_param.txt"))){
-      write.table(0.0, file = paste0(fullUserPath, "opt_param.txt"),row.names = T,col.names = F);
-    }
-    
-    if (!file.exists("metaboanalyst_spec_proc.txt")){
-      print_mes <- paste0("Running Status -- Job Submitted Successfully at: ", Sys.time(), "\n Waiting in queue to start...")
-      write.table(print_mes, file = paste0(fullUserPath, "metaboanalyst_spec_proc.txt"),row.names = F,col.names = F);
-    }
-    
-  }
-  
-  #================= raw_pre
-  if (type=="spec"){
-    
-    plan.path <- paste0(getwd(),"/temp/plan");
-    if (!dir.exists(plan.path)){dir.create(paste0(getwd(),"/temp/plan"),recursive = T)};
-    
-    if (!file.exists(paste0(plan.path,"/plan.rds"))){
-      
-      running.as.plan <<- T;
-      plan <- list();
-      plan_count <<- 0;
-      
-      
-      saveRDS(plan, file = paste0(plan.path,"/plan.rds"));
-      saveRDS(running.as.plan, file = paste0(plan.path,"/running.as.plan.rds"));
-      saveRDS(plan_count, file = paste0(plan.path,"/plan_count.rds"));
-      
-      
-    } else {
-      
-      plan <<- readRDS(paste0(plan.path,"/plan.rds"));
-      running.as.plan <<- readRDS(paste0(plan.path,"/running.as.plan.rds"));
-      plan_count <<- readRDS(paste0(plan.path,"/plan_count.rds"));
-      plan_count <<- plan_count + 1;
-      
-    };
-    
-    #----------------------
-    
-    envir.path <- paste0(getwd(),"/temp/envir");
-    if (!dir.exists(envir.path)){dir.create(paste0(getwd(),"/temp/envir"),recursive = T)};
-    
-    if (!file.exists(paste0(envir.path,"/envir.rds"))){
-      envir <<- new.env();
-      saveRDS(envir, file = paste0(envir.path,"/envir.rds"));
-    } else {
-      envir <<- readRDS(paste0(envir.path,"/envir.rds"));
-    }
-    
-    if(exists("plan_count") & plan_count > 0){
-      return(plan)
-    }
-    
-  };
-  
+  MessageOutput(paste0("Running Status -- Plan Initialized Successfully at: ", Sys.time(), "\nPlease define your running plan ..."), "\n", 0);
   
   #=============== raw_opt
-  if (type=="raw_opt"){
+  if (type == "raw_opt") {
+    plan.path <- paste0(getwd(), "/temp/plan")
     
-    plan.path <- paste0(getwd(),"/temp/plan");
-    if (!dir.exists(plan.path)){dir.create(paste0(getwd(),"/temp/plan"),recursive = T)};
-    
-    if (!file.exists(paste0(plan.path,"/plan.rds"))){
-      
-      running.as.plan <<- T;
-      plan <- list();
-      plan_count <<- 0;
-      
-      
-      saveRDS(plan, file = paste0(plan.path,"/plan.rds"));
-      saveRDS(running.as.plan, file = paste0(plan.path,"/running.as.plan.rds"));
-      saveRDS(plan_count, file = paste0(plan.path,"/plan_count.rds"));
-      
-      
-    } else {
-      
-      plan <<- readRDS(paste0(plan.path,"/plan.rds"));
-      running.as.plan <<- readRDS(paste0(plan.path,"/running.as.plan.rds"));
-      plan_count <<- readRDS(paste0(plan.path,"/plan_count.rds"));
-      plan_count <<- plan_count + 1;
-      
-    };
-    
-    #----------------------
-    
-    optimize_switch <<- T;
-    switch.path <- paste0(getwd(),"/temp/plan");
-    saveRDS(optimize_switch, file = paste0(switch.path,"/optimize_switch_",plan_count,".rds"));  
-    
-    #----------------------
-    
-    envir.path <- paste0(getwd(),"/temp/envir");
-    if (!dir.exists(envir.path)){dir.create(paste0(getwd(),"/temp/envir"),recursive = T)};
-    
-    if (!file.exists(paste0(envir.path,"/envir.rds"))){
-      envir <<- new.env();
-      saveRDS(envir, file = paste0(envir.path,"/envir.rds"));
-    } else {
-      envir <<- readRDS(paste0(envir.path,"/envir.rds"));
+    if (!dir.exists(plan.path)) {
+      dir.create(paste0(getwd(), "/temp/plan"),
+                 recursive = T)
     }
     
+    .running.as.plan <<- T
+    plan <- list()
+    .plan_count <<- 0
+    
+    saveRDS(plan, file = paste0(plan.path, "/plan.rds"))
+    saveRDS(.running.as.plan, file = paste0(plan.path, "/running.as.plan.rds"))
+    saveRDS(.plan_count, file = paste0(plan.path, "/plan_count.rds"))
+    #----------------------
+    .optimize_switch <<- T
+    switch.path <- paste0(getwd(), "/temp/plan")
+    saveRDS(.optimize_switch,
+            file = paste0(switch.path, "/optimize_switch_", .plan_count, ".rds"))
+    
+    #----------------------
+    envir.path <- paste0(getwd(), "/temp/envir")
+    if (!dir.exists(envir.path)) {
+      dir.create(paste0(getwd(), "/temp/envir"),
+                 recursive = T)
+    }
+    
+    envir <<- new.env()
+    saveRDS(envir, file = paste0(envir.path, "/envir.rds"))
+    #----------------------
+    if (.on.public.web) {
+      rawFileNames <- paste0(getwd(), "/temp/plan")
+      saveRDS(rawfilenms,
+              file = paste0(rawFileNames, "/rawfilenms_", .plan_count, ".rds"))
+    }
     #----------------------
     
-    rawFileNames <- paste0(getwd(),"/temp/plan");
-    saveRDS(rawfilenms, file=paste0(rawFileNames,"/rawfilenms_",plan_count,".rds"))
-    
-    #----------------------
-    
-    if(exists("plan_count") & plan_count > 0){
+    if (exists(".plan_count") & .plan_count > 0) {
       return(plan)
     }
-    
-  };
+  }
   
   #================== raw_ms
-  if (type=="raw_ms"){
+  if (type == "raw_ms") {
+    plan.path <- paste0(getwd(), "/temp/plan")
     
-    plan.path <- paste0(getwd(),"/temp/plan");
-    
-    if (!dir.exists(plan.path)){dir.create(paste0(getwd(),"/temp/plan"),recursive = T)};
+    if (!dir.exists(plan.path)) {
+      dir.create(paste0(getwd(), "/temp/plan"),
+                 recursive = T)
+    }
     
     #---------------
-    if (!file.exists(paste0(plan.path,"/plan.rds"))){
-      
-      running.as.plan <<- T;
-      plan <- list();
-      plan_count <<- 0;
-      
-      saveRDS(plan, file = paste0(plan.path,"/plan.rds"));
-      saveRDS(running.as.plan, file = paste0(plan.path,"/running.as.plan.rds"));
-      saveRDS(plan_count, file = paste0(plan.path,"/plan_count.rds"));
-      
-      
-    } else {
-      
-      plan <<- readRDS(paste0(plan.path,"/plan.rds"));
-      running.as.plan <<- readRDS(paste0(plan.path,"/running.as.plan.rds"));
-      plan_count <<- readRDS(paste0(plan.path,"/plan_count.rds"));
-      plan_count <<- plan_count + 1;
-      
-    };
+    .running.as.plan <<- T
+    plan <- list()
+    .plan_count <<- 0
+    
+    saveRDS(plan, file = paste0(plan.path, "/plan.rds"))
+    saveRDS(.running.as.plan, file = paste0(plan.path, "/running.as.plan.rds"))
+    saveRDS(.plan_count, file = paste0(plan.path, "/plan_count.rds"))
     
     #----------------------
-    
-    optimize_switch <<- F;
-    switch.path <- paste0(getwd(),"/temp/plan");
-    saveRDS(optimize_switch, file = paste0(switch.path,"/optimize_switch_",plan_count,".rds"));
+    .optimize_switch <<- F
+    switch.path <- paste0(getwd(), "/temp/plan")
+    saveRDS(.optimize_switch,
+            file = paste0(switch.path, "/optimize_switch_", .plan_count, ".rds"))
     
     #----------------------
+    envir.path <- paste0(getwd(), "/temp/envir")
+    if (!dir.exists(envir.path)) {
+      dir.create(paste0(getwd(), "/temp/envir"),
+                 recursive = T)
+    }
     
-    envir.path <- paste0(getwd(),"/temp/envir");
-    if (!dir.exists(envir.path)){dir.create(paste0(getwd(),"/temp/envir"),recursive = T)};
-    if (!file.exists(paste0(envir.path,"/envir.rds"))){
-      envir <<- new.env();
-      saveRDS(envir, file = paste0(envir.path,"/envir.rds"));
+    envir <<- new.env()
+    saveRDS(envir, file = paste0(envir.path, "/envir.rds"))
+    #----------------------
+    rawFileNames <- paste0(getwd(), "/temp/plan")
+    
+    if (.on.public.web) {
+      saveRDS(rawfilenms,
+              file = paste0(rawFileNames, "/rawfilenms_", .plan_count, ".rds"))
     } else {
-      envir <<- readRDS(paste0(envir.path,"/envir.rds"));
+      # do nothing for local
     }
     
     #----------------------
-    
-    rawFileNames <- paste0(getwd(),"/temp/plan");
-    saveRDS(rawfilenms, file=paste0(rawFileNames,"/rawfilenms_",plan_count,".rds"))
-    
-    #----------------------
-    
-    if(exists("plan_count") & plan_count > 0){
+    if (exists(".plan_count") & .plan_count > 0) {
       return(plan)
     }
-    
-  };
+  }
   
   ## Recording cache file information
-  record.info <- matrix(nrow = 180,ncol = 2);record.path <- paste0(getwd(),"/temp/records");
-  if (!dir.exists(record.path)){dir.create(paste0(getwd(),"/temp/records"),recursive = T)};
+  record.info <- matrix(nrow = 180, ncol = 2)
+  record.path <- paste0(getwd(), "/temp/records")
   
-  if (!file.exists(paste0(record.path,"/records.rds"))){
-    saveRDS(record.info,file = paste0(record.path,"/records.rds"))
-  } else {
-    records <- readRDS(paste0(record.path,"/records.rds"));
-    if (sum(is.na(records[,1])) < 1){
-      AddErrMsg("Too many caches for data proceesing operation !")
-    };
-  };
+  if (!dir.exists(record.path)) {
+    dir.create(paste0(getwd(), "/temp/records"),
+               recursive = T)
+  }
   
+  saveRDS(record.info, file = paste0(record.path, "/records.rds"))
   
   return(plan)
   #return(.set.mSet(plan))
@@ -222,26 +137,26 @@ running.plan <- function(plan=NULL,...){
   commands <- match.call(expand.dots = FALSE)$...
   
   ## Declare controller
-  plan$running.controller <- controller.resetter()
+  plan$running.controller <- controller.resetter();
   ##
   
   if (!length(commands)) {
-    stop("No command provided to run !")
+    stop("No command provided to run !");
   }
   
-  plan[[paste0("command_set_",plan_count)]] <- commands
+  .plan_count <<- .plan_count + 1;
   
-  if(.on.public.web){
-    plan.path <- paste0(getwd(),"/temp/plan");
-    saveRDS(plan, file = paste0(plan.path,"/plan.rds"));
-    saveRDS(plan_count, file = paste0(plan.path,"/plan_count.rds"));
-  }
+  plan[[paste0("command_set_",.plan_count)]] <- commands;
   
-  recordMarker_resetter(plan_count);
+  plan.path <- paste0(getwd(), "/temp/plan");
+  saveRDS(plan, file = paste0(plan.path, "/plan.rds"));
+  saveRDS(.plan_count, file = paste0(plan.path, "/plan_count.rds"));
+  
+  recordMarker_resetter(.plan_count);
   
   return(plan)
-  
 }
+
 .get.current.plan <- function(plan){
   
   if (is.null(plan)){
@@ -266,9 +181,9 @@ ExecutePlan <- function(plan=NULL){
   # Reset running.controller to make sure everything is normal at beginning
   plan$running.controller <- controller.resetter()
   
-  if (length(plan)==2){
+  if (length(plan) == 2){
     
-    envir$rc <<- plan$running.controller
+    envir$rc <<- plan$running.controller;
     perform.plan(plan[["command_set_1"]]);
     
     envir.path <- paste0(getwd(),"/temp/envir");
@@ -299,20 +214,17 @@ ExecutePlan <- function(plan=NULL){
     }
     
     ## Module 7 - Detect whether some steps have been run in last plan excuting process (Secondary Decision switch)
-    plan <- recording_identifier(plan)
-    
+    plan <- recording_identifier(plan);
     
     ## Module 8 - Dectect whether current plan type (raw_ms or raw_pre) is different from the last one (Final Decision switch)
-    plan <- planType_identifier(plan)
-    
-    
+    plan <- planType_identifier(plan);
     
     envir$rc <<- plan$running.controller
     # define.plan.controller <- str2lang('rc <- plan$running.controller');
     # eval (define.plan.controller,envir = envir);
     #perform.plan(new_command_set);
     
-    mSetInfo <- tryCatch(perform.plan(new_command_set), error = function(e){e})
+    mSetInfo <- tryCatch(perform.plan(new_command_set), error = function(e){e});
     
     if (class(mSetInfo)[1]=="simpleError"){
       #write.table(0.0, file = paste0(fullUserPath, "log_progress.txt"),row.names = F,col.names = F);
@@ -330,10 +242,10 @@ ExecutePlan <- function(plan=NULL){
   
 }
 
-controller.modifier <- function(new_command,last_command,plan){
+controller.modifier <- function(new_command, last_command, plan){
   
   functions <- sapply(1:length(plan[[length(plan)]]),FUN=function(i){plan[[length(plan)]][[i]][[3]][[1]]});
-  data_trim_order <- which(functions=="PerformDataTrimming");
+  data_trim_order <- which(functions=="PerformDataTrimming" | functions=="PerformROIExtraction");
   dara_ms_order <- which(functions=="ImportRawMSData");
   
   ###-------------Operators definition ------------//
@@ -353,8 +265,15 @@ controller.modifier <- function(new_command,last_command,plan){
   
   # Module 1 - Detect whether the tranning data folder has been changed
   if (!identical(data_trim_order, integer(0))){
+    
     if ((class(new_command[[3]]) == "character") & (plan[[length(plan)]][[data_trim_order]][[3]][[2]] == new_command[[2]])){
       if (new_command[[3]] != last_command[[3]]){
+        # to deal with the case the data folder did change
+        plan$running.controller$data_trim <- c(T,T,T,T);
+        names(plan$running.controller$data_trim) <- c("c1","c2","c3","c4");
+        plan$running.controller$operators[["operators_2"]] <- T;
+      } else if(OptiFileChanged(last_command[[3]])){
+        # to deal with the case some files are deleted or added for the same folder
         plan$running.controller$data_trim <- c(T,T,T,T);
         names(plan$running.controller$data_trim) <- c("c1","c2","c3","c4");
         plan$running.controller$operators[["operators_2"]] <- T;
@@ -363,13 +282,16 @@ controller.modifier <- function(new_command,last_command,plan){
   }
   
   # Module 2 - Detect whether the params of datatrimming has been changed
-  if (new_command[[3]][[1]] == "PerformDataTrimming"){
+  if (new_command[[3]][[1]] == "PerformDataTrimming" | new_command[[3]][[1]] == "PerformROIExtraction"){
     
-    data_folder_funciton_order <- which(sapply(1:length(plan[[length(plan)]]),FUN = function(x){plan[[length(plan)]][[x]][[2]]})==new_command[[3]][[2]] & 
-                                          as.character(sapply(1:length(plan[[length(plan)]]),FUN = function(x){plan[[length(plan)]][[x]][[1]]})) == "`<-`")
+    data_folder_funciton_order <- which(sapply(1:length(plan[[length(plan)]]),
+                                               FUN = function(x){
+                                                 plan[[length(plan)]][[x]][[2]]})==new_command[[3]][[2]] & 
+                                          as.character(sapply(1:length(plan[[length(plan)]]),
+                                                              FUN = function(x){plan[[length(plan)]][[x]][[1]]})) == "`<-`")
     
     if ((plan[[length(plan)]][[data_folder_funciton_order]] != plan[[length(plan)-1]][[data_folder_funciton_order]]) | 
-        plan$running.controller$operators[["operators_2"]]){
+        plan$running.controller$operators[["operators_2"]]) {
       # To make sure the data did change or not. If the data changed, re-run all.
       plan$running.controller$data_trim <- c(T,T,T,T);
       names(plan$running.controller$data_trim) <- c("c1","c2","c3","c4");
@@ -377,6 +299,7 @@ controller.modifier <- function(new_command,last_command,plan){
     } else if (new_command == last_command) {
       # If the setting did not change, skip the trim step
       if(.on.public.web){
+        # retained for further process 
         # If on web, to detect whether the rmConts (remove contaminants param changed or not !)
         print("run here : web version - param change detection !-")
         
@@ -399,14 +322,11 @@ controller.modifier <- function(new_command,last_command,plan){
           names(plan$running.controller$data_trim) <- c("c1","c2","c3","c4");
         }
         
-        
-        
       } else {
         # Otherwise, no need to detect
         plan$running.controller$data_trim <- c(F,F,F,F);
         names(plan$running.controller$data_trim) <- c("c1","c2","c3","c4");
       }
-      
       
     } else {
       # If the setting did change, skip some steps in different cases
@@ -501,29 +421,28 @@ controller.modifier <- function(new_command,last_command,plan){
   # Module 3 - Dectect whether the raw ms data folder has been changed
   if (!identical(dara_ms_order, integer(0))){
     if ((class(new_command[[3]]) == "character") & (plan[[length(plan)]][[dara_ms_order]][[3]][[2]] == new_command[[2]])){
-      
-      if (new_command[[3]] != last_command[[3]]){ # if the data folder changed at local
-        
+      if (new_command[[3]] != last_command[[3]] | ProcessFileChanged(last_command[[3]])){ 
+        # if the data folder changed at local or the files changed inside the folder
         plan$running.controller$peak_profiling <- c(T,T,T,T);
         names(plan$running.controller$peak_profiling) <- c("c1","c2","c3","c4"); 
         plan$running.controller$operators[["operators_3"]] <- T;
         
       } else if(new_command[[3]] == last_command[[3]] & .on.public.web){ # to identify if the data folder changed at local
-        
+        # TODO: need to correct this issue.
         rawFileNames <- paste0(getwd(),"/temp/plan");
-        rawfilenms_last <- readRDS(paste0(rawFileNames,"/rawfilenms_",plan_count-1,".rds"));
-        rawfilenms_new <- readRDS(paste0(rawFileNames,"/rawfilenms_",plan_count,".rds"));
+        rawfilenms_last <- readRDS(paste0(rawFileNames,"/rawfilenms_",.plan_count-1,".rds"));
+        rawfilenms_new <- readRDS(paste0(rawFileNames,"/rawfilenms_",.plan_count,".rds"));
         
-        if(identical(setdiff(rawfilenms_last,rawfilenms_new), character(0))){ # if files included didn't change
-          
+        if(identical(setdiff(rawfilenms_last,rawfilenms_new), character(0))){ 
+          # if files included didn't change
           plan$running.controller$operators[["operators_3"]] <- F;
           
-        } else {# if files included did change
-          
-          print("run here -0-0------------------------------");
+        } else {
+          # if files included did change
           
           #plan$running.controller$data_trim[["c1"]] <- T; 
-          #plan$running.controller$others_1[["c1"]] <- T; # TO DO: to avoid re-do the trimming when QC did not change;
+          #plan$running.controller$others_1[["c1"]] <- T; 
+          # TODO: to avoid re-do the trimming when QC did not change;
           
           plan$running.controller$operators[["operators_3"]] <- T;
           plan$running.controller$peak_profiling <- c(T,T,T,T);
@@ -538,36 +457,44 @@ controller.modifier <- function(new_command,last_command,plan){
   # Module 4 - Detect whether the params of data Import has been changed
   if (new_command[[3]][[1]] == "ImportRawMSData"){
     
-    data_folder_sample_order <- which(sapply(1:length(plan[[length(plan)]]),FUN = function(x){plan[[length(plan)]][[x]][[2]]})==new_command[[3]][[2]] & 
-                                        as.character(sapply(1:length(plan[[length(plan)]]),FUN = function(x){plan[[length(plan)]][[x]][[1]]})) == "`<-`")
-    
+    data_folder_sample_order <- which(sapply(1:length(plan[[length(plan)]]),
+                                             FUN = function(x){plan[[length(plan)]][[x]][[2]]})==new_command[[3]][[2]] & 
+                                        as.character(sapply(1:length(plan[[length(plan)]]),
+                                                            FUN = function(x){plan[[length(plan)]][[x]][[1]]})) == "`<-`")
+
     if (!identical(which(names(new_command[[3]])=="plotSettings"),integer(0))){
-      print("run here -0-1------------------------------")
-      plot_function1_order <- which(new_command[[3]][[which(names(new_command[[3]])=="plotSettings")]] == sapply(plan[[length(plan)]], FUN=function(x){x[[2]]}));
+      plot_function1_order <-
+        which(new_command[[3]][[which(names(new_command[[3]]) == "plotSettings")]] == sapply(
+          plan[[length(plan)]],
+          FUN = function(x) {
+            x[[2]]
+          }
+        ))
       
     } else {
-      print("run here -0-2------------------------------")
-      plot_function1_order <- which(new_command[[3]][[4]] == sapply(plan[[length(plan)]], FUN=function(x){x[[2]]}));
-      
+      plot_function1_order <-
+        which(new_command[[3]][[4]] == sapply(
+          plan[[length(plan)]],
+          FUN = function(x) {
+            x[[2]]
+          }
+        ))
     }
     
     if ((plan[[length(plan)]][[data_folder_sample_order]] != plan[[length(plan)-1]][[data_folder_sample_order]]) | 
-        plan$running.controller$operators[["operators_3"]]){
+        plan$running.controller$operators[["operators_3"]]) {
       # To make sure the data did change or not. If the data changed, re-run all.
       # c2 in others_1 is used to control the ImportRawMSData - Reading Part (c3 is used for plotting part)
-      print("run here -0-3------------------------------");
       
       plan[["running.controller"]][["others_1"]][["c2"]] <- T;
       plan[["running.controller"]][["others_1"]][["c3"]] <- T;
       
     } else if (new_command == last_command) {
       # If the setting did not change, skip the import step - Reading Part (c3 is used for plotting part)
-      print("run here -0-4------------------------------");
-      
+     
       plan[["running.controller"]][["others_1"]][["c2"]] <- F;
       
     } else {
-      print("run here -0-5------------------------------")
       # If the setting did change, skip some steps in different cases
       for (i in 2:length(new_command[[3]])){
         for (j in 2:length(last_command[[3]])){
@@ -607,16 +534,14 @@ controller.modifier <- function(new_command,last_command,plan){
     # others_1: c3 is the plotting part
     if (plan[[length(plan)]][[plot_function1_order]] != plan[[length(plan)-1]][[plot_function1_order]]) {
       
-      print("run here -0-6------------------------------")
       plan[["running.controller"]][["others_1"]][["c3"]] <- T;
       
-      
     } else if(plan$running.controller$operators[["operators_3"]]){
-      print("run here -0-7------------------------------")
+      
       plan[["running.controller"]][["others_1"]][["c3"]] <- T;
       
     } else {
-      print("run here -0-8------------------------------")
+      
       plan[["running.controller"]][["others_1"]][["c3"]] <- F;
       
     }
@@ -633,16 +558,13 @@ controller.modifier <- function(new_command,last_command,plan){
     
     
     if (!identical(which(names(new_command[[3]])=="plotSettings"),integer(0))){
-      print("run here -2------------------------------")
       plot_function2_order <- which(new_command[[3]][[which(names(new_command[[3]])=="plotSettings")]] == sapply(plan[[length(plan)]], FUN=function(x){x[[2]]}));
     } else {
-      print("run here -3------------------------------")
       plot_function2_order <- which(new_command[[3]][[4]] == sapply(plan[[length(plan)]], FUN=function(x){x[[2]]}));
     };
     
     if (plan$running.controller$others_1[[2]]){ 
       # If data Import step (reading) was excecuted, the profiling step also has to be run/re-run;
-      print("run here -4------------------------------")
       plan[["running.controller"]][["peak_profiling"]] <- c(T,T,T,T);
       names(plan[["running.controller"]][["peak_profiling"]]) <- c("c1","c2","c3","c4");
       
@@ -680,8 +602,8 @@ controller.modifier <- function(new_command,last_command,plan){
         }
         
         switch.path <- paste0(getwd(),"/temp/plan");      
-        new_optimize_switch <- readRDS(paste0(switch.path,"/optimize_switch_",plan_count,".rds"));
-        last_optimize_switch <- readRDS(paste0(switch.path,"/optimize_switch_",plan_count-1,".rds"));
+        new_optimize_switch <- readRDS(paste0(switch.path,"/optimize_switch_",.plan_count,".rds"));
+        last_optimize_switch <- readRDS(paste0(switch.path,"/optimize_switch_",.plan_count-1,".rds"));
         
         if(new_optimize_switch == T & 
            last_optimize_switch == T & 
@@ -819,9 +741,9 @@ controller.modifier <- function(new_command,last_command,plan){
 planType_identifier <- function(plan){
   
   switch.path <- paste0(getwd(),"/temp/plan");
-  optimize_switch_last <- readRDS(paste0(switch.path,"/optimize_switch_",plan_count-1,".rds"));
+  optimize_switch_last <- readRDS(paste0(switch.path,"/optimize_switch_",.plan_count-1,".rds"));
   
-  if  (optimize_switch_last == optimize_switch){
+  if  (optimize_switch_last == .optimize_switch){
     # if the plan type is the same, not modification
     return(plan)
   } else {
@@ -858,11 +780,11 @@ recording_identifier <- function(plan) {
   
   record.path <- paste0(getwd(),"/temp/records");
   
-  if(file.exists(paste0(record.path,"/records_marker_",plan_count-1,".rds"))){
-    record.marker_last <- readRDS(paste0(record.path,"/records_marker_",plan_count-1,".rds"));
+  if(file.exists(paste0(record.path,"/records_marker_",.plan_count-1,".rds"))){
+    record.marker_last <- readRDS(paste0(record.path,"/records_marker_",.plan_count-1,".rds"));
   } else {
-    recordMarker_resetter(plan_count-1);
-    record.marker_last <- readRDS(paste0(record.path,"/records_marker_",plan_count-1,".rds"));
+    recordMarker_resetter(.plan_count-1);
+    record.marker_last <- readRDS(paste0(record.path,"/records_marker_",.plan_count-1,".rds"));
   }
   
   
@@ -895,7 +817,7 @@ recording_identifier <- function(plan) {
   
 }
 
-recordMarker_resetter <- function(plan_count){
+recordMarker_resetter <- function(.plan_count){
   
   ## Recording initial markers about being ran or not
   record.marker <- matrix(nrow = 20,ncol = 2);
@@ -905,26 +827,26 @@ recordMarker_resetter <- function(plan_count){
   record.marker[,2] <- rep(F, 20)
   record.path <- paste0(getwd(),"/temp/records");
   
-  saveRDS(record.marker,file = paste0(record.path,"/records_marker_",plan_count,".rds"));
+  saveRDS(record.marker,file = paste0(record.path,"/records_marker_",.plan_count,".rds"));
   
 }
 
 marker_record <- function(functionNM){
   record.path <- paste0(getwd(),"/temp/records");
   
-  if (!file.exists(paste0(record.path,"/records_marker_",plan_count,".rds"))){
+  if (!file.exists(paste0(record.path,"/records_marker_",.plan_count,".rds"))){
     record.marker <- matrix(nrow = 20,ncol = 2);
     record.marker[,1] <- c("trim_1","trim_2","trim_3","trim_4","profiling_1","profiling_2","profiling_3","profiling_4",
                            "others_1","others_2","others_3","others_4","operators_1","operators_2","operators_3","operators_4",
                            "operators_5","operators_6","operators_7","operators_8");
     record.marker[,2] <- rep(F, 20)
-    saveRDS(record.marker,file = paste0(record.path,"/records_marker_",plan_count,".rds"))
+    saveRDS(record.marker,file = paste0(record.path,"/records_marker_",.plan_count,".rds"))
   } else {
-    record.marker <- readRDS(paste0(record.path,"/records_marker_",plan_count,".rds"));
+    record.marker <- readRDS(paste0(record.path,"/records_marker_",.plan_count,".rds"));
   };
   
   
-  # If this step has been run at "plan_count" time, is will be marked as T
+  # If this step has been run at ".plan_count" time, is will be marked as T
   if(functionNM=="datatrim_c1"){record.marker[1,2] <- T};
   if(functionNM=="datatrim_c2"){record.marker[2,2] <- T};
   if(functionNM=="datatrim_c3"){record.marker[3,2] <- T};
@@ -949,7 +871,7 @@ marker_record <- function(functionNM){
   if(functionNM==""){record.marker[19,2] <- F};
   if(functionNM==""){record.marker[20,2] <- F};
   
-  saveRDS(record.marker,file = paste0(record.path,"/records_marker_",plan_count,".rds"));
+  saveRDS(record.marker,file = paste0(record.path,"/records_marker_",.plan_count,".rds"));
 }
 
 controller.resetter <- function() {
@@ -1153,6 +1075,35 @@ CreateRawRscript2 <- function(guestName, meth){
   
 }
 
+OptiFileChanged <- function(data_trim_folder){
+  
+  envir_previous <- readRDS(paste0(fullUserPath,"/temp/envir/envir.rds"));
+  optifiles_last <- try(envir_previous[["mSet"]]@rawInMemory@phenoData@data[["sample_name"]],silent = T);
+  optifiles_current <- list.files(data_trim_folder,recursive = TRUE);
+  
+  if(is.null(optifiles_last) | class(optifiles_last) == "try-error"){
+    return(FALSE);
+  }
+  
+  if(all(nchar(optifiles_last) != nchar(optifiles_current))){
+    return(TRUE);
+  }
+}
+
+ProcessFileChanged <- function(data_process_folder){
+  
+  envir_previous <- readRDS(paste0(fullUserPath,"/temp/envir/envir.rds"));
+  optifiles_last <- try(basename(envir_previous[["mSet"]]@rawOnDisk@processingData@files),silent = T);
+  optifiles_current <- list.files(data_process_folder, recursive = TRUE);
+  
+  if(is.null(optifiles_last) | class(optifiles_last) == "try-error"){
+    return(FALSE);
+  }
+  
+  if(all(nchar(optifiles_last) != nchar(optifiles_current))){
+    return(TRUE);
+  }
+}
 
 
 FastRunningShow_auto <- function(fullUserPath){

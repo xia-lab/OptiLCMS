@@ -27,10 +27,17 @@ PerformParamsOptimization <- function(mSet, param=p0, method="DoE", ncore=4, run
     stop("Wrong mSet object provided !")
   }
   
-  .optimize_switch <- TRUE;
+  if(missing(param)) {
+    param <- SetPeakParam();
+  }
+  
+  .optimize_switch <<- TRUE;
   
   #Build Running plan for optimization - Indentify the controller
-  if (is.null(running.controller)) {c1 <- T} else {
+  if (is.null(running.controller)) {
+    c1 <- T;
+    .running.as.plan <- FALSE;
+  } else {
     c1 <- running.controller[["others_1"]][["c1"]]
   }
   
@@ -167,14 +174,18 @@ PerformParamsOptimization <- function(mSet, param=p0, method="DoE", ncore=4, run
       
     }
     
-    optimize_switch <<-F;
+    .optimize_switch <<-F;
     
   } else {
     end.time<-Sys.time();
     message("Time Spent In Total:",round((as.numeric(end.time) - as.numeric(start.time))/60, 1),"mins","\n");
   }
   
-  return(p1)
+  if(.on.public.web) {
+    # do nothing for now
+  } else {
+    return(p1);
+  }
 }
 
 #' @title Overall Funtion for DoE

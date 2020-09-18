@@ -655,7 +655,7 @@ massifquantROIs <- function(mz,
                             criticalVal,
                             segs,
                             scanBack) {
-  if (.on.public.web & !optimize_switch) {
+  if (.on.public.web & !.optimize_switch) {
     massifquantROIs <-
       .Call(
         "massifquant",
