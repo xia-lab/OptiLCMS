@@ -105,10 +105,6 @@ setClass("mSet",
 ##' liquid chromatography/mass spectrometry data sets." Analytical Chemistry, 84, 283-289. 
 ##' http://pubs.acs.org/doi/abs/10.1021/ac202450g.
 
-if (.on.public.web){
-  load_biobase()
-}
-
 setClass("mSetRule",
          representation(ionlistfile="character",
                         ionlist="data.frame", 
@@ -146,4 +142,65 @@ setClass("mSetRule",
          validity=function(object) {
            TRUE
          })
+
+
+setClass(
+  "controller",
+  representation(
+    data_trim = "logical",
+    peak_profiling = "logical",
+    others_1 = "logical",
+    operators = "logical"
+  ),
+  contains = c("Versioned"),
+  prototype = prototype(
+    data_trim = logical(),
+    peak_profiling = logical(),
+    others_1 = logical(),
+    operators = logical()
+  ),
+  validity = function(object) {
+    TRUE
+  }
+)
+
+setClass(
+  "ResumeHistory",
+  representation(setNO = "numeric",
+                 FunishedPosition = "numeric"),
+  contains = c("Versioned"),
+  prototype = prototype(
+    setNO = vector("numeric"),
+    FunishedPosition = vector("numeric")
+  ),
+  validity = function(object) {
+    TRUE
+  }
+)
+
+
+#' Running Plan Class is designed for fast resuming
+#' @author Zhiqiang Pang
+#' @noRd
+#' 
+setClass(
+  "ResumingePlan",
+  representation(
+    running.controller = "controller",
+    CommandSet = "list",
+    RunningHistory = "ResumeHistory",
+    PlanNumber = "numeric"
+  ),
+  contains = c("Versioned"),
+  prototype = prototype(
+    running.controller = new("controller"),
+    CommandSet = vector("list"),
+    RunningHistory = new("ResumeHistory"),
+    PlanNumber = numeric(0),
+    new("Versioned", versions = c(OptiLCMS = "0.1.1"))
+  ),
+  validity = function(object) {
+    TRUE
+  }
+)
 

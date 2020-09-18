@@ -58,7 +58,7 @@ PerformDataInspect <-
       
     }
     
-    if(on.public.web){
+    if(.on.public.web){
       load_MSnbase()
     }
     
@@ -317,7 +317,7 @@ PlotXIC <-
     # Load data results
     load("mSet.rda")
     
-    if(on.public.web){
+    if(.on.public.web){
       load_MSnbase()
     }
     
@@ -457,7 +457,7 @@ PlotXIC <-
     
     peak_width <- max(res$RT) - min(res$RT);
     
-    if(on.public.web){
+    if(.on.public.web){
       load_ggplot2();
       load_ggrepel();
     }
@@ -746,7 +746,7 @@ PlotSpectraPCA <-
     df <- as.data.frame(mSet_pca$x)
     df$group <- sample_idx
     
-    if(on.public.web){
+    if(.on.public.web){
       load_ggplot2();
       load_ggrepel();
     }
@@ -1033,7 +1033,7 @@ PlotSpectraBPIadj <-
 plotMSfeature <- function(FeatureNM,
                           dpi = 72,
                           format = "png") {
-  if(on.public.web){
+  if(.on.public.web){
     load_ggplot2();
     load_ggrepel();
     load_RColorBrewer();

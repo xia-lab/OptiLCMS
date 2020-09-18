@@ -350,6 +350,8 @@ ImportRawMSData <-
         running.controller[["others_1"]][["c3"]] # used to control plotting option
     }
     
+    .optimize_switch <<- FALSE;
+    
     if (!dir.exists(foldername) & .on.public.web) {
       foldername <- "/home/glassfish/projects/MetaboDemoRawData/upload"
     }
