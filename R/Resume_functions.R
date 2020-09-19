@@ -1105,6 +1105,20 @@ CommandOrganize <- function(command, commands, FUNPos){
   return(command)
 }
 
+ParamVerify <- function(StandardCommands) {
+  
+  if(class(StandardCommands) != "OptiCommandSet" | class(StandardCommands) != "CustCommandSet"){
+    stop("Wrong standard Command Set were provided as input !")
+  }
+  
+  if (class(StandardCommands) != "OptiCommandSet") {
+    
+    StandardCommands@ROIExtraction[[3]]
+    
+  }
+  
+}
+
 CreateRawRscript <- function(guestName, planString, planString2, rawfilenms.vec){
   
   guestName <<- guestName;

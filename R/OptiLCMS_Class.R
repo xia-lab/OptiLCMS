@@ -113,6 +113,30 @@ setClass(
   }
 )
 
+setClass(
+  "CustCommandSet",
+  representation(
+    ROIExtraction = "language",
+    ParamsOptimization = "language",
+    ImportRawMSData = "language",
+    PeakProfiling = "language",
+    PeakAnnotation = "language",
+    FormatPeakList = "language"
+  ),
+  prototype = prototype(
+    ROIExtraction = new("call"),
+    ParamsOptimization = new("call"),
+    ImportRawMSData = new("call"),
+    PeakProfiling = new("call"),
+    PeakAnnotation = new("call"),
+    FormatPeakList = new("call")
+  ),
+  validity = function(object) {
+    TRUE
+  }
+)
+
+
 
 setClass(
   "controller",
