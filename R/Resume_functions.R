@@ -148,6 +148,7 @@ running.plan <- function(plan=NULL,...){
   plan@PlanNumber <- .plan_count <<- .plan_count + 1;
   
   CommandsVerified <- CommandsVerify(commands);
+  MessageOutput("Commands Origanization Finished!", ecol = "\n", NULL);
   
   plan@CommandSet[[paste0("command_set_",.plan_count)]] <- CommandsVerified;
   
@@ -182,23 +183,34 @@ ExecutePlan <- function(plan=NULL){
   
   
   # Reset running.controller to make sure everything is normal at beginning
-  plan$running.controller <- controller.resetter()
+  plan@running.controller <- controller.resetter();
   
-  if (length(plan) == 2){
+  if (length(plan@CommandSet) == 1){
     
-    envir$rc <<- plan$running.controller;
-    perform.plan(plan[["command_set_1"]]);
+    envir$rc <<- plan@running.controller;
+    perform.plan(plan@CommandSet[["command_set_1"]]);
     
     envir.path <- paste0(getwd(),"/temp/envir");
     saveRDS(envir, file = paste0(envir.path,"/envir.rds"));
     
-  } else if (length(plan) > 2) {
+  } else if (length(plan@CommandSet) > 1) {
     
     ## This is the most important part for the whole pipeline
     ## Module 1-6: Dectect whether the parameters changed or not so as to operate the whole pipeline
     
-    last_command_set <- plan[[names(plan)[length(plan)-1]]];
-    new_command_set <- plan[[names(plan)[length(plan)]]];
+    last_command_set <- plan@CommandSet[[.plan_count-1]];
+    new_command_set <- plan@CommandSet[[.plan_count]];
+    
+    if(class(last_command_set) != class(new_command_set)){
+      plan@running.controller <- controller.resetter();
+    } else {
+      
+      plan <-
+        controller.modifier(new_command_set,
+                            last_command_set,
+                            plan)
+
+    }
     
     for (i in 1:length(new_command_set)){
       for (j in 1:length(last_command_set)){
@@ -906,10 +918,21 @@ controller.resetter <- function() {
 
 perform.plan <- function(plan.set){
   
-  for (i in plan.set){
-    perform.command(i)
+  if(class(plan.set) == "OptiCommandSet"){
+    perform.command(plan.set@ROIExtraction);
+    perform.command(plan.set@ParamsOptimization);
+    perform.command(plan.set@ImportRawMSData);
+    perform.command(plan.set@PeakProfiling);
+    perform.command(plan.set@PeakAnnotation);
+    perform.command(plan.set@FormatPeakList);
   }
   
+  if(class(plan.set) == "CustCommandSet"){
+    perform.command(plan.set@ImportRawMSData);
+    perform.command(plan.set@PeakProfiling);
+    perform.command(plan.set@PeakAnnotation);
+    perform.command(plan.set@FormatPeakList);
+  }
 }
 
 perform.command <- function(command){
@@ -996,8 +1019,7 @@ profiling_param_identifier <- function(new_command,last_command){
 
 CommandsVerify <- function(commands){
   
-  OptiPipeline <- FALSE;
-  OCP1 <- OCP2 <- OCP3 <- OCP4 <- OCP5 <- OCP6 <- OCP7 <- OCP8 <- FALSE;
+  CustPipeline <- OptiPipeline <- FALSE;
 
   # Identify if the commandset is automated optimization
   OptiPipeline <- any(unlist(lapply(
@@ -1011,7 +1033,20 @@ CommandsVerify <- function(commands){
     }
   )))
   
-  # Organize the commands as a standard commandset for next step
+  CustPipeline <- all(unlist(lapply(
+    commands,
+    FUN = function(x) {
+      if (class(x[[3]]) == "call") {
+        if (x[[3]][[1]] == "PerformParamsOptimization") {
+          return(FALSE)
+        } else {
+          return(TRUE)
+        }
+      }
+    }
+  )))
+  
+  # Organize the commands as a standard opti/cust commandset for next step
   # including folowing parts:
   
   # 1. PerformROIExtraction / PerformDataTrimming;
@@ -1033,43 +1068,159 @@ CommandsVerify <- function(commands){
         
         if(commands[[i]][[3]][[1]] == "PerformDataTrimming" | commands[[i]][[3]][[1]] == "PerformROIExtraction"){
           FUNCommandArray <- c(FUNCommandArray, i);
-          StandCommand@ROIExtraction <- CommandOrganize(commands[[i]], commands, i);
+          tmp_command <- CommandOrganize(commands[[i]], commands, i);
+          
+          ArguList <- c("datapath", "mode", "write", "mz", "mzdiff", "rt", "rtdiff", "rt.idx", "plot", "running.controller");
+          ArgNM <- ArguList[which(names(tmp_command[[3]])[-1] == "")];
+          ArgPos <- which(ArgNM == ArguList);
+          names(tmp_command[[3]])[ArgPos + 1] <- ArgNM;
+          
+          StandCommand@ROIExtraction <- tmp_command;
         }
         
         if(commands[[i]][[3]][[1]] == "PerformParamsOptimization"){
           FUNCommandArray <- c(FUNCommandArray, i);
-          StandCommand@ParamsOptimization <- CommandOrganize(commands[[i]], commands, i);
+          tmp_command <- CommandOrganize(commands[[i]], commands, i);
+          
+          ArguList <- c("mSet", "param", "method", "ncore", "running.controller");
+          ArgNM <- ArguList[which(names(tmp_command[[3]])[-1] == "")];
+          ArgPos <- which(ArgNM == ArguList);
+          names(tmp_command[[3]])[ArgPos + 1] <- ArgNM;
+          
+          StandCommand@ParamsOptimization <- tmp_command;
         }
         
         if(commands[[i]][[3]][[1]] == "ImportRawMSData"){
           FUNCommandArray <- c(FUNCommandArray, i);
-          StandCommand@ImportRawMSData <- CommandOrganize(commands[[i]], commands, i);
+          tmp_command <- CommandOrganize(commands[[i]], commands, i);
+          
+          ArguList <- c("mSet", "foldername", "mode", "ncores", "plotSettings", "running.controller");
+          ArgNM <- ArguList[which(names(tmp_command[[3]])[-1] == "")];
+          ArgPos <- which(ArgNM == ArguList);
+          names(tmp_command[[3]])[ArgPos + 1] <- ArgNM;
+          
+          StandCommand@ImportRawMSData <- tmp_command;
         }
         
         if(commands[[i]][[3]][[1]] == "PerformPeakProfiling"){
           FUNCommandArray <- c(FUNCommandArray, i);
-          StandCommand@PeakProfiling <- CommandOrganize(commands[[i]], commands, i);
+          tmp_command <- CommandOrganize(commands[[i]], commands, i);
+          
+          ArguList <- c("mSet", "Params", "plotSettings", "ncore", "running.controller");
+          ArgNM <- ArguList[which(names(tmp_command[[3]])[-1] == "")];
+          ArgPos <- which(ArgNM == ArguList);
+          names(tmp_command[[3]])[ArgPos + 1] <- ArgNM;
+          
+          StandCommand@PeakProfiling <- tmp_command;
         }
         
         if(commands[[i]][[3]][[1]] == "PerformPeakAnnotation"){
           FUNCommandArray <- c(FUNCommandArray, i);
-          StandCommand@PeakAnnotation <- CommandOrganize(commands[[i]], commands, i);
+          tmp_command <- CommandOrganize(commands[[i]], commands, i);
+          
+          ArguList <- c("mSet", "annotaParam", "ncore", "running.controller");
+          ArgNM <- ArguList[which(names(tmp_command[[3]])[-1] == "")];
+          ArgPos <- which(ArgNM == ArguList);
+          names(tmp_command[[3]])[ArgPos + 1] <- ArgNM;
+          
+          StandCommand@PeakAnnotation <- tmp_command;
         }
         
         if(commands[[i]][[3]][[1]] == "FormatPeakList"){
           FUNCommandArray <- c(FUNCommandArray, i);
-          StandCommand@FormatPeakList <- CommandOrganize(commands[[i]], commands, i);
+          tmp_command <- CommandOrganize(commands[[i]], commands, i);
+          
+          ArguList <- c("mSet", "annParams", "filtIso", "filtAdducts", "missPercent");
+          ArgNM <- ArguList[which(names(tmp_command[[3]])[-1] == "")];
+          ArgPos <- which(ArgNM == ArguList);
+          names(tmp_command[[3]])[ArgPos + 1] <- ArgNM;
+          
+          StandCommand@FormatPeakList <- tmp_command;
         }
         
       }
       
+    }
+    
+    if(length(commands) > 6){
+      print("More functions than standard OptiPipeline were detected !")
+      print(paste0("NOTE: Only ",paste(scales::ordinal(FUNCommandArray),collapse = ", "), 
+                     " functions in this plan and their direct defination on the argument will be included !"))
+    }
+  }
+  
+  if(CustPipeline){
+    
+    VARCommandArray <- NULL;
+    FUNCommandArray <- NULL;
+    StandCommand <- new("CustCommandSet");
+    
+    for (i in seq_along(commands)){
+      
+      if(class(commands[[i]][[3]]) == "call"){
+
+        
+        if(commands[[i]][[3]][[1]] == "ImportRawMSData"){
+          FUNCommandArray <- c(FUNCommandArray, i);
+          tmp_command <- CommandOrganize(commands[[i]], commands, i);
+          
+          ArguList <- c("mSet", "foldername", "mode", "ncores", "plotSettings", "running.controller");
+          ArgNM <- ArguList[which(names(tmp_command[[3]])[-1] == "")];
+          ArgPos <- which(ArgNM == ArguList);
+          names(tmp_command[[3]])[ArgPos + 1] <- ArgNM;
+          
+          StandCommand@ImportRawMSData <- tmp_command;
+        }
+        
+        if(commands[[i]][[3]][[1]] == "PerformPeakProfiling"){
+          FUNCommandArray <- c(FUNCommandArray, i);
+          tmp_command <- CommandOrganize(commands[[i]], commands, i);
+          
+          ArguList <- c("mSet", "Params", "plotSettings", "ncore", "running.controller");
+          ArgNM <- ArguList[which(names(tmp_command[[3]])[-1] == "")];
+          ArgPos <- which(ArgNM == ArguList);
+          names(tmp_command[[3]])[ArgPos + 1] <- ArgNM;
+          
+          StandCommand@PeakProfiling <- tmp_command;
+        }
+        
+        if(commands[[i]][[3]][[1]] == "PerformPeakAnnotation"){
+          FUNCommandArray <- c(FUNCommandArray, i);
+          tmp_command <- CommandOrganize(commands[[i]], commands, i);
+          
+          ArguList <- c("mSet", "annotaParam", "ncore", "running.controller");
+          ArgNM <- ArguList[which(names(tmp_command[[3]])[-1] == "")];
+          ArgPos <- which(ArgNM == ArguList);
+          names(tmp_command[[3]])[ArgPos + 1] <- ArgNM;
+          
+          StandCommand@PeakAnnotation <- tmp_command;
+        }
+        
+        if(commands[[i]][[3]][[1]] == "FormatPeakList"){
+          FUNCommandArray <- c(FUNCommandArray, i);
+          tmp_command <- CommandOrganize(commands[[i]], commands, i);
+          
+          ArguList <- c("mSet", "annParams", "filtIso", "filtAdducts", "missPercent");
+          ArgNM <- ArguList[which(names(tmp_command[[3]])[-1] == "")];
+          ArgPos <- which(ArgNM == ArguList);
+          names(tmp_command[[3]])[ArgPos + 1] <- ArgNM;
+          
+          StandCommand@FormatPeakList <- tmp_command;
+        }
+        
+      }
       
     }
     
+    if(length(commands) > 4){
+      print("More functions than standard OptiPipeline were detected !")
+      print(paste0("NOTE: Only ",paste(scales::ordinal(FUNCommandArray),collapse = ", "), 
+                   " functions in this plan and their direct defination on the argument will be included !"))
+    }
     
   }
   
-  
+  return(StandCommand)
 }
 
 CommandOrganize <- function(command, commands, FUNPos){
@@ -1104,6 +1255,7 @@ CommandOrganize <- function(command, commands, FUNPos){
   
   return(command)
 }
+
 
 CreateRawRscript <- function(guestName, planString, planString2, rawfilenms.vec){
   

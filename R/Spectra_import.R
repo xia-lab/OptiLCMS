@@ -345,9 +345,9 @@ ImportRawMSData <-
     } else {
       plan_switch <- TRUE;
       c2 <-
-        running.controller[["others_1"]][["c2"]] # used to control data import
+        running.controller@others_1[["c2"]] # used to control data import
       c3 <-
-        running.controller[["others_1"]][["c3"]] # used to control plotting option
+        running.controller@others_1[["c3"]] # used to control plotting option
     }
     
     .optimize_switch <<- FALSE;

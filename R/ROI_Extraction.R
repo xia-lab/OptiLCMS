@@ -80,10 +80,10 @@ PerformROIExtraction <-
       c1 <- c2 <- c3 <- c4 <- TRUE;
       .running.as.plan <<- FALSE;
     } else {
-      c1 <- running.controller[["data_trim"]][["c1"]];
-      c2 <- running.controller[["data_trim"]][["c2"]];
-      c3 <- running.controller[["data_trim"]][["c3"]];
-      c4 <- running.controller[["data_trim"]][["c4"]];
+      c1 <- running.controller@data_trim[["c1"]]; # Data read part
+      c2 <- running.controller@data_trim[["c2"]]; # Data trim part
+      c3 <- running.controller@data_trim[["c3"]]; # Data write part
+      c4 <- running.controller@data_trim[["c4"]]; # Data plot part
       .running.as.plan <<- TRUE;
     }
     

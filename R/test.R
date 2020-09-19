@@ -23,14 +23,17 @@ testOptiLCMS <- function(){
 # remove.packages("OptiLCMS", lib="~/R/x86_64-pc-linux-gnu-library/4.0")
 
 # Resumming Running ----
+# MessageOutput <- OptiLCMS:::MessageOutput
+# .on.public.web <- F
+# 
 plan <- InitializaPlan("raw_opt","/home/glassfish/projects/MetaboDemoRawData/")
 plan <- running.plan(plan,
                      data_folder_QC <- 'upload/QC/',
                      mSet <- PerformROIExtraction(datapath = data_folder_QC, rt.idx = 0.9, plot = F, running.controller = rc),
                      param_initial <- SetPeakParam(),
-                     param_optimized <- PerformParamsOptimization(mSet = mSet, param = param_initial, ncore = 4, running.controller = rc),
+                     best_parameters <- PerformParamsOptimization(mSet = mSet, param_initial, ncore = 4, running.controller = rc),
                      data_folder_Sample <- 'upload/',
-                     param <- param_optimized$best_parameters,
+                     param <- best_parameters,
                      plotSettings1 <- SetPlotParam(Plot=T),
                      plotSettings2 <- SetPlotParam(Plot=T),
                      mSet <- ImportRawMSData(mSet = mSet, foldername = data_folder_Sample, plotSettings = plotSettings1, running.controller = rc),

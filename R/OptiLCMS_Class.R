@@ -113,6 +113,24 @@ setClass(
   }
 )
 
+setClass(
+  "CustCommandSet",
+  representation(
+    ImportRawMSData = "language",
+    PeakProfiling = "language",
+    PeakAnnotation = "language",
+    FormatPeakList = "language"
+  ),
+  prototype = prototype(
+    ImportRawMSData = new("call"),
+    PeakProfiling = new("call"),
+    PeakAnnotation = new("call"),
+    FormatPeakList = new("call")
+  ),
+  validity = function(object) {
+    TRUE
+  }
+)
 
 setClass(
   "controller",

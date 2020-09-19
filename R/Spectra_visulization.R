@@ -677,7 +677,7 @@ PlotSpectraInsensityStistics <-
 #' @param format
 #' @param dpi
 #' @param width
-#'
+#' @importFrom ggrepel geom_text_repel
 #' @return
 #' @export
 #'

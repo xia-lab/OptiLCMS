@@ -38,7 +38,7 @@ PerformParamsOptimization <- function(mSet, param=p0, method="DoE", ncore=4, run
     c1 <- T;
     .running.as.plan <- FALSE;
   } else {
-    c1 <- running.controller[["others_1"]][["c1"]]
+    c1 <- running.controller@others_1[["c1"]]
   }
   
   MessageOutput("Step 1/6: Start to optimize parameters! \nThis step may take a long time...", "\n", NULL)
@@ -266,13 +266,11 @@ optimize.xcms.doe <- function(raw_data, param, ncore = 8){
   optimizedxcmsObject <- result$best_settings$xset;
   
   ##Parameters Out-put
-  peakParams2<-list();
-  peakParams2$best_parameters <- result[["best_settings"]][["parameters"]];
-  peakParams2$data<-optimizedxcmsObject;
+  best_parameters <- result[["best_settings"]][["parameters"]];
   
   MessageOutput(paste0("Step 1/6: Parameters Optimization Finished ! (", Sys.time(),")"), "\n", NULL);
 
-  return(peakParams2)
+  return(best_parameters)
 }
 
 #' @title Core Optimization Function of DoE

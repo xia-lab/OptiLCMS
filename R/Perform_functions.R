@@ -194,13 +194,13 @@ PerformPeakProfiling <-
       .running.as.plan <<- FALSE;
     } else {
       c1 <-
-        running.controller[["peak_profiling"]][["c1"]] # used to control peak picking
+        running.controller@peak_profiling[["c1"]] # used to control peak picking
       c2 <-
-        running.controller[["peak_profiling"]][["c2"]] # used to control peak alignment
+        running.controller@peak_profiling[["c2"]] # used to control peak alignment
       c3 <-
-        running.controller[["peak_profiling"]][["c3"]] # used to control peak filing
+        running.controller@peak_profiling[["c3"]] # used to control peak filing
       c4 <-
-        running.controller[["peak_profiling"]][["c4"]] # used to control plotting
+        running.controller@peak_profiling[["c4"]] # used to control plotting
     }
     
     .optimize_switch <<- FALSE;
@@ -218,7 +218,12 @@ PerformPeakProfiling <-
 
     if(!is.null(Params)){
       mSet@params <- updateRawSpectraParam (Params);
+    } else if (is.null(Params) & length(mSet@params) == 0){
+      warning("Param is missing. Will use the default generic/general params, 
+              but optimization with PerformParamsOptimization is strongly recommanded !");
+      mSet@params <- updateRawSpectraParam (SetPeakParam());
     }
+    
     
     ### Setting the different parallel method for linux or windows
     MessageOutput(mes = NULL,
@@ -596,7 +601,7 @@ PerformPeakAnnotation <-
       operators_4 <- T;
       .running.as.plan <<- FALSE;
     } else {
-      operators_4 <- running.controller[["operators"]][["operators_4"]];
+      operators_4 <- running.controller@operators[["operators_4"]];
       .running.as.plan <<- TRUE;
     }
     
