@@ -29,16 +29,16 @@ testOptiLCMS <- function(){
 plan <- InitializaPlan("raw_opt","/home/glassfish/projects/MetaboDemoRawData/")
 plan <- running.plan(plan,
                      data_folder_QC <- 'upload/QC/',
-                     mSet <- PerformROIExtraction(datapath = data_folder_QC, rt.idx = 0.9, plot = F, running.controller = rc),
+                     mSet <- PerformROIExtraction(datapath = data_folder_QC, rt.idx = 0.8, plot = F, running.controller = rc),
                      param_initial <- SetPeakParam(),
                      best_parameters <- PerformParamsOptimization(mSet = mSet, param_initial, ncore = 4, running.controller = rc),
-                     data_folder_Sample <- 'upload/',
+                     data_folder_Sample <- 'upload1/',
                      param <- best_parameters,
                      plotSettings1 <- SetPlotParam(Plot=T),
                      plotSettings2 <- SetPlotParam(Plot=T),
                      mSet <- ImportRawMSData(mSet = mSet, foldername = data_folder_Sample, plotSettings = plotSettings1, running.controller = rc),
-                     mSet <- PerformPeakProfiling(mSet = mSet, param, plotSettings = plotSettings2, running.controller = rc),
-                     annParams <- SetAnnotationParam(polarity = 'negative', mz_abs_add = 0.015),
+                     mSet <- PerformPeakProfiling(mSet = mSet, Params = SetPeakParam(ppm = 5,bw = 10), plotSettings = plotSettings2, running.controller = rc),
+                     annParams <- SetAnnotationParam(polarity = 'negative', mz_abs_add = 0.025),
                      mSet <- PerformPeakAnnotation(mSet = mSet, annotaParam = annParams, ncore =1, running.controller = rc),
                      maPeaks <- FormatPeakList(mSet = mSet, annParams, filtIso =F, filtAdducts = FALSE,missPercent = 1));
 ExecutePlan(plan)

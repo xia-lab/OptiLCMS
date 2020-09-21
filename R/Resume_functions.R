@@ -895,9 +895,12 @@ controller.resetter <- function() {
   points <- rep(T, 4);
   names(points) <- c("c1", "c2", "c3", "c4");
   
-  running.controller@data_trim <-
+  running.controller@ROI_extract <-
+    running.controller@data_import <-
     running.controller@peak_profiling <-
-    running.controller@others_1 <- points;
+    running.controller@peak_annotation <-
+    running.controller@others_1 <- 
+    points;
   
   running.controller@operators <- c(F, F, F, F, F, F, F, F);
   
@@ -1348,6 +1351,30 @@ CreateRawRscript2 <- function(guestName, meth){
   cat(str);
   sink();
   return(1)
+  
+}
+
+ParamsChanged <- function(lastParamArgus, newParamArgus){
+  
+  if (is.call(newParamArgus) & is.call(lastParamArgus)){
+    new_param <- eval(newParamArgus);
+    last_param <- eval(lastParamArgus);
+    
+    identifiers <- NULL;
+    
+    for (i in 1:length(new_param)){
+      for (j in 1:length(last_param)){
+        if (names(new_param[i])==names(last_param[j]) & new_param[[i]] != last_param[[j]]){
+          identifiers <- c(identifiers, names(new_param[i]))
+        }
+      }
+    }
+    
+    return(identifiers)
+    
+  } else {
+    return("all")
+  }
   
 }
 

@@ -598,7 +598,7 @@ PerformPeakAnnotation <-
     function.name <- "peak_annotation"
     
     if (is.null(running.controller) | .plan_count == 1) {
-      operators_4 <- T;
+      operators_4 <- TRUE;
       .running.as.plan <<- FALSE;
     } else {
       operators_4 <- running.controller@operators[["operators_4"]];

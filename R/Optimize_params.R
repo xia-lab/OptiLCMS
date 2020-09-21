@@ -35,7 +35,7 @@ PerformParamsOptimization <- function(mSet, param=p0, method="DoE", ncore=4, run
   
   #Build Running plan for optimization - Indentify the controller
   if (is.null(running.controller)) {
-    c1 <- T;
+    c1 <- TRUE;
     .running.as.plan <- FALSE;
   } else {
     c1 <- running.controller@others_1[["c1"]]

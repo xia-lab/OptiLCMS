@@ -135,14 +135,18 @@ setClass(
 setClass(
   "controller",
   representation(
-    data_trim = "logical",
+    ROI_extract = "logical",
+    data_import = "logical",
     peak_profiling = "logical",
+    peak_annotation = "logical",
     others_1 = "logical",
     operators = "logical"
   ),
   prototype = prototype(
-    data_trim = logical(),
+    ROI_extract = logical(),
+    data_import = logical(),
     peak_profiling = logical(),
+    peak_annotation = logical(),
     others_1 = logical(),
     operators = logical()
   ),

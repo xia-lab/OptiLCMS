@@ -2,22 +2,23 @@ controller.modifier <- function(new_command_set, last_command_set, plan){
   
   ###-------------Operators definition ------------//
   
-  #' operators_1 : SetPeakParam ~ PerformParamsOptimization;
-  #' operators_2 : data_folder_trainning ~ PerformDataTrimming;
-  #' operators_3 : data_folder_sample ~ peak_profiling;
-  #' operators_4 : PerformPeakProfiling ~ PerformPeakAnnotation;
+  #' operators_1 : PerformDataTrimming ~ PerformParamsOptimization;
+  #' operators_2 : PerformParamsOptimization ~ peak_profiling;  #' 
+  #' operators_3 : PerformPeakProfiling ~ PerformPeakAnnotation;  #' 
+  #' operators_4 : ;
   
   
-  #' others_1 c1 : SetPeakParam;
-  #' others_1 c2 : ImportRawData - reading part;
-  #' others_1 c3 : ImportRawData - plotting part;
-  #' others_1 c4 : Start to do annotation.
+  #' others_1 c1 : Control Optimization or not;
+  #' others_1 c2 : ;
+  #' others_1 c3 : ;
+  #' others_1 c4 : .
   
   ##----------------------------------------------//
   
   if(class(new_command_set) == "OptiCommandSet"){
     
     # 1. ROIExtraction: -----
+    # 1.1 Note on controller: c1, read; c2, trim; c3, write; c4, plot.
     new_ROIExtraction <- new_command_set@ROIExtraction[[3]];
     last_ROIExtraction <- last_command_set@ROIExtraction[[3]];
     ChangedArugsArray <- NULL;
@@ -40,41 +41,272 @@ controller.modifier <- function(new_command_set, last_command_set, plan){
     
     if(is.null(ChangedArugsArray) | length(ChangedArugsArray) == 0){
       # Not changed !
-      plan@running.controller@data_trim[c(1:4)] <- rep(FALSE, 4);
+      plan@running.controller@ROI_extract[c(1:4)] <- rep(FALSE, 4);
     }
     
+    if("datapath" %in% ChangedArugsArray){
+      plan@running.controller@ROI_extract[c(1:4)] <- rep(TRUE,4);
+      plan@running.controller@operators[1] <- TRUE;
+    }
     
-    # if(new_ROIExtraction$datapath != last_ROIExtraction$datapath){
-    #   plan@running.controller@data_trim[c(1:4)] <- rep(TRUE,4);
-    # }
-    # 
-    # if(new_ROIExtraction$mode != last_ROIExtraction$mode){
-    #   plan@running.controller@data_trim[c(1:4)] <- rep(TRUE,4);
-    # }
-    # 
-    # if(new_ROIExtraction$rt.idx != last_ROIExtraction$rt.idx){
-    #   plan@running.controller@data_trim[c(2:4)] <- rep(TRUE,3);
-    # }
-    # 
-    # if(new_ROIExtraction$plot != last_ROIExtraction$plot){
-    #   plan@running.controller@data_trim[4] <- rep(TRUE,1);
-    # }
-    # 
-    # 
-    # datapath,
-    # mode = "ssm",
-    # write = F,
-    # mz,
-    # mzdiff,
-    # rt,
-    # rtdiff,
-    # rt.idx = 1/15,
-    # plot = T,
-    # running.controller = NULL
-    # #
+    if(any(c("mode", "mz", "mzdiff", "rt", "rtdiff", "rt.idx") %in% ChangedArugsArray)){
+      plan@running.controller@ROI_extract[c(2:4)] <- rep(TRUE,3);
+      plan@running.controller@operators[1] <- TRUE;
+    }
+    
+    if("write" %in% ChangedArugsArray){
+      plan@running.controller@ROI_extract[3] <- TRUE;
+    }
+    
+    if("plot" %in% ChangedArugsArray){
+      plan@running.controller@ROI_extract[4] <- TRUE;
+    }
+    
+    # 2. ParamsOptimization: -----
+    # 2.1 Note on controller: others c1, run or not.
+    new_ParamsOptimization <- new_command_set@ParamsOptimization[[3]];
+    last_ParamsOptimization <- last_command_set@ParamsOptimization[[3]];
+    ChangedArugsArray <- NULL;
+    
+    for (i in 2:length(new_ParamsOptimization)){
+      for (j in 2:length(last_ParamsOptimization)){
+        if (names(new_ParamsOptimization[i]) == names(last_ParamsOptimization[j]) & 
+            new_ParamsOptimization[[i]] != last_ParamsOptimization[[j]]) {
+          ChangedArugsArray <- c(ChangedArugsArray, names(new_ParamsOptimization[i]))
+        } 
+      }
+    }
+    
+    newArugsNMs <- names(new_ParamsOptimization)[-1];
+    lastArugsNMs <- names(last_ParamsOptimization)[-1];
+    NewArugsArray <- setdiff(newArugsNMs,lastArugsNMs);
+    RmArugsArray <- setdiff(lastArugsNMs, newArugsNMs);
+    
+    ChangedArugsArray <- c(ChangedArugsArray, NewArugsArray, RmArugsArray)
+    
+    if(is.null(ChangedArugsArray) | length(ChangedArugsArray) == 0){
+      # Not changed !
+      plan@running.controller@others_1[1] <- FALSE;
+    }
+    
+    if("param" %in% ChangedArugsArray){
+      
+      if(length(RmArugsArray == "param") != 0){
+        if(RmArugsArray == "param"){
+          # refer to: the omitted Argus is param
+          if(last_ParamsOptimization$param == "SetPeakParam()"){
+            # handle: the omitted param is SetPeakParam()
+            plan@running.controller@others_1[1] <- FALSE;
+          } else {
+            # handle: the omitted param is not SetPeakParam()
+            plan@running.controller@others_1[1] <- TRUE;
+          }
+        }
+      }
 
+      if (length(NewArugsArray == "param") != 0) {
+        if (NewArugsArray == "param") {
+          # refer to: the added Argus is param
+          if (new_ParamsOptimization$param == "SetPeakParam()") {
+            # handle: the added param is SetPeakParam()
+            plan@running.controller@others_1[1] <- FALSE;
+          } else {
+            # handle: the added param is not SetPeakParam()
+            plan@running.controller@others_1[1] <- TRUE;
+          }
+        }
+      }
+      
+      if (length(NewArugsArray == "param") == 0 & 
+          length(RmArugsArray == "param") == 0) {
+        plan@running.controller@others_1[1] <- TRUE;
+      }
+      
+    }
+    
+    if(plan@running.controller@operators[1]){
+      # Data ROI changed ! Optimization has to be re-run !
+      plan@running.controller@others_1[1] <- TRUE;
+    }
+    
+    if(plan@running.controller@others_1[1]){
+      # the peak profiling also need to be re-run
+      plan@running.controller@operators[2] <- TRUE;
+    }
+  }
+  
+  # 3. ImportRawMSData: -----
+  # 3.1 Note on controller: others c2, data import. c3, plot.
+  
+  new_ImportRawMSData <- new_command_set@ImportRawMSData[[3]];
+  last_ImportRawMSData <- last_command_set@ImportRawMSData[[3]];
+  ChangedArugsArray <- NULL;
+  
+  for (i in 2:length(new_ImportRawMSData)){
+    for (j in 2:length(last_ImportRawMSData)){
+      if (names(new_ImportRawMSData[i]) == names(last_ImportRawMSData[j]) & 
+          new_ImportRawMSData[[i]] != last_ImportRawMSData[[j]]) {
+        ChangedArugsArray <- c(ChangedArugsArray, names(new_ImportRawMSData[i]))
+      } 
+    }
+  }
+  
+  newArugsNMs <- names(new_ImportRawMSData)[-1];
+  lastArugsNMs <- names(last_ImportRawMSData)[-1];
+  NewArugsArray <- setdiff(newArugsNMs,lastArugsNMs);
+  RmArugsArray <- setdiff(lastArugsNMs, newArugsNMs);
+  
+  ChangedArugsArray <- c(ChangedArugsArray, NewArugsArray, RmArugsArray);
+  
+  if(is.null(ChangedArugsArray) | length(ChangedArugsArray) == 0){
+    # Not changed !
+    plan@running.controller@data_import[c(1:2)] <- rep(TRUE, 2);
+  }
+  
+  if("foldername" %in% ChangedArugsArray){
+    plan@running.controller@data_import[1] <- TRUE;
+  }
+  
+  if("plotSettings" %in% ChangedArugsArray){
+    plan@running.controller@data_import[2] <- TRUE;
+  }
+  
+  # 4. PeakProfiling: -----
+  # 4.1 Note on controller peak_profiling: c1, peak picking; c2, peak alignment; c3, peak filing; c4, plotting.
+  
+  new_PeakProfiling <- new_command_set@PeakProfiling[[3]];
+  last_PeakProfiling <- last_command_set@PeakProfiling[[3]];
+  ChangedArugsArray <- NULL;
+  
+  for (i in 2:length(new_PeakProfiling)){
+    for (j in 2:length(last_PeakProfiling)){
+      if (names(new_PeakProfiling[i]) == names(last_PeakProfiling[j])) {
+        if(new_PeakProfiling[[i]] != last_PeakProfiling[[j]]){
+          ChangedArugsArray <- c(ChangedArugsArray, names(new_PeakProfiling[i]))
+        }
+      } 
+    }
+  }
+  
+  newArugsNMs <- names(new_PeakProfiling)[-1];
+  lastArugsNMs <- names(last_PeakProfiling)[-1];
+  NewArugsArray <- setdiff(newArugsNMs,lastArugsNMs);
+  RmArugsArray <- setdiff(lastArugsNMs, newArugsNMs);
+  
+  ChangedArugsArray <- c(ChangedArugsArray, NewArugsArray, RmArugsArray);
+  
+  if(is.null(ChangedArugsArray) | length(ChangedArugsArray) == 0){
+    # Not changed !
+    plan@running.controller@peak_profiling <- rep(FALSE, 4);
+    names(plan@running.controller@peak_profiling) <- c("c1","c2","c3","c4");
+  }
+  
+  if(plan@running.controller@operators[2]){
+    # OPtimized parameters changed ! re-run everything in peak profiling.
+    plan@running.controller@peak_profiling <- rep(TRUE, 4);
+    names(plan@running.controller@peak_profiling) <- c("c1","c2","c3","c4");
+    
+    plan@running.controller@operators[3] <- TRUE;
+  }
+  
+  if("plotSettings" %in% ChangedArugsArray){
+    plan@running.controller@peak_profiling[4] <- TRUE;
+  }
+
+  if(.on.public.web){
+    # load params.rda and envir.rds and do a comparison
+    envir.path <- paste0(getwd(),"/temp/envir");
+    envir_tmp <- readRDS(paste0(envir.path,"/envir.rds"));
+    last_param <- envir_tmp[["param"]];
+    load("params.rda");
+    new_param <- peakParams;
+    # TODO: need to configure with the web; handle the annotate params at the same time
+    
+  } else {
+    
+    if("Params" %in% ChangedArugsArray){
+      
+      newParamArgus <- new_PeakProfiling$Params;
+      lastParamArgus <- last_PeakProfiling$Params;
+      
+      ChangedParamArgus <- ParamsChanged(lastParamArgus, newParamArgus);
+
+      if(is.null(ChangedParamArgus)){
+        plan@running.controller@peak_profiling[c(1:3)] <- rep(FALSE,3);
+      } else if (any(ChangedParamArgus %in% c("min_peakwidth","max_peakwidth","mzdiff","ppm","noise","prefilter","value_of_prefilter",
+                                              "Peak_method","snthresh","fwhm","sigma","steps"))){
+        plan@running.controller@peak_profiling[c(1:3)] <- rep(TRUE,3);
+        plan@running.controller@operators[3] <- TRUE;
+      } else if (any(ChangedParamArgus %in% c("bw","RT_method","minFraction","minSamples","maxFeatures","family","smooth",
+                                              "span","integrate","mzCenterFun","verbose.columns","fitgauss"))){
+        plan@running.controller@peak_profiling[c(1:3)] <- c(FALSE, TRUE, TRUE);
+        plan@running.controller@operators[3] <- TRUE;
+      } else if (ChangedParamArgus == "all"){
+        plan@running.controller@peak_profiling[c(1:3)] <- rep(TRUE,3);
+        plan@running.controller@operators[3] <- TRUE;
+      }
+    }
     
   }
+  
+  if(plan@running.controller@operators)
+  # 5. PeakAnnotation: -----
+  # 5.1 Note on controller PeakAnnotation: c1, peak annotation; others not used for now.
+
+  new_PeakAnnotation <- new_command_set@PeakAnnotation[[3]];
+  last_PeakAnnotation <- last_command_set@PeakAnnotation[[3]];
+  ChangedArugsArray <- NULL;
+  
+  for (i in 2:length(new_PeakAnnotation)){
+    for (j in 2:length(last_PeakAnnotation)){
+      if (names(new_PeakAnnotation[i]) == names(last_PeakAnnotation[j])) {
+        if(new_PeakAnnotation[[i]] != last_PeakAnnotation[[j]]){
+          ChangedArugsArray <- c(ChangedArugsArray, names(new_PeakAnnotation[i]))
+        }
+      } 
+    }
+  }
+  
+  newArugsNMs <- names(new_PeakAnnotation)[-1];
+  lastArugsNMs <- names(last_PeakAnnotation)[-1];
+  NewArugsArray <- setdiff(newArugsNMs,lastArugsNMs);
+  RmArugsArray <- setdiff(lastArugsNMs, newArugsNMs);
+  
+  ChangedArugsArray <- c(ChangedArugsArray, NewArugsArray, RmArugsArray);
+  
+  if(.on.public.web){
+    # load params.rda and envir.rds and do a comparison
+    # TODO: need to configure with the web and profiling
+    
+  } else {
+    
+    if("Params" %in% ChangedArugsArray){
+      
+      newAnnoParamArgus <- new_PeakAnnotation$annotaParam;
+      lastAnnoParamArgus <- last_PeakAnnotation$annotaParam;
+      
+      ChangedParamArgus <- ParamsChanged(lastAnnoParamArgus, newAnnoParamArgus);
+      
+      if(is.null(ChangedParamArgus)){
+        plan@running.controller@peak_annotation[1] <- FALSE;
+      } else {
+        plan@running.controller@peak_annotation[1] <- TRUE;
+      }
+    }
+    
+  }
+  
+  if(plan@running.controller@operators[3]){
+    plan@running.controller@peak_annotation[1] <- TRUE;
+  }
+  
+  # 6. FormatPeakList: -----
+  # 6.1 Note on controller FormatPeakList.
+  # No need to resume for this function
+  
+  
+  
+  
   
   
   
@@ -572,4 +804,5 @@ controller.modifier <- function(new_command_set, last_command_set, plan){
   # Return the prepared plan for excuting
   return(plan)
   
+  # 
 }
