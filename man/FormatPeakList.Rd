@@ -5,7 +5,7 @@
 \title{Format Peak List}
 \usage{
 FormatPeakList(
-  annotPeaks,
+  mSet,
   annParams,
   filtIso = TRUE,
   filtAdducts = FALSE,
@@ -13,8 +13,6 @@ FormatPeakList(
 )
 }
 \arguments{
-\item{annotPeaks}{The object created using the PerformPeakAnnotation.}
-
 \item{annParams}{The object created using the SetAnnotationParam function,
 containing user's specified or default parameters for downstream
 raw MS data pre-processing.}
@@ -30,6 +28,8 @@ positive ion more and \verb{[M-H]}- for negative ion mode. By default it is set 
 missing in X\\% of samples. For instance, 0.5 specifies to remove features
 that are missing from 50\\% of all samples per group. Method is only valid
 when there are two groups.}
+
+\item{annotPeaks}{The object created using the PerformPeakAnnotation.}
 }
 \description{
 This function formats the CAMERA output to a usable format for MetaboAanlyst.

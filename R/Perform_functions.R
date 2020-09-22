@@ -598,14 +598,14 @@ PerformPeakAnnotation <-
     function.name <- "peak_annotation"
     
     if (is.null(running.controller) | .plan_count == 1) {
-      operators_4 <- TRUE;
+      annoController <- TRUE;
       .running.as.plan <<- FALSE;
     } else {
-      operators_4 <- running.controller@operators[["operators_4"]];
+      annoController <- running.controller@peak_annotation[["c1"]];
       .running.as.plan <<- TRUE;
     }
     
-    if (operators_4) {
+    if (annoController) {
       ## 1. Prepare the Annotation Object-------
       #xs <- mSet$xcmsSet
       

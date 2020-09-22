@@ -4,7 +4,7 @@
 \alias{calcRCS_GSValues}
 \title{Calculatre RCS and GS method}
 \usage{
-calcRCS_GSValues(xset)
+calcRCS_GSValues(mSet)
 }
 \arguments{
 \item{xset}{XCMSnExp Object, this object is produced by 'calculateSet_doe' function.}

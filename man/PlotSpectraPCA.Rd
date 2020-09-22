@@ -6,9 +6,6 @@
 \usage{
 PlotSpectraPCA(mSet, imgName, format = "png", dpi = 72, width = NA)
 }
-\arguments{
-\item{width}{}
-}
 \value{
 
 }

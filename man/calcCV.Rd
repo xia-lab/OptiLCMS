@@ -4,7 +4,7 @@
 \alias{calcCV}
 \title{Calculatre CV method}
 \usage{
-calcCV(xset)
+calcCV(mSet)
 }
 \arguments{
 \item{xset}{XCMSnExp Object, this object is produced by 'calculateSet_doe' function.}

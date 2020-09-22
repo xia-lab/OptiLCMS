@@ -4,10 +4,10 @@
 \alias{calcPPS2}
 \title{Calculate PPS method}
 \usage{
-calcPPS2(xset, isotopeIdentification = c("IPO", "CAMERA"), ...)
+calcPPS2(mSet, isotopeIdentification = c("IPO", "CAMERA"), ...)
 }
 \arguments{
-\item{xset}{xcmsSet Object, this object is produced by 'calculateSet_doe' function, and transformed
+\item{mSet}{xcmsSet Object, this object is produced by 'calculateSet_doe' function, and transformed
 with as(objec,'xcmsSet') function.}
 
 \item{isotopeIdentification}{Character, IsotopeIdentidication method, usually includes 'IPO' and 'CAMERA'.}

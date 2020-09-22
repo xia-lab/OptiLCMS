@@ -4,7 +4,7 @@
 \alias{creatPeakTable}
 \title{creatPeakTable}
 \usage{
-creatPeakTable(xset)
+creatPeakTable(mSet)
 }
 \description{
 creatPeakTable
