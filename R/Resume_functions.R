@@ -209,7 +209,9 @@ ExecutePlan <- function(plan=NULL){
     new_command_set <- plan@CommandSet[[.plan_count]];
     
     if(class(last_command_set) != class(new_command_set)){
+      
       plan@running.controller <- controller.resetter();
+      
     } else {
       
       plan <-
@@ -650,7 +652,6 @@ CommandsVerify <- function(commands){
     for (i in seq_along(commands)){
       
       if(class(commands[[i]][[3]]) == "call"){
-
         
         if(commands[[i]][[3]][[1]] == "ImportRawMSData"){
           FUNCommandArray <- c(FUNCommandArray, i);
@@ -719,6 +720,10 @@ CommandOrganize <- function(command, commands, FUNPos){
   
   varNMs <- as.character(command[[3]]);
   if(varNMs[1] == "PerformROIExtraction"){
+    Vars <- varNMs[-1];
+  } 
+  
+  if(varNMs[2] != "mSet"){
     Vars <- varNMs[-1];
   } else {
     Vars <- varNMs[c(-1,-2)];

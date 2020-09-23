@@ -316,7 +316,7 @@ ImportRawMSDataList <-
 #' @importFrom Cairo Cairo
 
 ImportRawMSData <-
-  function(mSet,
+  function(mSet = NULL,
            foldername,
            mode = "onDisk",
            ncores = 4,
@@ -334,6 +334,8 @@ ImportRawMSData <-
     } 
     
     if(missing(mSet)){
+      mSet <- new("mSet")
+    } else if(is.null(mSet)){
       mSet <- new("mSet")
     }
     
