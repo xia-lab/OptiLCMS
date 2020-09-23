@@ -18,7 +18,7 @@
 InitDataObjects <- function(data.type, anal.type, paired=FALSE){
   
   if(anal.type == "raw" & data.type == "spec") {
-    print("OptiLCMS R objects initialized ...");
+    cat("OptiLCMS R objects initialized ...\n");
     return(new("mSet"))
   }
   
@@ -208,7 +208,7 @@ ImportRawMSDataList <-
     if (!.on.public.web & par.cores == TRUE) {
       cores <- parallel::detectCores()
       num_cores <- ceiling(cores / 2)
-      print(paste0("The number of CPU cores to be used is set to ", num_cores, "."))
+      cat(paste0("The number of CPU cores to be used is set to ", num_cores, ".","\n"))
       
       if (.Platform$OS.type == "unix") {
         BiocParallel::register(BiocParallel::bpstart(BiocParallel::MulticoreParam(num_cores)))
@@ -284,7 +284,7 @@ ImportRawMSDataList <-
       dev.off()
     }
     
-    print("Successfully imported raw MS data!")
+    cat("Successfully imported raw MS data!\n")
     return(raw_data)
   }
 
@@ -339,14 +339,14 @@ ImportRawMSData <-
     
     #Build Running plan for data import - Indentify the controller
     if (is.null(running.controller)) {
+      c1 <- TRUE;
       c2 <- TRUE;
-      c3 <- TRUE;
       plan_switch <- FALSE;
     } else {
       plan_switch <- TRUE;
-      c2 <-
+      c1 <-
         running.controller@data_import[["c1"]] # used to control data import
-      c3 <-
+      c2 <-
         running.controller@data_import[["c2"]] # used to control plotting option
     }
     
@@ -474,7 +474,7 @@ ImportRawMSData <-
         ncores -> num_cores
       }
       
-      print(paste0("The number of CPU cores to be used is set to ", num_cores, "."))
+      cat(paste0("The number of CPU cores to be used is set to ", num_cores, ".","\n"))
       
       if (.Platform$OS.type == "unix") {
         BiocParallel::register(BiocParallel::bpstart(BiocParallel::MulticoreParam(num_cores)))
@@ -485,11 +485,11 @@ ImportRawMSData <-
       
     } else {
       num_cores <- 2
-      print(paste0("The number of CPU cores to be used is set to ", num_cores, "."))
+      cat(paste0("The number of CPU cores to be used is set to ", num_cores, ".","\n"))
       BiocParallel::register(BiocParallel::bpstart(BiocParallel::MulticoreParam(num_cores)))
     }
     
-    if (c2) {
+    if (c1) {
       raw_data <-
         suppressMessages(read.MSdata(
           files = files,
@@ -499,18 +499,18 @@ ImportRawMSData <-
         ))
       
       if(plan_switch){
-        cache.save(raw_data, funpartnm = "raw_data_samples_c2");
-        marker_record("raw_data_samples_c2");
+        cache.save(raw_data, funpartnm = "data_import_c1");
+        marker_record("data_import_c1");
       }
  
     } else {
-      raw_data <- cache.read ("raw_data_samples", "c2")
-      marker_record("raw_data_samples_c2")
+      raw_data <- cache.read ("data_import", "c1")
+      marker_record("data_import_1")
     }
     
     MessageOutput(NULL, NULL, 22)
     
-    if (c3) {
+    if (c2) {
       if (plotSettings$Plot == TRUE) {
         if (is.null(plotSettings$plot.opts)) {
           plot.opts <- "default"
@@ -520,7 +520,7 @@ ImportRawMSData <-
         
         if (plot.opts == "default") {
           #subset raw_data to first 50 samples
-          print("To reduce memory usage BPIS and TICS plots will be created using only 10 samples per group.")
+          cat("To reduce memory usage BPIS and TICS plots will be created using only 10 samples per group.\n")
           
           grp_nms <- names(table(pd$sample_group))
           files <- NA
@@ -550,12 +550,12 @@ ImportRawMSData <-
           h <- as.integer(h)
           
           if (h == 1) {
-            print("ImportRawMSData function aborted!")
+            cat("ImportRawMSData function aborted!\n")
             return(0)
           }
         }
         
-        print("Plotting BPIS and TICS.")
+        cat("Plotting BPIS and TICS.\n")
         # Plotting functions to see entire chromatogram
         bpis <- chromatogram(raw_data_filt, aggregationFun = "max")
         tics <- chromatogram(raw_data_filt, aggregationFun = "sum")
@@ -632,7 +632,7 @@ ImportRawMSData <-
         dev.off()
       }
       if (plan_switch) {
-        marker_record("raw_data_samples_c3")
+        marker_record("data_import_c2")
       }
     }
     
@@ -748,7 +748,7 @@ read.InMemMSd.data <- function(files,
   count.idx <- 0;
   
   for (f in files) {
-    print(paste("Reading MS from",basename(f),"begin !"))
+    cat(paste("Reading MS from",basename(f),"begin !\n"))
     
     filen <- match(f, files)
     filenums <- c(filenums, filen)
@@ -827,8 +827,8 @@ read.InMemMSd.data <- function(files,
     } else { ## .msLevel != 1
       if (length(spidx) == 0)
         stop("No MS(n>1) spectra in file", f)
-      print(paste("Reading ", length(spidx), " MS", msLevel.,
-                  " spectra from file ", basename(f)))
+      cat(paste("Reading ", length(spidx), " MS", msLevel.,
+                  " spectra from file ", basename(f),"\n"))
       
       scanNums <- fullhd[fullhd$msLevel == msLevel., "precursorScanNum"]
       if (length(scanNums) != length(spidx))
@@ -889,7 +889,7 @@ read.InMemMSd.data <- function(files,
       write.table(1.0 + count.idx/length(files)*3, file = paste0(fullUserPath, "log_progress.txt"),row.names = F,col.names = F);
     }
     
-    print(paste("This reading finished !"))
+    cat(paste("This reading finished !\n"))
     
   }
   

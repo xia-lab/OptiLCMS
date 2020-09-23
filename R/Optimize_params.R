@@ -139,13 +139,13 @@ PerformParamsOptimization <- function(mSet, param=p0, method="DoE", ncore=4, run
     };
     
     if(.running.as.plan){
-      cache.save(p1, funpartnm= "optimized_results_c1");
-      marker_record("optimized_results_c1");
+      cache.save(p1, funpartnm= "others_c1");
+      marker_record("others_c1");
     }
 
   } else {
-    p1 <- cache.read ("optimized_results","c1");
-    marker_record("optimized_results_c1");
+    p1 <- cache.read ("others","c1");
+    marker_record("others_c1");
   }
   
   if (.on.public.web){
@@ -556,8 +556,8 @@ ExperimentsCluster_doe <-function(object, object_mslevel,params,
   tasks <- 1:nrow(design);
   
   if (.Platform$OS.type=="windows"){
-    print("Your OS is Windows, there might be unexpected errors.")
-    print("If there is some unexpected bugs, please reduce the 'core' as 1.")
+    cat("Your OS is Windows, there might be unexpected errors.\n")
+    cat("If there is some unexpected bugs, please reduce the 'core' as 1.\n")
   }
   
   if (.on.public.web){
@@ -800,10 +800,10 @@ SlaveCluster_doe <-function(task, Set_parameters, object, object_mslevel,
       task = task,
       BPPARAM = BPPARAM
     )
-  print(paste("Finished", task,"/",length(Set_parameters),"in this round !"))
+  cat(paste("Finished", task,"/",length(Set_parameters),"in this round !\n"))
   
   if (!class(mSet)=="character"){
-    print("Peak Feature Analyzing...")
+    cat("Peak Feature Analyzing...\n")
     
     #xset <- mSet[["xcmsSet"]]
     
@@ -839,7 +839,7 @@ SlaveCluster_doe <-function(task, Set_parameters, object, object_mslevel,
     names(result)[c(6,7,8,9)]<-c("CV","RCS","GS","GaussianSI")
     
     #result
-    print("Peak Feature Analyzing Done !")
+    cat("Peak Feature Analyzing Done !\n")
     
   } else{
     result<-c(task,0,0,0,0,0,0,0,0)

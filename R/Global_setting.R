@@ -96,7 +96,7 @@
 ####Scheduler
 
 SetRawFileNames <- function(filenms){
-  print(filenms)
+  cat(filenms)
   rawfilenms.vec <<- filenms
   return(1);
 }
@@ -108,7 +108,7 @@ ReadRawMeta<-function(fileName){
   }else if(grepl(".csv", fileName, fixed=T)){
     tbl = read.csv(fileName,header=TRUE, stringsAsFactors = F);
   }else{
-    print("wrongfiletype")
+    cat("wrongfiletype\n")
   }
   
   rawFileNms<-as.vector(tbl[,1])
@@ -120,7 +120,7 @@ ReadRawMeta<-function(fileName){
   for(name in clsTypes){
     if(toupper(name) !="QC"){
       replicateNum = clsTable[[name]]
-      print(replicateNum)
+      cat(replicateNum,"\n")
     }
   }
   

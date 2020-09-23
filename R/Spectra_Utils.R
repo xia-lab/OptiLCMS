@@ -4578,7 +4578,7 @@ findAdducts <- function(mSet, ppm=5, mzabs=0.015, multiplier=3, polarity=NULL, r
     }
     
     #Some informationen for the user
-    print(paste("Parallel mode: There are",length(argList), "tasks."))
+    cat(paste("Parallel mode: There are",length(argList), "tasks.\n"))
     
     if(is.null(mSet@peakAnnotation$AnnotateObject$runParallel$cluster)){
       #Use MPI
@@ -5782,7 +5782,7 @@ getIsotopeCluster <- function(object, number=NULL, value="maxo",
     }
     
     if(any(is.na(peakmat))){
-      print("Warning: peak table contains NA values. To remove apply fillpeaks on xcmsSet.");
+      cat("Warning: peak table contains NA values. To remove apply fillpeaks on xcmsSet.");
     }
     
   } else if(length(sampnames(object@xcmsSet)) == 1){  ## only one sample was 

@@ -32,7 +32,7 @@ PerformDataInspect <-
         datapath <- paste0("upload/", list.files("upload", recursive = T)[1])
         datapath <- paste0(fullUserPath, datapath)
       } else {
-        print("Local Inspectation !")
+        cat("Local Inspectation !\n")
       }
     } else {
       files <-
@@ -72,7 +72,7 @@ PerformDataInspect <-
         !grepl(pattern = c("*.mzML"), basename(datapath)) &
         !grepl(pattern = c("*.CDF"), basename(datapath)) &
         !grepl(pattern = c("*.cdf"), basename(datapath))) {
-      print(paste("First file in ", datapath, " will be inspected !"))
+      cat(paste("First file in ", datapath, " will be inspected !\n"))
       mzf <- list.files(datapath, recursive = F, full.names = T)[1]
     } else {
       mzf <- datapath
@@ -95,12 +95,12 @@ PerformDataInspect <-
         hd$retentionTime[ms1] < max(hd$retentionTime)
       
       rt.extension <- F
-      print(paste(
+      cat(paste(
         "RT range is:",
         min(hd$retentionTime),
         "and",
         max(hd$retentionTime),
-        "seconds !"
+        "seconds !\n"
       ))
       
     } else{
@@ -112,7 +112,7 @@ PerformDataInspect <-
         rt.range[2] <- rt.range[2] + 1
         rt.range[1] <- rt.range[1] - 1
       }
-      print(paste("RT range is:", rt.range[1], "and", rt.range[2], "seconds !"))
+      cat(paste("RT range is:", rt.range[1], "and", rt.range[2], "seconds !\n"))
       
       rtsel <-
         hd$retentionTime[ms1] > rt.range[1] &
@@ -132,22 +132,22 @@ PerformDataInspect <-
       max.mz <- max(hd$highMZ)
       
       if (min.mz == 0 & max.mz == 0 | min.mz == max.mz) {
-        print(
-          "mz.range information is missing in your data file. mz between 100 and 1200 will be shown here !"
+        cat(
+          "mz.range information is missing in your data file. mz between 100 and 1200 will be shown here !\n"
         )
         min.mz <- 100
         max.mz <- 1200
         
       } else if (is.infinite(min.mz) |
                  is.infinite(max.mz) | min.mz == -1 | max.mz == -1) {
-        print(
-          "mz.range information is missing in your data file. mz between 50 and 2000 will be shown here !"
+        cat(
+          "mz.range information is missing in your data file. mz between 50 and 2000 will be shown here !\n"
         )
         min.mz <- 50
         max.mz <- 2000
       }
       
-      print(paste("MZ range is:", min.mz, "and", max.mz, "Thomson !"))
+      cat(paste("MZ range is:", min.mz, "and", max.mz, "Thomson !\n"))
       
       res.mz <- (max.mz - min.mz) / res
       M <- MSmap(ms,
@@ -168,7 +168,7 @@ PerformDataInspect <-
         mz.range[1] <- mz.range[1] - 0.01
       }
       
-      print(paste("MZ range is:", mz.range[1], "and", mz.range[2], "Thomson !"))
+      cat(paste("MZ range is:", mz.range[1], "and", mz.range[2], "Thomson !\n"))
       
       res.mz <- (mz.range[2] - mz.range[1]) / res
       M <- MSmap(ms,

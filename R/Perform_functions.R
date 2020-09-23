@@ -279,7 +279,7 @@ PerformPeakProfiling <-
       
     } else {
       mSet <- cache.read(function.name, "c1")
-      marker_record("raw_data_samples_c2")
+      marker_record("peak_profiling_c1")
     }
     
     if (.on.public.web) {
@@ -329,7 +329,7 @@ PerformPeakProfiling <-
       
     } else {
       mSet <- cache.read(function.name, "c2")
-      marker_record("raw_data_samples_c2")
+      marker_record("peak_profiling_c2")
     }
     
     if (.on.public.web) {
@@ -382,7 +382,7 @@ PerformPeakProfiling <-
       
     } else {
       mSet <- cache.read(function.name, "c3")
-      marker_record("raw_data_samples_c2")
+      marker_record("peak_profiling_c3")
     }
     
     if (class(mSet)[1] == "simpleError") {
@@ -585,27 +585,27 @@ PerformPeakAnnotation <-
     if (.on.public.web) {
       dyn.load(.getDynLoadPath());
       
-      load_progress()
-      load_graph()
-      load_RBGL()
+      load_progress();
+      load_graph();
+      load_RBGL();
     }
     
     if (ncore > 1) {
-      print("Only single core mode is supported now. Parallel will be supported later !")
+      cat("Only single core mode is supported now. Parallel will be supported later !\n")
       ncore <- 1
     }
 
     function.name <- "peak_annotation"
     
-    if (is.null(running.controller) | .plan_count == 1) {
-      annoController <- TRUE;
+    if (is.null(running.controller)) {
+      c1 <- TRUE;
       .running.as.plan <<- FALSE;
     } else {
-      annoController <- running.controller@peak_annotation[["c1"]];
+      c1 <- running.controller@peak_annotation[["c1"]];
       .running.as.plan <<- TRUE;
     }
     
-    if (annoController) {
+    if (c1) {
       ## 1. Prepare the Annotation Object-------
       #xs <- mSet$xcmsSet
       
@@ -632,8 +632,8 @@ PerformPeakAnnotation <-
       
       mSet@peakAnnotation$AnnotateObject$sample   <-  as.numeric(NA);
       mSet@peakAnnotation$AnnotateObject$groupInfo <- getPeaks_selection(mSet);
-      runParallel <- list()
-      runParallel$enable   <-  0
+      runParallel <- list();
+      runParallel$enable <- 0;
       
       if (ncore > 1) {
         ## If MPI is available ...
@@ -1404,13 +1404,13 @@ PerformPeakAnnotation <-
       ## 0. Final Output -----
       
       if (.running.as.plan) {
-        cache.save(mSet, paste0(function.name, "_0"))
-        marker_record(paste0(function.name, "_0"))
+        cache.save(mSet, paste0(function.name, "_c1"));
+        marker_record("peak_annotation_c1");
       }
       
     } else {
-      mSet <- cache.read(function.name, "0")
-      marker_record("raw_data_samples_c2")
+      mSet <- cache.read(function.name, "c1");
+      marker_record("peak_annotation_c1");
     }
     
     return(mSet)

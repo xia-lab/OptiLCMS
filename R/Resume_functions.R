@@ -17,9 +17,16 @@ InitializaPlan <- function(type="spec", path){
   
   MessageOutput(paste0("Running Status -- Plan Initialized Successfully at: ", Sys.time(), "\nPlease define your running plan ..."), "\n", 0);
   
+  temp.path <- paste0(getwd(), "/temp/");
+  
+  if(dir.exists(temp.path)){
+    unlink(temp.path, recursive = TRUE, force = TRUE);
+  }
+  
   #=============== raw_opt
   if (type == "raw_opt") {
-    plan.path <- paste0(getwd(), "/temp/plan")
+    
+    plan.path <- paste0(getwd(), "/temp/plan");
     
     if (!dir.exists(plan.path)) {
       dir.create(paste0(getwd(), "/temp/plan"),
@@ -176,7 +183,7 @@ running.plan <- function(plan=NULL,...){
 #'
 #' @export
 ExecutePlan <- function(plan=NULL){
-  print(getwd());
+  cat("Current Working Directory: ",getwd(),"\n");
   if (is.null(plan)){
     stop("No running plan input. Please design you plan first with 'running.plan' function !")
   };
@@ -211,30 +218,14 @@ ExecutePlan <- function(plan=NULL){
                             plan)
 
     }
-    
-    # for (i in 1:length(new_command_set)){
-    #   for (j in 1:length(last_command_set)){
-    #     
-    #     if (((new_command_set[[i]][[1]] == "<-") & (last_command_set[[j]][[1]] == "<-")) & 
-    #         (new_command_set[[i]][[3]][[1]] == last_command_set[[j]][[3]][[1]])){
-    #       plan <- controller.modifier(new_command_set[[i]],last_command_set[[j]],plan)
-    #     };
-    #     
-    #     if (((new_command_set[[i]][[1]] != "<-") & (last_command_set[[j]][[1]] != "<-")) &
-    #         (new_command_set[[i]][[1]] == last_command_set[[j]][[1]])){
-    #       plan <- controller.modifier(new_command_set[[i]],last_command_set[[j]],plan)
-    #     };
-    #     
-    #   }
-    # }
-    
+
     ## Module 7 - Detect whether some steps have been run in last plan excuting process (Secondary Decision switch)
     plan <- recording_identifier(plan);
     
     ## Module 8 - Dectect whether current plan type (raw_ms or raw_pre) is different from the last one (Final Decision switch)
-    plan <- planType_identifier(plan);
+    # plan <- planType_identifier(plan);
     
-    envir$rc <<- plan$running.controller
+    envir$rc <<- plan@running.controller
     # define.plan.controller <- str2lang('rc <- plan$running.controller');
     # eval (define.plan.controller,envir = envir);
     #perform.plan(new_command_set);
@@ -245,7 +236,7 @@ ExecutePlan <- function(plan=NULL){
       #write.table(0.0, file = paste0(fullUserPath, "log_progress.txt"),row.names = F,col.names = F);
       print_mes <- paste0("<font color=\"red\">","\nERROR:",mSetInfo$message,"</font>");
       write.table(print_mes,file="metaboanalyst_spec_proc.txt",append = T,row.names = F,col.names = F, quote = F, eol = "\n");
-      stop("EXCEPTION POINT CODE: EX1");
+      stop(paste0("EXCEPTION POINT CODE: ", mSetInfo$message));
     }
     
     envir.path <- paste0(getwd(),"/temp/envir");
@@ -257,539 +248,6 @@ ExecutePlan <- function(plan=NULL){
   
 }
 
-#' controller.modifier <- function(new_command, last_command, plan){
-#'   
-#'   functions <- sapply(1:length(plan[[length(plan)]]),FUN=function(i){plan[[length(plan)]][[i]][[3]][[1]]});
-#'   data_trim_order <- which(functions=="PerformDataTrimming" | functions=="PerformROIExtraction");
-#'   dara_ms_order <- which(functions=="ImportRawMSData");
-#'   
-#'   ###-------------Operators definition ------------//
-#'   
-#'   #' operators_1 : SetPeakParam ~ PerformParamsOptimization;
-#'   #' operators_2 : data_folder_trainning ~ PerformDataTrimming;
-#'   #' operators_3 : data_folder_sample ~ peak_profiling;
-#'   #' operators_4 : PerformPeakProfiling ~ PerformPeakAnnotation;
-#'   
-#'   
-#'   #' others_1 c1 : SetPeakParam;
-#'   #' others_1 c2 : ImportRawData - reading part;
-#'   #' others_1 c3 : ImportRawData - plotting part;
-#'   #' others_1 c4 : Start to do annotation.
-#'   
-#'   ##----------------------------------------------//
-#'   
-#'   # Module 1 - Detect whether the tranning data folder has been changed
-#'   if (!identical(data_trim_order, integer(0))){
-#'     
-#'     if ((class(new_command[[3]]) == "character") & (plan[[length(plan)]][[data_trim_order]][[3]][[2]] == new_command[[2]])){
-#'       if (new_command[[3]] != last_command[[3]]){
-#'         # to deal with the case the data folder did change
-#'         plan$running.controller$data_trim <- c(T,T,T,T);
-#'         names(plan$running.controller$data_trim) <- c("c1","c2","c3","c4");
-#'         plan$running.controller$operators[["operators_2"]] <- T;
-#'       } else if(OptiFileChanged(last_command[[3]])){
-#'         # to deal with the case some files are deleted or added for the same folder
-#'         plan$running.controller$data_trim <- c(T,T,T,T);
-#'         names(plan$running.controller$data_trim) <- c("c1","c2","c3","c4");
-#'         plan$running.controller$operators[["operators_2"]] <- T;
-#'       }
-#'     }
-#'   }
-#'   
-#'   # Module 2 - Detect whether the params of datatrimming has been changed
-#'   if (new_command[[3]][[1]] == "PerformDataTrimming" | new_command[[3]][[1]] == "PerformROIExtraction"){
-#'     
-#'     data_folder_funciton_order <- which(sapply(1:length(plan[[length(plan)]]),
-#'                                                FUN = function(x){
-#'                                                  plan[[length(plan)]][[x]][[2]]})==new_command[[3]][[2]] & 
-#'                                           as.character(sapply(1:length(plan[[length(plan)]]),
-#'                                                               FUN = function(x){plan[[length(plan)]][[x]][[1]]})) == "`<-`")
-#'     
-#'     if ((plan[[length(plan)]][[data_folder_funciton_order]] != plan[[length(plan)-1]][[data_folder_funciton_order]]) | 
-#'         plan$running.controller$operators[["operators_2"]]) {
-#'       # To make sure the data did change or not. If the data changed, re-run all.
-#'       plan$running.controller$data_trim <- c(T,T,T,T);
-#'       names(plan$running.controller$data_trim) <- c("c1","c2","c3","c4");
-#'       
-#'     } else if (new_command == last_command) {
-#'       # If the setting did not change, skip the trim step
-#'       if(.on.public.web){
-#'         # retained for further process 
-#'         # If on web, to detect whether the rmConts (remove contaminants param changed or not !)
-#'         print("run here : web version - param change detection !-")
-#'         
-#'         envir.path <- paste0(getwd(),"/temp/envir");
-#'         envir_tmp <- readRDS(paste0(envir.path,"/envir.rds"));
-#'         last_param <- envir_tmp[["param"]];
-#'         load("params.rda");
-#'         new_param <- peakParams;
-#'         
-#'         if(is.null(last_param)){ # This is designed for the case that param have not been finsihed when killed
-#'           
-#'           print("run here : param phase killed last time ! trim phase-")
-#'           plan$running.controller$data_trim <- c(T,T,T,T);
-#'           names(plan$running.controller$data_trim) <- c("c1","c2","c3","c4");
-#'           
-#'         } else if (last_param[["rmConts"]] != new_param[["rmConts"]]) {
-#'           
-#'           print("run here : param rmConts changed ! trim phase-")
-#'           plan$running.controller$data_trim <- c(F,T,T,T);
-#'           names(plan$running.controller$data_trim) <- c("c1","c2","c3","c4");
-#'         }
-#'         
-#'       } else {
-#'         # Otherwise, no need to detect
-#'         plan$running.controller$data_trim <- c(F,F,F,F);
-#'         names(plan$running.controller$data_trim) <- c("c1","c2","c3","c4");
-#'       }
-#'       
-#'     } else {
-#'       # If the setting did change, skip some steps in different cases
-#'       for (i in 2:length(new_command[[3]])){
-#'         for (j in 2:length(last_command[[3]])){
-#'           if ((names(new_command[[3]])[i] == names(last_command[[3]])[j]) && 
-#'               (new_command[[3]][[i]] != last_command[[3]][[j]])){
-#'             
-#'             if (names(new_command[[3]])[i] == "datapath" | (names(new_command[[3]])[i] == "" & i ==1)){
-#'               plan$running.controller$data_trim <- c(T,T,T,T);
-#'               names(plan$running.controller$data_trim) <- c("c1","c2","c3","c4");
-#'             };
-#'             
-#'             if (names(new_command[[3]])[i] == "mode" | (names(new_command[[3]])[i] == "" & i ==2)){
-#'               plan$running.controller$data_trim <- c(F,T,T,T);
-#'               names(plan$running.controller$data_trim) <- c("c1","c2","c3","c4");
-#'             };
-#'             
-#'             if (names(new_command[[3]])[i] == "mz" | (names(new_command[[3]])[i] == "" & i ==4)){
-#'               plan$running.controller$data_trim <- c(F,T,T,T);
-#'               names(plan$running.controller$data_trim) <- c("c1","c2","c3","c4");
-#'             };
-#'             
-#'             if (names(new_command[[3]])[i] == "mzdiff" | (names(new_command[[3]])[i] == "" & i ==5)){
-#'               plan$running.controller$data_trim <- c(F,T,T,T);
-#'               names(plan$running.controller$data_trim) <- c("c1","c2","c3","c4");
-#'             };
-#'             
-#'             if (names(new_command[[3]])[i] == "rt" | (names(new_command[[3]])[i] == "" & i ==6)){
-#'               plan$running.controller$data_trim <- c(F,T,T,T);
-#'               names(plan$running.controller$data_trim) <- c("c1","c2","c3","c4");
-#'             };
-#'             
-#'             if (names(new_command[[3]])[i] == "rtdiff" | (names(new_command[[3]])[i] == "" & i ==7)){
-#'               plan$running.controller$data_trim <- c(F,T,T,T);
-#'               names(plan$running.controller$data_trim) <- c("c1","c2","c3","c4");
-#'             };
-#'             
-#'             if (names(new_command[[3]])[i] == "rt.idx" | (names(new_command[[3]])[i] == "" & i ==8)){
-#'               plan$running.controller$data_trim <- c(F,T,T,T);
-#'               names(plan$running.controller$data_trim) <- c("c1","c2","c3","c4");
-#'             };
-#'             
-#'             if (names(new_command[[3]])[i] == "write" | (names(new_command[[3]])[i] == "" & i ==3)){
-#'               plan$running.controller$data_trim <- c(F,F,T,F);
-#'               names(plan$running.controller$data_trim) <- c("c1","c2","c3","c4");
-#'             };
-#'             
-#'             if (names(new_command[[3]])[i] == "plot" | (names(new_command[[3]])[i] == "" & i ==9)){
-#'               plan$running.controller$data_trim <- c(F,F,F,T);
-#'               names(plan$running.controller$data_trim) <- c("c1","c2","c3","c4");
-#'             };
-#'           };
-#'         };
-#'       };
-#'     };
-#'     
-#'     
-#'   };
-#'   
-#'   if (new_command[[3]][[1]] == "SetPeakParam"){
-#'     
-#'     if (new_command != last_command) {
-#'       
-#'       plan$running.controller$others_1[1] <- T;
-#'       plan$running.controller$operators[["operators_1"]] <- T;
-#'       
-#'     } else if(new_command == last_command & .on.public.web) {
-#'       
-#'       #load("params.rda");
-#'       plan$running.controller$operators[["operators_1"]] <- F; # switch of the operator for optimization
-#'       plan$running.controller$others_1[1] <- F; # switch of the operator for optimization
-#'       
-#'     };
-#'     
-#'   };
-#'   
-#'   if (new_command[[3]][[1]] == "PerformParamsOptimization"){
-#'     
-#'     if (any(plan$running.controller$data_trim[c(1,2)])){
-#'       plan$running.controller$others_1[1] <- T;
-#'       
-#'     } else if (plan$running.controller$operators[["operators_1"]]) {
-#'       plan$running.controller$others_1[1] <- T;
-#'       
-#'     } else {
-#'       plan$running.controller$others_1[1] <- F;
-#'     };
-#'     
-#'   };
-#'   
-#'   # Module 3 - Dectect whether the raw ms data folder has been changed
-#'   if (!identical(dara_ms_order, integer(0))){
-#'     if ((class(new_command[[3]]) == "character") & (plan[[length(plan)]][[dara_ms_order]][[3]][[2]] == new_command[[2]])){
-#'       if (new_command[[3]] != last_command[[3]] | ProcessFileChanged(last_command[[3]])){ 
-#'         # if the data folder changed at local or the files changed inside the folder
-#'         plan$running.controller$peak_profiling <- c(T,T,T,T);
-#'         names(plan$running.controller$peak_profiling) <- c("c1","c2","c3","c4"); 
-#'         plan$running.controller$operators[["operators_3"]] <- T;
-#'         
-#'       } else if(new_command[[3]] == last_command[[3]] & .on.public.web){ # to identify if the data folder changed at local
-#'         # TODO: need to correct this issue.
-#'         rawFileNames <- paste0(getwd(),"/temp/plan");
-#'         rawfilenms_last <- readRDS(paste0(rawFileNames,"/rawfilenms_",.plan_count-1,".rds"));
-#'         rawfilenms_new <- readRDS(paste0(rawFileNames,"/rawfilenms_",.plan_count,".rds"));
-#'         
-#'         if(identical(setdiff(rawfilenms_last,rawfilenms_new), character(0))){ 
-#'           # if files included didn't change
-#'           plan$running.controller$operators[["operators_3"]] <- F;
-#'           
-#'         } else {
-#'           # if files included did change
-#'           
-#'           #plan$running.controller$data_trim[["c1"]] <- T; 
-#'           #plan$running.controller$others_1[["c1"]] <- T; 
-#'           # TODO: to avoid re-do the trimming when QC did not change;
-#'           
-#'           plan$running.controller$operators[["operators_3"]] <- T;
-#'           plan$running.controller$peak_profiling <- c(T,T,T,T);
-#'           names(plan$running.controller$peak_profiling) <- c("c1","c2","c3","c4"); 
-#'           
-#'         }
-#'         
-#'       }
-#'     }
-#'   };
-#'   
-#'   # Module 4 - Detect whether the params of data Import has been changed
-#'   if (new_command[[3]][[1]] == "ImportRawMSData"){
-#'     
-#'     data_folder_sample_order <- which(sapply(1:length(plan[[length(plan)]]),
-#'                                              FUN = function(x){plan[[length(plan)]][[x]][[2]]})==new_command[[3]][[2]] & 
-#'                                         as.character(sapply(1:length(plan[[length(plan)]]),
-#'                                                             FUN = function(x){plan[[length(plan)]][[x]][[1]]})) == "`<-`")
-#' 
-#'     if (!identical(which(names(new_command[[3]])=="plotSettings"),integer(0))){
-#'       plot_function1_order <-
-#'         which(new_command[[3]][[which(names(new_command[[3]]) == "plotSettings")]] == sapply(
-#'           plan[[length(plan)]],
-#'           FUN = function(x) {
-#'             x[[2]]
-#'           }
-#'         ))
-#'       
-#'     } else {
-#'       plot_function1_order <-
-#'         which(new_command[[3]][[4]] == sapply(
-#'           plan[[length(plan)]],
-#'           FUN = function(x) {
-#'             x[[2]]
-#'           }
-#'         ))
-#'     }
-#'     
-#'     if ((plan[[length(plan)]][[data_folder_sample_order]] != plan[[length(plan)-1]][[data_folder_sample_order]]) | 
-#'         plan$running.controller$operators[["operators_3"]]) {
-#'       # To make sure the data did change or not. If the data changed, re-run all.
-#'       # c2 in others_1 is used to control the ImportRawMSData - Reading Part (c3 is used for plotting part)
-#'       
-#'       plan[["running.controller"]][["others_1"]][["c2"]] <- T;
-#'       plan[["running.controller"]][["others_1"]][["c3"]] <- T;
-#'       
-#'     } else if (new_command == last_command) {
-#'       # If the setting did not change, skip the import step - Reading Part (c3 is used for plotting part)
-#'      
-#'       plan[["running.controller"]][["others_1"]][["c2"]] <- F;
-#'       
-#'     } else {
-#'       # If the setting did change, skip some steps in different cases
-#'       for (i in 2:length(new_command[[3]])){
-#'         for (j in 2:length(last_command[[3]])){
-#'           if ((names(new_command[[3]])[i] == names(last_command[[3]])[j]) && 
-#'               (new_command[[3]][[i]] != last_command[[3]][[j]])){
-#'             
-#'             if (names(new_command[[3]])[i] == "foldername" | (names(new_command[[3]])[i] == "" & i ==1)){
-#'               
-#'               plan[["running.controller"]][["others_1"]][["c2"]] <- T;
-#'               
-#'             };
-#'             
-#'             if (names(new_command[[3]])[i] == "mode" | (names(new_command[[3]])[i] == "" & i ==2)){
-#'               
-#'               plan[["running.controller"]][["others_1"]][["c2"]] <- T;
-#'               
-#'             };
-#'             
-#'             if (names(new_command[[3]])[i] == "ncores" | (names(new_command[[3]])[i] == "" & i ==3)){
-#'               
-#'               plan[["running.controller"]][["others_1"]][["c2"]] <- F;
-#'               
-#'             };
-#'             
-#'             if (names(new_command[[3]])[i] == "plotSettings" | (names(new_command[[3]])[i] == "" & i ==4)){
-#'               
-#'               plan[["running.controller"]][["others_1"]][["c2"]] <- F;
-#'               plan[["running.controller"]][["others_1"]][["c3"]] <- T;
-#'               
-#'             };
-#'           }
-#'         }
-#'       };
-#'       
-#'     }
-#'     
-#'     # others_1: c3 is the plotting part
-#'     if (plan[[length(plan)]][[plot_function1_order]] != plan[[length(plan)-1]][[plot_function1_order]]) {
-#'       
-#'       plan[["running.controller"]][["others_1"]][["c3"]] <- T;
-#'       
-#'     } else if(plan$running.controller$operators[["operators_3"]]){
-#'       
-#'       plan[["running.controller"]][["others_1"]][["c3"]] <- T;
-#'       
-#'     } else {
-#'       
-#'       plan[["running.controller"]][["others_1"]][["c3"]] <- F;
-#'       
-#'     }
-#'     
-#'   }
-#'   
-#'   # Module 5 - Detect whether the params of peak profiling +  annotation has been changed
-#'   if (new_command[[3]][[1]] == "PerformPeakProfiling"){
-#'     print("run here PerformPeakProfiling + annotation parame changes detection !-");
-#'     
-#'     # TO get the position of functions defined the 'param'
-#'     profiling_param_order <- which(sapply(1:length(plan[[length(plan)]]),FUN = function(x){plan[[length(plan)]][[x]][[2]]})==new_command[[3]][[3]] & 
-#'                                      as.character(sapply(1:length(plan[[length(plan)]]),FUN = function(x){plan[[length(plan)]][[x]][[1]]})) == "`<-`")
-#'     
-#'     
-#'     if (!identical(which(names(new_command[[3]])=="plotSettings"),integer(0))){
-#'       plot_function2_order <- which(new_command[[3]][[which(names(new_command[[3]])=="plotSettings")]] == sapply(plan[[length(plan)]], FUN=function(x){x[[2]]}));
-#'     } else {
-#'       plot_function2_order <- which(new_command[[3]][[4]] == sapply(plan[[length(plan)]], FUN=function(x){x[[2]]}));
-#'     };
-#'     
-#'     if (plan$running.controller$others_1[[2]]){ 
-#'       # If data Import step (reading) was excecuted, the profiling step also has to be run/re-run;
-#'       plan[["running.controller"]][["peak_profiling"]] <- c(T,T,T,T);
-#'       names(plan[["running.controller"]][["peak_profiling"]]) <- c("c1","c2","c3","c4");
-#'       
-#'     } else if (.on.public.web & new_command == last_command) {
-#'       # If the param setting did change, run some profiling steps (web version)
-#'       
-#'       print("run here : web version - param change detection !-")
-#'       
-#'       envir.path <- paste0(getwd(),"/temp/envir");
-#'       envir_tmp <- readRDS(paste0(envir.path,"/envir.rds"));
-#'       last_param <- envir_tmp[["param"]];
-#'       load("params.rda");
-#'       new_param <- peakParams;
-#'       
-#'       if(is.null(last_param)){ # This is designed for the case that param have not been finsihed when killed
-#'         
-#'         print("run here : param phase killed last time !-")
-#'         
-#'         plan[["running.controller"]][["peak_profiling"]] <- c(T,T,T,T);
-#'         names(plan[["running.controller"]][["peak_profiling"]]) <- c("c1","c2","c3","c4");
-#'         
-#'         plan[["running.controller"]][["operators"]][[4]] <- T;
-#'         names(plan[["running.controller"]][["operators"]][[4]]) <- "operators_4";
-#'         
-#'       } else {
-#'         
-#'         identifiers <- NULL;
-#'         
-#'         for (i in 1:length(new_param)){
-#'           for (j in 1:length(last_param)){
-#'             if (names(new_param[i])==names(last_param[j]) & new_param[[i]] != last_param[[j]]){
-#'               identifiers <- c(identifiers, names(new_param[i]))
-#'             }
-#'           }
-#'         }
-#'         
-#'         switch.path <- paste0(getwd(),"/temp/plan");      
-#'         new_optimize_switch <- readRDS(paste0(switch.path,"/optimize_switch_",.plan_count,".rds"));
-#'         last_optimize_switch <- readRDS(paste0(switch.path,"/optimize_switch_",.plan_count-1,".rds"));
-#'         
-#'         if(new_optimize_switch == T & 
-#'            last_optimize_switch == T & 
-#'            !plan$running.controller$operators[["operators_2"]] & 
-#'            !plan$running.controller$operators[["operators_3"]]){
-#'           
-#'           identifiers <- NULL;
-#'           
-#'         } else if(plan$running.controller$operators[["operators_3"]] | plan$running.controller$operators[["operators_2"]]){
-#'           
-#'           # if data files included changed, re-run everything!
-#'           print("run here : data files included changed !")
-#'           
-#'           plan[["running.controller"]][["peak_profiling"]] <- c(T,T,T,T);
-#'           names(plan[["running.controller"]][["peak_profiling"]]) <- c("c1","c2","c3","c4");
-#'           
-#'           plan[["running.controller"]][["operators"]][[4]] <- T;
-#'           names(plan[["running.controller"]][["operators"]][[4]]) <- "operators_4";
-#'           
-#'         }
-#'         
-#'         if(is.null(identifiers)){
-#'           #0. No parameters changed
-#'           plan[["running.controller"]][["peak_profiling"]] <- c(F,F,F,F);
-#'           names(plan[["running.controller"]][["peak_profiling"]]) <- c("c1","c2","c3","c4");
-#'           
-#'         } else if (any(identifiers %in% c("min_peakwidth","max_peakwidth","mzdiff","ppm","noise","prefilter","value_of_prefilter",
-#'                                           "Peak_method","snthresh","fwhm","sigma","steps"))){
-#'           
-#'           print("run here : picking parameters change found !-")
-#'           # 1. change picking parameters
-#'           plan[["running.controller"]][["peak_profiling"]] <- c(T,T,T,T);
-#'           names(plan[["running.controller"]][["peak_profiling"]]) <- c("c1","c2","c3","c4");
-#'           
-#'           plan[["running.controller"]][["operators"]][[4]] <- T;
-#'           names(plan[["running.controller"]][["operators"]][[4]]) <- "operators_4";
-#'           
-#'         } else if (any(identifiers %in% c("bw","RT_method","minFraction","minSamples","maxFeatures","family","smooth",
-#'                                           "span","integrate","mzCenterFun","verbose.columns","fitgauss"))){
-#'           
-#'           print("run here : alignment parameters change found !-")
-#'           # 2. change alignment parameters
-#'           plan[["running.controller"]][["peak_profiling"]] <- c(F,T,T,T);
-#'           names(plan[["running.controller"]][["peak_profiling"]]) <- c("c1","c2","c3","c4");
-#'           
-#'           plan[["running.controller"]][["operators"]][[4]] <- T;
-#'           names(plan[["running.controller"]][["operators"]][[4]]) <- "operators_4";
-#'           
-#'         } else if(any(identifiers %in% c("polarity","perc_fwhm","mz_abs_iso","max_charge","max_iso","corr_eic_th","mz_abs_add"))){
-#'           
-#'           print("run here : Annotation parameters change found !-");
-#'           
-#'           # 3. change Annotation parameters
-#'           plan[["running.controller"]][["peak_profiling"]] <- c(F,F,F,F);
-#'           names(plan[["running.controller"]][["peak_profiling"]]) <- c("c1","c2","c3","c4");
-#'           
-#'           plan[["running.controller"]][["operators"]][[4]] <- T;
-#'           names(plan[["running.controller"]][["operators"]][[4]]) <- "operators_4";
-#'           
-#'         };
-#'         
-#'       } 
-#'       
-#'     } else if (plan[[length(plan)]][[profiling_param_order]] != plan[[length(plan)-1]][[profiling_param_order]]) {
-#'       # If the param setting did change, run some profiling steps (Package version)
-#'       
-#'       identifiers <- profiling_param_identifier(plan[[length(plan)]][[profiling_param_order]],
-#'                                                 plan[[length(plan)-1]][[profiling_param_order]]);
-#'       print("run here -8------------------------------")
-#'       # 1. change picking parameters
-#'       
-#'       if (any(identifiers %in% c("min_peakwidth","max_peakwidth","mzdiff","ppm","noise","prefilter","value_of_prefilter",
-#'                                  "Peak_method","snthresh","fwhm","sigma","steps"))){
-#'         plan[["running.controller"]][["peak_profiling"]] <- c(T,T,T,T);
-#'         names(plan[["running.controller"]][["peak_profiling"]]) <- c("c1","c2","c3","c4");
-#'       };
-#'       
-#'       # 2. change alignment parameters
-#'       
-#'       if (any(identifiers %in% c("bw","RT_method","minFraction","minSamples","maxFeatures","family","smooth",
-#'                                  "span","integrate","mzCenterFun","verbose.columns","fitgauss"))){
-#'         plan[["running.controller"]][["peak_profiling"]] <- c(F,T,T,T);
-#'         names(plan[["running.controller"]][["peak_profiling"]]) <- c("c1","c2","c3","c4");
-#'       };
-#'       
-#'       
-#'     } else if (new_command == last_command) {
-#'       # If the setting did not change, skip the profiling step
-#'       
-#'       plan[["running.controller"]][["peak_profiling"]] <- c(F,F,F,F);
-#'       names(plan[["running.controller"]][["peak_profiling"]]) <- c("c1","c2","c3","c4");
-#'       
-#'     } else {
-#'       # Some unexcepted cases appears. Re-run everything to make sure correctness
-#'       print("run here : unexcepted cases appears - Re-run everything !-")
-#'       plan[["running.controller"]][["peak_profiling"]] <- c(T,T,T,T);
-#'     };
-#'     
-#'     # peak_profiling: c4 is the plotting part
-#'     if ((plan[[length(plan)]][[plot_function2_order]] != plan[[length(plan)-1]][[plot_function2_order]]) & 
-#'         (!any(plan[["running.controller"]][["peak_profiling"]][c(1:3)]))) {
-#'       
-#'       print("run here -10------------------------------")
-#'       plan[["running.controller"]][["peak_profiling"]][[4]] <- T;
-#'       
-#'     } else if(any(plan[["running.controller"]][["peak_profiling"]][c(1:3)])) {
-#'       
-#'       print("run here -11------------------------------")
-#'       plan[["running.controller"]][["peak_profiling"]][[4]] <- T;
-#'       
-#'     } else {
-#'       plan[["running.controller"]][["peak_profiling"]][[4]] <- F;
-#'     };
-#'     
-#'   }
-#'   
-#'   # Module 6 - Detect whether annotation need to be re-run
-#'   if (new_command[[3]][[1]] == "SetAnnotationParam"){
-#'     
-#'     if (new_command != last_command) {
-#'       plan$running.controller$operators[[4]] <- T; # operators_4 for annotations
-#'     };
-#'     
-#'     if (any(plan$running.controller$peak_profiling[1:3])){
-#'       plan$running.controller$operators[[4]] <- T;
-#'     };
-#'     
-#'   }
-#'   
-#'   # Return the prepared plan for excuting
-#'   return(plan)
-#'   
-#' }
-
-planType_identifier <- function(plan){
-  
-  switch.path <- paste0(getwd(),"/temp/plan");
-  optimize_switch_last <- readRDS(paste0(switch.path,"/optimize_switch_",.plan_count-1,".rds"));
-  
-  if  (optimize_switch_last == .optimize_switch){
-    # if the plan type is the same, not modification
-    return(plan)
-  } else {
-    # otherwise, rerun everything
-    plan[["running.controller"]][["data_trim"]][["c1"]] <- 
-      plan[["running.controller"]][["data_trim"]][["c2"]] <- 
-      plan[["running.controller"]][["data_trim"]][["c3"]] <- 
-      plan[["running.controller"]][["data_trim"]][["c4"]] <- 
-      plan[["running.controller"]][["peak_profiling"]][["c1"]] <-
-      plan[["running.controller"]][["peak_profiling"]][["c2"]] <- 
-      plan[["running.controller"]][["peak_profiling"]][["c3"]] <- 
-      plan[["running.controller"]][["peak_profiling"]][["c4"]] <- 
-      plan[["running.controller"]][["others_1"]][["c1"]] <-
-      plan[["running.controller"]][["others_1"]][["c2"]] <- 
-      plan[["running.controller"]][["others_1"]][["c3"]] <- 
-      plan[["running.controller"]][["others_1"]][["c4"]] <- 
-      plan[["running.controller"]][["operators"]][["operators_4"]] <-T; # special mark- TO DO: improve in future
-    
-    plan[["running.controller"]][["operators"]][["operators_1"]] <- 
-      plan[["running.controller"]][["operators"]][["operators_2"]] <- 
-      plan[["running.controller"]][["operators"]][["operators_3"]] <-
-      plan[["running.controller"]][["operators"]][["operators_5"]] <-
-      plan[["running.controller"]][["operators"]][["operators_6"]] <-
-      plan[["running.controller"]][["operators"]][["operators_7"]] <-
-      plan[["running.controller"]][["operators"]][["operators_8"]] <- F;
-    
-    return(plan);
-    
-  }
-  
-}
 
 recording_identifier <- function(plan) {
   
@@ -804,29 +262,42 @@ recording_identifier <- function(plan) {
   
   
   # If things were not run last time, forcedly start running the slot this time
-  if(!as.logical(record.marker_last[1,2])){plan$running.controller$data_trim[1] <- T}
-  if(!as.logical(record.marker_last[2,2])){plan$running.controller$data_trim[2] <- T}
-  if(!as.logical(record.marker_last[3,2])){plan$running.controller$data_trim[3] <- T}
-  if(!as.logical(record.marker_last[4,2])){plan$running.controller$data_trim[4] <- T}
+  if(!as.logical(record.marker_last[1,2])){plan@running.controller@ROI_extract[1] <- TRUE};
+  if(!as.logical(record.marker_last[2,2])){plan@running.controller@ROI_extract[2] <- TRUE};
+  if(!as.logical(record.marker_last[3,2])){plan@running.controller@ROI_extract[3] <- TRUE};
+  if(!as.logical(record.marker_last[4,2])){plan@running.controller@ROI_extract[4] <- TRUE};
   
-  if(!as.logical(record.marker_last[5,2])){plan$running.controller$peak_profiling[1] <- T}
-  if(!as.logical(record.marker_last[6,2])){plan$running.controller$peak_profiling[2] <- T}
-  if(!as.logical(record.marker_last[7,2])){plan$running.controller$peak_profiling[3] <- T}
-  if(!as.logical(record.marker_last[8,2])){plan$running.controller$peak_profiling[4] <- T}
+  if(!as.logical(record.marker_last[5,2])){plan@running.controller@data_import[1] <- TRUE}
+  if(!as.logical(record.marker_last[6,2])){plan@running.controller@data_import[2] <- TRUE}
+  if(!as.logical(record.marker_last[7,2])){plan@running.controller@data_import[3] <- TRUE}
+  if(!as.logical(record.marker_last[8,2])){plan@running.controller@data_import[4] <- TRUE}
   
-  if(!as.logical(record.marker_last[9,2])){plan$running.controller$others_1[1] <- T}
-  if(!as.logical(record.marker_last[10,2])){plan$running.controller$others_1[2] <- T}
-  if(!as.logical(record.marker_last[11,2])){plan$running.controller$others_1[3] <- T}
-  if(!as.logical(record.marker_last[12,2])){plan$running.controller$others_1[4] <- T}
+  if(!as.logical(record.marker_last[9,2])){plan@running.controller@peak_profiling[1] <- TRUE}
+  if(!as.logical(record.marker_last[10,2])){plan@running.controller@peak_profiling[2] <- TRUE}
+  if(!as.logical(record.marker_last[11,2])){plan@running.controller@peak_profiling[3] <- TRUE}
+  if(!as.logical(record.marker_last[12,2])){plan@running.controller@peak_profiling[4] <- TRUE}
   
-  if(!as.logical(record.marker_last[13,2])){plan$running.controller$operators[1] <- T}
-  if(!as.logical(record.marker_last[14,2])){plan$running.controller$operators[2] <- F} # Switch off this operator at the end of plan define
-  if(!as.logical(record.marker_last[15,2])){plan$running.controller$operators[3] <- F} # Switch off this operator at the end of plan define
-  if(!as.logical(record.marker_last[16,2])){plan$running.controller$operators[4] <- T}
-  if(!as.logical(record.marker_last[17,2])){plan$running.controller$operators[5] <- T}
-  if(!as.logical(record.marker_last[18,2])){plan$running.controller$operators[6] <- T}
-  if(!as.logical(record.marker_last[19,2])){plan$running.controller$operators[7] <- T}
-  if(!as.logical(record.marker_last[20,2])){plan$running.controller$operators[8] <- T}
+  if(!as.logical(record.marker_last[13,2])){plan@running.controller@peak_annotation[1] <- TRUE}
+  if(!as.logical(record.marker_last[14,2])){plan@running.controller@peak_annotation[2] <- TRUE}
+  if(!as.logical(record.marker_last[15,2])){plan@running.controller@peak_annotation[3] <- TRUE}
+  if(!as.logical(record.marker_last[16,2])){plan@running.controller@peak_annotation[4] <- TRUE}
+  
+  if(!as.logical(record.marker_last[17,2])){plan@running.controller@others_1[1] <- TRUE}
+  if(!as.logical(record.marker_last[18,2])){plan@running.controller@others_1[2] <- TRUE}
+  if(!as.logical(record.marker_last[19,2])){plan@running.controller@others_1[3] <- TRUE}
+  if(!as.logical(record.marker_last[20,2])){plan@running.controller@others_1[4] <- TRUE}
+  
+  if(!as.logical(record.marker_last[21,2])){plan@running.controller@operators[1] <- TRUE}
+  if(!as.logical(record.marker_last[22,2])){plan@running.controller@operators[2] <- FALSE} # Switch off this operator at the end of plan define
+  if(!as.logical(record.marker_last[23,2])){plan@running.controller@operators[3] <- FALSE} # Switch off this operator at the end of plan define
+  if(!as.logical(record.marker_last[24,2])){plan@running.controller@operators[4] <- FALSE}
+  if(!as.logical(record.marker_last[25,2])){plan@running.controller@operators[5] <- FALSE}
+  if(!as.logical(record.marker_last[26,2])){plan@running.controller@operators[6] <- FALSE}
+  if(!as.logical(record.marker_last[27,2])){plan@running.controller@operators[7] <- FALSE}
+  if(!as.logical(record.marker_last[28,2])){plan@running.controller@operators[8] <- FALSE}
+  
+  plan@RunningHistory@setNO <- .plan_count-1;
+  plan@RunningHistory@FunishedPosition <- which(as.logical(record.marker_last[,2]))
   
   return(plan)
   
@@ -835,11 +306,15 @@ recording_identifier <- function(plan) {
 recordMarker_resetter <- function(.plan_count){
   
   ## Recording initial markers about being ran or not
-  record.marker <- matrix(nrow = 20,ncol = 2);
-  record.marker[,1] <- c("trim_1","trim_2","trim_3","trim_4","profiling_1","profiling_2","profiling_3","profiling_4",
-                         "others_1","others_2","others_3","others_4","operators_1","operators_2","operators_3","operators_4",
+  record.marker <- matrix(nrow = 28,ncol = 2);
+  record.marker[,1] <- c("ROI_extract_1","ROI_extract_2","ROI_extract_3","ROI_extract_4",
+                         "data_import_1","data_import_2","data_import_3","data_import_4",
+                         "profiling_1","profiling_2","profiling_3","profiling_4",
+                         "peak_annotation_1","peak_annotation_2","peak_annotation_3","peak_annotation_4",
+                         "others_1","others_2","others_3","others_4",
+                         "operators_1","operators_2","operators_3","operators_4",
                          "operators_5","operators_6","operators_7","operators_8");
-  record.marker[,2] <- rep(F, 20)
+  record.marker[,2] <- rep(FALSE, 28);
   record.path <- paste0(getwd(),"/temp/records");
   
   saveRDS(record.marker,file = paste0(record.path,"/records_marker_",.plan_count,".rds"));
@@ -850,11 +325,15 @@ marker_record <- function(functionNM){
   record.path <- paste0(getwd(),"/temp/records");
   
   if (!file.exists(paste0(record.path,"/records_marker_",.plan_count,".rds"))){
-    record.marker <- matrix(nrow = 20,ncol = 2);
-    record.marker[,1] <- c("trim_1","trim_2","trim_3","trim_4","profiling_1","profiling_2","profiling_3","profiling_4",
-                           "others_1","others_2","others_3","others_4","operators_1","operators_2","operators_3","operators_4",
+    record.marker <- matrix(nrow = 28,ncol = 2);
+    record.marker[,1] <- c("ROI_extract_1","ROI_extract_2","ROI_extract_3","ROI_extract_4",
+                           "data_import_1","data_import_2","data_import_3","data_import_4",
+                           "profiling_1","profiling_2","profiling_3","profiling_4",
+                           "peak_annotation_1","peak_annotation_2","peak_annotation_3","peak_annotation_4",
+                           "others_1","others_2","others_3","others_4",
+                           "operators_1","operators_2","operators_3","operators_4",
                            "operators_5","operators_6","operators_7","operators_8");
-    record.marker[,2] <- rep(F, 20)
+    record.marker[,2] <- rep(FALSE, 28);
     saveRDS(record.marker,file = paste0(record.path,"/records_marker_",.plan_count,".rds"))
   } else {
     record.marker <- readRDS(paste0(record.path,"/records_marker_",.plan_count,".rds"));
@@ -862,29 +341,39 @@ marker_record <- function(functionNM){
   
   
   # If this step has been run at ".plan_count" time, is will be marked as T
-  if(functionNM=="datatrim_c1"){record.marker[1,2] <- T};
-  if(functionNM=="datatrim_c2"){record.marker[2,2] <- T};
-  if(functionNM=="datatrim_c3"){record.marker[3,2] <- T};
-  if(functionNM=="datatrim_c4"){record.marker[4,2] <- T};
+  if(functionNM=="ROI_extract_c1"){record.marker[1,2] <- TRUE};
+  if(functionNM=="ROI_extract_c2"){record.marker[2,2] <- TRUE};
+  if(functionNM=="ROI_extract_c3"){record.marker[3,2] <- TRUE};
+  if(functionNM=="ROI_extract_c4"){record.marker[4,2] <- TRUE};
   
-  if(functionNM=="peak_profiling_c1"){record.marker[5,2] <- T};
-  if(functionNM=="peak_profiling_c2"){record.marker[6,2] <- T};
-  if(functionNM=="peak_profiling_c3"){record.marker[7,2] <- T};
-  if(functionNM=="peak_profiling_c4"){record.marker[8,2] <- T};
+  if(functionNM=="data_import_c1"){record.marker[5,2] <- TRUE};
+  if(functionNM=="data_import_c2"){record.marker[6,2] <- TRUE};
+  if(functionNM=="data_import_c3"){record.marker[7,2] <- TRUE}; # RETAINED 
+  if(functionNM=="data_import_c4"){record.marker[8,2] <- TRUE}; # RETAINED 
   
-  if(functionNM=="optimized_results_c1"){record.marker[9,2] <- T};
-  if(functionNM=="raw_data_samples_c2"){record.marker[10,2] <- T};
-  if(functionNM=="raw_data_samples_c3"){record.marker[11,2] <- T};
-  if(functionNM=="others_c4"){record.marker[12,2] <- T};
+  if(functionNM=="peak_profiling_c1"){record.marker[9,2] <- TRUE};
+  if(functionNM=="peak_profiling_c2"){record.marker[10,2] <- TRUE};
+  if(functionNM=="peak_profiling_c3"){record.marker[11,2] <- TRUE};
+  if(functionNM=="peak_profiling_c4"){record.marker[12,2] <- TRUE};
   
-  if(functionNM=="operators_operators_1"){record.marker[13,2] <- T};
-  if(functionNM==""){record.marker[14,2] <- F};
-  if(functionNM==""){record.marker[15,2] <- F};
-  if(functionNM=="peak_annotation_0"){record.marker[16,2] <- T};
-  if(functionNM==""){record.marker[17,2] <- F};
-  if(functionNM==""){record.marker[18,2] <- F};
-  if(functionNM==""){record.marker[19,2] <- F};
-  if(functionNM==""){record.marker[20,2] <- F};
+  if(functionNM=="peak_annotation_c1"){record.marker[13,2] <- TRUE};
+  if(functionNM=="peak_annotation_c2"){record.marker[14,2] <- TRUE}; # RETAINED 
+  if(functionNM=="peak_annotation_c3"){record.marker[15,2] <- TRUE}; # RETAINED 
+  if(functionNM=="peak_annotation_c4"){record.marker[16,2] <- TRUE}; # RETAINED 
+  
+  if(functionNM=="others_c1"){record.marker[17,2] <- TRUE};
+  if(functionNM=="others_c2"){record.marker[18,2] <- TRUE}; # RETAINED 
+  if(functionNM=="others_c3"){record.marker[19,2] <- TRUE}; # RETAINED 
+  if(functionNM=="others_c4"){record.marker[19,2] <- TRUE}; # RETAINED 
+  
+  if(functionNM=="operators_c1"){record.marker[13,2] <- TRUE};
+  if(functionNM=="operators_c2"){record.marker[14,2] <- TRUE};
+  if(functionNM=="operators_c3"){record.marker[15,2] <- TRUE};
+  if(functionNM=="operators_c4"){record.marker[16,2] <- TRUE};
+  if(functionNM=="operators_c5"){record.marker[17,2] <- FALSE}; # RETAINED 
+  if(functionNM=="operators_c6"){record.marker[18,2] <- FALSE}; # RETAINED 
+  if(functionNM=="operators_c7"){record.marker[19,2] <- FALSE}; # RETAINED 
+  if(functionNM=="operators_c8"){record.marker[20,2] <- FALSE}; # RETAINED 
   
   saveRDS(record.marker,file = paste0(record.path,"/records_marker_",.plan_count,".rds"));
 }
@@ -1146,9 +635,9 @@ CommandsVerify <- function(commands){
     }
     
     if(length(commands) > 6){
-      print("More functions than standard OptiPipeline were detected !")
-      print(paste0("NOTE: Only ",paste(scales::ordinal(FUNCommandArray),collapse = ", "), 
-                     " functions in this plan and their direct defination on the argument will be included !"))
+      cat("More functions than standard OptiPipeline were detected !\n")
+      cat(paste0("NOTE: Only ",paste(scales::ordinal(FUNCommandArray),collapse = ", "), 
+                     " functions in this plan and their direct defination on the argument will be included !\n"))
     }
   }
   
@@ -1216,9 +705,9 @@ CommandsVerify <- function(commands){
     }
     
     if(length(commands) > 4){
-      print("More functions than standard OptiPipeline were detected !")
-      print(paste0("NOTE: Only ",paste(scales::ordinal(FUNCommandArray),collapse = ", "), 
-                   " functions in this plan and their direct defination on the argument will be included !"))
+      cat("More functions than standard OptiPipeline were detected !\n")
+      cat(paste0("NOTE: Only ",paste(scales::ordinal(FUNCommandArray),collapse = ", "), 
+                   " functions in this plan and their direct defination on the argument will be included !\n"))
     }
     
   }

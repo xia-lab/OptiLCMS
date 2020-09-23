@@ -74,7 +74,7 @@ PerformROIExtraction <-
               ))
     
     start.time <- Sys.time();
-    function.name <- "datatrim";
+    function.name <- "ROI_extract";
     
     if (is.null(running.controller)) {
       c1 <- c2 <- c3 <- c4 <- TRUE;
@@ -205,7 +205,7 @@ PerformROIExtraction <-
                                 recursive = T,
                                 full.names = T)
       }
-      print(dda_file1)
+      cat(dda_file1,"\n")
       
       pd <-
         data.frame(
