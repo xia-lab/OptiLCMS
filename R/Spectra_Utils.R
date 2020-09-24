@@ -262,7 +262,7 @@ PeakPicking_centWave_slave <- function(x,param){
   peaklist <- list();
   Nscantime <- length(scantime)
   lf <- length(roiList)
-  save(roiList, file = paste0("roiList_",Sys.time(),".rda"))
+  # save(roiList, file = paste0("roiList_",Sys.time(),".rda"))
   ## print('\n Detecting chromatographic peaks ... \n % finished: ')
   ## lp <- -1
   
@@ -321,9 +321,9 @@ PeakPicking_centWave_slave <- function(x,param){
       next
     }
     
-    if(f == lf){
-      save(mzROI.EIC, file = paste0("mzROI.EIC_",f,"_", Sys.time(),".rda"))
-    }
+    # if(f == lf){
+    #   save(mzROI.EIC, file = paste0("mzROI.EIC_",f,"_", Sys.time(),".rda"))
+    # }
     
     ## scrange + scRangeTol, used for gauss fitting and continuous
     ## data above 1st baseline detection
@@ -356,7 +356,7 @@ PeakPicking_centWave_slave <- function(x,param){
     if (firstBaselineCheck &
         !continuousPtsAboveThreshold(fd, threshold = noise,
                                      num = minPtsAboveBaseLine)){
-      save("sss", file = paste0("sss_",Sys.time(),".rda"))
+      # save(firstBaselineCheck, file = paste0("sss_",Sys.time(),".rda"))
       next
     }
       
@@ -365,9 +365,9 @@ PeakPicking_centWave_slave <- function(x,param){
                                     threshold = noise,
                                     num = minPtsAboveBaseLine)
     
-    if(f == lf){
-      save(lnoise, file = paste0("lnoise_",f,"_", Sys.time(),".rda"))
-    }
+    # if(f == lf){
+    #   save(lnoise, file = paste0("lnoise_",f,"_", Sys.time(),".rda"))
+    # }
     ## Final baseline & Noise estimate
     baseline <- max(1, min(lnoise[1], noise))
     sdnoise <- max(1, lnoise[2])
@@ -585,7 +585,7 @@ PeakPicking_centWave_slave <- function(x,param){
   }
   
   p <- do.call(rbind, peaklist)
-  save(p, file = paste0("p_",Sys.time(),".rda"))
+  # save(p, file = paste0("p_",Sys.time(),".rda"))
   
   if (!param$verboseColumns)
     p <- p[, basenames, drop = FALSE]

@@ -20,7 +20,7 @@ controller.modifier <- function(new_command_set, last_command_set, plan){
   if(class(new_command_set) == "OptiCommandSet"){
     
     # 1. ROIExtraction: -----
-    # 1.1 Note on controller: c1, read; c2, trim; c3, write; c4, plot.
+    # 1.1 Note on controller: c1, read; c2, trim; c3, write; c4, plot; C5, rmConts.
     new_ROIExtraction <- new_command_set@ROIExtraction[[3]];
     last_ROIExtraction <- last_command_set@ROIExtraction[[3]];
     ChangedArugsArray <- NULL;
@@ -43,26 +43,33 @@ controller.modifier <- function(new_command_set, last_command_set, plan){
     
     if(is.null(ChangedArugsArray) | length(ChangedArugsArray) == 0){
       # Not changed !
-      plan@running.controller@ROI_extract[c(1:4)] <- rep(FALSE, 4);
+      plan@running.controller@ROI_extract[c(1:5)] <- rep(FALSE, 5);
     }
     
     if("datapath" %in% ChangedArugsArray){
-      plan@running.controller@ROI_extract[c(1:4)] <- rep(TRUE,4);
+      plan@running.controller@ROI_extract[c(1:5)] <- rep(TRUE,5);
       plan@running.controller@operators[1] <- TRUE;
     } else {
       plan@running.controller@ROI_extract[1] <- FALSE;
+    }
+    
+    if("rmConts" %in% ChangedArugsArray){
+      plan@running.controller@ROI_extract[5] <- TRUE;
+      plan@running.controller@operators[1] <- TRUE;
+    }else {
+      plan@running.controller@ROI_extract[5] <- FALSE;
     }
     
     if(any(c("mode", "mz", "mzdiff", "rt", "rtdiff", "rt.idx") %in% ChangedArugsArray)){
       # if any of these params changed, need to run the following steps
       plan@running.controller@ROI_extract[c(2:4)] <- rep(TRUE,3);
       plan@running.controller@operators[1] <- TRUE;
-    } else if (plan@running.controller@ROI_extract[1]){
+    } else if (any(plan@running.controller@ROI_extract[c(1,5)])){
       # if datapath changed, still need to run the following steps
       plan@running.controller@ROI_extract[c(2:4)] <- rep(TRUE,3);
       plan@running.controller@operators[1] <- TRUE;
     } else {
-      # if all these params and datapath did not changed, first 2 steps skipped
+      # if all these params and datapath did not changed, skipped trimming step
       plan@running.controller@ROI_extract[2] <- FALSE;
     }
     

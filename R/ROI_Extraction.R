@@ -1,8 +1,8 @@
 PerformDataTrimming<- function(datapath, mode="ssm", write=F, mz, mzdiff, rt, rtdiff, 
-                                 rt.idx=1/15, plot=T,running.controller=NULL){
+                                 rt.idx=1/15, rmConts = TRUE, plot=T,running.controller=NULL){
   
   PerformROIExtraction(datapath, mode=mode, write, mz, mzdiff, rt, rtdiff, 
-                       rt.idx, plot,running.controller);
+                       rt.idx, rmConts = rmConts, plot,running.controller);
   
 }
 
@@ -292,14 +292,22 @@ PerformROIExtraction <-
           
           if(class(tmp_mes) == "try-error" | rmConts){
             raw_data <- ContaminatsRemoval(raw_data, ms_list);
-            save(raw_data, file = "Contaminats_free_raw_data.rda");
+            #save(raw_data, file = "Contaminats_free_raw_data.rda");
           } else if (.on.public.web) {
             if(peakParams[["rmConts"]]){
               raw_data <- ContaminatsRemoval(raw_data, ms_list);
-              save(raw_data, file = "Contaminats_free_raw_data.rda");
+              #save(raw_data, file = "Contaminats_free_raw_data.rda");
             }
           }
           
+          if (.running.as.plan) {
+            cache.save(raw_data, paste0(function.name, "_c5"));
+            marker_record(paste0(function.name, "_c5"));
+          }
+          
+        } else {
+          raw_data <- cache.read(function.name, "c5");
+          marker_record(paste0(function.name, "_c5"));
         }
 
         
