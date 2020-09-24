@@ -789,7 +789,7 @@ findmzROI <- function(mz,
     )
     
   } else {
-    roiList <<- .Call(
+    roiList <- .Call(
       C_findmzROI,
       mz,
       int,

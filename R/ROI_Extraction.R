@@ -47,6 +47,7 @@ PerformROIExtraction <-
            rt,
            rtdiff,
            rt.idx = 1/15,
+           rmConts = TRUE,
            plot = T,
            running.controller = NULL) {
     if (!dir.exists(datapath)) {
@@ -77,13 +78,14 @@ PerformROIExtraction <-
     function.name <- "ROI_extract";
     
     if (is.null(running.controller)) {
-      c1 <- c2 <- c3 <- c4 <- TRUE;
+      c1 <- c2 <- c3 <- c4 <- c5 <- TRUE;
       .running.as.plan <<- FALSE;
     } else {
       c1 <- running.controller@ROI_extract[["c1"]]; # Data read part
       c2 <- running.controller@ROI_extract[["c2"]]; # Data trim part
       c3 <- running.controller@ROI_extract[["c3"]]; # Data write part
       c4 <- running.controller@ROI_extract[["c4"]]; # Data plot part
+      c5 <- running.controller@ROI_extract[["c5"]]; # Data rmConts part
       .running.as.plan <<- TRUE;
     }
     
@@ -279,15 +281,27 @@ PerformROIExtraction <-
           # include the 90% RT range
         }
         
-        tmp_mes <- try(suppressWarnings(load("params.rda")),silent = T)
-        
-        if(class(tmp_mes) == "try-error"){
-          raw_data <- ContaminatsRemoval(raw_data, ms_list);
-          save(raw_data, file = "Contaminats_free_raw_data.rda");
-        } else if (peakParams[["rmConts"]]) {
-          raw_data <- ContaminatsRemoval(raw_data, ms_list);
-          save(raw_data, file = "Contaminats_free_raw_data.rda");
+        if(.on.public.web){
+          rmConts <- FALSE;
+          tmp_mes <- try(suppressWarnings(load("params.rda")),silent = T);
+        } else {
+          tmp_mes <- 0;
         }
+        
+        if(c5){
+          
+          if(class(tmp_mes) == "try-error" | rmConts){
+            raw_data <- ContaminatsRemoval(raw_data, ms_list);
+            save(raw_data, file = "Contaminats_free_raw_data.rda");
+          } else if (.on.public.web) {
+            if(peakParams[["rmConts"]]){
+              raw_data <- ContaminatsRemoval(raw_data, ms_list);
+              save(raw_data, file = "Contaminats_free_raw_data.rda");
+            }
+          }
+          
+        }
+
         
         if (mode == "ssm") {
           trimed_MSnExp <- ssm_trim(raw_data, ms_list, rt.idx = rt.idx);

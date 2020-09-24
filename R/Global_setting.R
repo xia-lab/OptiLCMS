@@ -54,7 +54,11 @@
                            "descendZero",
                            "which.colMax",
                            "breaks_on_nBins",
-                           ".aggregateMethod2int"
+                           ".aggregateMethod2int",
+                           "findmzROI",
+                           "getEIC",
+                           "getMZ",
+                           "weighted.mean"
                            
                            
 )

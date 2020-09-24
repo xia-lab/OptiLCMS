@@ -112,17 +112,18 @@ PeakPicking_centWave_slave <- function(x,param){
   }
   # load necessary C code for data processing
   
-  
-  if (class(x)=="OnDiskMSnExp"){ # for raw data processing
+  # for raw data processing
+  if (class(x)=="OnDiskMSnExp"){ 
     
     scan.set <- MSnbase::spectra(x, BPPARAM = SerialParam());
     rt <- MSnbase::rtime(x);
     
-  } else if (class(x) == "list") { # for parameters optimization
-    
+  }
+  
+  # for parameters optimization
+  if (class(x) == "list") {
     scan.set <- x;
     rt <- unlist(lapply(x,  MSnbase::rtime), use.names = FALSE);
-    
   }
   
   mzs <- lapply(scan.set, MSnbase::mz)
@@ -140,8 +141,8 @@ PeakPicking_centWave_slave <- function(x,param){
   
   ######   centWaveCore Function
   
-  valCount <- cumsum(valsPerSpect)
-  scanindex <- as.integer(c(0, valCount[-length(valCount)])) ## Get index vector for C calls
+  valCount <- cumsum(valsPerSpect);
+  scanindex <- as.integer(c(0, valCount[-length(valCount)])); ## Get index vector for C calls
   
   if (!is.double(mz))
     mz <- as.double(mz)
@@ -191,7 +192,6 @@ PeakPicking_centWave_slave <- function(x,param){
   scRangeTol <-  maxDescOutlier <- floor(minPeakWidth / 2)
   scanrange <- c(1, length(scantime))
   
-  
   ## If no ROIs are supplied then search for them.
   roiList <- list()
   if (length(roiList) == 0) {
@@ -206,7 +206,6 @@ PeakPicking_centWave_slave <- function(x,param){
         tmp <- capture.output(roiList <-
                                 findmzROI (mz, int, scanindex, scanrange, scantime, param,
                                            minCentroids))
-        
       },
       error = function(e) {
         if (grepl("m/z sort assumption violated !", e$message)) {
@@ -257,15 +256,13 @@ PeakPicking_centWave_slave <- function(x,param){
       }
     )
     
-    
-    
   }
   
   ## Second stage: process the ROIs
   peaklist <- list();
   Nscantime <- length(scantime)
   lf <- length(roiList)
-  
+  save(roiList, file = paste0("roiList_",Sys.time(),".rda"))
   ## print('\n Detecting chromatographic peaks ... \n % finished: ')
   ## lp <- -1
   
@@ -287,7 +284,7 @@ PeakPicking_centWave_slave <- function(x,param){
   
   roiScales = NULL
   
-  for (f in  1:lf) {
+  for (f in 1:lf) {
     
     feat <- roiList[[f]]
     N <- feat$scmax - feat$scmin + 1
@@ -302,15 +299,15 @@ PeakPicking_centWave_slave <- function(x,param){
     eic <- getEIC (mz, int, scanindex, mzrange, sr)
   
     ## eic <- rawEIC(object,mzrange=mzrange,scanrange=sr)
-    d <- eic$intensity
-    td <- sr[1]:sr[2]
-    scan.range <- c(sr[1], sr[2])
+    d <- eic$intensity;
+    td <- sr[1]:sr[2];
+    scan.range <- c(sr[1], sr[2]);
     ## original mzROI range
-    idxs <- which(eic$scan %in% seq(scrange[1], scrange[2]))
-    mzROI.EIC <- list(scan=eic$scan[idxs], intensity=eic$intensity[idxs])
+    idxs <- which(eic$scan %in% seq(scrange[1], scrange[2]));
+    mzROI.EIC <- list(scan=eic$scan[idxs], intensity=eic$intensity[idxs]);
     ## mzROI.EIC <- rawEIC(object,mzrange=mzrange,scanrange=scrange)
     
-    omz <- getMZ (mz, int, scanindex, mzrange, scrange, scantime)
+    omz <- getMZ (mz, int, scanindex, mzrange, scrange, scantime);
     
     ## omz <- rawMZ(object,mzrange=mzrange,scanrange=scrange)
     if (all(omz == 0)) {
@@ -322,6 +319,10 @@ PeakPicking_centWave_slave <- function(x,param){
     if (all(od == 0)) {
       warning("centWave: no peaks found in ROI.")
       next
+    }
+    
+    if(f == lf){
+      save(mzROI.EIC, file = paste0("mzROI.EIC_",f,"_", Sys.time(),".rda"))
     }
     
     ## scrange + scRangeTol, used for gauss fitting and continuous
@@ -354,12 +355,19 @@ PeakPicking_centWave_slave <- function(x,param){
     ## any continuous data above 1st baseline ?
     if (firstBaselineCheck &
         !continuousPtsAboveThreshold(fd, threshold = noise,
-                                     num = minPtsAboveBaseLine))
+                                     num = minPtsAboveBaseLine)){
+      save("sss", file = paste0("sss_",Sys.time(),".rda"))
       next
+    }
+      
     ## 2nd baseline estimate using not-peak-range
     lnoise <- getLocalNoiseEstimate(d, td, ftd, noiserange, Nscantime,
                                     threshold = noise,
                                     num = minPtsAboveBaseLine)
+    
+    if(f == lf){
+      save(lnoise, file = paste0("lnoise_",f,"_", Sys.time(),".rda"))
+    }
     ## Final baseline & Noise estimate
     baseline <- max(1, min(lnoise[1], noise))
     sdnoise <- max(1, lnoise[2])
@@ -423,7 +431,7 @@ PeakPicking_centWave_slave <- function(x,param){
               
               pprange <- min(pp):max(pp)
               ## maxint <- max(d[pprange])
-              lwpos <- max(1,best.scale.pos - best.scale)
+              lwpos <- max(1, best.scale.pos - best.scale)
               rwpos <- min(best.scale.pos + best.scale, length(td))
               p1 <- match(td[lwpos], otd)[1]
               p2 <- match(td[rwpos], otd)
@@ -577,7 +585,7 @@ PeakPicking_centWave_slave <- function(x,param){
   }
   
   p <- do.call(rbind, peaklist)
-  
+  save(p, file = paste0("p_",Sys.time(),".rda"))
   
   if (!param$verboseColumns)
     p <- p[, basenames, drop = FALSE]
@@ -3609,7 +3617,7 @@ PeakPicking_prep <- function(object){
 #' @author Zhiqiang Pang \email{zhiqiang.pang@mail.mcgill.ca}
 #' Mcgill University
 #' License: GNU GPL (>= 2)
-PeakPicking_core <-function(object,object_mslevel,param, BPPARAM = bpparam(), msLevel = 1L){
+PeakPicking_core <-function(object, object_mslevel, param, BPPARAM = bpparam(), msLevel = 1L){
   
   ## Restrict to MS 1 data for now.
   if (length(msLevel) > 1)

@@ -585,7 +585,6 @@ ExperimentsCluster_doe <-function(object, object_mslevel,params,
         data.size<-0.5
       }
       
-      
       if (memtotal/data.size>30){
         nstepby<-ceiling(memtotal*0.75/(data.size*32))
       } else if (memtotal/data.size<30 && memtotal/data.size>15){

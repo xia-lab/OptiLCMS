@@ -27,13 +27,13 @@ testOptiLCMS <- function(){
 # .on.public.web <- F
 # 
 
-
+# library(OptiLCMS);
 # plan <- InitializaPlan("raw_opt","/home/glassfish/projects/MetaboDemoRawData/")
 # plan <- running.plan(plan,
 #                      data_folder_QC <- 'upload/QC/',
-#                      mSet <- PerformROIExtraction(datapath = data_folder_QC, rt.idx = 0.9, plot = F, running.controller = rc),
+#                      mSet <- PerformROIExtraction(datapath = data_folder_QC, rt.idx = 0.9, plot = F, rmConts = F, running.controller = rc),
 #                      param_initial <- SetPeakParam(),
-#                      best_parameters <- PerformParamsOptimization(mSet = mSet, param_initial, ncore = 4, running.controller = rc),
+#                      best_parameters <- PerformParamsOptimization(mSet = mSet, param_initial, ncore = 8, running.controller = rc),
 #                      data_folder_Sample <- 'upload/',
 #                      param <- best_parameters,
 #                      plotSettings1 <- SetPlotParam(Plot=T),
@@ -43,6 +43,8 @@ testOptiLCMS <- function(){
 #                      annParams <- SetAnnotationParam(polarity = 'negative', mz_abs_add = 0.025),
 #                      mSet <- PerformPeakAnnotation(mSet = mSet, annotaParam = annParams, ncore =1, running.controller = rc),
 #                      maPeaks <- FormatPeakList(mSet = mSet, annParams, filtIso =F, filtAdducts = FALSE,missPercent = 1));
+# ExecutePlan(plan);
+
 # 
 # plan <- running.plan(plan,
 #                      data_folder_Sample <- 'upload/',
@@ -56,7 +58,7 @@ testOptiLCMS <- function(){
 #                      maPeaks <- FormatPeakList(mSet = mSet, annParams, filtIso =F, filtAdducts = FALSE,missPercent = 1));
 # 
 # ExecutePlan(plan)
-
-
+# 
+# 
 
 # load("mSet.rda") # load mSet for further analysis, e.g. Statistics/ Mummichog etc.

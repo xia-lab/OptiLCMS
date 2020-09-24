@@ -119,7 +119,7 @@ InitializaPlan <- function(type="spec", path){
   }
   
   ## Recording cache file information
-  record.info <- matrix(nrow = 180, ncol = 2)
+  record.info <- matrix(nrow = 30, ncol = 2)
   record.path <- paste0(getwd(), "/temp/records")
   
   if (!dir.exists(record.path)) {
@@ -383,8 +383,8 @@ marker_record <- function(functionNM){
 controller.resetter <- function() {
   running.controller <- new("controller");
   
-  points <- rep(T, 4);
-  names(points) <- c("c1", "c2", "c3", "c4");
+  points <- rep(T, 5);
+  names(points) <- c("c1", "c2", "c3", "c4", "c5");
   
   running.controller@ROI_extract <-
     running.controller@data_import <-
@@ -447,7 +447,7 @@ perform.command <- function(command){
   
 }
 
-cache.save <- function(obj,funpartnm){
+cache.save <- function(obj, funpartnm){
   
   tmp_path <- paste0(getwd(),"/temp/cache");
   if (!dir.exists(tmp_path)){dir.create(tmp_path,recursive = T)};
@@ -460,18 +460,17 @@ cache.save <- function(obj,funpartnm){
     
   };
   temp_file_name <- basename(temp)
-  info.save(funpartnm,tmp_path_r,temp_file_name)
+  info.save(funpartnm, tmp_path_r, temp_file_name)
 }
 
-info.save <- function(funpartnm,tmp_path_r,temp_file_name){
+info.save <- function(funpartnm, tmp_path_r, temp_file_name){
   
   info.matrix <- readRDS(paste0(tmp_path_r,"/records.rds"));
-  if (identical(which(info.matrix[,1]==funpartnm),integer(0))){
+  if (identical(which(info.matrix[,1] == funpartnm),integer(0))){
     record.row <- which(is.na(info.matrix[,1]))[1];
   } else {
     record.row <- which(info.matrix[,1]==funpartnm)[1];
   }
-  
   
   info.matrix[record.row,1] <- funpartnm;
   info.matrix[record.row,2] <- temp_file_name;
