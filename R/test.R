@@ -26,34 +26,34 @@ testOptiLCMS <- function(){
 # MessageOutput <- OptiLCMS:::MessageOutput
 # .on.public.web <- F
 
-# 
-# library(OptiLCMS);
-# plan <- InitializaPlan("raw_opt","/home/qiang/Data_IBD/test/")
-# plan <- running.plan(plan,
-#                      data_folder_QC <- 'upload/QC/',
-#                      mSet <- PerformROIExtraction(datapath = data_folder_QC, rt.idx = 0.9, plot = F, rmConts = F, running.controller = rc),
-#                      param_initial <- SetPeakParam(),
-#                      best_parameters <- PerformParamsOptimization(mSet = mSet, param_initial, ncore = 8, running.controller = rc),
-#                      data_folder_Sample <- 'upload/',
-#                      param <- best_parameters,
-#                      plotSettings1 <- SetPlotParam(Plot=T),
-#                      plotSettings2 <- SetPlotParam(Plot=T),
-#                      mSet <- ImportRawMSData(mSet = mSet, foldername = data_folder_Sample, plotSettings = plotSettings1, running.controller = rc),
-#                      mSet <- PerformPeakProfiling(mSet = mSet, Params = param, plotSettings = plotSettings2, running.controller = rc),
-#                      annParams <- SetAnnotationParam(polarity = 'negative', mz_abs_add = 0.025),
-#                      mSet <- PerformPeakAnnotation(mSet = mSet, annotaParam = annParams, ncore =1, running.controller = rc),
-#                      maPeaks <- FormatPeakList(mSet = mSet, annParams, filtIso =F, filtAdducts = FALSE,missPercent = 1));
-# ExecutePlan(plan);
 
+library(OptiLCMS);
+plan <- InitializaPlan("raw_opt","/home/glassfish/projects/MetaboDemoRawData/upload/trimmed/")
+plan <- running.plan(plan,
+                     data_folder_QC <- 'data/QC/',
+                     mSet <- PerformROIExtraction(datapath = data_folder_QC, rt.idx = 0.95, plot = F, rmConts = T, running.controller = rc),
+                     param_initial <- SetPeakParam(),
+                     best_parameters <- PerformParamsOptimization(mSet = mSet, param_initial, ncore = 10, running.controller = rc),
+                     data_folder_Sample <- 'data/',
+                     param <- best_parameters,
+                     plotSettings1 <- SetPlotParam(Plot=T),
+                     plotSettings2 <- SetPlotParam(Plot=F),
+                     mSet <- ImportRawMSData(mSet = mSet, foldername = data_folder_Sample, plotSettings = plotSettings1, running.controller = rc),
+                     mSet <- PerformPeakProfiling(mSet = mSet, Params = param, plotSettings = plotSettings2, running.controller = rc),
+                     annParams <- SetAnnotationParam(polarity = 'negative', mz_abs_add = 0.025),
+                     mSet <- PerformPeakAnnotation(mSet = mSet, annotaParam = annParams, ncore =1, running.controller = rc),
+                     maPeaks <- FormatPeakList(mSet = mSet, annParams, filtIso =F, filtAdducts = FALSE,missPercent = 1));
+ExecutePlan(plan);
 # 
+# #
 # plan <- running.plan(plan,
 #                      data_folder_Sample <- 'upload/',
-#                      param <- SetPeakParam(ppm = 8),
+#                      param <- SetPeakParam(),
 #                      plotSettings1 <- SetPlotParam(Plot=T),
 #                      plotSettings2 <- SetPlotParam(Plot=T),
 #                      mSet <- ImportRawMSData(foldername = data_folder_Sample, plotSettings = plotSettings1, running.controller = rc),
 #                      mSet <- PerformPeakProfiling(mSet = mSet, Params = param, plotSettings = plotSettings2, running.controller = rc),
-#                      annParams <- SetAnnotationParam(polarity = 'positive', mz_abs_add = 0.025),
+#                      annParams <- SetAnnotationParam(polarity = 'positive', mz_abs_add = 0.035),
 #                      mSet <- PerformPeakAnnotation(mSet = mSet, annotaParam = annParams, ncore =1, running.controller = rc),
 #                      maPeaks <- FormatPeakList(mSet = mSet, annParams, filtIso =F, filtAdducts = FALSE,missPercent = 1));
 # 

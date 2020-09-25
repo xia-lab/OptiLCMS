@@ -97,49 +97,49 @@
                                  "checkParams"),
                             .peak_function_list)
 
-####Scheduler
-
-SetRawFileNames <- function(filenms){
-  cat(filenms)
-  rawfilenms.vec <<- filenms
-  return(1);
-}
-
-####Raw Spectra Upload
-ReadRawMeta<-function(fileName){
-  if(grepl(".txt", fileName, fixed=T)){
-    tbl=read.table(fileName,header=TRUE, stringsAsFactors = F);
-  }else if(grepl(".csv", fileName, fixed=T)){
-    tbl = read.csv(fileName,header=TRUE, stringsAsFactors = F);
-  }else{
-    cat("wrongfiletype\n")
-  }
-  
-  rawFileNms<-as.vector(tbl[,1])
-  rawClassNms<-as.vector(tbl[,2])
-  rawFileNms <- sapply(strsplit(rawFileNms, "\\."), function(x) paste0(head(x,-1), collapse="."));
-  clsTable = table(rawClassNms)
-  #check replicate number
-  clsTypes = names(table(rawClassNms))
-  for(name in clsTypes){
-    if(toupper(name) !="QC"){
-      replicateNum = clsTable[[name]]
-      cat(replicateNum,"\n")
-    }
-  }
-  
-  rawFileNms<<-rawFileNms
-  rawClassNms<<-rawClassNms
-  return(1);
-}
-
-GetRawFileNms <- function(){
-  return(rawFileNms)
-}
-
-GetRawClassNms <- function(){
-  return(rawClassNms)
-}
+# ####Scheduler - outdated functions
+# 
+# SetRawFileNames <- function(filenms){
+#   cat(filenms)
+#   rawfilenms.vec <<- filenms
+#   return(1);
+# }
+# 
+# ####Raw Spectra Upload
+# ReadRawMeta<-function(fileName){
+#   if(grepl(".txt", fileName, fixed=T)){
+#     tbl=read.table(fileName,header=TRUE, stringsAsFactors = F);
+#   }else if(grepl(".csv", fileName, fixed=T)){
+#     tbl = read.csv(fileName,header=TRUE, stringsAsFactors = F);
+#   }else{
+#     cat("wrongfiletype\n")
+#   }
+#   
+#   rawFileNms<-as.vector(tbl[,1])
+#   rawClassNms<-as.vector(tbl[,2])
+#   rawFileNms <- sapply(strsplit(rawFileNms, "\\."), function(x) paste0(head(x,-1), collapse="."));
+#   clsTable = table(rawClassNms)
+#   #check replicate number
+#   clsTypes = names(table(rawClassNms))
+#   for(name in clsTypes){
+#     if(toupper(name) !="QC"){
+#       replicateNum = clsTable[[name]]
+#       cat(replicateNum,"\n")
+#     }
+#   }
+#   
+#   rawFileNms<<-rawFileNms
+#   rawClassNms<<-rawClassNms
+#   return(1);
+# }
+# 
+# GetRawFileNms <- function(){
+#   return(rawFileNms)
+# }
+# 
+# GetRawClassNms <- function(){
+#   return(rawClassNms)
+# }
 
 
 #' Title

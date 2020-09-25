@@ -15,6 +15,9 @@ NULL
 
 ############# ============ ------------- Call C by .C ----------- ============ ###########
 
+#' continuousPtsAboveThreshold
+#' @noRd
+#' @references Smith, C.A. et al. 2006. {Analytical Chemistry}, 78, 779-787
 continuousPtsAboveThreshold <-
   function(y, threshold, num, istart = 1) {
     if (!is.double(y))
@@ -48,6 +51,9 @@ continuousPtsAboveThreshold <-
     }
   }
 
+#' continuousPtsAboveThresholdIdx
+#' @noRd
+#' @references Smith, C.A. et al. 2006. {Analytical Chemistry}, 78, 779-787
 continuousPtsAboveThresholdIdx <-
   function(y, threshold, num, istart = 1) {
     if (!is.double(y))
@@ -80,6 +86,9 @@ continuousPtsAboveThresholdIdx <-
     }
   }
 
+#' descendMin
+#' @noRd
+#' @references Smith, C.A. et al. 2006. {Analytical Chemistry}, 78, 779-787
 descendMin <- function(y, istart = which.max(y)) {
   if (!is.double(y))
     y <- as.double(y)
@@ -104,6 +113,9 @@ descendMin <- function(y, istart = which.max(y)) {
   }
 }
 
+#' which.colMax
+#' @noRd
+#' @references Smith, C.A. et al. 2006. {Analytical Chemistry}, 78, 779-787
 which.colMax <- function (x, na.rm = FALSE, dims = 1) {
   if (is.data.frame(x))
     x <- as.matrix(x)
@@ -143,6 +155,9 @@ which.colMax <- function (x, na.rm = FALSE, dims = 1) {
   z
 }
 
+#' descendZero
+#' @noRd
+#' @references Smith, C.A. et al. 2006. {Analytical Chemistry}, 78, 779-787
 descendZero <- function(y, istart = which.max(y)) {
   if (!is.double(y))
     y <- as.double(y)
@@ -172,6 +187,9 @@ descendZero <- function(y, istart = which.max(y)) {
   
 }
 
+#' colMax
+#' @noRd
+#' @references Smith, C.A. et al. 2006. {Analytical Chemistry}, 78, 779-787
 colMax <- function (x, na.rm = FALSE, dims = 1) {
   if (is.data.frame(x))
     x <- as.matrix(x)
@@ -208,6 +226,9 @@ colMax <- function (x, na.rm = FALSE, dims = 1) {
   z
 }
 
+#' rectUnique
+#' @noRd
+#' @references Smith, C.A. et al. 2006. {Analytical Chemistry}, 78, 779-787
 rectUnique <-
   function(m,
            order = seq(length = nrow(m)),
@@ -242,6 +263,9 @@ rectUnique <-
     }
   }
 
+#' findEqualGreaterM
+#' @noRd
+#' @references Smith, C.A. et al. 2006. {Analytical Chemistry}, 78, 779-787
 findEqualGreaterM <- function(x, values) {
   if (!is.double(x))
     x <- as.double(x)
@@ -267,6 +291,9 @@ findEqualGreaterM <- function(x, values) {
 
 
 ############# ============ ------------- Call C by .Call ----------- ============ ###########
+#' R_set_obiwarp
+#' @noRd
+#' @references Smith, C.A. et al. 2006. {Analytical Chemistry}, 78, 779-787
 R_set_obiwarp <-
   function(valscantime1,
            scantime1,
@@ -310,6 +337,9 @@ R_set_obiwarp <-
     
   }
 
+#' getEIC4Peaks
+#' @noRd
+#' @references Smith, C.A. et al. 2006. {Analytical Chemistry}, 78, 779-787
 getEIC4Peaks <-
   function(mset, peaks, maxscans) {
     mset$env$mz <-
@@ -381,6 +411,9 @@ getEIC4Peaks <-
     eics
   }
 
+#' breaks_on_nBins
+#' @noRd
+#' @references Smith, C.A. et al. 2006. {Analytical Chemistry}, 78, 779-787
 breaks_on_nBins <-
   function(fromX, toX, nBins, shiftByHalfBinSize = FALSE) {
     if (missing(fromX) | missing(toX) | missing(nBins))
@@ -407,6 +440,9 @@ breaks_on_nBins <-
     return(res)
   }
 
+#' imputeLinInterpol
+#' @noRd
+#' @references Smith, C.A. et al. 2006. {Analytical Chemistry}, 78, 779-787
 imputeLinInterpol <-
   function(x,
            baseValue,
@@ -464,6 +500,9 @@ imputeLinInterpol <-
     }
   }
 
+#' binYonX
+#' @noRd
+#' @references Smith, C.A. et al. 2006. {Analytical Chemistry}, 78, 779-787
 binYonX <- function(x,
                     y,
                     breaks,
@@ -642,6 +681,10 @@ binYonX <- function(x,
   }
 }
 
+
+#' massifquantROIs
+#' @noRd
+#' @references Smith, C.A. et al. 2006. {Analytical Chemistry}, 78, 779-787
 massifquantROIs <- function(mz,
                             int,
                             scanindex,
@@ -702,6 +745,9 @@ massifquantROIs <- function(mz,
   
 }
 
+#' getEIC
+#' @noRd
+#' @references Smith, C.A. et al. 2006. {Analytical Chemistry}, 78, 779-787
 getEIC <-
   function(mz,
            int,
@@ -734,6 +780,9 @@ getEIC <-
     return(noised)
   }
 
+#' getMZ
+#' @noRd
+#' @references Smith, C.A. et al. 2006. {Analytical Chemistry}, 78, 779-787
 getMZ <- function(mz,
                   int,
                   scanindex,
@@ -766,6 +815,9 @@ getMZ <- function(mz,
 }
 
 
+#' findmzROI
+#' @noRd
+#' @references Smith, C.A. et al. 2006. {Analytical Chemistry}, 78, 779-787
 findmzROI <- function(mz,
                       int,
                       scanindex,

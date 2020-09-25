@@ -325,10 +325,6 @@ ImportRawMSData <-
     
     foldername <- tools::file_path_as_absolute(foldername);
     
-    MessageOutput(mes = "Step 2/6: Start to import the spectrum! \nThis step will take a short time...",
-                  ecol = "\n",
-                  progress = 21.0)
-    
     if(.on.public.web){
       load_msnbase();
     } 
@@ -364,6 +360,10 @@ ImportRawMSData <-
     
     # the "upload" folder should contain two subfolders (groups, i.e. Healthy vs. Disease)
     # each subfolder must contain samples (.mzML/.CDF/.mzXML files)
+    
+    MessageOutput(mes = "Step 2/6: Start to import the spectrum! \nThis step will take a short time...",
+                  ecol = "\n",
+                  progress = 21.0)
     
     files <-
       dir(

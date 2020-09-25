@@ -4,24 +4,18 @@
 \alias{PeakPicking_core}
 \title{Calculate PPS method}
 \usage{
-PeakPicking_core(
-  object,
-  object_mslevel,
-  param,
-  BPPARAM = bpparam(),
-  msLevel = 1L
-)
+PeakPicking_core(object, object_mslevel, param, msLevel = 1L)
 }
 \arguments{
 \item{object_mslevel}{List, prepared by findChromPeaks_prep function.}
 
 \item{param}{Parameters list.}
 
-\item{BPPARAM}{Parallel Method.}
-
 \item{msLevel}{msLevel. Only 1 is supported currently.}
 
 \item{xset}{MSnExp object.}
+
+\item{BPPARAM}{Parallel Method.}
 }
 \description{
 Peak picking method. Specifically used for parameters optimization

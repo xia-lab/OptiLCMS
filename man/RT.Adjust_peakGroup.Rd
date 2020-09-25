@@ -21,6 +21,9 @@ RT.Adjust_peakGroup(
 \description{
 RT.Adjust_peakGroup
 }
+\references{
+Smith, C.A. et al. 2006. {Analytical Chemistry}, 78, 779-787
+}
 \author{
 Zhiqiang Pang, Jeff Xia \email{jeff.xia@mcgill.ca}
 McGill University, Canada
