@@ -13,6 +13,7 @@ PerformROIExtraction(
   rt,
   rtdiff,
   rt.idx = 1/15,
+  rmConts = TRUE,
   plot = T,
   running.controller = NULL
 )

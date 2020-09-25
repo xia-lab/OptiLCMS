@@ -5,7 +5,7 @@
 \title{Import raw MS data}
 \usage{
 ImportRawMSData(
-  mSet,
+  mSet = NULL,
   foldername,
   mode = "onDisk",
   ncores = 4,
