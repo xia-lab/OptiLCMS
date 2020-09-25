@@ -573,27 +573,40 @@ ExperimentsCluster_doe <-function(object, object_mslevel,params,
       
     } else {
       # Memory optimization strategy
-      ncount<-object@phenoData@data[["sample_name"]];
-      data.size<-round(as.numeric(object.size(object)/1024/1024),1);
-      if(.Platform$OS.type=="unix" ){
-        memtotal <- ceiling(as.numeric(system("awk '/MemTotal/ {print $2}' /proc/meminfo", intern=TRUE))/1024/1024)
+      ncount <- object@phenoData@data[["sample_name"]];
+      
+      data.size <- round(as.numeric(object.size(object) / 1024 / 1024), 1)
+      
+      if (.Platform$OS.type == "unix") {
+        memtotal <-
+          ceiling(as.numeric(
+            system("awk '/MemTotal/ {print $2}' /proc/meminfo", intern = TRUE)
+          ) / 1024 / 1024)
       }
-      if(.Platform$OS.type=="windows"){
-        memtotal <- ceiling(as.numeric(gsub("\r","",gsub("TotalVisibleMemorySize=","",system('wmic OS get TotalVisibleMemorySize /Value',intern=TRUE)[3])))/1024/1024)
+      if (.Platform$OS.type == "windows") {
+        memtotal <-
+          ceiling(as.numeric(gsub(
+            "\r", "", gsub(
+              "TotalVisibleMemorySize=",
+              "",
+              system('wmic OS get TotalVisibleMemorySize /Value', intern = TRUE)[3]
+            )
+          )) / 1024 / 1024)
       }
-      if(data.size<1){
-        data.size<-0.5
+      if (data.size < 1) {
+        data.size <- 0.5
       }
       
-      if (memtotal/data.size>30){
-        nstepby<-ceiling(memtotal*0.75/(data.size*32))
-      } else if (memtotal/data.size<30 && memtotal/data.size>15){
-        nstepby<-ceiling(memtotal*0.5/(data.size*32))
+      if (memtotal / data.size > 30) {
+        nstepby <- ceiling(memtotal * 1.5 / (data.size * 32))
+      } else if (memtotal / data.size < 30 &&
+                 memtotal / data.size > 15) {
+        nstepby <- ceiling(memtotal * 1 / (data.size * 32))
       } else {
-        nstepby<-ceiling(memtotal*0.25/(data.size*32))
+        nstepby <- ceiling(memtotal * 0.5 / (data.size * 32))
       }
       
-      nstep<-ceiling(length(tasks)/nstepby)
+      nstep <- ceiling(length(tasks) / nstepby)
     }
     
     ## Parallel Setting
@@ -791,6 +804,9 @@ Statistic_doe <-function(object, object_mslevel, isotopeIdentification,
 SlaveCluster_doe <-function(task, Set_parameters, object, object_mslevel, 
                             isotopeIdentification, BPPARAM = bpparam(),...) {
   
+  if(.optimize_switch){
+    write.table(paste0("WK_XXXXXXXXXXXXXXXXXXXXXXXXXX_",Sys.time()), file = "tmp_progress.txt",row.names = F,quote = F,col.names = F,append = T,eol ="\n")
+  }
   mSet <-
     calculateSet_doe(
       object = object,
@@ -867,7 +883,9 @@ calculateSet_doe <- function(object, object_mslevel, Set_parameters, task = 1,
   } else { # deal with the optimization case, usaully 44 (33 each set)
     param <- updateRawSpectraParam(Set_parameters[[task]])
   }
-  
+  if(.optimize_switch){
+    write.table(paste0("WK_zzzzzzzzzzzzzzzzzzz_",Sys.time()), file = "tmp_progress.txt",row.names = F,quote = F,col.names = F,append = T,eol ="\n")
+  }
   mSet <- calculatePPKs(object, object_mslevel, param, BPPARAM = bpparam())
   
   mSet <- calculateGPRT(mSet, param)
@@ -893,11 +911,18 @@ calculatePPKs<-function(object, object_mslevel,param,
   
   if (param$Peak_method == "centWave" | param$Peak_method == "matchedFilter") {
     # centWave & matchedFilter
-    
-    mSet <- try(PeakPicking_core(object, object_mslevel, 
-                                 param = param, 
-                                 BPPARAM = BPPARAM,
-                                 msLevel = 1),silent = T)
+    if(.optimize_switch){
+      write.table(paste0("WK_jjjjjjjjjjjjjjjjjjjjjjjjj_",Sys.time()), file = "tmp_progress.txt",row.names = F,quote = F,col.names = F,append = T,eol ="\n")
+    }
+    mSet <- try(PeakPicking_core(object, object_mslevel,
+                                 param = param,
+                                 msLevel = 1),
+                silent = T)
+    # mSet <- PeakPicking_core(object, 
+    #                          object_mslevel, 
+    #                          param = param, 
+    #                          BPPARAM = BPPARAM,
+    #                          msLevel = 1)
     
   } else {
     

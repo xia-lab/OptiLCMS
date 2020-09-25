@@ -106,12 +106,11 @@ PerformPeakPicking<-function(mSet, BPPARAM = bpparam()){
 #'@ref Smith, C.A. et al. 2006. Analytical Chemistry, 78, 779-787
 #'
 PeakPicking_centWave_slave <- function(x,param){
-  
+
   if(.on.public.web){
     dyn.load(.getDynLoadPath());
   }
   # load necessary C code for data processing
-  
   # for raw data processing
   if (class(x)=="OnDiskMSnExp"){ 
     
@@ -250,7 +249,7 @@ PeakPicking_centWave_slave <- function(x,param){
         rm(mzl)
         rm(splitF)
         tmp <- capture.output(
-          roiList <<- findmzROI (mz, int, scanindex, scanrange, scantime, param,
+          roiList <- findmzROI (mz, int, scanindex, scanrange, scantime, param,
                                  minCentroids)
         )
       }
@@ -273,7 +272,7 @@ PeakPicking_centWave_slave <- function(x,param){
     print_mes <- paste0(print_mes,print_mes_tmp)
     
     count_current_sample <<- count_current_sample +1;
-    write.table(count_current_sample, file = "log_progress.txt",row.names = F,col.names = F)
+    #write.table(count_current_sample, file = "log_progress.txt",row.names = F,col.names = F)
     write.table(25 + count_current_sample*3/count_total_sample*25, file = "log_progress.txt",row.names = F,col.names = F)
     
   } else {
@@ -282,8 +281,12 @@ PeakPicking_centWave_slave <- function(x,param){
     
   }
   
-  roiScales = NULL
+  if(.optimize_switch){
+    write.table("WK_0000000000000000", file = "tmp_progress.txt",row.names = F,quote = F,col.names = F,append = T,eol ="\n")
+  }
   
+  roiScales = NULL;
+ 
   for (f in 1:lf) {
     
     feat <- roiList[[f]]
@@ -297,7 +300,11 @@ PeakPicking_centWave_slave <- function(x,param){
             min(scanrange[2], scrange[2] + max(noiserange)))
     
     eic <- getEIC (mz, int, scanindex, mzrange, sr)
-  
+    
+    if(.optimize_switch){
+      write.table(paste0("WK_1_",f,"_",Sys.time()), file = "tmp_progress.txt",row.names = F,quote = F,col.names = F,append = T,eol ="\n")
+    }
+    
     ## eic <- rawEIC(object,mzrange=mzrange,scanrange=sr)
     d <- eic$intensity;
     td <- sr[1]:sr[2];
@@ -321,9 +328,9 @@ PeakPicking_centWave_slave <- function(x,param){
       next
     }
     
-    # if(f == lf){
-    #   save(mzROI.EIC, file = paste0("mzROI.EIC_",f,"_", Sys.time(),".rda"))
-    # }
+    if(.optimize_switch){
+      write.table(paste0("WK_2_",f,"_",Sys.time()), file = "tmp_progress.txt",row.names = F,quote = F,col.names = F,append = T,eol ="\n")
+    }
     
     ## scrange + scRangeTol, used for gauss fitting and continuous
     ## data above 1st baseline detection
@@ -345,6 +352,10 @@ PeakPicking_centWave_slave <- function(x,param){
     ## 90% trimmed mean as first baseline guess
     gz <- which(noised > 0);
     
+    if(.optimize_switch){
+      write.table(paste0("WK_3_",f,"_",Sys.time()), file = "tmp_progress.txt",row.names = F,quote = F,col.names = F,append = T,eol ="\n")
+    }
+    
     if (length(gz) < 3*minPeakWidth){
       noise <- mean(noised)
     } else {
@@ -365,9 +376,9 @@ PeakPicking_centWave_slave <- function(x,param){
                                     threshold = noise,
                                     num = minPtsAboveBaseLine)
     
-    # if(f == lf){
-    #   save(lnoise, file = paste0("lnoise_",f,"_", Sys.time(),".rda"))
-    # }
+    if(.optimize_switch){
+      write.table(paste0("WK_4_",f,"_",Sys.time()), file = "tmp_progress.txt",row.names = F,quote = F,col.names = F,append = T,eol ="\n")
+    }
     ## Final baseline & Noise estimate
     baseline <- max(1, min(lnoise[1], noise))
     sdnoise <- max(1, lnoise[2])
@@ -375,7 +386,12 @@ PeakPicking_centWave_slave <- function(x,param){
     ## is there any data above S/N * threshold ?
     if (!(any(fd - baseline >= sdthr)))
       next
-    wCoefs <- MSW.cwt(d, scales = scales, wavelet = 'mexh')
+    wCoefs <- MSW.cwt(d, scales = scales, wavelet = 'mexh');
+    
+    if(.optimize_switch){
+      write.table(paste0("WK_5_",f,"_",Sys.time()), file = "tmp_progress.txt",row.names = F,quote = F,col.names = F,append = T,eol ="\n")
+    }
+    
     if (!(!is.null(dim(wCoefs)) && any(wCoefs- baseline >= sdthr)))
       next
     if (td[length(td)] == Nscantime) ## workaround, localMax fails otherwise
@@ -487,6 +503,9 @@ PeakPicking_centWave_slave <- function(x,param){
       }  ##for
     } ## if
     
+    if(.optimize_switch){
+      write.table(paste0("WK_6_",f,"_",Sys.time()), file = "tmp_progress.txt",row.names = F,quote = F,col.names = F,append = T,eol ="\n")
+    }
     ##  postprocessing
     if (!is.null(peaks)) {
       colnames(peaks) <- c(basenames, verbosenames)
@@ -568,6 +587,7 @@ PeakPicking_centWave_slave <- function(x,param){
     }
   } ## f
   
+  #save.image(file = paste0(length(roiList),"_",Sys.time(),".RData"));
   
   if (length(peaklist) == 0) {
     warning("No peaks found!")
@@ -607,7 +627,6 @@ PeakPicking_centWave_slave <- function(x,param){
   }
   
   return(pr)
-  
 }
 
 #'PeakPicking_Massifquant_slave
@@ -3614,10 +3633,11 @@ PeakPicking_prep <- function(object){
 #' @param BPPARAM Parallel Method.
 #' @param msLevel msLevel. Only 1 is supported currently.
 #' @import MSnbase
+#' @import BiocParallel
 #' @author Zhiqiang Pang \email{zhiqiang.pang@mail.mcgill.ca}
 #' Mcgill University
 #' License: GNU GPL (>= 2)
-PeakPicking_core <-function(object, object_mslevel, param, BPPARAM = bpparam(), msLevel = 1L){
+PeakPicking_core <-function(object, object_mslevel, param, msLevel = 1L){
   
   ## Restrict to MS 1 data for now.
   if (length(msLevel) > 1)
@@ -3625,18 +3645,18 @@ PeakPicking_core <-function(object, object_mslevel, param, BPPARAM = bpparam(), 
          "supported", call. = FALSE)
   
   if (is.null(param$fwhm)){
-    
-    resList <- bplapply(object_mslevel,
-                        FUN = PeakPicking_centWave_slave,
+
+    resList <- try(BiocParallel::bplapply(object_mslevel,
+                        FUN = OptiLCMS:::PeakPicking_centWave_slave,
                         param = param,
-                        BPPARAM = BPPARAM)
-    
+                        BPPARAM = SerialParam()),silent = T)
+
   } else {
     
-    resList <- bplapply(object_mslevel,
-                        FUN = PeakPicking_MatchedFilter_slave,
+    resList <- BiocParallel::bplapply(object_mslevel,
+                        FUN = OptiLCMS:::PeakPicking_MatchedFilter_slave,
                         param = param,
-                        BPPARAM = BPPARAM)
+                        BPPARAM = SerialParam())
     
   }
   

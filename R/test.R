@@ -25,13 +25,13 @@ testOptiLCMS <- function(){
 # Resumming Running ----
 # MessageOutput <- OptiLCMS:::MessageOutput
 # .on.public.web <- F
-# 
+
 # 
 # library(OptiLCMS);
-# plan <- InitializaPlan("raw_opt","/home/glassfish/projects/MetaboDemoRawData/")
+# plan <- InitializaPlan("raw_opt","/home/qiang/Data_IBD/test/")
 # plan <- running.plan(plan,
 #                      data_folder_QC <- 'upload/QC/',
-#                      mSet <- PerformROIExtraction(datapath = data_folder_QC, rt.idx = 0.85, plot = F, rmConts = T, running.controller = rc),
+#                      mSet <- PerformROIExtraction(datapath = data_folder_QC, rt.idx = 0.9, plot = F, rmConts = F, running.controller = rc),
 #                      param_initial <- SetPeakParam(),
 #                      best_parameters <- PerformParamsOptimization(mSet = mSet, param_initial, ncore = 8, running.controller = rc),
 #                      data_folder_Sample <- 'upload/',
