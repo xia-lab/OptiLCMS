@@ -12,6 +12,11 @@ updateRawSpectraParam(Params)
 \description{
 updateRawSpectraParam
 }
+\references{
+Smith, C.A. et al. 2006. {Analytical Chemistry}, 78, 779-787
+Mcgill University
+License: GNU GPL (>= 2)
+}
 \author{
 Zhiqiang Pang, Jeff Xia \email{jeff.xia@mcgill.ca}
 McGill University, Canada

@@ -9,15 +9,15 @@
 
 # --------------------1. Raw spectra processing_Section using the xcms way---------------------------------------------
 
-#'PerformPeakPicking
-#'@description PerformPeakPicking
-#'@param mSet the raw data object read by ImportRawMSData function.
-#'@param BPPARAM parallel method used for data processing. Default is bpparam(). Optional.
-#'@author Zhiqiang Pang, Jeff Xia \email{jeff.xia@mcgill.ca}
-#'McGill University, Canada
-#'License: GNU GPL (>= 2)
-#'@export
-#'@ref Smith, C.A. et al. 2006. Analytical Chemistry, 78, 779-787
+#' PerformPeakPicking
+#' @description PerformPeakPicking
+#' @param mSet the raw data object read by ImportRawMSData function.
+#' @param BPPARAM parallel method used for data processing. Default is bpparam(). Optional.
+#' @author Zhiqiang Pang, Jeff Xia \email{jeff.xia@mcgill.ca}
+#' McGill University, Canada
+#' License: GNU GPL (>= 2)
+#' @export
+#' @references Smith, C.A. et al. 2006. {Analytical Chemistry}, 78, 779-787
 #'
 PerformPeakPicking<-function(mSet, BPPARAM = bpparam()){
   
@@ -103,7 +103,7 @@ PerformPeakPicking<-function(mSet, BPPARAM = bpparam()){
 #'@author Zhiqiang Pang, Jeff Xia \email{jeff.xia@mcgill.ca}
 #'McGill University, Canada
 #'License: GNU GPL (>= 2)
-#'@ref Smith, C.A. et al. 2006. Analytical Chemistry, 78, 779-787
+#' @references Smith, C.A. et al. 2006. {Analytical Chemistry}, 78, 779-787
 #'
 PeakPicking_centWave_slave <- function(x,param){
 
@@ -634,7 +634,7 @@ PeakPicking_centWave_slave <- function(x,param){
 #'@author Zhiqiang Pang, Jeff Xia \email{jeff.xia@mcgill.ca}
 #'McGill University, Canada
 #'License: GNU GPL (>= 2)
-#'@ref Smith, C.A. et al. 2006. Analytical Chemistry, 78, 779-787
+#' @references Smith, C.A. et al. 2006. {Analytical Chemistry}, 78, 779-787
 #'
 PeakPicking_Massifquant_slave <- function(x,param){
   
@@ -833,7 +833,7 @@ PeakPicking_Massifquant_slave <- function(x,param){
 #'@author Zhiqiang Pang, Jeff Xia \email{jeff.xia@mcgill.ca}
 #'McGill University, Canada
 #'License: GNU GPL (>= 2)
-#'@ref Smith, C.A. et al. 2006. Analytical Chemistry, 78, 779-787
+#' @references Smith, C.A. et al. 2006. {Analytical Chemistry}, 78, 779-787
 #'
 PeakPicking_MatchedFilter_slave <- function(x,param){
   
@@ -1025,7 +1025,7 @@ PeakPicking_MatchedFilter_slave <- function(x,param){
 #'@author Zhiqiang Pang, Jeff Xia \email{jeff.xia@mcgill.ca}
 #'McGill University, Canada
 #'License: GNU GPL (>= 2)
-#'@ref Smith, C.A. et al. 2006. Analytical Chemistry, 78, 779-787
+#' @references Smith, C.A. et al. 2006. {Analytical Chemistry}, 78, 779-787
 #'
 PerformPeakGrouping<-function(mSet){
   
@@ -1145,7 +1145,7 @@ PerformPeakGrouping<-function(mSet){
 #'@author Zhiqiang Pang, Jeff Xia \email{jeff.xia@mcgill.ca}
 #'McGill University, Canada
 #'License: GNU GPL (>= 2)
-#'@ref Smith, C.A. et al. 2006. Analytical Chemistry, 78, 779-787
+#' @references Smith, C.A. et al. 2006. {Analytical Chemistry}, 78, 779-787
 #'@noRd
 Densitygrouping_slave <- function(x, bw, densFrom, densTo, densN, sampleGroups,
                                   sampleGroupTable, minFraction,
@@ -1199,7 +1199,7 @@ Densitygrouping_slave <- function(x, bw, densFrom, densTo, densN, sampleGroups,
 #'McGill University, Canada
 #'License: GNU GPL (>= 2)
 #'@export
-#'@ref Smith, C.A. et al. 2006. Analytical Chemistry, 78, 779-787
+#' @references Smith, C.A. et al. 2006. {Analytical Chemistry}, 78, 779-787
 #'
 
 PerformPeakAlignment<-function(mSet){
@@ -1283,7 +1283,7 @@ PerformRTcorrection <- function(mSet){
 #'@author Zhiqiang Pang, Jeff Xia \email{jeff.xia@mcgill.ca}
 #'McGill University, Canada
 #'License: GNU GPL (>= 2)
-#'@ref Smith, C.A. et al. 2006. Analytical Chemistry, 78, 779-787
+#' @references Smith, C.A. et al. 2006. {Analytical Chemistry}, 78, 779-787
 #'
 RT.Adjust_peakGroup <-
   function(peaks, peakIndex, rtime, minFraction = 0.9, extraPeaks = 1,
@@ -1986,7 +1986,7 @@ mSet.obiwarp <- function(mSet, object, param0) { ## Do not use the params define
 #'McGill University, Canada
 #'License: GNU GPL (>= 2)
 #'@export
-#'@ref Smith, C.A. et al. 2006. Analytical Chemistry, 78, 779-787
+#' @references Smith, C.A. et al. 2006. {Analytical Chemistry}, 78, 779-787
 #'
 PerformPeakFiling <- function(mSet,BPPARAM=bpparam()){
   
@@ -2312,7 +2312,7 @@ PerformPeakFiling <- function(mSet,BPPARAM=bpparam()){
 #'@author Zhiqiang Pang, Jeff Xia \email{jeff.xia@mcgill.ca}
 #'McGill University, Canada
 #'License: GNU GPL (>= 2)
-#'@ref Smith, C.A. et al. 2006. Analytical Chemistry, 78, 779-787
+#' @references Smith, C.A. et al. 2006. {Analytical Chemistry}, 78, 779-787
 #'
 mSet2xcmsSet <- function(mSet) {
   
@@ -2372,7 +2372,7 @@ mSet2xcmsSet <- function(mSet) {
 #'@author Zhiqiang Pang, Jeff Xia \email{jeff.xia@mcgill.ca}
 #'McGill University, Canada
 #'@export
-#'@ref Smith, C.A. et al. 2006. Analytical Chemistry, 78, 779-787
+#' @references Smith, C.A. et al. 2006. {Analytical Chemistry}, 78, 779-787
 #' Mcgill University
 #' License: GNU GPL (>= 2)
 updateRawSpectraParam <- function (Params){

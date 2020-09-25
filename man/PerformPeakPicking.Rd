@@ -7,12 +7,15 @@
 PerformPeakPicking(mSet, BPPARAM = bpparam())
 }
 \arguments{
-\item{BPPARAM}{parallel method used for data processing. Default is bpparam().}
+\item{mSet}{the raw data object read by ImportRawMSData function.}
 
-\item{object}{the raw data object read by ImportRawMSData function.}
+\item{BPPARAM}{parallel method used for data processing. Default is bpparam(). Optional.}
 }
 \description{
 PerformPeakPicking
+}
+\references{
+Smith, C.A. et al. 2006. {Analytical Chemistry}, 78, 779-787
 }
 \author{
 Zhiqiang Pang, Jeff Xia \email{jeff.xia@mcgill.ca}
