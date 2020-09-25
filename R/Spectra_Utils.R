@@ -11,8 +11,8 @@
 
 #'PerformPeakPicking
 #'@description PerformPeakPicking
-#'@param object the raw data object read by ImportRawMSData function.
-#'@param BPPARAM parallel method used for data processing. Default is bpparam().
+#'@param mSet the raw data object read by ImportRawMSData function.
+#'@param BPPARAM parallel method used for data processing. Default is bpparam(). Optional.
 #'@author Zhiqiang Pang, Jeff Xia \email{jeff.xia@mcgill.ca}
 #'McGill University, Canada
 #'License: GNU GPL (>= 2)
@@ -281,9 +281,9 @@ PeakPicking_centWave_slave <- function(x,param){
     
   }
   
-  if(.optimize_switch){
-    write.table("WK_0000000000000000", file = "tmp_progress.txt",row.names = F,quote = F,col.names = F,append = T,eol ="\n")
-  }
+  # if(.optimize_switch){
+  #   write.table("WK_0000000000000000", file = "tmp_progress.txt",row.names = F,quote = F,col.names = F,append = T,eol ="\n")
+  # }
   
   roiScales = NULL;
  
@@ -301,9 +301,9 @@ PeakPicking_centWave_slave <- function(x,param){
     
     eic <- getEIC (mz, int, scanindex, mzrange, sr)
     
-    if(.optimize_switch){
-      write.table(paste0("WK_1_",f,"_",Sys.time()), file = "tmp_progress.txt",row.names = F,quote = F,col.names = F,append = T,eol ="\n")
-    }
+    # if(.optimize_switch){
+    #   write.table(paste0("WK_1_",f,"_",Sys.time()), file = "tmp_progress.txt",row.names = F,quote = F,col.names = F,append = T,eol ="\n")
+    # }
     
     ## eic <- rawEIC(object,mzrange=mzrange,scanrange=sr)
     d <- eic$intensity;
@@ -328,9 +328,9 @@ PeakPicking_centWave_slave <- function(x,param){
       next
     }
     
-    if(.optimize_switch){
-      write.table(paste0("WK_2_",f,"_",Sys.time()), file = "tmp_progress.txt",row.names = F,quote = F,col.names = F,append = T,eol ="\n")
-    }
+    # if(.optimize_switch){
+    #   write.table(paste0("WK_2_",f,"_",Sys.time()), file = "tmp_progress.txt",row.names = F,quote = F,col.names = F,append = T,eol ="\n")
+    # }
     
     ## scrange + scRangeTol, used for gauss fitting and continuous
     ## data above 1st baseline detection
@@ -352,10 +352,10 @@ PeakPicking_centWave_slave <- function(x,param){
     ## 90% trimmed mean as first baseline guess
     gz <- which(noised > 0);
     
-    if(.optimize_switch){
-      write.table(paste0("WK_3_",f,"_",Sys.time()), file = "tmp_progress.txt",row.names = F,quote = F,col.names = F,append = T,eol ="\n")
-    }
-    
+    # if(.optimize_switch){
+    #   write.table(paste0("WK_3_",f,"_",Sys.time()), file = "tmp_progress.txt",row.names = F,quote = F,col.names = F,append = T,eol ="\n")
+    # }
+    # 
     if (length(gz) < 3*minPeakWidth){
       noise <- mean(noised)
     } else {
@@ -375,10 +375,10 @@ PeakPicking_centWave_slave <- function(x,param){
     lnoise <- getLocalNoiseEstimate(d, td, ftd, noiserange, Nscantime,
                                     threshold = noise,
                                     num = minPtsAboveBaseLine)
-    
-    if(.optimize_switch){
-      write.table(paste0("WK_4_",f,"_",Sys.time()), file = "tmp_progress.txt",row.names = F,quote = F,col.names = F,append = T,eol ="\n")
-    }
+    # 
+    # if(.optimize_switch){
+    #   write.table(paste0("WK_4_",f,"_",Sys.time()), file = "tmp_progress.txt",row.names = F,quote = F,col.names = F,append = T,eol ="\n")
+    # }
     ## Final baseline & Noise estimate
     baseline <- max(1, min(lnoise[1], noise))
     sdnoise <- max(1, lnoise[2])
@@ -388,9 +388,9 @@ PeakPicking_centWave_slave <- function(x,param){
       next
     wCoefs <- MSW.cwt(d, scales = scales, wavelet = 'mexh');
     
-    if(.optimize_switch){
-      write.table(paste0("WK_5_",f,"_",Sys.time()), file = "tmp_progress.txt",row.names = F,quote = F,col.names = F,append = T,eol ="\n")
-    }
+    # if(.optimize_switch){
+    #   write.table(paste0("WK_5_",f,"_",Sys.time()), file = "tmp_progress.txt",row.names = F,quote = F,col.names = F,append = T,eol ="\n")
+    # }
     
     if (!(!is.null(dim(wCoefs)) && any(wCoefs- baseline >= sdthr)))
       next
@@ -503,9 +503,9 @@ PeakPicking_centWave_slave <- function(x,param){
       }  ##for
     } ## if
     
-    if(.optimize_switch){
-      write.table(paste0("WK_6_",f,"_",Sys.time()), file = "tmp_progress.txt",row.names = F,quote = F,col.names = F,append = T,eol ="\n")
-    }
+    # if(.optimize_switch){
+    #   write.table(paste0("WK_6_",f,"_",Sys.time()), file = "tmp_progress.txt",row.names = F,quote = F,col.names = F,append = T,eol ="\n")
+    # }
     ##  postprocessing
     if (!is.null(peaks)) {
       colnames(peaks) <- c(basenames, verbosenames)

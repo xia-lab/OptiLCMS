@@ -804,9 +804,9 @@ Statistic_doe <-function(object, object_mslevel, isotopeIdentification,
 SlaveCluster_doe <-function(task, Set_parameters, object, object_mslevel, 
                             isotopeIdentification, BPPARAM = bpparam(),...) {
   
-  if(.optimize_switch){
-    write.table(paste0("WK_XXXXXXXXXXXXXXXXXXXXXXXXXX_",Sys.time()), file = "tmp_progress.txt",row.names = F,quote = F,col.names = F,append = T,eol ="\n")
-  }
+  # if(.optimize_switch){
+  #   write.table(paste0("WK_XXXXXXXXXXXXXXXXXXXXXXXXXX_",Sys.time()), file = "tmp_progress.txt",row.names = F,quote = F,col.names = F,append = T,eol ="\n")
+  # }
   mSet <-
     calculateSet_doe(
       object = object,
@@ -883,9 +883,9 @@ calculateSet_doe <- function(object, object_mslevel, Set_parameters, task = 1,
   } else { # deal with the optimization case, usaully 44 (33 each set)
     param <- updateRawSpectraParam(Set_parameters[[task]])
   }
-  if(.optimize_switch){
-    write.table(paste0("WK_zzzzzzzzzzzzzzzzzzz_",Sys.time()), file = "tmp_progress.txt",row.names = F,quote = F,col.names = F,append = T,eol ="\n")
-  }
+  # if(.optimize_switch){
+  #   write.table(paste0("WK_zzzzzzzzzzzzzzzzzzz_",Sys.time()), file = "tmp_progress.txt",row.names = F,quote = F,col.names = F,append = T,eol ="\n")
+  # }
   mSet <- calculatePPKs(object, object_mslevel, param, BPPARAM = bpparam())
   
   mSet <- calculateGPRT(mSet, param)
@@ -911,9 +911,9 @@ calculatePPKs<-function(object, object_mslevel,param,
   
   if (param$Peak_method == "centWave" | param$Peak_method == "matchedFilter") {
     # centWave & matchedFilter
-    if(.optimize_switch){
-      write.table(paste0("WK_jjjjjjjjjjjjjjjjjjjjjjjjj_",Sys.time()), file = "tmp_progress.txt",row.names = F,quote = F,col.names = F,append = T,eol ="\n")
-    }
+    # if(.optimize_switch){
+    #   write.table(paste0("WK_jjjjjjjjjjjjjjjjjjjjjjjjj_",Sys.time()), file = "tmp_progress.txt",row.names = F,quote = F,col.names = F,append = T,eol ="\n")
+    # }
     mSet <- try(PeakPicking_core(object, object_mslevel,
                                  param = param,
                                  msLevel = 1),
