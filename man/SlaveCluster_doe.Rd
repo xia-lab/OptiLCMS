@@ -10,23 +10,22 @@ SlaveCluster_doe(
   object,
   object_mslevel,
   isotopeIdentification,
-  BPPARAM = bpparam(),
-  ...
+  BPPARAM = bpparam()
 )
 }
 \arguments{
 \item{task}{Numeric, task order for XCMS paramters table to run the peak picking and alignment.}
+
+\item{Set_parameters}{Matrix, the parameters combination produced automatically according to
+the primary parameters input.}
+
+\item{object}{object, the trimmed or the original data.}
 
 \item{object_mslevel}{List, the parsed metabolomics scans produced by PeakPicking_prep.}
 
 \item{isotopeIdentification}{Character, IsotopeIdentidication method, usually includes 'IPO' and 'CAMERA'.}
 
 \item{BPPARAM}{MulticoreParam method, used to set the parallel method. Default is bpparam().}
-
-\item{xcmsSet_parameters}{Matrix, the parameters combination produced automatically according to
-the primary parameters input.}
-
-\item{MSnExp}{object, the trimmed or the original data.}
 }
 \description{
 Core Peak Picking Slave Cluster

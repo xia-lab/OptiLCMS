@@ -24,13 +24,11 @@ SetPeakParam(
   minFraction,
   minSamples,
   maxFeatures,
-  max,
   extra,
   span,
   smooth,
   family,
   fitgauss,
-  verbose.columns,
   mzCenterFun,
   integrate,
   polarity,
@@ -40,8 +38,7 @@ SetPeakParam(
   max_iso,
   corr_eic_th,
   mz_abs_add,
-  rmConts,
-  ...
+  rmConts
 )
 }
 \arguments{
@@ -89,13 +86,44 @@ smoothing kernel to be applied during peak grouping.}
 
 \item{maxFeatures}{Numeric, specify the maximum number of features to be identified.}
 
-\item{...}{Other parameters, including max,extra,span,smooth,family,fitgauss, verbose.columns,mzCenterFun,integrate. Usually don't
+\item{extra}{Numeric, defining the maximal number of additional peaks for all samples to be assigned to a peak group (i.e. feature) for retention time correction}
+
+\item{span}{Numeric, defining the degree of smoothing (if smooth = "loess"). This parameter is passed to the internal call to loess}
+
+\item{smooth}{Character, defining the function to be used, to interpolate corrected retention times for all peak groups. Either "loess" or "linear".}
+
+\item{family}{Character, defining the method to be used for loess smoothing. Allowed values are "gaussian" and "symmetric"}
+
+\item{fitgauss}{Logical, whether or not a Gaussian should be fitted to each peak. This affects mostly the retention time position of the peak.}
+
+\item{mzCenterFun}{Character, Name of the function to calculate the m/z center of the chromatographic peak.}
+
+\item{integrate}{Integration method. For integrate = 1 peak limits are found through descent on the mexican hat filtered data, for integrate = 2 the descent is done on the real data. The latter method is more accurate but prone to noise, while the former is more robust, but less exact.}
+
+\item{polarity}{PeakAnnotation parameters, (Only effective for website pipeline, for local package, OptiLCMS, please use SetAnnotationParam to define the annotation parameters).}
+
+\item{perc_fwhm}{PeakAnnotation parameters, (Only effective for website pipeline, for local package, OptiLCMS, please use SetAnnotationParam to define the annotation parameters).}
+
+\item{mz_abs_iso}{PeakAnnotation parameters, (Only effective for website pipeline, for local package, OptiLCMS, please use SetAnnotationParam to define the annotation parameters).}
+
+\item{max_charge}{PeakAnnotation parameters, (Only effective for website pipeline, for local package, OptiLCMS, please use SetAnnotationParam to define the annotation parameters).}
+
+\item{max_iso}{PeakAnnotation parameters, (Only effective for website pipeline, for local package, OptiLCMS, please use SetAnnotationParam to define the annotation parameters).}
+
+\item{corr_eic_th}{PeakAnnotation parameters, (Only effective for website pipeline, for local package, OptiLCMS, please use SetAnnotationParam to define the annotation parameters).}
+
+\item{mz_abs_add}{PeakAnnotation parameters, (Only effective for website pipeline, for local package, OptiLCMS, please use SetAnnotationParam to define the annotation parameters).}
+
+\item{rmConts}{Logical, specify whether to exclude/remove the potential contaminations (the ones with RT range over 50\% of the whole spetra).
 need to change.}
 }
 \description{
 This function sets all the parameters used for downstream
 pre-processing of user's raw MS data based on specific LC-MS platform or parameters optimization.
 The database will be under an real-time update based on the progress in this field.
+}
+\references{
+Smith, C.A. et al. 2006. {Analytical Chemistry}, 78, 779-787
 }
 \author{
 Zhiqiang Pang \email{zhiqiang.pang@mail.mcgill.ca}, Jasmine Chong \email{jasmine.chong@mail.mcgill.ca},

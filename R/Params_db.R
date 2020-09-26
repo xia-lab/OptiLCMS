@@ -3,6 +3,7 @@
 #' @description This function sets all the parameters used for downstream
 #' pre-processing of user's raw MS data based on specific LC-MS platform or parameters optimization.
 #' The database will be under an real-time update based on the progress in this field.
+#'
 #' @param platform Character, specify the LC-MS platform used in pratice, including "UPLC-Q/E",
 #' "UPLC-Q/TOF","UPLC-T/TOF","UPLC-Ion_Trap","UPLC-Orbitrap","UPLC-G2S","HPLC-Q/TOF","HPLC-Ion_Trap","HPLC-Orbitrap","HPLC-S/Q". 
 #' Default is "general", which is a more common option for all platform. If the platform is not listed above, please use this one.
@@ -28,24 +29,39 @@
 #' @param minFraction Numeric, specify fraction of samples in each group that contain the feature for it to be grouped.
 #' @param minSamples Numeric, specify minimum number of sample(s) in each group that contain the feature for it to be included.
 #' @param maxFeatures Numeric, specify the maximum number of features to be identified.
-#' @param ... Other parameters, including max,extra,span,smooth,family,fitgauss, verbose.columns,mzCenterFun,integrate. Usually don't 
+#' @param extra Numeric, defining the maximal number of additional peaks for all samples to be assigned to a peak group (i.e. feature) for retention time correction
+#' @param span Numeric, defining the degree of smoothing (if smooth = "loess"). This parameter is passed to the internal call to loess
+#' @param smooth Character, defining the function to be used, to interpolate corrected retention times for all peak groups. Either "loess" or "linear".
+#' @param family Character, defining the method to be used for loess smoothing. Allowed values are "gaussian" and "symmetric"
+#' @param fitgauss Logical, whether or not a Gaussian should be fitted to each peak. This affects mostly the retention time position of the peak.
+#' @param mzCenterFun Character, Name of the function to calculate the m/z center of the chromatographic peak.
+#' @param integrate Integration method. For integrate = 1 peak limits are found through descent on the mexican hat filtered data, for integrate = 2 the descent is done on the real data. The latter method is more accurate but prone to noise, while the former is more robust, but less exact.
+#' @param polarity PeakAnnotation parameters, (Only effective for website pipeline, for local package, OptiLCMS, please use SetAnnotationParam to define the annotation parameters).
+#' @param perc_fwhm PeakAnnotation parameters, (Only effective for website pipeline, for local package, OptiLCMS, please use SetAnnotationParam to define the annotation parameters).
+#' @param mz_abs_iso PeakAnnotation parameters, (Only effective for website pipeline, for local package, OptiLCMS, please use SetAnnotationParam to define the annotation parameters).
+#' @param max_charge PeakAnnotation parameters, (Only effective for website pipeline, for local package, OptiLCMS, please use SetAnnotationParam to define the annotation parameters).
+#' @param max_iso PeakAnnotation parameters, (Only effective for website pipeline, for local package, OptiLCMS, please use SetAnnotationParam to define the annotation parameters).
+#' @param corr_eic_th PeakAnnotation parameters, (Only effective for website pipeline, for local package, OptiLCMS, please use SetAnnotationParam to define the annotation parameters).
+#' @param mz_abs_add PeakAnnotation parameters, (Only effective for website pipeline, for local package, OptiLCMS, please use SetAnnotationParam to define the annotation parameters).
+#' @param rmConts Logical, specify whether to exclude/remove the potential contaminations (the ones with RT range over 50% of the whole spetra).
 #' need to change.
 #' @author Zhiqiang Pang \email{zhiqiang.pang@mail.mcgill.ca}, Jasmine Chong \email{jasmine.chong@mail.mcgill.ca},
 #' Mai Yamamoto \email{yamamoto.mai@mail.mcgill.ca}, and Jeff Xia \email{jeff.xia@mcgill.ca}
 #' McGill University, Canada
 #' License: GNU GPL (>= 2)
+#' @import utils
 #' @export
+#' @references Smith, C.A. et al. 2006. {Analytical Chemistry}, 78, 779-787
 
 SetPeakParam <- function(platform = "general", Peak_method = "centWave", RT_method = "loess",
                          mzdiff, snthresh, bw,
                          ppm, min_peakwidth, max_peakwidth, noise, prefilter, value_of_prefilter,
                          fwhm, steps, sigma,
                          profStep, minFraction, minSamples, maxFeatures,
-                         max, extra, span, smooth, family, fitgauss,
-                         verbose.columns, mzCenterFun, integrate,
+                         extra, span, smooth, family, fitgauss,
+                         mzCenterFun, integrate,
                          polarity, perc_fwhm, mz_abs_iso, max_charge, max_iso, corr_eic_th, mz_abs_add,
-                         rmConts,
-                         ...){
+                         rmConts){
   
   
   if (.on.public.web & missing(platform) & missing(Peak_method) & file.exists("params.rda")){
@@ -144,11 +160,8 @@ SetPeakParam <- function(platform = "general", Peak_method = "centWave", RT_meth
       } else{
         peakParams$steps <- steps
       };
-      if (missing(max)){
-        peakParams$max <- 10;
-      } else{
-        peakParams$max <- max
-      };
+
+      
       if (missing(snthresh)){
         peakParams$snthresh <- 10;
       } else{
@@ -186,11 +199,8 @@ SetPeakParam <- function(platform = "general", Peak_method = "centWave", RT_meth
     } else {
       peakParams$fitgauss<-fitgauss
     };
-    if (missing(verbose.columns)){
-      peakParams$verbose.columns<-FALSE
-    } else {
-      peakParams$verbose.columns<-verbose.columns
-    };
+
+    
     if (missing(mzCenterFun)){
       peakParams$mzCenterFun<-"wMean"
     } else {
@@ -304,11 +314,8 @@ SetPeakParam <- function(platform = "general", Peak_method = "centWave", RT_meth
       } else{
         peakParams$steps <- steps
       };
-      if (missing(max)){
-        peakParams$max <- 10;
-      } else{
-        peakParams$max <- max
-      };
+
+      
       if (missing(snthresh)){
         peakParams$snthresh <- 10;
       } else{
@@ -346,11 +353,8 @@ SetPeakParam <- function(platform = "general", Peak_method = "centWave", RT_meth
     } else {
       peakParams$fitgauss<-fitgauss
     };
-    if (missing(verbose.columns)){
-      peakParams$verbose.columns<-FALSE
-    } else {
-      peakParams$verbose.columns<-verbose.columns
-    };
+
+    
     if (missing(mzCenterFun)){
       peakParams$mzCenterFun<-"wMean"
     } else {
@@ -464,11 +468,8 @@ SetPeakParam <- function(platform = "general", Peak_method = "centWave", RT_meth
       } else{
         peakParams$steps <- steps
       };
-      if (missing(max)){
-        peakParams$max <- 10;
-      } else{
-        peakParams$max <- max
-      };
+
+      
       if (missing(snthresh)){
         peakParams$snthresh <- 10;
       } else{
@@ -506,11 +507,8 @@ SetPeakParam <- function(platform = "general", Peak_method = "centWave", RT_meth
     } else {
       peakParams$fitgauss<-fitgauss
     };
-    if (missing(verbose.columns)){
-      peakParams$verbose.columns<-FALSE
-    } else {
-      peakParams$verbose.columns<-verbose.columns
-    };
+
+    
     if (missing(mzCenterFun)){
       peakParams$mzCenterFun<-"wMean"
     } else {
@@ -624,11 +622,8 @@ SetPeakParam <- function(platform = "general", Peak_method = "centWave", RT_meth
       } else{
         peakParams$steps <- steps
       };
-      if (missing(max)){
-        peakParams$max <- 10;
-      } else{
-        peakParams$max <- max
-      };
+
+      
       if (missing(snthresh)){
         peakParams$snthresh <- 10;
       } else{
@@ -666,11 +661,8 @@ SetPeakParam <- function(platform = "general", Peak_method = "centWave", RT_meth
     } else {
       peakParams$fitgauss<-fitgauss
     };
-    if (missing(verbose.columns)){
-      peakParams$verbose.columns<-FALSE
-    } else {
-      peakParams$verbose.columns<-verbose.columns
-    };
+
+    
     if (missing(mzCenterFun)){
       peakParams$mzCenterFun<-"wMean"
     } else {
@@ -784,11 +776,8 @@ SetPeakParam <- function(platform = "general", Peak_method = "centWave", RT_meth
       } else{
         peakParams$steps <- steps
       };
-      if (missing(max)){
-        peakParams$max <- 10;
-      } else{
-        peakParams$max <- max
-      };
+
+      
       if (missing(snthresh)){
         peakParams$snthresh <- 10;
       } else{
@@ -826,11 +815,8 @@ SetPeakParam <- function(platform = "general", Peak_method = "centWave", RT_meth
     } else {
       peakParams$fitgauss<-fitgauss
     };
-    if (missing(verbose.columns)){
-      peakParams$verbose.columns<-FALSE
-    } else {
-      peakParams$verbose.columns<-verbose.columns
-    };
+
+    
     if (missing(mzCenterFun)){
       peakParams$mzCenterFun<-"wMean"
     } else {
@@ -944,11 +930,8 @@ SetPeakParam <- function(platform = "general", Peak_method = "centWave", RT_meth
       } else{
         peakParams$steps <- steps
       };
-      if (missing(max)){
-        peakParams$max <- 10;
-      } else{
-        peakParams$max <- max
-      };
+
+      
       if (missing(snthresh)){
         peakParams$snthresh <- 10;
       } else{
@@ -986,11 +969,8 @@ SetPeakParam <- function(platform = "general", Peak_method = "centWave", RT_meth
     } else {
       peakParams$fitgauss<-fitgauss
     };
-    if (missing(verbose.columns)){
-      peakParams$verbose.columns<-FALSE
-    } else {
-      peakParams$verbose.columns<-verbose.columns
-    };
+
+    
     if (missing(mzCenterFun)){
       peakParams$mzCenterFun<-"wMean"
     } else {
@@ -1105,11 +1085,8 @@ SetPeakParam <- function(platform = "general", Peak_method = "centWave", RT_meth
       } else{
         peakParams$steps <- steps
       };
-      if (missing(max)){
-        peakParams$max <- 10;
-      } else{
-        peakParams$max <- max
-      };
+
+      
       if (missing(snthresh)){
         peakParams$snthresh <- 10;
       } else{
@@ -1147,11 +1124,8 @@ SetPeakParam <- function(platform = "general", Peak_method = "centWave", RT_meth
     } else {
       peakParams$fitgauss<-fitgauss
     };
-    if (missing(verbose.columns)){
-      peakParams$verbose.columns<-FALSE
-    } else {
-      peakParams$verbose.columns<-verbose.columns
-    };
+
+    
     if (missing(mzCenterFun)){
       peakParams$mzCenterFun<-"wMean"
     } else {
@@ -1265,11 +1239,8 @@ SetPeakParam <- function(platform = "general", Peak_method = "centWave", RT_meth
       } else{
         peakParams$steps <- steps
       };
-      if (missing(max)){
-        peakParams$max <- 10;
-      } else{
-        peakParams$max <- max
-      };
+
+      
       if (missing(snthresh)){
         peakParams$snthresh <- 10;
       } else{
@@ -1307,11 +1278,8 @@ SetPeakParam <- function(platform = "general", Peak_method = "centWave", RT_meth
     } else {
       peakParams$fitgauss<-fitgauss
     };
-    if (missing(verbose.columns)){
-      peakParams$verbose.columns<-FALSE
-    } else {
-      peakParams$verbose.columns<-verbose.columns
-    };
+
+    
     if (missing(mzCenterFun)){
       peakParams$mzCenterFun<-"wMean"
     } else {
@@ -1425,11 +1393,8 @@ SetPeakParam <- function(platform = "general", Peak_method = "centWave", RT_meth
       } else{
         peakParams$steps <- steps
       };
-      if (missing(max)){
-        peakParams$max <- 10;
-      } else{
-        peakParams$max <- max
-      };
+
+      
       if (missing(snthresh)){
         peakParams$snthresh <- 10;
       } else{
@@ -1467,11 +1432,8 @@ SetPeakParam <- function(platform = "general", Peak_method = "centWave", RT_meth
     } else {
       peakParams$fitgauss<-fitgauss
     };
-    if (missing(verbose.columns)){
-      peakParams$verbose.columns<-FALSE
-    } else {
-      peakParams$verbose.columns<-verbose.columns
-    };
+
+    
     if (missing(mzCenterFun)){
       peakParams$mzCenterFun<-"wMean"
     } else {
@@ -1585,11 +1547,8 @@ SetPeakParam <- function(platform = "general", Peak_method = "centWave", RT_meth
       } else{
         peakParams$steps <- steps
       };
-      if (missing(max)){
-        peakParams$max <- 10;
-      } else{
-        peakParams$max <- max
-      };
+ 
+      
       if (missing(snthresh)){
         peakParams$snthresh <- 10;
       } else{
@@ -1627,11 +1586,8 @@ SetPeakParam <- function(platform = "general", Peak_method = "centWave", RT_meth
     } else {
       peakParams$fitgauss<-fitgauss
     };
-    if (missing(verbose.columns)){
-      peakParams$verbose.columns<-FALSE
-    } else {
-      peakParams$verbose.columns<-verbose.columns
-    };
+
+    
     if (missing(mzCenterFun)){
       peakParams$mzCenterFun<-"wMean"
     } else {
@@ -1822,11 +1778,8 @@ SetPeakParam <- function(platform = "general", Peak_method = "centWave", RT_meth
       } else{
         peakParams$steps <- steps
       };
-      if (missing(max)){
-        peakParams$max <- 10;
-      } else{
-        peakParams$max <- max
-      };
+
+      
       if (missing(snthresh)){
         peakParams$snthresh <- 10;
       } else{
@@ -1864,11 +1817,8 @@ SetPeakParam <- function(platform = "general", Peak_method = "centWave", RT_meth
     } else {
       peakParams$fitgauss<-fitgauss
     };
-    if (missing(verbose.columns)){
-      peakParams$verbose.columns<-FALSE
-    } else {
-      peakParams$verbose.columns<-verbose.columns
-    };
+
+    
     if (missing(mzCenterFun)){
       peakParams$mzCenterFun<-"wMean"
     } else {

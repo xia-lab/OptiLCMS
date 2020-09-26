@@ -4,6 +4,10 @@
 
 # OTHER SETTINGS
 # NA
+write.table <- utils::write.table;
+read.csv <- utils::read.csv;
+write.csv <- utils::write.csv;
+utils::globalVariables(c("envir", ".plan_count",".optimize_switch","msg.vec"))
 
 # Used to defined the parallel namespace for peak picking
 .peak_function_list <- list("PerformPeakPicking",
@@ -142,15 +146,8 @@
 # }
 
 
-#' Title
-#'
-#' @param mes 
-#' @param ecol 
-#' @param progress 
-#'
-#' @return
-#'
-#' @examples
+#' MessageOutput
+#' @noRd
 MessageOutput <- function(mes, ecol, progress) {
   if (!is.null(mes)) {
     if (.on.public.web) {
@@ -189,6 +186,10 @@ MessageOutput <- function(mes, ecol, progress) {
   
 }
 
+#' fast.write.csv
+#' @author Jeff xia
+#' @noRd
+#' @importFrom data.table fwrite
 fast.write.csv <- function(dat, file, row.names=TRUE){
   tryCatch(
     {

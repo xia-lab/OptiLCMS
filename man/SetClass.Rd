@@ -6,6 +6,9 @@
 \usage{
 SetClass(class)
 }
+\arguments{
+\item{class}{class/group of samples.}
+}
 \description{
 This function sets the class information
 for preprocessing MS data.

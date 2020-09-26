@@ -14,6 +14,4 @@ Identify whether results improved or not
 }
 \author{
 Zhiqiang Pang \email{zhiqiang.pang@mail.mcgill.ca} Jeff Xia \email{jeff.xia@mcgill.ca}
-Mcgill University
-License: GNU GPL (>= 2)
 }

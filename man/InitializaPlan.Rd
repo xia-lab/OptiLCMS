@@ -7,10 +7,15 @@
 InitializaPlan(type = "spec", path)
 }
 \arguments{
-\item{type}{}
+\item{type}{Initialized plan type for a resumable running mode. Can be "raw_opt" for automated optimization option, or "raw_ms" for customized pipeline.}
 
-\item{path}{}
+\item{path}{this parameter is used to define the working directory (also is where the raw spectra data exists).}
 }
 \description{
 Initializing running plan
+}
+\author{
+Zhiqiang Pang \email{zhiqiang.pang@mail.mcgill.ca} Jeff Xia \email{jeff.xia@mcgill.ca}
+Mcgill University
+License: GNU GPL (>= 2)
 }

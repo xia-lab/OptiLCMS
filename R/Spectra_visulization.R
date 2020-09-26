@@ -19,53 +19,52 @@
 #' License: GNU GPL (>= 2)
 PerformDataInspect <-
   function(datapath = NULL,
-           rt.range,
-           mz.range,
+           rt.range = c(0,0),
+           mz.range = c(0,0),
            dimension = "3D",
            res = 100) {
     
-    if (datapath == "null" | is.null(datapath)) {
-      if (.on.public.web & dir.exists("upload/QC")) {
-        datapath <- "upload/QC"
-        datapath <- paste0(fullUserPath, datapath)
-      } else if (.on.public.web) {
-        datapath <- paste0("upload/", list.files("upload", recursive = T)[1])
-        datapath <- paste0(fullUserPath, datapath)
-      } else {
-        cat("Local Inspectation !\n")
-      }
-    } else {
-      files <-
-        list.files(paste0(getwd(), "/upload/"),
-                   full.names = T,
-                   recursive = T)
-      
-      
-      if (isEmpty(files)) {
-        # Handle the example issue - show other files
-        files <-
-          list.files(
-            "/home/glassfish/projects/MetaboDemoRawData/upload/",
-            full.names = T,
-            recursive = T
-          )
-        datapath =  files[datapath == basename(files)]
-        
-      } else {
-        # Handle the regular data insepctation
-        datapath =  files[datapath == basename(files)]
-      }
-      
-    }
-    
     if(.on.public.web){
-      load_MSnbase()
-    }
-    
-    if (basename(datapath) == "NA") {
-      # Handle the example issue - default showing
-      datapath <-
-        "/home/glassfish/projects/MetaboDemoRawData/upload/QC"
+      if (datapath == "null" | is.null(datapath)) {
+        if (.on.public.web & dir.exists("upload/QC")) {
+          datapath <- "upload/QC"
+          datapath <- paste0(fullUserPath, datapath)
+        } else if (.on.public.web) {
+          datapath <- paste0("upload/", list.files("upload", recursive = T)[1])
+          datapath <- paste0(fullUserPath, datapath)
+        } else {
+          cat("Local Inspectation !\n")
+        }
+      } else {
+        files <-
+          list.files(paste0(getwd(), "/upload/"),
+                     full.names = T,
+                     recursive = T)
+        
+        
+        if (isEmpty(files)) {
+          # Handle the example issue - show other files
+          files <-
+            list.files(
+              "/home/glassfish/projects/MetaboDemoRawData/upload/",
+              full.names = T,
+              recursive = T
+            )
+          datapath =  files[datapath == basename(files)]
+          
+        } else {
+          # Handle the regular data insepctation
+          datapath =  files[datapath == basename(files)]
+        }
+        
+      }
+      load_MSnbase();
+      
+      if (basename(datapath) == "NA") {
+        # Handle the example issue - default showing
+        datapath <-
+          "/home/glassfish/projects/MetaboDemoRawData/upload/QC"
+      }
     }
     
     if (!grepl(pattern = c("*.mzXML"), basename(datapath)) &
@@ -269,21 +268,17 @@ SetPlotParam <-
     ))
   }
 
-#' Plot EIC
+#' PlotXIC/EIC
 #' @description This functionn creates an extracted ion chromatogram (EIC) for a specific
 #' m/z and retention time. This is used for quality-control of raw m/s data.
-#' @param raw_data The object created using the ImportRawMSData function,
-#' containing the raw MS data.
-#' @param rt_mn Numeric, specify the minimum bound of the retention time range.
-#' @param rt_mx Numeric, specify the maximum bound of the retention time range.
-#' @param mz_mn Numeric, specify the minimum bound of the m/z range.
-#' @param mz_mx Numeric, specify the maximum bound of the m/z range.
-#' @param aggreg Character, if "sum", creates a total ion chromatogram.
-#' If "max", creates a base peak chromatogram. By default it is set
-#' to "sum".
-#' @param format Character, input the format of the image to create.
-#' @param dpi Numeric, input the dpi of the image to create.
-#' @param width Numeric, input the width of the image to create.
+#' @param featureNum Numeric, Feature number in the feature table.
+#' @param sample_labeled Logical, whether to lable the sample name.
+#' @param Group_labeled Logical, whether to lable the group name.
+#' @param format Character, to give the format of BPI figures ploted. Can be "jpeg", "png", "pdf", "svg",
+#'  "tiff" or "ps". Default is "png".
+#' @param dpi Numeric, to define the dpi of the figures. Default is 72.
+#' @param width Numeric, to define the width of the figure.
+#' @param height Numeric, to define the height of the figure.
 #' @importFrom Cairo Cairo
 #' @export
 PlotXIC <-
@@ -591,18 +586,15 @@ PlotXIC <-
   }
 
 
-#' Title
-#'
-#' @param mSet
-#' @param imgName
-#' @param format
-#' @param dpi
-#' @param width
-#'
-#' @return
+#' PlotSpectraInsensityStistics
+#' @param mSet mSet object, usually generated after the peakannotaion finished here.
+#' @param imgName Character, to give the name of BPI figures ploted.
+#' @param format Character, to give the format of BPI figures ploted. Can be "jpeg", "png", "pdf", "svg",
+#'  "tiff" or "ps". Default is "png".
+#' @param dpi Numeric, to define the dpi of the figures. Default is 72.
+#' @param width Numeric, to define the width of the figure. Height = width * 0.618. 
 #' @export
 #' @importFrom Cairo Cairo
-#' @examples
 PlotSpectraInsensityStistics <-
   function(mSet,
            imgName,
@@ -670,18 +662,15 @@ PlotSpectraInsensityStistics <-
   }
 
 
-#' Title
-#'
-#' @param mSet
-#' @param imgName
-#' @param format
-#' @param dpi
-#' @param width
+#' PlotSpectraPCA
+#' @param mSet mSet object, usually generated after the peakannotaion finished here.
+#' @param imgName Character, to give the name of BPI figures ploted.
+#' @param format Character, to give the format of BPI figures ploted. Can be "jpeg", "png", "pdf", "svg",
+#'  "tiff" or "ps". Default is "png".
+#' @param dpi Numeric, to define the dpi of the figures. Default is 72.
+#' @param width Numeric, to define the width of the figure. Height = width * 0.618. 
 #' @importFrom ggrepel geom_text_repel
-#' @return
 #' @export
-#'
-#' @examples
 PlotSpectraPCA <-
   function(mSet,
            imgName,
@@ -800,18 +789,15 @@ PlotSpectraPCA <-
   }
 
 
-#' Title
-#'
-#' @param mSet
-#' @param imgName
-#' @param format
-#' @param dpi
-#' @param width
-#'
-#' @return
+#' PlotSpectraRTadj
+#' @param mSet mSet object, usually generated after the peakannotaion finished here.
+#' @param imgName Character, to give the name of BPI figures ploted.
+#' @param format Character, to give the format of BPI figures ploted. Can be "jpeg", "png", "pdf", "svg",
+#'  "tiff" or "ps". Default is "png".
+#' @param dpi Numeric, to define the dpi of the figures. Default is 72.
+#' @param width Numeric, to define the width of the figure. Height = width * 0.618. 
 #' @export
 #' @importFrom Cairo Cairo
-#' @examples
 PlotSpectraRTadj <-
   function(mSet,
            imgName,
@@ -929,18 +915,15 @@ PlotSpectraRTadj <-
     dev.off()
   }
 
-#' Title
-#'
-#' @param mSet
-#' @param imgName
-#' @param format
-#' @param dpi
-#' @param width
-#'
-#' @return
+#' PlotSpectraBPIadj
+#' @param mSet mSet object, usually generated after the peakannotaion finished here.
+#' @param imgName Character, to give the name of BPI figures ploted.
+#' @param format Character, to give the format of BPI figures ploted. Can be "jpeg", "png", "pdf", "svg",
+#'  "tiff" or "ps". Default is "png".
+#' @param dpi Numeric, to define the dpi of the figures. Default is 72.
+#' @param width Numeric, to define the width of the figure. Height = width * 0.618. 
 #' @export
 #' @importFrom Cairo Cairo
-#' @examples
 PlotSpectraBPIadj <-
   function(mSet,
            imgName,
@@ -1020,16 +1003,13 @@ PlotSpectraBPIadj <-
     dev.off()
   }
 
-#' Title
-#'
-#' @param FeatureNM
-#' @param dpi
-#' @param format
-#'
-#' @return
+#' plotMSfeature
+#' @param FeatureNM Numeric, feature number in the feature table.
+#' @param dpi Numeric, to define the dpi of the figures. Default is 72.
+#' @param format Character, to give the format of BPI figures ploted. Can be "jpeg", "png", "pdf", "svg",
+#'  "tiff" or "ps". Default is "png".
 #' @export
 #' @importFrom Cairo Cairo
-#' @examples
 plotMSfeature <- function(FeatureNM,
                           dpi = 72,
                           format = "png") {
@@ -1145,13 +1125,10 @@ plotMSfeature <- function(FeatureNM,
 
 #' plotSingleTIC
 #'
-#' @param filename
-#' @param imagename
-#'
-#' @return
+#' @param filename Character, to give the filename for the TIC plotting.
+#' @param imagename Character, to give the filename of the TIC plotted.
 #' @export
 #' @importFrom Cairo Cairo
-#' @examples
 plotSingleTIC <- function(filename, imagename) {
   load_msnbase()
   

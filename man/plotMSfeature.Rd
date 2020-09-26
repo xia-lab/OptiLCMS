@@ -2,16 +2,18 @@
 % Please edit documentation in R/Spectra_visulization.R
 \name{plotMSfeature}
 \alias{plotMSfeature}
-\title{Title}
+\title{plotMSfeature}
 \usage{
 plotMSfeature(FeatureNM, dpi = 72, format = "png")
 }
 \arguments{
-\item{format}{}
-}
-\value{
+\item{FeatureNM}{Numeric, feature number in the feature table.}
 
+\item{dpi}{Numeric, to define the dpi of the figures. Default is 72.}
+
+\item{format}{Character, to give the format of BPI figures ploted. Can be "jpeg", "png", "pdf", "svg",
+"tiff" or "ps". Default is "png".}
 }
 \description{
-Title
+plotMSfeature
 }

@@ -7,10 +7,9 @@
 plotSingleTIC(filename, imagename)
 }
 \arguments{
-\item{imagename}{}
-}
-\value{
+\item{filename}{Character, to give the filename for the TIC plotting.}
 
+\item{imagename}{Character, to give the filename of the TIC plotted.}
 }
 \description{
 plotSingleTIC

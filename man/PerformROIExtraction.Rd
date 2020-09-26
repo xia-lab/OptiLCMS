@@ -27,7 +27,7 @@ Default is 'ssm'. Users could select random trimed according to mz value (mz_ran
 RT value (rt_random). Besides, specific peaks at certain mz (mz_specific) or
 RT (rt_specific) could also be extracted. 'none' will not trim the data.}
 
-\item{write}{Logical, if true, will write the trimed data to the directory 'trimed' folder
+\item{write}{Logical, if true, will write the trimmed data to the directory 'trimmed' folder
 in the datapath. The data in memory will be kept.}
 
 \item{mz}{Numeric, mz value(s) for specific selection. Positive values means including (the values
@@ -44,7 +44,11 @@ and negative value means excluding.}
 will be retained, while 0 means none. Default is 1/15. If default rt.idx produce too few peaks,
 please consider increasing this value.}
 
-\item{plot}{Logical, if ture, will plot the chromatogram of the trimed data.}
+\item{rmConts}{LOgical, whether to exclude/remove the potential contamination for parameters optimization. Default is TRUE.}
+
+\item{plot}{Logical, if TRUE, will plot the chromatogram of the trimmed data.}
+
+\item{running.controller}{The resuming pipeline running controller. Optional. Don't need to define by hand.}
 }
 \description{
 This function performs the raw data trimming. This function will output

@@ -11,8 +11,7 @@ ExperimentsCluster_doe(
   isotopeIdentification,
   BPPARAM = bpparam(),
   nSlaves = 4,
-  iterator,
-  ...
+  iterator
 )
 }
 \arguments{
@@ -20,11 +19,15 @@ ExperimentsCluster_doe(
 
 \item{object_mslevel}{List, the parsed metabolomics scans produced by PeakPicking_prep.}
 
+\item{params}{parameters set for optimization}
+
 \item{isotopeIdentification}{Character, IsotopeIdentidication method, usually includes 'IPO' and 'CAMERA'.}
 
 \item{BPPARAM}{MulticoreParam method, used to set the parallel method. Default is bpparam().}
 
-\item{nSlave}{Numeric, core number used to perform the parallel based optimization.}
+\item{nSlaves}{Numeric, core number used to perform the parallel based optimization.}
+
+\item{iterator}{round of DoE}
 }
 \description{
 This function is used to perform the test with Design of Experiment on the parameters dataset.

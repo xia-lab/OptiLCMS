@@ -2,31 +2,25 @@
 % Please edit documentation in R/Spectra_visulization.R
 \name{PlotXIC}
 \alias{PlotXIC}
-\title{Plot EIC}
+\title{PlotXIC/EIC}
 \usage{
 PlotXIC(featureNum, sample_labeled, Group_labeled, format, dpi, width, height)
 }
 \arguments{
-\item{format}{Character, input the format of the image to create.}
+\item{featureNum}{Numeric, Feature number in the feature table.}
 
-\item{dpi}{Numeric, input the dpi of the image to create.}
+\item{sample_labeled}{Logical, whether to lable the sample name.}
 
-\item{width}{Numeric, input the width of the image to create.}
+\item{Group_labeled}{Logical, whether to lable the group name.}
 
-\item{raw_data}{The object created using the ImportRawMSData function,
-containing the raw MS data.}
+\item{format}{Character, to give the format of BPI figures ploted. Can be "jpeg", "png", "pdf", "svg",
+"tiff" or "ps". Default is "png".}
 
-\item{rt_mn}{Numeric, specify the minimum bound of the retention time range.}
+\item{dpi}{Numeric, to define the dpi of the figures. Default is 72.}
 
-\item{rt_mx}{Numeric, specify the maximum bound of the retention time range.}
+\item{width}{Numeric, to define the width of the figure.}
 
-\item{mz_mn}{Numeric, specify the minimum bound of the m/z range.}
-
-\item{mz_mx}{Numeric, specify the maximum bound of the m/z range.}
-
-\item{aggreg}{Character, if "sum", creates a total ion chromatogram.
-If "max", creates a base peak chromatogram. By default it is set
-to "sum".}
+\item{height}{Numeric, to define the height of the figure.}
 }
 \description{
 This functionn creates an extracted ion chromatogram (EIC) for a specific

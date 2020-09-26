@@ -6,6 +6,9 @@
 \usage{
 PerformPeakGrouping(mSet)
 }
+\arguments{
+\item{mSet}{mSet object.}
+}
 \description{
 PerformPeakGrouping
 }

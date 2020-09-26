@@ -25,9 +25,11 @@ PerformDataTrimming<- function(datapath, mode="ssm", write=F, mz, mzdiff, rt, rt
 #' @param rt.idx Numeric, the relative rt (retention time) range, from 0 to 1. 1 means all retention time
 #' will be retained, while 0 means none. Default is 1/15. If default rt.idx produce too few peaks, 
 #' please consider increasing this value.
-#' @param write Logical, if true, will write the trimed data to the directory 'trimed' folder 
+#' @param write Logical, if true, will write the trimmed data to the directory 'trimmed' folder 
 #' in the datapath. The data in memory will be kept.
-#' @param plot Logical, if ture, will plot the chromatogram of the trimed data.
+#' @param plot Logical, if TRUE, will plot the chromatogram of the trimmed data.
+#' @param rmConts LOgical, whether to exclude/remove the potential contamination for parameters optimization. Default is TRUE.
+#' @param running.controller The resuming pipeline running controller. Optional. Don't need to define by hand.
 #' @export
 #' @import MSnbase
 #' @import progress
@@ -226,7 +228,7 @@ PerformROIExtraction <-
         read.MSdata(
           dda_file1,
           pdata = new("NAnnotatedDataFrame", pd),
-          msLevel. = 1,
+          msLevel. = 1L,
           mode = "inMemory"
         )
       
@@ -769,8 +771,8 @@ mz.trim_specific<-function(raw_data, ms_list, mz, mzdiff=100){
 #' while the negative values will be removed.
 #' @param raw_data MSnExp object, the raw data that has been read in memory.
 #' @param ms_list List, the names list of all scans.
-#' @param mz Numeric, the specifric RT value that will be kept or removed.
-#' @param mzdiff Numeric, the deviation (ppm) for the 'rt' values. Default is 100.
+#' @param rt Numeric, the specifric RT value that will be kept or removed.
+#' @param rtdiff Numeric, the deviation (ppm) for the 'rt' values. Default is 100.
 #' @import progress
 #' @author Zhiqiang Pang \email{zhiqiang.pang@mail.mcgill.ca} Jeff Xia \email{jeff.xia@mcgill.ca}
 #' Mcgill University
@@ -836,8 +838,9 @@ rt.trim_specific<-function(raw_data,ms_list,rt,rtdiff=10){
 
 #' Function for 'Empty scan' removal
 #' @description Function for 'Empty scan' removal (internal use only)
+#' @noRd
 #' @author Zhiqiang Pang \email{zhiqiang.pang@mail.mcgill.ca}
-.emptyscan.remove<-function(raw_data,ms_list){
+.emptyscan.remove<-function(raw_data, ms_list){
   
   name.set<-sort(names(raw_data@assayData))
   
@@ -904,6 +907,7 @@ PerformMSDataOutput<-function(raw_data){
 #' Function for 3D ms plotting
 #' @description Function for 3D ms plotting (internal use only)
 #' @author Zhiqiang Pang \email{zhiqiang.pang@mail.mcgill.ca}
+#' @noRd
 plot.MS_3D<-function(object) {
   
   if (.on.public.web){load_lattice()};

@@ -7,13 +7,11 @@
 calcRCS_GSValues(mSet)
 }
 \arguments{
-\item{xset}{XCMSnExp Object, this object is produced by 'calculateSet_doe' function.}
+\item{mSet}{mSet Object, this object is produced by 'calculateSet_doe' function.}
 }
 \description{
 Calculatre RCS and GS method
 }
 \author{
 Zhiqiang Pang \email{zhiqiang.pang@mail.mcgill.ca} Jeff Xia \email{jeff.xia@mcgill.ca}
-Mcgill University
-License: GNU GPL (>= 2)
 }

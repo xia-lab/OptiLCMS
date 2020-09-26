@@ -2,18 +2,15 @@
 % Please edit documentation in R/Perform_functions.R
 \name{featureSUM}
 \alias{featureSUM}
-\title{Title}
+\title{featureSUM}
 \usage{
 featureSUM(MS_group, frtr)
 }
 \arguments{
-\item{MS_group}{}
+\item{MS_group}{MS_group}
 
-\item{frtr}{}
-}
-\value{
-
+\item{frtr}{frtr}
 }
 \description{
-Title
+featureSUM
 }

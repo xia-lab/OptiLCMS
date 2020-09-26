@@ -15,6 +15,9 @@ PerformPeakProfiling(
 )
 }
 \arguments{
+\item{mSet}{The object created using the ImportRawMSData function,
+containing the raw MS data.}
+
 \item{Params}{The object created using the SetPeakParam function,
 containing user's specified or default parameters for downstream
 raw MS data pre-processing.}
@@ -24,8 +27,7 @@ Defaut is set to true.}
 
 \item{ncore}{Numeric, used to define the cores' number for Peak Profiling.}
 
-\item{rawData}{The object created using the ImportRawMSData function,
-containing the raw MS data.}
+\item{running.controller}{The resuming pipeline running controller. Optional. Don't need to define by hand.}
 }
 \description{
 Perform peak profiling

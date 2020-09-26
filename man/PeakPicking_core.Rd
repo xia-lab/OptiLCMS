@@ -7,15 +7,13 @@
 PeakPicking_core(object, object_mslevel, param, msLevel = 1L)
 }
 \arguments{
+\item{object}{MSnExp object.}
+
 \item{object_mslevel}{List, prepared by findChromPeaks_prep function.}
 
 \item{param}{Parameters list.}
 
 \item{msLevel}{msLevel. Only 1 is supported currently.}
-
-\item{xset}{MSnExp object.}
-
-\item{BPPARAM}{Parallel Method.}
 }
 \description{
 Peak picking method. Specifically used for parameters optimization

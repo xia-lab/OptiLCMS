@@ -6,6 +6,11 @@
 \usage{
 PeakPicking_centWave_slave(x, param)
 }
+\arguments{
+\item{x}{ms objects}
+
+\item{param}{parameters set for processing}
+}
 \description{
 PeakPicking_centWave_slave
 }

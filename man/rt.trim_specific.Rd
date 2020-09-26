@@ -11,9 +11,9 @@ rt.trim_specific(raw_data, ms_list, rt, rtdiff = 10)
 
 \item{ms_list}{List, the names list of all scans.}
 
-\item{mz}{Numeric, the specifric RT value that will be kept or removed.}
+\item{rt}{Numeric, the specifric RT value that will be kept or removed.}
 
-\item{mzdiff}{Numeric, the deviation (ppm) for the 'rt' values. Default is 100.}
+\item{rtdiff}{Numeric, the deviation (ppm) for the 'rt' values. Default is 100.}
 }
 \description{
 Trim data based on specific RT values. Positive values will be specially retained,

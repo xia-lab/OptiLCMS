@@ -9,6 +9,8 @@ PlotMS2Spectra(ms2, spectra = 1)
 \arguments{
 \item{ms2}{Spectrum2 class object containing all of the spectra for the selected
 m/z feature.}
+
+\item{spectra}{spectra level. Usually 1 or 2.}
 }
 \description{
 This function creates a plot of the user selected precursor m/z.

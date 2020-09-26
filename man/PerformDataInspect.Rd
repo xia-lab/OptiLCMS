@@ -6,8 +6,8 @@
 \usage{
 PerformDataInspect(
   datapath = NULL,
-  rt.range,
-  mz.range,
+  rt.range = c(0, 0),
+  mz.range = c(0, 0),
   dimension = "3D",
   res = 100
 )
