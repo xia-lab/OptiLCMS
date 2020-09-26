@@ -58,7 +58,7 @@ PerformDataInspect <-
         }
         
       }
-      load_MSnbase();
+      # load_MSnbase();
       
       if (basename(datapath) == "NA") {
         # Handle the example issue - default showing
@@ -312,9 +312,9 @@ PlotXIC <-
     # Load data results
     load("mSet.rda")
     
-    if(.on.public.web){
-      load_MSnbase()
-    }
+    # if(.on.public.web){
+    #   load_MSnbase()
+    # }
     
     raw_data <- mSet[["onDiskData"]]
     raw_data@featureData$retentionTime <-
@@ -1130,7 +1130,7 @@ plotMSfeature <- function(FeatureNM,
 #' @export
 #' @importFrom Cairo Cairo
 plotSingleTIC <- function(filename, imagename) {
-  load_msnbase()
+  # load_msnbase()
   
   load("raw_data_filt.rda")
   load("tics.rda")

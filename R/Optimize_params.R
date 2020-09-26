@@ -174,7 +174,7 @@ PerformParamsOptimization <- function(mSet, param=p0, method="DoE", ncore=4, run
       
     }
     
-    .optimize_switch <<-F;
+    .optimize_switch <<-FALSE;
     
   } else {
     end.time<-Sys.time();
@@ -1044,7 +1044,6 @@ calcPPS2 <- function(mSet, isotopeIdentification=c("IPO", "CAMERA")) {
 #' @title Calculatre CV method
 #' @param mSet mSet Object, this object is produced by 'calculateSet_doe' function.
 #' @author Zhiqiang Pang \email{zhiqiang.pang@mail.mcgill.ca} Jeff Xia \email{jeff.xia@mcgill.ca}
-#' @noRd
 #' Mcgill University
 #' License: GNU GPL (>= 2)
 
@@ -1071,7 +1070,6 @@ calcCV<-function(mSet){
 #' @title Calculatre RCS and GS method
 #' @param mSet mSet Object, this object is produced by 'calculateSet_doe' function.
 #' @author Zhiqiang Pang \email{zhiqiang.pang@mail.mcgill.ca} Jeff Xia \email{jeff.xia@mcgill.ca}
-#' @noRd
 #' Mcgill University
 #' License: GNU GPL (>= 2)
 
@@ -1242,7 +1240,6 @@ calcGaussianS<-function(mSet, object, useNoise, BPPARAM = bpparam()){
 #' @title Identify whether results improved or not
 #' @param history List, an interal media objects used to save the optimization results of peaks.
 #' @author Zhiqiang Pang \email{zhiqiang.pang@mail.mcgill.ca} Jeff Xia \email{jeff.xia@mcgill.ca}
-#' @noRd
 #' Mcgill University
 #' License: GNU GPL (>= 2)
 
@@ -1483,7 +1480,7 @@ Noise_evaluate <- function (raw_data) {
       if(is.null(approvedPeaks)){(next)()}
       overlappingScans <- sum(approvedPeaks$multipleInScan)
       ppmEst <- try(filterPpmError(approvedPeaks, useGap = T, 
-                                   varExpThresh, returnPpmPlots = F, plotDir, observedPeak), silent = T);
+                                   varExpThresh, returnPpmPlots = F, plotDir = NULL, observedPeak), silent = T);
       if(class(ppmEst) == "try-error" | is.na(ppmEst)){(next)()}
       ppmObs <- approvedPeaks$meanPPM
       ppmObs <- strsplit(split = ";", x = as.character(ppmObs))

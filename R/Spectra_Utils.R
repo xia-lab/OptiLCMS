@@ -29,9 +29,7 @@ PerformPeakPicking<-function(mSet, BPPARAM = bpparam()){
                                fcol = c(MSnbase:::.MSnExpReqFvarLabels,
                                         "centroided")), msLevel. = 1)
   
-  if (length(object_mslevel) == 0)
-    AddErrMsg("Empty spectra present to perform !")
-  
+
   # Splite the MS data 
   object_mslevel <- lapply(1:length(fileNames(object_mslevel)),
                            FUN = filterFile,
@@ -107,7 +105,7 @@ PerformPeakPicking<-function(mSet, BPPARAM = bpparam()){
 #'License: GNU GPL (>= 2)
 #' @references Smith, C.A. et al. 2006. {Analytical Chemistry}, 78, 779-787
 #'
-PeakPicking_centWave_slave <- function(x,param){
+PeakPicking_centWave_slave <- function(x, param){
 
   if(.on.public.web){
     dyn.load(.getDynLoadPath());

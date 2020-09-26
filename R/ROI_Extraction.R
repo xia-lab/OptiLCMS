@@ -441,9 +441,9 @@ ssm_trim <- function(raw_data, ms_list, rt.idx){
   #  ms_list_s<-sort(names(ms_list))
   #}
   
-  if (.on.public.web){
-    load_msnbase();
-  }
+  # if (.on.public.web){
+  #   load_msnbase();
+  # }
   
   spectra_mz <- unlist(lapply(MSnbase::spectra(raw_data),mz))
   

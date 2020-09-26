@@ -43,7 +43,7 @@ InitializaPlan <- function(type="spec", path){
     saveRDS(.running.as.plan, file = paste0(plan.path, "/running.as.plan.rds"));
     saveRDS(.plan_count, file = paste0(plan.path, "/plan_count.rds"));
     #----------------------
-    .optimize_switch <<- T
+    .optimize_switch <<- TRUE;
     switch.path <- paste0(getwd(), "/temp/plan")
     saveRDS(.optimize_switch,
             file = paste0(switch.path, "/optimize_switch_", .plan_count, ".rds"))
@@ -89,7 +89,7 @@ InitializaPlan <- function(type="spec", path){
     saveRDS(.running.as.plan, file = paste0(plan.path, "/running.as.plan.rds"));
     saveRDS(.plan_count, file = paste0(plan.path, "/plan_count.rds"));
     #----------------------
-    .optimize_switch <<- F;
+    .optimize_switch <<- FALSE;
     switch.path <- paste0(getwd(), "/temp/plan");
     saveRDS(.optimize_switch,
             file = paste0(switch.path, "/optimize_switch_", .plan_count, ".rds"));
@@ -197,6 +197,10 @@ ExecutePlan <- function(plan=NULL){
   plan@running.controller <- controller.resetter();
   
   if (length(plan@CommandSet) == 1){
+    
+    if(!exists("envir",envir = ".GlobalEnv")){
+      envir <<- new.env()
+    }
     
     envir$rc <<- plan@running.controller;
     perform.plan(plan@CommandSet[["command_set_1"]]);
@@ -420,21 +424,20 @@ controller.resetter <- function() {
   return(running.controller)
 }
 
-#' @noRd
 controller.modifier <- function(new_command_set, last_command_set, plan){
   
   ###-------------Operators definition ------------//
   
-  #' operators_1 : PerformDataTrimming ~ PerformParamsOptimization;
-  #' operators_2 : PerformParamsOptimization ~ peak_profiling;  #' 
-  #' operators_3 : PerformPeakProfiling ~ PerformPeakAnnotation;  #' 
-  #' operators_4 : ;
+  # operators_1 : PerformDataTrimming ~ PerformParamsOptimization;
+  # operators_2 : PerformParamsOptimization ~ peak_profiling;  #' 
+  # operators_3 : PerformPeakProfiling ~ PerformPeakAnnotation;  #' 
+  # operators_4 : ;
   
   
-  #' others_1 c1 : Control Optimization or not;
-  #' others_1 c2 : ;
-  #' others_1 c3 : ;
-  #' others_1 c4 : .
+  # others_1 c1 : Control Optimization or not;
+  # others_1 c2 : ;
+  # others_1 c3 : ;
+  # others_1 c4 : .
   
   ##----------------------------------------------//
   

@@ -105,191 +105,6 @@ InitDataObjects <- function(data.type, anal.type, paired=FALSE){
 
 #' Import raw MS data
 #' @description This function handles the reading in of
-#' raw MS data (.mzML, .CDF and .mzXML). Users must provide
-#' a matrix with meta information about file such that each file has the name,
-#' file path, group class and extension type.
-#' The function will output two chromatograms into the user's working directory, a
-#' base peak intensity chromatogram (BPIC) and a total ion
-#' chromatogram (TIC). Further, this function sets the number of cores
-#' to be used for parallel processing. It first determines the number of cores
-#' within a user's computer and then sets it that number/2.
-#' @param dataset.meta Matrix, input the meta data for files containing
-#' the raw MS spectra to be processed.
-#' @param format Character, input the format of the image to create.
-#' @param dpi Numeric, input the dpi of the image to create.
-#' @param width Numeric, input the width of the image to create.
-#' @param par.cores Logical, if true, the function will automatically
-#' set the number of parallel cores. If false, it will not.
-#' @param plot Logical, if true the function will create BPIS and TICS plots.
-#' @param bpis_name Character, input the name of the BPIS image to create.
-#' @param tics_name Character, input the name of the TICS image to create.
-#' @author Jasmine Chong \email{jasmine.chong@mail.mcgill.ca},
-#' Mai Yamamoto \email{yamamoto.mai@mail.mcgill.ca}, and Jeff Xia \email{jeff.xia@mcgill.ca}
-#' McGill University, Canada
-#' License: GNU GPL (>= 2)
-#' @export
-#' @import MSnbase
-#' @import BiocParallel
-#' @import parallel
-#' @importFrom Cairo Cairo
-
-ImportRawMSDataList <-
-  function(dataset.meta,
-           format = "png",
-           dpi = 72,
-           width = 9,
-           par.cores = TRUE,
-           plot = TRUE,
-           bpis_name = "BPIS_",
-           tics_name = "TICS_") {
-    
-    msg.vec <<- vector(mode = "character")
-    
-    if (bpis_name == "BPIS_") {
-      bpis_name = paste("BPIS_", dpi, ".", format, sep = "")
-    }
-    if (tics_name == "TICS_") {
-      tics_name <- paste("TICS_", dpi, ".", format, sep = "")
-    }
-    
-    msg <- c("The uploaded files are raw MS spectra.")
-    
-    # The dataset.meta should be a matrix such that each row has the following:
-    #   1- file name, 2- file path, 3- group and 4- file extension type
-    # provided. The accepted file extensions are (.mzML/.CDF/.mzXML files)
-    
-    if (nrow(dataset.meta) == 0 || is.na(dataset.meta)) {
-      AddErrMsg("No spectra were found!")
-      return(0)
-    }
-    
-    compfile.types <-
-      sum(sapply(dataset.meta[, 3], function(x) {
-        x %in% c("mzml", "cdf", "mzxml")
-      }))
-    if (compfile.types < nrow(dataset.meta)) {
-      AddErrMsg("Only mzML, cdf and mzXML input types can be handled!")
-      return(0)
-    }
-    
-    snames <- dataset.meta[, 1]
-    files <-
-      dataset.meta[, 2]
-    files <-
-      as.character(files)
-    # Otherwise, a factor form of files will cause an error
-    sclass <- dataset.meta[, 4]
-    
-    # some sanity check before proceeds
-    sclass <- as.factor(sclass)
-    
-    if (length(levels(sclass)) < 2) {
-      AddErrMsg("You must provide classes labels (at least two classes)!")
-      return(0)
-    }
-    
-    SetClass(sclass)
-    
-    # check for unique sample names
-    if (length(unique(snames)) != length(snames)) {
-      AddErrMsg("Duplicate sample names are not allowed!")
-      dup.nm <- paste(snames[duplicated(snames)], collapse = " ")
-      AddErrMsg("Duplicate sample names are not allowed!")
-      AddErrMsg(dup.nm)
-      return(0)
-    }
-    
-    pd <- data.frame(
-      sample_name = snames,
-      sample_group = sclass,
-      stringsAsFactors = FALSE
-    )
-    
-    if (!.on.public.web & par.cores == TRUE) {
-      cores <- parallel::detectCores()
-      num_cores <- ceiling(cores / 2)
-      cat(paste0("The number of CPU cores to be used is set to ", num_cores, ".","\n"))
-      
-      if (.Platform$OS.type == "unix") {
-        BiocParallel::register(BiocParallel::bpstart(BiocParallel::MulticoreParam(num_cores)))
-      } else {
-        # for windows
-        BiocParallel::register(BiocParallel::bpstart(BiocParallel::SnowParam(num_cores)))
-      }
-    }
-    
-    raw_data <-
-      suppressMessages(read.MSdata(
-        files = files,
-        pdata = new("NAnnotatedDataFrame", pd),
-        mode = "onDisk"
-      ))
-    
-    if (plot == TRUE) {
-      # Plotting functions to see entire chromatogram
-      bpis <- chromatogram(raw_data, aggregationFun = "max")
-      tics <- chromatogram(raw_data, aggregationFun = "sum")
-      
-      groupNum <- nlevels(groupInfo)
-      
-      if (groupNum > 9) {
-        col.fun <-
-          grDevices::colorRampPalette(RColorBrewer::brewer.pal(12, "Set3"))
-        group_colors <- col.fun(groupNum)
-      } else{
-        group_colors <-
-          paste0(RColorBrewer::brewer.pal(9, "Set1")[1:groupNum], "60")
-      }
-      
-      names(group_colors) <- levels(groupInfo)
-      
-      Cairo::Cairo(
-        file = bpis_name,
-        unit = "in",
-        dpi = dpi,
-        width = width,
-        height = width * 5 / 9,
-        type = format,
-        bg = "white"
-      )
-      
-      plot(bpis, col = group_colors[raw_data$sample_group])
-      legend(
-        "topright",
-        legend = levels(groupInfo),
-        pch = 15,
-        col = group_colors
-      )
-      
-      dev.off()
-      
-      Cairo::Cairo(
-        file = tics_name,
-        unit = "in",
-        dpi = dpi,
-        width = width,
-        height = width * 5 / 9,
-        type = format,
-        bg = "white"
-      )
-      
-      plot(tics, col = group_colors[raw_data$sample_group])
-      legend(
-        "topright",
-        legend = levels(groupInfo),
-        pch = 15,
-        col = group_colors
-      )
-      
-      dev.off()
-    }
-    
-    cat("Successfully imported raw MS data!\n")
-    return(raw_data)
-  }
-
-#' Import raw MS data
-#' @description This function handles the reading in of
 #' raw MS data (.mzML, .CDF and .mzXML). Users must set
 #' their working directory to the folder containing their raw
 #' data, divided into two subfolders named their desired group labels. The
@@ -316,6 +131,7 @@ ImportRawMSDataList <-
 #' @import MSnbase
 #' @import BiocParallel
 #' @import parallel
+#' @importFrom tools file_path_as_absolute
 #' @importFrom Cairo Cairo
 
 ImportRawMSData <-
@@ -328,10 +144,10 @@ ImportRawMSData <-
     
     foldername <- tools::file_path_as_absolute(foldername);
     
-    if(.on.public.web){
-      load_msnbase();
-    } 
-    
+    # if(.on.public.web){
+    #   load_msnbase();
+    # } 
+    # 
     if(missing(mSet)){
       mSet <- new("mSet")
     } else if(is.null(mSet)){
@@ -400,8 +216,8 @@ ImportRawMSData <-
       )
     }
     
-    count_total_sample <<- length(files)
-    count_current_sample <<- 0
+    count_total_sample <<- length(files);
+    count_current_sample <<- 0;
     toRemove = vector();
     
     # Update first
@@ -420,12 +236,7 @@ ImportRawMSData <-
     
     toKeepInx = !(files %in% toRemove)
     files = files[toKeepInx]
-    
-    if (length(files) == 0) {
-      AddErrMsg("No spectra were found!")
-      return(0)
-    }
-    
+
     snames <- gsub("\\.[^.]*$", "", basename(files))
     msg <- c(msg, paste("A total of ", length(files), "samples were found."))
     sclass <- gsub("^\\.$", "sample", dirname(files))
@@ -456,15 +267,15 @@ ImportRawMSData <-
     sclass <- as.factor(sclass);
     SetClass(sclass);
     
-    # check for unique sample names
-    if (length(unique(snames)) != length(snames)) {
-      AddErrMsg("Duplicate sample names are not allowed!")
-      dup.nm <- paste(snames[duplicated(snames)], collapse = " ")
-      AddErrMsg("Duplicate sample names are not allowed!")
-      AddErrMsg(dup.nm)
-      return(0)
-    }
-    
+    # # check for unique sample names
+    # if (length(unique(snames)) != length(snames)) {
+    #   AddErrMsg("Duplicate sample names are not allowed!")
+    #   dup.nm <- paste(snames[duplicated(snames)], collapse = " ")
+    #   AddErrMsg("Duplicate sample names are not allowed!")
+    #   AddErrMsg(dup.nm)
+    #   return(0)
+    # }
+    # 
     pd <- data.frame(
       sample_name = snames,
       sample_group = sclass,
@@ -547,7 +358,7 @@ ImportRawMSData <-
           # just for plotting
         }
         
-        save(raw_data_filt, file = "raw_data_filt.rda")
+        #save(raw_data_filt, file = "raw_data_filt.rda")
         
         if (plot.opts == "all") {
           h <-

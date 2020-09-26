@@ -3,11 +3,27 @@
 .on.public.web <- FALSE;
 
 # OTHER SETTINGS
-# NA
-write.table <- utils::write.table;
-read.csv <- utils::read.csv;
-write.csv <- utils::write.csv;
-utils::globalVariables(c("envir", ".plan_count",".optimize_switch","msg.vec"))
+# 1. Avoid binfing notes
+
+suppressGlobalBindingNotes <- function(variablesMentionedInNotes) {
+  for(variable in variablesMentionedInNotes) {
+    utils::globalVariables(variable, "OptiLCMS", TRUE);
+    dontCheck(variable);
+  }
+}
+
+suppressGlobalBindingNotes(
+  c(
+    "envir",
+    ".plan_count",
+    ".optimize_switch",
+    "msg.vec",
+    "fullUserPath",
+    "count_total_sample",
+    "count_current_sample"
+  )
+)
+
 
 # Used to defined the parallel namespace for peak picking
 .peak_function_list <- list("PerformPeakPicking",
@@ -208,5 +224,9 @@ fast.write.csv <- function(dat, file, row.names=TRUE){
     });
 }
 
+#' @noRd
+# load_msnbase <- function(){
+#   library("MSnbase");
+# }
 
 
