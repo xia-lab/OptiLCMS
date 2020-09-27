@@ -13,6 +13,7 @@
 #'License: GNU GPL (>= 2)
 #'@export
 #'@import methods
+#'@import BiocParallel
 #'@importFrom  Cairo CairoFonts
 
 InitDataObjects <- function(data.type, anal.type, paired=FALSE){
@@ -22,85 +23,6 @@ InitDataObjects <- function(data.type, anal.type, paired=FALSE){
     return(new("mSet"))
   }
   
-  if(!.on.public.web){
-    if(exists("mSet")){
-      mSetObj <- .get.mSet(mSet);
-      mSetObj$dataSet$type <- data.type;
-      mSetObj$analSet$type <- anal.type;
-      return(.set.mSet(mSetObj));
-    }
-  }
-  
-  dataSet <- list();
-  dataSet$type <- data.type;
-  dataSet$design.type <- "regular"; # one factor to two factor
-  dataSet$cls.type <- "disc"; # default until specified otherwise
-  dataSet$format <- "rowu";
-  dataSet$paired <- paired;
-  analSet <- list();
-  analSet$type <- anal.type;
-  
-  mSetObj <- list();
-  mSetObj$dataSet <- dataSet;
-  mSetObj$analSet <- analSet;
-  mSetObj$imgSet <- list();
-  mSetObj$msgSet <- list(); # store various message during data processing
-  mSetObj$msgSet$msg.vec <- vector(mode="character");     # store error messages
-  mSetObj$cmdSet <- vector(mode="character"); # store R command
-  
-  # other global variables
-  msg.vec <<- "";
-  err.vec <<- "";
-  
-  # for network analysis
-  module.count <<- 0;
-  # counter for naming different json file (pathway viewer)
-  smpdbpw.count <<- 0; 
-  # for mummichog
-  peakFormat <<- "mpt"  
-  
-  # for meta-analysis
-  mdata.all <<- list(); 
-  mdata.siggenes <<- vector("list");
-  meta.selected <<- TRUE;
-  anal.type <<- anal.type;
-  
-  if(.on.public.web){
-    # disable parallel prcessing for public server
-    load_BiocParallel();
-    register(SerialParam());
-  }else{
-    if("stat" %in% anal.type | "msetqea" %in% anal.type | "pathqea" %in% anal.type | "roc" %in% anal.type)
-      # start Rserve engine for Rpackage
-      load_Rserve();
-  }
-  
-  # plotting required by all
-  Cairo::CairoFonts(regular="Arial:style=Regular",bold="Arial:style=Bold",italic="Arial:style=Italic",bolditalic = "Arial:style=Bold Italic",symbol = "Symbol")
-  
-  # sqlite db path for gene annotation
-  if(file.exists("/home/glassfish/sqlite/")){ #.on.public.web
-    url.pre <<- "/home/glassfish/sqlite/";
-  }else if(file.exists("/home/jasmine/Downloads/sqlite/")){ #jasmine's local
-    url.pre <<- "/home/jasmine/Downloads/sqlite/";
-  }else if(file.exists("/Users/soufanom/Documents/Projects/gene-id-mapping/")){ # soufan laptop
-    url.pre <<- "/Users/soufanom/Documents/Projects/gene-id-mapping/";
-  }else if(file.exists("~/Documents/Projects/gene-id-mapping/")){
-    url.pre <<- "~/Documents/Projects/gene-id-mapping/"
-  }else if(file.exists("/Users/xia/Dropbox/sqlite/")){ # xia local
-    url.pre <<- "/Users/xia/Dropbox/sqlite/";
-  }else if(file.exists("/media/zzggyy/disk/sqlite/")){
-    url.pre <<-"/media/zzggyy/disk/sqlite/"; #zgy local)
-  }else if(file.exists("/home/zgy/sqlite/")){
-    url.pre <<-"/home/zgy/sqlite/"; #zgy local)
-  } else if(file.exists("/home/le/sqlite/GeneID_25Species_JE/")){# le local
-    url.pre <<-"/home/le/sqlite/GeneID_25Species_JE/";
-  }else{
-    url.pre <<- paste0(dirname(system.file("database", "sqlite/GeneID_25Species_JE/ath_genes.sqlite", package="MetaboAnalystR")), "/")
-  }
-  
-  print("MetaboAnalyst R objects initialized ...");
-  return(.set.mSet(mSetObj));
 }
 
 #' Import raw MS data

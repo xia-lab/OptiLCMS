@@ -200,7 +200,6 @@ SetPeakParam <- function(platform = "general", Peak_method = "centWave", RT_meth
       peakParams$fitgauss<-fitgauss
     };
 
-    
     if (missing(mzCenterFun)){
       peakParams$mzCenterFun<-"wMean"
     } else {
@@ -1817,8 +1816,11 @@ SetPeakParam <- function(platform = "general", Peak_method = "centWave", RT_meth
     } else {
       peakParams$fitgauss<-fitgauss
     };
-
-    
+    # if (missing(verbose.columns)){
+      peakParams$verbose.columns <- FALSE;
+    # } else{
+    #   peakParams$verbose.columns <- verbose.columns
+    # };
     if (missing(mzCenterFun)){
       peakParams$mzCenterFun<-"wMean"
     } else {
@@ -1862,6 +1864,13 @@ SetPeakParam <- function(platform = "general", Peak_method = "centWave", RT_meth
       # other parameters use default
     }
   }
+  
+  ## Generic Params
+  # if (missing(verbose.columns)){
+    peakParams$verbose.columns <- FALSE;
+  # } else{
+  #   peakParams$verbose.columns <- verbose.columns
+  # };
   
   ### Setup Peak Annotation Parameters
   if("annotation" =="annotation"){ 

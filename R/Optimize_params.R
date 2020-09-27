@@ -2075,24 +2075,24 @@ testSinusDistribution <- function(rawdata, peak) {
 }
 findIsotopes.CAMERA <-  function(mSet, ...) {
   
-  iso_mat <- matrix(0, nrow=0, ncol=2)
-  if(is.null(mSet)) {
-    return(iso_mat)
-  }
-  
-  ids <- peaks_IPO(mSet)[,"sample", drop=FALSE]
-  ids <- cbind(1:length(ids), ids)
-  
-  xsets <- split(mSet, unique(peaks_IPO(mSet)[,"sample"]))
-  samples <- unique(peaks_IPO(mSet)[,"sample"])
-  for(sample in samples) {
-    an <- xsAnnotate(mSet, sample=sample)
-    isos <- findIsotopes(an, ...)@isoID[,c("mpeak", "isopeak"), drop=FALSE]
-    #start_id <- ids[ids[,2]==sample,,drop=FALSE][1,1] - 1
-    iso_mat <- rbind(iso_mat, matrix(ids[ids[,2]==sample,1][isos], ncol=2))
-  }
-  
-  iso_mat
+  # iso_mat <- matrix(0, nrow=0, ncol=2)
+  # if(is.null(mSet)) {
+  #   return(iso_mat)
+  # }
+  # 
+  # ids <- peaks_IPO(mSet)[,"sample", drop=FALSE]
+  # ids <- cbind(1:length(ids), ids)
+  # 
+  # xsets <- split(mSet, unique(peaks_IPO(mSet)[,"sample"]))
+  # samples <- unique(peaks_IPO(mSet)[,"sample"])
+  # for(sample in samples) {
+  #   an <- xsAnnotate(mSet, sample=sample)
+  #   isos <- findIsotopes(an, ...)@isoID[,c("mpeak", "isopeak"), drop=FALSE]
+  #   #start_id <- ids[ids[,2]==sample,,drop=FALSE][1,1] - 1
+  #   iso_mat <- rbind(iso_mat, matrix(ids[ids[,2]==sample,1][isos], ncol=2))
+  # }
+  # 
+  # iso_mat
 }
 createModel <- function(design, params, resp) {
   # add response to the design, which gives the data for the model

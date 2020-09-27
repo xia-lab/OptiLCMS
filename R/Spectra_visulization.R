@@ -83,7 +83,7 @@ PerformDataInspect <-
       return()
     }
     
-    ms <- openMSfile(mzf)
+    ms <- mzR::openMSfile(mzf)
     hd <- header(ms)
     
     ms1 <- which(hd$msLevel == 1)

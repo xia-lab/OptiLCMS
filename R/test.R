@@ -45,7 +45,7 @@ testOptiLCMS <- function(){
 #                      plotSettings2 <- SetPlotParam(Plot=F),
 #                      mSet <- ImportRawMSData(mSet = mSet, foldername = data_folder_Sample, plotSettings = plotSettings1, running.controller = rc),
 #                      mSet <- PerformPeakProfiling(mSet = mSet, Params = param, plotSettings = plotSettings2, running.controller = rc),
-#                      annParams <- SetAnnotationParam(polarity = 'negative', mz_abs_add = 0.025),
+#                      annParams <- SetAnnotationParam(polarity = 'negative', mz_abs_add = 0.035),
 #                      mSet <- PerformPeakAnnotation(mSet = mSet, annotaParam = annParams, ncore =1, running.controller = rc),
 #                      maPeaks <- FormatPeakList(mSet = mSet, annParams, filtIso =F, filtAdducts = FALSE,missPercent = 1));
 # ExecutePlan(plan);

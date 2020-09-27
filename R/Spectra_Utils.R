@@ -2423,7 +2423,7 @@ updateRawSpectraParam <- function (Params){
     param$mzdiff <- as.numeric(Params[["mzdiff"]]);
     param$fitgauss <- as.logical(Params[["fitgauss"]]);
     param$noise <- as.numeric(Params[["noise"]]);
-    #param$verboseColumns <- as.logical(Params[["verbose.columns"]]);
+    param$verboseColumns <- as.logical(Params[["verbose.columns"]]);
     
     param$binSize <-0.25; # density Param
     
@@ -2466,7 +2466,7 @@ updateRawSpectraParam <- function (Params){
     param$mzdiff <- as.numeric(Params[["mzdiff"]]);
     param$fitgauss <- as.logical(Params[["fitgauss"]]);
     param$noise <- as.numeric(Params[["noise"]]);
-    #param$verboseColumns <- as.logical(Params[["verbose.columns"]]);
+    param$verboseColumns <- as.logical(Params[["verbose.columns"]]);
     
     param$binSize <-0.25; # density Param
     
@@ -2631,6 +2631,7 @@ getLocalNoiseEstimate <- function(d, td, ftd, noiserange, Nscantime, threshold, 
   c(min(baseline1,baseline2),min(sdnoise1,sdnoise2))
 }
 
+
 MSW.cwt <- function (ms, scales = 1, wavelet = "mexh") { ## modified from package MassSpecWavelet
   if (wavelet == "mexh") {
     psi_xval <- seq(-6, 6, length = 256)
@@ -2684,6 +2685,7 @@ MSW.cwt <- function (ms, scales = 1, wavelet = "mexh") { ## modified from packag
   wCoefs <- wCoefs[1:oldLen, , drop = FALSE]
   wCoefs
 }
+
 MSW.extendNBase <- function(x, nLevel=1, base=2, ...) { ## from package MassSpecWavelet
   if (!is.matrix(x)) x <- matrix(x, ncol=1)
   

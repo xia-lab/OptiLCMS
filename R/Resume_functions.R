@@ -198,10 +198,6 @@ ExecutePlan <- function(plan=NULL){
   
   if (length(plan@CommandSet) == 1){
     
-    if(!exists("envir",envir = ".GlobalEnv")){
-      envir <<- new.env()
-    }
-    
     envir$rc <<- plan@running.controller;
     perform.plan(plan@CommandSet[["command_set_1"]]);
     

@@ -228,7 +228,7 @@ PerformPeakProfiling <-
                   progress = 25)
     
     if (.on.public.web) {
-      load_biocparallel()
+      # load_biocparallel()
       total_threads <- 4
       
     } else if (missing(ncore)) {

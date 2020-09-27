@@ -3,12 +3,12 @@
 .on.public.web <- FALSE;
 
 # OTHER SETTINGS
-# 1. Avoid binfing notes
+# 1. Avoid binding visible notes
+#utils::globalVariables();
 
 suppressGlobalBindingNotes <- function(variablesMentionedInNotes) {
   for(variable in variablesMentionedInNotes) {
     utils::globalVariables(variable, "OptiLCMS", TRUE);
-    dontCheck(variable);
   }
 }
 
