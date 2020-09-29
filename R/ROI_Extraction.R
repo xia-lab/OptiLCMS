@@ -209,7 +209,7 @@ PerformROIExtraction <-
                                 recursive = T,
                                 full.names = T)
       }
-      cat(dda_file1,"\n")
+      cat(paste0(dda_file1,collapse = "\n"),"\n")
       
       pd <-
         data.frame(

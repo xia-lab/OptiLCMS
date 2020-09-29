@@ -487,7 +487,7 @@ read.InMemMSd.data <- function(files,
   count.idx <- 0;
   
   for (f in files) {
-    cat(paste("Reading MS from",basename(f),"begin !\n"))
+    cat(paste("Reading MS from",basename(f),"...\n"))
     
     filen <- match(f, files)
     filenums <- c(filenums, filen)
@@ -628,7 +628,7 @@ read.InMemMSd.data <- function(files,
       write.table(1.0 + count.idx/length(files)*3, file = paste0(fullUserPath, "log_progress.txt"),row.names = F,col.names = F);
     }
     
-    cat(paste("This reading finished !\n"))
+    cat(paste0("Reading from", basename(f), "finished successfully !\n"));
     
   }
   

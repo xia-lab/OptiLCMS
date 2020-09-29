@@ -1118,14 +1118,23 @@ calcGaussianS<-function(mSet, object, useNoise, BPPARAM = bpparam()){
         z <- z[sort(sample(1:nrow(z), 150)), ]
       }
       currentSample <- suppressMessages(MSnbase::filterRt(MSnbase::filterFile(object, 
-                                                                              z[1, "sample"]), rt = range(z[, c("rtmin", "rtmax")])))
+                                                                              z[1, "sample"]), 
+                                                          rt = range(z[, c("rtmin", "rtmax")])))
+      
       corr <- unlist(sapply(seq_len(nrow(z)), FUN = function(i) {
         
         corr <- 0.1;
         mzRange <- z[i, c("mzmin", "mzmax")] + c(-0.001, 0.001);
         rtRange <- z[i, c("rtmin", "rtmax")];
-        suppressWarnings(ints <- MSnbase::intensity(MSnbase::filterMz(MSnbase::filterRt(currentSample, 
-                                                                                        rtRange), mzRange)))
+        
+        ints <- try(MSnbase::intensity(MSnbase::filterMz(MSnbase::filterRt(currentSample,
+                                                                           rtRange),
+                                                         mzRange)), silent = TRUE)
+        
+        if(class(ints) == "try-error"){
+          return(corr);
+        }
+        
         ints[lengths(ints) == 0] <- 0
         ints <- as.integer(unlist(ints))
         ints <- ints[!is.na(ints)]
@@ -1138,23 +1147,25 @@ calcGaussianS<-function(mSet, object, useNoise, BPPARAM = bpparam()){
                          data.frame(x = 1:length(ints), y = ints)), 
                      silent = TRUE)
           if (class(fit) == "try-error") {
+            write.table(fit[[1]], file = "error_report.txt",append = T,eol = "\n")
             corr <- 0.1
-          }
-          else {
+          } else {
             if (sum(!is.na(ints - fitted(fit))) > 4 && 
                 sum(!is.na(unique(ints))) > 4 && sum(!is.na(unique(fitted(fit)))) > 
                 4) {
-              cor <- NULL
-              options(show.error.messages = FALSE)
+              
+              cor <- NULL;
+              options(show.error.messages = FALSE);
               cor <- try(cor.test(ints, fitted(fit), 
-                                  method = "pearson", use = "complete"))
-              options(show.error.messages = TRUE)
+                                  method = "pearson", use = "complete"));
+              options(show.error.messages = TRUE);
+              
               if (!is.null(cor) && cor$p.value <= 0.05) {
                 corr <- cor$estimate
               }
               else if (!is.null(cor) && cor$p.value > 
                        0.05) {
-                corr <- cor$estimate * 0.85
+                corr <- cor$estimate * 0.85 # Give a penalty on that!
               }
             }
             else {
@@ -1279,8 +1290,8 @@ Noise_evaluate <- function (raw_data) {
   mSet$intensity <- split(MSnbase::tic(raw_data), fromFile(raw_data))
   
   signals <- suppressMessages(lapply(mSet$intensity, FUN = function(y) {
-    lag <- 25
-    threshold <- 3.1
+    lag <- 15
+    threshold <- 2
     influence <- 0.1
     signals <- rep(0, length(y))
     filteredY <- y[seq_len(lag)]

@@ -1839,7 +1839,7 @@ SetPeakParam <- function(platform = "general", Peak_method = "centWave", RT_meth
       peakParams$extra <- extra
     };
     if (missing(span)){
-      peakParams$span <- 0.25;
+      peakParams$span <- 0.4;
     } else{
       peakParams$span <- span
     };

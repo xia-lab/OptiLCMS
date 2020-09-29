@@ -2107,7 +2107,7 @@ PerformPeakFiling <- function(mSet,BPPARAM=bpparam()){
   }
   
   if (!.optimize_switch){
-    MessageOutput(".","\n",76)
+    MessageOutput(".","",76)
   }
   
   ## Split the object by file and define the peaks for which
@@ -3152,21 +3152,22 @@ na.flatfill <- function(x) {
     x[(realloc[length(realloc)]+1):length(x)] <- x[realloc[length(realloc)]]
   x
 }
+
 SSgauss <- selfStart(~ h*exp(-(x-mu)^2/(2*sigma^2)), function(mCall, data, LHS) {
   
-  xy <- sortedXyData(mCall[["x"]], LHS, data)
+  xy <- sortedXyData(mCall[["x"]], LHS, data);
   
-  len <- dim(xy)[1]
-  xyarea <- sum((xy[2:len,2]+xy[1:(len-1),2])*(xy[2:len,1]-xy[1:(len-1),1]))/2
-  maxpos <- which.max(xy[,2])
+  len <- dim(xy)[1];
+  xyarea <- sum((xy[2:len,2]+xy[1:(len-1),2])*(xy[2:len,1]-xy[1:(len-1),1]))/2;
+  maxpos <- which.max(xy[,2]);
   
-  mu <- xy[maxpos,1]
-  h <- xy[maxpos,2]
-  sigma <- xyarea/(h*sqrt(2*pi))
+  mu <- xy[maxpos,1];
+  h <- xy[maxpos,2];
+  sigma <- xyarea/(h*sqrt(2*pi));
   
-  value <- c(mu, sigma, h)
-  names(value) <- mCall[c("mu", "sigma", "h")]
-  value
+  value <- c(mu, sigma, h);
+  names(value) <- mCall[c("mu", "sigma", "h")];
+  value;
   
 }, c("mu", "sigma", "h"))
 

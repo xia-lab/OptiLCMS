@@ -1,11 +1,3 @@
-#' @title testOptiLCMS
-#' @description testOptiLCMS
-#' @author zhiqiang Pang
-#' @export
-testOptiLCMS <- function(){
-  cat("Running Successfully !")
-}
-
 # Reguler part ----
 # library(OptiLCMS);
 # mSet<-InitDataObjects("spec", "raw", FALSE)
@@ -42,14 +34,14 @@ testOptiLCMS <- function(){
 #                      data_folder_Sample <- 'data/',
 #                      param <- best_parameters,
 #                      plotSettings1 <- SetPlotParam(Plot=T),
-#                      plotSettings2 <- SetPlotParam(Plot=F),
+#                      plotSettings2 <- SetPlotParam(Plot=T),
 #                      mSet <- ImportRawMSData(mSet = mSet, foldername = data_folder_Sample, plotSettings = plotSettings1, running.controller = rc),
 #                      mSet <- PerformPeakProfiling(mSet = mSet, Params = param, plotSettings = plotSettings2, running.controller = rc),
 #                      annParams <- SetAnnotationParam(polarity = 'negative', mz_abs_add = 0.035),
 #                      mSet <- PerformPeakAnnotation(mSet = mSet, annotaParam = annParams, ncore =1, running.controller = rc),
 #                      maPeaks <- FormatPeakList(mSet = mSet, annParams, filtIso =F, filtAdducts = FALSE,missPercent = 1));
 # ExecutePlan(plan);
-# 
+
 # #
 # plan <- running.plan(plan,
 #                      data_folder_Sample <- 'upload/',
