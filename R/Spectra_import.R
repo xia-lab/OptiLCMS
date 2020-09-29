@@ -628,7 +628,7 @@ read.InMemMSd.data <- function(files,
       write.table(1.0 + count.idx/length(files)*3, file = paste0(fullUserPath, "log_progress.txt"),row.names = F,col.names = F);
     }
     
-    cat(paste0("Reading from", basename(f), "finished successfully !\n"));
+    cat(paste0("Reading from ", basename(f), " finished successfully !\n"));
     
   }
   
