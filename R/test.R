@@ -55,11 +55,8 @@
 #                      maPeaks <- FormatPeakList(mSet = mSet, annParams, filtIso =F, filtAdducts = FALSE,missPercent = 1));
 # 
 # ExecutePlan(plan)
+
 # 
-
-
-
-
 # library(OptiLCMS);
 # plan <- InitializaPlan("raw_opt","/home/glassfish/projects/MetaboDemoRawData/")
 # plan <- running.plan(plan,
@@ -76,8 +73,8 @@
 #                      annParams <- SetAnnotationParam(polarity = 'negative', mz_abs_add = 0.035),
 #                      mSet <- PerformPeakAnnotation(mSet = mSet, annotaParam = annParams, ncore =1, running.controller = rc),
 #                      maPeaks <- FormatPeakList(mSet = mSet, annParams, filtIso =F, filtAdducts = FALSE,missPercent = 1));
-# ExecutePlan(plan);
-
+# ExecutePlan(plan)
 # 
+
 
 # load("mSet.rda") # load mSet for further analysis, e.g. Statistics/ Mummichog etc.

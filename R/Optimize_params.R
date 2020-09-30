@@ -772,11 +772,20 @@ Statistic_doe <-function(object, object_mslevel, isotopeIdentification,
   
   #mSet_OPT$xset <- xset
   mSet_OPT$PPS <- calcPPS2(mSet, isotopeIdentification)
-  suppressWarnings(mSet_OPT$PPS$CV <- suppressMessages(calcCV(mSet)));
-  mSet_OPT$PPS$RCS <-suppressMessages(calcRCS_GSValues(mSet)$RCS);
-  mSet_OPT$PPS$GS <-suppressMessages(calcRCS_GSValues(mSet)$GS);
-  mSet_OPT$PPS$GaussianSI <-calcGaussianS(mSet,object,useNoise=useNoise);
+  suppressWarnings(mSet_OPT$PPS$CV <-
+                     suppressMessages(calcCV(mSet)))
   
+  mSet_OPT$PPS$RCS <- suppressMessages(calcRCS_GSValues(mSet)$RCS)
+  
+  mSet_OPT$PPS$GS <- suppressMessages(calcRCS_GSValues(mSet)$GS)
+  
+  mSet_OPT$PPS$GaussianSI <-
+    calcGaussianS(mSet, object, useNoise = useNoise)
+  
+  print(paste0("********#########********** ", mSet_OPT$PPS$GaussianSI, " ***************************"))
+  print(paste0("********#########*******2## ", calcGaussianS(mSet, object, useNoise = useNoise), " ***************************"))
+  
+  save(mSet_OPT, file = paste0("mSet_",Sys.time(),"_780.rda"));
   ## Normalize the CV, RCS, GS, GaussianSI
   normalized.CV<-(mSet_OPT$PPS$CV-min(index.set$CV))/(max(index.set$CV)-min(index.set$CV));
   normalized.RCS<-(mSet_OPT$PPS$RCS-min(index.set$RCS))/(max(index.set$RCS)-min(index.set$RCS));
@@ -1088,7 +1097,184 @@ calcRCS_GSValues<-function(mSet){
 #' Mcgill University
 #' License: GNU GPL (>= 2)
 
-calcGaussianS<-function(mSet, object, useNoise, BPPARAM = bpparam()){                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  
+# calcGaussianS<-function(mSet, object, useNoise, BPPARAM = bpparam()){                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  
+#   
+#   if (identical(useNoise, numeric(0))) {
+#     useNoise <- 0
+#   }
+#   peakmat <- mSet@peakfilling$msFeatureData$chromPeaks;
+#   peakmat_set <- split.data.frame(peakmat, peakmat[, "sample"])
+#   
+#   object <- mSet@rawInMemory;
+#   
+#   ## Adjusted RT application
+#   scan_names <- sort(names(object@assayData));
+#   adjRTs <- unname(unlist(mSet@peakfilling[["msFeatureData"]][["adjustedRT"]]))
+#   
+#   for(s in 1:length(object)){
+#     scanNM <- scan_names[s];
+#     object@assayData[[scanNM]]@rt <- adjRTs[s];
+#   }
+#   
+#   ## select different platforms
+#   if (.Platform$OS.type == "unix") {
+#     
+#     BPPARAM = MulticoreParam();
+#     extFUN <- function(z, object, useNoise) {
+#       
+#       if (nrow(z) > 150) {
+#         z <- z[sort(sample(1:nrow(z), 150)), ]
+#       }
+#       currentSample <- suppressMessages(MSnbase::filterRt(MSnbase::filterFile(object, 
+#                                                                               z[1, "sample"]), 
+#                                                           rt = range(z[, c("rtmin", "rtmax")])))
+#       
+#       corr <- unlist(sapply(seq_len(nrow(z)), FUN = function(i) {
+#         
+#         corr <- 0.1;
+#         mzRange <- z[i, c("mzmin", "mzmax")] + c(-0.001, 0.001);
+#         rtRange <- z[i, c("rtmin", "rtmax")];
+#         
+#         ints <- try(MSnbase::intensity(MSnbase::filterMz(MSnbase::filterRt(currentSample,
+#                                                                            rtRange),
+#                                                          mzRange)), silent = TRUE)
+#         
+#         if(class(ints) == "try-error"){
+#           return(corr);
+#         }
+#         
+#         ints[lengths(ints) == 0] <- 0
+#         ints <- as.integer(unlist(ints))
+#         ints <- ints[!is.na(ints)]
+#         ints <- ints[ints > useNoise]
+#         if (length(ints)) {
+#           ints <- ints - min(ints)
+#           # if (max(ints) > 0)
+#           #   ints <- ints/max(ints)
+#           fit <- try(nls(y ~ SSgauss(x, mu, sigma, h), 
+#                          data.frame(x = 1:length(ints), y = ints)), 
+#                      silent = TRUE)
+#           # 
+#           # if (class(fit) == "try-error") { # error - do normalization transform
+#           #   ints_nor <- ints/max(ints);
+#           #   fit <- try(nls(y ~ SSgauss(x, mu, sigma, h), 
+#           #                  data.frame(x = 1:length(ints_nor), y = ints_nor)), 
+#           #              silent = TRUE);
+#           # }
+#           # 
+#           # if (class(fit) == "try-error") { # Still error - do log transform
+#           #   ints_log <- log(ints+1);
+#           #   fit <- try(nls(y ~ SSgauss(x, mu, sigma, h), 
+#           #                  data.frame(x = 1:length(ints_log), y = ints_log)), 
+#           #              silent = TRUE);
+#           # }
+#           
+#           if (class(fit) == "try-error") { # Still error - record error !
+#             #write.table(paste0(fit[[1]],Sys.time()), file = "error_report.txt",append = T,eol = "\n");
+#             #save(ints,file = paste0("ints_",Sys.time(),".rda"));
+#             corr <- 0.1;
+#           } else {
+#             if (sum(!is.na(ints - fitted(fit))) > 4 && 
+#                 sum(!is.na(unique(ints))) > 4 && sum(!is.na(unique(fitted(fit)))) > 
+#                 4) {
+#               
+#               cor <- NULL;
+#               options(show.error.messages = FALSE);
+#               cor <- try(cor.test(ints, fitted(fit), 
+#                                   method = "pearson", use = "complete"));
+#               options(show.error.messages = TRUE);
+#               
+#               if (!is.null(cor) && cor$p.value <= 0.05) {
+#                 corr <- cor$estimate
+#               }
+#               else if (!is.null(cor) && cor$p.value > 
+#                        0.05) {
+#                 corr <- cor$estimate * 0.85 # Give a penalty on that!
+#               }
+#             }
+#             else {
+#               corr <- 0.1
+#             }
+#           }
+#         }
+#         return(corr)
+#       }))
+#       gaussian.peak.ratio <- nrow(z[corr >= 0.9, , drop = FALSE])/nrow(z)
+#       return(gaussian.peak.ratio)
+#     }
+#     
+#     res <- bplapply(peakmat_set, extFUN, object = object, 
+#                     useNoise = useNoise, BPPARAM = BPPARAM)
+#     
+#   }
+#   if (.Platform$OS.type == "windows") {
+#     
+#     extFUN <- function(z, object, useNoise) {
+#       if (nrow(z) > 150) {
+#         z <- z[sort(sample(1:nrow(z), 150)), ]
+#       }
+#       currentSample <- suppressMessages(MSnbase::filterRt(MSnbase::filterFile(object, 
+#                                                                               z[1, "sample"]), rt = range(z[, c("rtmin", "rtmax")])))
+#       corr <- unlist(sapply(seq_len(nrow(z)), FUN = function(i) {
+#         corr <- 0.1
+#         mzRange <- z[i, c("mzmin", "mzmax")] + c(-0.001, 
+#                                                  0.001)
+#         rtRange <- z[i, c("rtmin", "rtmax")]
+#         suppressWarnings(ints <- MSnbase::intensity(MSnbase::filterMz(MSnbase::filterRt(currentSample, 
+#                                                                                         rtRange), mzRange)))
+#         ints[lengths(ints) == 0] <- 0
+#         ints <- as.integer(unlist(ints))
+#         ints <- ints[!is.na(ints)]
+#         ints <- ints[ints > useNoise]
+#         if (length(ints)) {
+#           ints <- ints - min(ints)
+#           if (max(ints) > 0) 
+#             ints <- ints/max(ints)
+#           fit <- try(nls(y ~ SSgauss(x, mu, sigma, h), 
+#                          data.frame(x = 1:length(ints), y = ints)), 
+#                      silent = TRUE)
+#           if (class(fit) == "try-error") {
+#             corr <- 0.1
+#           }
+#           else {
+#             if (sum(!is.na(ints - fitted(fit))) > 4 && 
+#                 sum(!is.na(unique(ints))) > 4 && sum(!is.na(unique(fitted(fit)))) > 
+#                 4) {
+#               cor <- NULL
+#               options(show.error.messages = FALSE)
+#               cor <- try(cor.test(ints, fitted(fit), 
+#                                   method = "pearson", use = "complete"))
+#               options(show.error.messages = TRUE)
+#               if (!is.null(cor) && cor$p.value <= 0.05) {
+#                 corr <- cor$estimate
+#               }
+#               else if (!is.null(cor) && cor$p.value > 
+#                        0.05) {
+#                 corr <- cor$estimate * 0.85
+#               }
+#             }
+#             else {
+#               corr <- 0.1
+#             }
+#           }
+#         }
+#         return(corr)
+#       }))
+#       gaussian.peak.ratio <- nrow(z[corr >= 0.9, , drop = FALSE])/nrow(z)
+#       return(gaussian.peak.ratio)
+#     }
+#     
+#     res <- lapply(peakmat_set, extFUN, object = object, 
+#                   useNoise = useNoise)
+#     res <- unlist(res)
+#   }
+#   return(mean(sapply(res, FUN = function(x) {
+#     x
+#   })))
+#   
+# }
+
+calcGaussianS <-function(mSet, object, useNoise, BPPARAM = bpparam()){                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  
   
   if (identical(useNoise, numeric(0))) {
     useNoise <- 0
@@ -1110,80 +1296,19 @@ calcGaussianS<-function(mSet, object, useNoise, BPPARAM = bpparam()){
   ## select different platforms
   if (.Platform$OS.type == "unix") {
     
-    BPPARAM = MulticoreParam()
+    BPPARAM = MulticoreParam();
+
+    res <- bplapply(peakmat_set, extFUN, object = object,
+                    useNoise = useNoise,
+                    BPPARAM = BPPARAM)
     
-    extFUN <- function(z, object, useNoise) {
-      
-      if (nrow(z) > 150) {
-        z <- z[sort(sample(1:nrow(z), 150)), ]
-      }
-      currentSample <- suppressMessages(MSnbase::filterRt(MSnbase::filterFile(object, 
-                                                                              z[1, "sample"]), 
-                                                          rt = range(z[, c("rtmin", "rtmax")])))
-      
-      corr <- unlist(sapply(seq_len(nrow(z)), FUN = function(i) {
-        
-        corr <- 0.1;
-        mzRange <- z[i, c("mzmin", "mzmax")] + c(-0.001, 0.001);
-        rtRange <- z[i, c("rtmin", "rtmax")];
-        
-        ints <- try(MSnbase::intensity(MSnbase::filterMz(MSnbase::filterRt(currentSample,
-                                                                           rtRange),
-                                                         mzRange)), silent = TRUE)
-        
-        if(class(ints) == "try-error"){
-          return(corr);
-        }
-        
-        ints[lengths(ints) == 0] <- 0
-        ints <- as.integer(unlist(ints))
-        ints <- ints[!is.na(ints)]
-        ints <- ints[ints > useNoise]
-        if (length(ints)) {
-          ints <- ints - min(ints)
-          if (max(ints) > 0) 
-            ints <- ints/max(ints)
-          fit <- try(nls(y ~ SSgauss(x, mu, sigma, h), 
-                         data.frame(x = 1:length(ints), y = ints)), 
-                     silent = TRUE)
-          if (class(fit) == "try-error") {
-            write.table(fit[[1]], file = "error_report.txt",append = T,eol = "\n")
-            corr <- 0.1
-          } else {
-            if (sum(!is.na(ints - fitted(fit))) > 4 && 
-                sum(!is.na(unique(ints))) > 4 && sum(!is.na(unique(fitted(fit)))) > 
-                4) {
-              
-              cor <- NULL;
-              options(show.error.messages = FALSE);
-              cor <- try(cor.test(ints, fitted(fit), 
-                                  method = "pearson", use = "complete"));
-              options(show.error.messages = TRUE);
-              
-              if (!is.null(cor) && cor$p.value <= 0.05) {
-                corr <- cor$estimate
-              }
-              else if (!is.null(cor) && cor$p.value > 
-                       0.05) {
-                corr <- cor$estimate * 0.85 # Give a penalty on that!
-              }
-            }
-            else {
-              corr <- 0.1
-            }
-          }
-        }
-        return(corr)
-      }))
-      gaussian.peak.ratio <- nrow(z[corr >= 0.9, , drop = FALSE])/nrow(z)
-      return(gaussian.peak.ratio)
-    }
-    
-    res <- bplapply(peakmat_set, extFUN, object = object, 
-                    useNoise = useNoise, BPPARAM = BPPARAM)
+    # res <- lapply(peakmat_set, extFUN, object = object,
+    #                 useNoise = useNoise)
+    # print(res)
     
   }
   if (.Platform$OS.type == "windows") {
+    
     extFUN <- function(z, object, useNoise) {
       if (nrow(z) > 150) {
         z <- z[sort(sample(1:nrow(z), 150)), ]
@@ -1238,6 +1363,7 @@ calcGaussianS<-function(mSet, object, useNoise, BPPARAM = bpparam()){
       gaussian.peak.ratio <- nrow(z[corr >= 0.9, , drop = FALSE])/nrow(z)
       return(gaussian.peak.ratio)
     }
+    
     res <- lapply(peakmat_set, extFUN, object = object, 
                   useNoise = useNoise)
     res <- unlist(res)
@@ -1247,6 +1373,84 @@ calcGaussianS<-function(mSet, object, useNoise, BPPARAM = bpparam()){
   })))
   
 }
+
+SSgaussStats <- function(ints){
+
+  .GlobalEnv$SSgauss <- SSgauss;
+  fit <- try(nls(y ~ SSgauss(x, mu, sigma, h), 
+                 data.frame(x = 1:length(ints), y = ints)), 
+             silent = TRUE)
+  
+  return(fit)
+}
+
+extFUN <- function(z, object, useNoise) {
+  
+  if (nrow(z) > 150) {
+    z <- z[sort(sample(1:nrow(z), 150)), ]
+  }
+  currentSample <- suppressMessages(MSnbase::filterRt(MSnbase::filterFile(object, 
+                                                                          z[1, "sample"]), 
+                                                      rt = range(z[, c("rtmin", "rtmax")])))
+  
+  corr <- unlist(sapply(seq_len(nrow(z)), FUN = function(i) {
+    
+    corr <- 0.1;
+    mzRange <- z[i, c("mzmin", "mzmax")] + c(-0.001, 0.001);
+    rtRange <- z[i, c("rtmin", "rtmax")];
+    
+    ints <- try(MSnbase::intensity(MSnbase::filterMz(MSnbase::filterRt(currentSample,
+                                                                       rtRange),
+                                                     mzRange)), silent = TRUE)
+    
+    if(class(ints) == "try-error"){
+      return(corr);
+    }
+    
+    ints[lengths(ints) == 0] <- 0
+    ints <- as.integer(unlist(ints))
+    ints <- ints[!is.na(ints)]
+    ints <- ints[ints > useNoise]
+    if (length(ints)) {
+      ints <- ints - min(ints)
+      # if (max(ints) > 0)
+      #   ints <- ints/max(ints)
+      
+      fit <- SSgaussStats(ints);
+      
+      if (class(fit) == "try-error") { # Still error - record error !
+        write.table(paste0(fit[[1]],Sys.time()), file = "error_report.txt",append = T,eol = "\n");
+        corr <- 0.1;
+      } else {
+        if (sum(!is.na(ints - fitted(fit))) > 4 && 
+            sum(!is.na(unique(ints))) > 4 && sum(!is.na(unique(fitted(fit)))) > 
+            4) {
+          
+          cor <- NULL;
+          options(show.error.messages = FALSE);
+          cor <- try(cor.test(ints, fitted(fit), 
+                              method = "pearson", use = "complete"));
+          options(show.error.messages = TRUE);
+          
+          if (!is.null(cor) && cor$p.value <= 0.05) {
+            corr <- cor$estimate
+          }
+          else if (!is.null(cor) && cor$p.value > 
+                   0.05) {
+            corr <- cor$estimate * 0.85 # Give a penalty on that!
+          }
+        }
+        else {
+          corr <- 0.1
+        }
+      }
+    }
+    return(corr)
+  }))
+  gaussian.peak.ratio <- nrow(z[corr >= 0.9, , drop = FALSE])/nrow(z)
+  return(gaussian.peak.ratio)
+}
+
 
 #' @title Identify whether results improved or not
 #' @param history List, an interal media objects used to save the optimization results of peaks.

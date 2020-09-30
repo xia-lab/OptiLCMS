@@ -3152,7 +3152,6 @@ na.flatfill <- function(x) {
     x[(realloc[length(realloc)]+1):length(x)] <- x[realloc[length(realloc)]]
   x
 }
-
 SSgauss <- selfStart(~ h*exp(-(x-mu)^2/(2*sigma^2)), function(mCall, data, LHS) {
   
   xy <- sortedXyData(mCall[["x"]], LHS, data);
