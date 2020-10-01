@@ -52,15 +52,28 @@ PerformROIExtraction <-
            rmConts = TRUE,
            plot = T,
            running.controller = NULL) {
-    if (!dir.exists(datapath)) {
-      datapath <- "upload/"
-    }
     
-    datapath <- tools::file_path_as_absolute(datapath);
-    
-    if (!dir.exists(datapath)) {
-      datapath <- "/home/glassfish/projects/MetaboDemoRawData/upload/QC/"
+    if(!.on.public.web){
+      #Local R package running
+      if (!dir.exists(datapath)) {
+        stop("The directory you specify does not exist ! Please check datapath !");
+      } else {
+        datapath <- tools::file_path_as_absolute(datapath);
+      }
+      
+    } else {
+      # code for web version
+      if (!dir.exists(datapath)) {
+        datapath <- "upload/";
+      }
+      
+      if (!dir.exists(datapath)) {
+        datapath <- "/home/glassfish/projects/MetaboDemoRawData/upload/QC/";
+      }
+      
+      datapath <- tools::file_path_as_absolute(datapath);
     }
+
     MessageOutput(
       "Step 0/6: Scanning ROIs for parameters optimization...",
       ecol = "\n",
@@ -95,11 +108,12 @@ PerformROIExtraction <-
       #Select first at least 2 QC data for optimization
       
       if (.on.public.web) {
+        #TODO: need to configure with the online pipeline
         dda_file <- list.files(datapath, recursive = T, full.names = TRUE);
         
         if (basename(datapath) == "QC") {
           QC_uploaded_list <- basename(dda_file);
-          QC_index <- QC_uploaded_list %in% rawfilenms;
+          QC_index <- QC_uploaded_list %in% rawfilenms; #TODO: need to deal with the included files by using mSet@rawfiles;
           QC_count <- length(which(QC_index));
           
           if (QC_count > 1) {
@@ -205,6 +219,7 @@ PerformROIExtraction <-
         }
         
       } else {
+        
         dda_file1 <- list.files(datapath,
                                 recursive = T,
                                 full.names = T)
@@ -253,14 +268,16 @@ PerformROIExtraction <-
             FUN = function(x) {
               unlockBinding(sym = x, env = raw_data@assayData)
             }
-          )))
+          )));
+        
         ms_list <-
           sapply(
             ls(raw_data@assayData),
             FUN = function(x)
               raw_data@assayData[[x]]@mz
-          )
-        MessageOutput("Empty Scan detecting...","\n",NULL)
+          );
+        
+        MessageOutput("Empty Scan detecting...", "\n", NULL)
         emptyScan <- vector()
         
         for (i in 1:length(ms_list)) {

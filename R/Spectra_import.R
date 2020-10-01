@@ -64,12 +64,18 @@ ImportRawMSData <-
            plotSettings,
            running.controller = NULL) {
     
-    foldername <- tools::file_path_as_absolute(foldername);
-    
-    # if(.on.public.web){
-    #   load_msnbase();
-    # } 
-    # 
+    if (!dir.exists(foldername) & .on.public.web) {
+      foldername <- "/home/glassfish/projects/MetaboDemoRawData/upload"
+    } else if(!dir.exists(foldername)){
+      folderPath <- paste0(getwd(),foldername);
+    } else if(dir.exists(foldername)){
+      folderPath <- foldername;
+    } else {
+      stop("Wrong folername has been provided ! Please check !")
+    }
+
+    foldername <- tools::file_path_as_absolute(folderPath);
+
     if(missing(mSet)){
       mSet <- new("mSet")
     } else if(is.null(mSet)){
@@ -90,11 +96,7 @@ ImportRawMSData <-
     }
     
     .optimize_switch <<- FALSE;
-    
-    if (!dir.exists(foldername) & .on.public.web) {
-      foldername <- "/home/glassfish/projects/MetaboDemoRawData/upload"
-    }
-    
+
     start.time <- Sys.time()
     msg.vec <<- vector(mode = "character")
     msg <- c("The uploaded files are raw MS spectra.")
