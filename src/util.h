@@ -34,3 +34,10 @@ SEXP DoubleMatrix(SEXP nrow, SEXP ncol);
 SEXP IntegerMatrix(SEXP nrow, SEXP ncol);
 
 SEXP LogicalMatrix(SEXP nrow, SEXP ncol);
+
+void continuousPtsAboveThreshold(double *x, int *istart, int *numin, double *threshold, int *num, int *n);
+
+void continuousPtsAboveThresholdIdx(double *x, int *istart, int *numin, double *threshold, int *num, int *n);
+
+void FindEqualGreaterUnsorted(const double *in, const int *size, const double *target,
+                              int *index);
