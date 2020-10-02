@@ -785,7 +785,7 @@ Statistic_doe <-function(object, object_mslevel, isotopeIdentification,
   print(paste0("********#########********** ", mSet_OPT$PPS$GaussianSI, " ***************************"))
   print(paste0("********#########*******2## ", calcGaussianS(mSet, object, useNoise = useNoise), " ***************************"))
   
-  save(mSet_OPT, file = paste0("mSet_",Sys.time(),"_780.rda"));
+  #save(mSet_OPT, file = paste0("mSet_",Sys.time(),"_780.rda"));
   ## Normalize the CV, RCS, GS, GaussianSI
   normalized.CV<-(mSet_OPT$PPS$CV-min(index.set$CV))/(max(index.set$CV)-min(index.set$CV));
   normalized.RCS<-(mSet_OPT$PPS$RCS-min(index.set$RCS))/(max(index.set$RCS)-min(index.set$RCS));
