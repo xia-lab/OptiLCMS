@@ -2,7 +2,7 @@ MQOBJECTS=massifquant/xcms_massifquant.o massifquant/TrMgr.o massifquant/Tracker
 
 OBIOBJECTS=obiwarp/mat.o obiwarp/vec.o obiwarp/xcms_dynprog.o obiwarp/xcms_lmat.o xcms_obiwarp.o
 
-XCMSOBJECTS=mzROI.o util.o xcms_binners.o util.o
+XCMSOBJECTS=mzROI.o util.o xcms_binners.o
 
 INITOBJECT=init.o
 
@@ -10,13 +10,6 @@ OBJECTS= $(MQOBJECTS) $(OBIOBJECTS) $(XCMSOBJECTS) $(BATCHOBJECTS) $(INITOBJECT)
 
 
 all: $(SHLIB)
-
-# Hack found at
-# http://r.789695.n4.nabble.com/suppressing-quot-global-quot-cppflags-in-an-individual-package-td910894.html
-MINGWBUILDBROKENWITHOPTIMIZATION2FLAGS=-fno-inline
-
-%.o: %.c
-	$(CC) $(ALL_CPPFLAGS) $(ALL_CFLAGS) $(MINGWBUILDBROKENWITHOPTIMIZATION2FLAGS) -c $< -o $@
 
 clean:
 	rm -f $(OBJECTS)
