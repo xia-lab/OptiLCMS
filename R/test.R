@@ -58,6 +58,7 @@
 # 
 # data_folder_Sample <- "~/Data_IBD"
 # data_folder_QC <- "~/Data_IBD/QC"
+# library(googledrive)
 # temp <- tempfile(fileext = ".zip")
 # #example code: https://drive.google.com/file/d/1CjEPed1WZrwd5T3Ovuic1KVF-Uz13NjO/view?usp=sharing
 # dl <- drive_download(as_id("1CjEPed1WZrwd5T3Ovuic1KVF-Uz13NjO"), path = temp, overwrite = TRUE)

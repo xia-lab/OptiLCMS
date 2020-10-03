@@ -1,160 +1,3 @@
-#' Set class information for MS data
-#' @description This function sets the class information
-#' for preprocessing MS data.
-#' @param class class/group of samples.
-#' @author Jasmine Chong \email{jasmine.chong@mail.mcgill.ca},
-#' Mai Yamamoto \email{yamamoto.mai@mail.mcgill.ca}, and Jeff Xia \email{jeff.xia@mcgill.ca}
-#' McGill University, Canada
-#' License: GNU GPL (>= 2)
-SetClass <- function(class) {
-  groupInfo <<- class
-}
-
-#' featureSUM
-#'
-#' @param MS_group MS_group
-#' @param frtr frtr
-#' @import scales
-featureSUM <- function(MS_group, frtr) {
-  # sanity check
-  if (identical(MS_group, list())) {
-    rts <- quantile(frtr)
-    res <- data.frame(rts[1], 0)
-    res[2, ] <- c(rts[2], 0.5)
-    res[3, ] <- c(rts[3], 1)
-    res[4, ] <- c(rts[4], 0.5)
-    res[5, ] <- c(rts[5], 0)
-    colnames(res) <- c("RT_mean", "Inten_mean")
-    
-    return(res)
-  }
-  
-  # summarize intensity and RT
-  inten_sum <-
-    sapply(
-      MS_group,
-      FUN = function(x) {
-        sum(x@intensity, na.rm = T)
-      }
-    )
-  
-  inten_sum[(inten_sum == 0)] <- 1
-  
-  rt_min_sum <- sapply(
-    MS_group,
-    FUN = function(x) {
-      min(x@rtime)
-    }
-  )
-  
-  rt_max_sum <- sapply(
-    MS_group,
-    FUN = function(x) {
-      max(x@rtime)
-    }
-  )
-  
-  scan_sum <- sapply(
-    MS_group,
-    FUN = function(x) {
-      length(x@rtime)
-    }
-  )
-  
-  # correct RT
-  rt_min_corrected <- sum(rt_min_sum * inten_sum) / sum(inten_sum)
-  rt_max_corrected <- sum(rt_max_sum * inten_sum) / sum(inten_sum)
-  rt_range_cor <- abs(rt_max_corrected - rt_min_corrected)
-
-  if(.on.public.web){
-    load_scales()
-  }
-  
-  MS_group <-
-    sapply(
-      MS_group,
-      FUN = function(x, rt_min_corrected, rt_max_corrected) {
-        x@rtime <- rescale(x@rtime, c(rt_min_corrected, rt_max_corrected))
-        
-        return(x)
-      },
-      rt_min_corrected = rt_min_corrected,
-      rt_max_corrected = rt_max_corrected
-    )
-  
-  # extract information
-  df <- data.frame()
-  
-  for (u in 1:length(MS_group)) {
-    ddf <- data.frame(MS_group[[u]]@rtime, MS_group[[u]]@intensity)
-    df <- rbind(df, ddf)
-  }
-  
-  df[is.na(df)] <- 0
-  colnames(df) <- c("rt", "intensity")
-  df <- df[order(df$rt),]
-  res <- data.frame()
-  
-  # bin all scans
-  binsize <-
-    rt_range_cor / (max(scan_sum) - 1) - 0.001
-  # Avoid the boundary effect by minus 0.001
-  rt_now <- rt_min_corrected + binsize
-  
-  if (length(MS_group) > 1) {
-    while (rt_now < rt_max_corrected + binsize) {
-      Inten_mean <-
-        mean(df[df$rt <= rt_now & df$rt >= (rt_now - binsize), 2])
-      
-      RT_mean <-
-        mean(df[df$rt < rt_now & df$rt >= (rt_now - binsize), 1])
-      res <- rbind(res, data.frame(RT_mean, Inten_mean))
-      rt_now <- rt_now + binsize
-    }
-    
-  } else {
-    # if only one sample, use it diresctly
-    res <- df
-    rownames(res) <- NULL
-  }
-  
-  colnames(res) <- c("RT_mean", "Inten_mean")
-  # remove the empty bin
-  if (any(is.nan(res$RT_mean) | is.nan(res$Inten_mean))) {
-    res <- res[-which(is.nan(res$RT_mean) | is.nan(res$Inten_mean)),]
-  }
-  
-  # manually add 2 empty points before and after the range
-  res[nrow(res) + 1, ] <- c(min(res$RT_mean) - binsize, 0)
-  res[nrow(res) + 1, ] <- c(min(res$RT_mean) - 2 * binsize, 0)
-  res[nrow(res) + 1, ] <- c(max(res$RT_mean) + binsize, 0)
-  res[nrow(res) + 1, ] <- c(max(res$RT_mean) + 2 * binsize, 0)
-  
-  return(res)
-}
-
-peakTableSUM <- function(peak_table) {
-  max_peaks <- vector()
-  
-  if (length(unique(peak_table[, ncol(peak_table)])) != length(peak_table[, ncol(peak_table)])) {
-    for (i in unique(peak_table[, ncol(peak_table)])) {
-      tmp_table <- peak_table[peak_table[, ncol(peak_table)] == i, ]
-      
-      if (!is.null(nrow(tmp_table))) {
-        max_peaks <-
-          c(max_peaks, names(which.max(tmp_table[, which(colnames(tmp_table) == "into")])))
-      } else {
-        max_peaks <-
-          c(max_peaks, names(which(peak_table[, ncol(peak_table)] == i)))
-      }
-    }
-    
-    return(peak_table[max_peaks, ])
-  } else {
-    return(peak_table)
-  }
-}
-
 #' Perform peak profiling
 #' This function performs feature extraction of user's raw MS data using
 #' the rawData object created using the ImportRawMSData function.
@@ -568,6 +411,7 @@ SetAnnotationParam <-
 #' "CAMERA: an integrated strategy for compound spectra extraction and annotation of
 #' liquid chromatography/mass spectrometry data sets." Analytical Chemistry, 84, 283-289.
 #' http://pubs.acs.org/doi/abs/10.1021/ac202450g.
+#' @example # Raw Spectra Import, Peak Profiling has to be performed first.
 PerformPeakAnnotation <-
   function(mSet,
            annotaParam,
@@ -1722,6 +1566,163 @@ GeneratePeakList <- function(userPath) {
   )
   
   return (nrow(ann_data))
+}
+
+#' Set class information for MS data
+#' @description This function sets the class information
+#' for preprocessing MS data.
+#' @param class class/group of samples.
+#' @author Jasmine Chong \email{jasmine.chong@mail.mcgill.ca},
+#' Mai Yamamoto \email{yamamoto.mai@mail.mcgill.ca}, and Jeff Xia \email{jeff.xia@mcgill.ca}
+#' McGill University, Canada
+#' License: GNU GPL (>= 2)
+SetClass <- function(class) {
+  groupInfo <<- class
+}
+
+#' featureSUM
+#'
+#' @param MS_group MS_group
+#' @param frtr frtr
+#' @import scales
+featureSUM <- function(MS_group, frtr) {
+  # sanity check
+  if (identical(MS_group, list())) {
+    rts <- quantile(frtr)
+    res <- data.frame(rts[1], 0)
+    res[2, ] <- c(rts[2], 0.5)
+    res[3, ] <- c(rts[3], 1)
+    res[4, ] <- c(rts[4], 0.5)
+    res[5, ] <- c(rts[5], 0)
+    colnames(res) <- c("RT_mean", "Inten_mean")
+    
+    return(res)
+  }
+  
+  # summarize intensity and RT
+  inten_sum <-
+    sapply(
+      MS_group,
+      FUN = function(x) {
+        sum(x@intensity, na.rm = T)
+      }
+    )
+  
+  inten_sum[(inten_sum == 0)] <- 1
+  
+  rt_min_sum <- sapply(
+    MS_group,
+    FUN = function(x) {
+      min(x@rtime)
+    }
+  )
+  
+  rt_max_sum <- sapply(
+    MS_group,
+    FUN = function(x) {
+      max(x@rtime)
+    }
+  )
+  
+  scan_sum <- sapply(
+    MS_group,
+    FUN = function(x) {
+      length(x@rtime)
+    }
+  )
+  
+  # correct RT
+  rt_min_corrected <- sum(rt_min_sum * inten_sum) / sum(inten_sum)
+  rt_max_corrected <- sum(rt_max_sum * inten_sum) / sum(inten_sum)
+  rt_range_cor <- abs(rt_max_corrected - rt_min_corrected)
+  
+  if(.on.public.web){
+    load_scales()
+  }
+  
+  MS_group <-
+    sapply(
+      MS_group,
+      FUN = function(x, rt_min_corrected, rt_max_corrected) {
+        x@rtime <- rescale(x@rtime, c(rt_min_corrected, rt_max_corrected))
+        
+        return(x)
+      },
+      rt_min_corrected = rt_min_corrected,
+      rt_max_corrected = rt_max_corrected
+    )
+  
+  # extract information
+  df <- data.frame()
+  
+  for (u in 1:length(MS_group)) {
+    ddf <- data.frame(MS_group[[u]]@rtime, MS_group[[u]]@intensity)
+    df <- rbind(df, ddf)
+  }
+  
+  df[is.na(df)] <- 0
+  colnames(df) <- c("rt", "intensity")
+  df <- df[order(df$rt),]
+  res <- data.frame()
+  
+  # bin all scans
+  binsize <-
+    rt_range_cor / (max(scan_sum) - 1) - 0.001
+  # Avoid the boundary effect by minus 0.001
+  rt_now <- rt_min_corrected + binsize
+  
+  if (length(MS_group) > 1) {
+    while (rt_now < rt_max_corrected + binsize) {
+      Inten_mean <-
+        mean(df[df$rt <= rt_now & df$rt >= (rt_now - binsize), 2])
+      
+      RT_mean <-
+        mean(df[df$rt < rt_now & df$rt >= (rt_now - binsize), 1])
+      res <- rbind(res, data.frame(RT_mean, Inten_mean))
+      rt_now <- rt_now + binsize
+    }
+    
+  } else {
+    # if only one sample, use it diresctly
+    res <- df
+    rownames(res) <- NULL
+  }
+  
+  colnames(res) <- c("RT_mean", "Inten_mean")
+  # remove the empty bin
+  if (any(is.nan(res$RT_mean) | is.nan(res$Inten_mean))) {
+    res <- res[-which(is.nan(res$RT_mean) | is.nan(res$Inten_mean)),]
+  }
+  
+  # manually add 2 empty points before and after the range
+  res[nrow(res) + 1, ] <- c(min(res$RT_mean) - binsize, 0)
+  res[nrow(res) + 1, ] <- c(min(res$RT_mean) - 2 * binsize, 0)
+  res[nrow(res) + 1, ] <- c(max(res$RT_mean) + binsize, 0)
+  res[nrow(res) + 1, ] <- c(max(res$RT_mean) + 2 * binsize, 0)
+  
+  return(res)
+}
+
+peakTableSUM <- function(peak_table) {
+  max_peaks <- vector()
+  
+  if (length(unique(peak_table[, ncol(peak_table)])) != length(peak_table[, ncol(peak_table)])) {
+    for (i in unique(peak_table[, ncol(peak_table)])) {
+      tmp_table <- peak_table[peak_table[, ncol(peak_table)] == i, ]
+      
+      if (!is.null(nrow(tmp_table))) {
+        max_peaks <-
+          c(max_peaks, names(which.max(tmp_table[, which(colnames(tmp_table) == "into")])))
+      } else {
+        max_peaks <-
+          c(max_peaks, names(which(peak_table[, ncol(peak_table)] == i)))
+      }
+    }
+    
+    return(peak_table[max_peaks, ])
+  } else {
+    return(peak_table)
+  }
 }
 
 #' Verify the data is centroid or not

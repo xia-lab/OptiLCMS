@@ -1,4 +1,3 @@
-
 # Content of this script
 
 # 1. raw data function - xcms 
@@ -23,6 +22,14 @@ PerformPeakPicking<-function(mSet, BPPARAM = bpparam()){
   
   object <- mSet@rawOnDisk;
   param <- mSet@params;
+  
+  if(length(object) == 0){
+    if(.on.public.web){
+      MessageOutput("ERROR: No MS data imported, please import the MS data with 'ImportRawMSData' first !", NULL, NULL)
+    } else {
+      stop("No MS data Imported, please import the MS data with 'ImportRawMSData' first !")
+    }
+  }
   
   object_mslevel <- MSnbase::filterMsLevel(
     MSnbase::selectFeatureData(object,
@@ -1045,15 +1052,25 @@ PeakPicking_MatchedFilter_slave <- function(x,param){
 #'
 PerformPeakGrouping<-function(mSet){
   
-  if(.on.public.web){
-    dyn.load(.getDynLoadPath());
-  }
+  # if(.on.public.web){
+  #   dyn.load(.getDynLoadPath());
+  # }
   
   param <- mSet@params;
   
   ## 1. Extract Information-------
   if(length(mSet@peakRTcorrection)==0){
-    peaks_0 <- mSet@peakpicking$chromPeaks;
+    
+    if(length(mSet@peakpicking) == 0){
+      if(.on.public.web){
+        MessageOutput("ERROR: No Chromatographic peaks detected, please \"PerformPeakPicking\" first !", NULL, NULL)
+      } else {
+        stop("No Chromatographic peaks detected, please \"PerformPeakPicking\" first !")
+      }
+    } else {
+      peaks_0 <- mSet@peakpicking$chromPeaks;
+    }
+    
   } else {
     peaks_0 <- mSet@peakRTcorrection$chromPeaks;
   }
@@ -1236,9 +1253,28 @@ PerformPeakAlignment<-function(mSet){
 PerformRTcorrection <- function(mSet){
   
   ## 5. Adjust Retention Time-------
+  # 
+  # if(.on.public.web){
+  #   dyn.load(.getDynLoadPath());
+  # }
+  # 
   
-  if(.on.public.web){
-    dyn.load(.getDynLoadPath());
+  #TODO: add a function to verify the param in mSet
+  
+  if(length(mSet@rawOnDisk) == 0 & length(mSet@rawInMemory) == 0){
+    if(.on.public.web){
+      MessageOutput("ERROR: No MS data imported, please import the MS data with 'ImportRawMSData' first !", NULL, NULL)
+    } else {
+      stop("No MS data Imported, please import the MS data with 'ImportRawMSData' first !")
+    }
+  }
+  
+  if(length(mSet@peakgrouping) == 0){
+    if(.on.public.web){
+      MessageOutput("ERROR: No grouped peaks found, please \"PerformPeakGrouping\" first !", NULL, NULL)
+    } else {
+      stop("No grouped peaks found, please \"PerformPeakGrouping\" first !")
+    }
   }
   
   param <- mSet@params;
@@ -1556,7 +1592,7 @@ adjustRtime_peakGroup <- function(mSet, param, msLevel = 1L) {
   
   subset_names <- original_names <- mSet@peakpicking$chromPeakData@rownames;
   n <- length(mSet@peakgrouping);
-  pidx <- mSet@peakgrouping[[n]]$peakidx;
+  pidx <- mSet@peakgrouping[[n]]$peakidx; # RT correction based on latest grouping results
   
   mSet@peakgrouping[[n]]$peakidx <- lapply(pidx, function(z) {
     idx <- base::match(original_names[z], subset_names)
@@ -2026,6 +2062,7 @@ PerformPeakFiling <- function(mSet,BPPARAM=bpparam()){
   fixedRt <- fixedMz <- expandRt <- expandMz <- 0
   
   if (is.null(param$ppm)){
+    warning("No ppm detected, will use ppm = 10 instead for peak filling !")
     ppm <-10
   } else {
     ppm <- param$ppm;
@@ -2038,10 +2075,19 @@ PerformPeakFiling <- function(mSet,BPPARAM=bpparam()){
   aggFunLow <- median
   aggFunHigh <- median;
   
+  if(length(mSet@peakRTcorrection) == 0){
+    if(.on.public.web){
+      MessageOutput("ERROR: No Retention Time Correction results found. Please \"PerformRTcorrection\" or \"PerformPeakAlignment\" first !");
+      stop();
+    } else {
+      stop("No Retention Time Correction results found. Please \"PerformRTcorrection\" or \"PerformPeakAlignment\" first !")
+    }
+  }
+  
   ngroup <- length(mSet@peakgrouping);
   #tmp_pks <- mSet$msFeatureData$chromPeaks[, c("rtmin", "rtmax", "mzmin", "mzmax")];
   tmp_pks <- mSet@peakRTcorrection$chromPeaks[, c("rtmin", "rtmax", "mzmin", "mzmax")];
-  fdef <- mSet@peakgrouping[[ngroup]]
+  fdef <- mSet@peakgrouping[[ngroup]];
   
   pkArea <- do.call(rbind,lapply(fdef$peakidx, function(z) {
     pa <- c(aggFunLow(tmp_pks[z, 1]),
