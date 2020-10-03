@@ -1308,62 +1308,7 @@ calcGaussianS <-function(mSet, object, useNoise, BPPARAM = bpparam()){
     
   }
   if (.Platform$OS.type == "windows") {
-    
-    extFUN <- function(z, object, useNoise) {
-      if (nrow(z) > 150) {
-        z <- z[sort(sample(1:nrow(z), 150)), ]
-      }
-      currentSample <- suppressMessages(MSnbase::filterRt(MSnbase::filterFile(object, 
-                                                                              z[1, "sample"]), rt = range(z[, c("rtmin", "rtmax")])))
-      corr <- unlist(sapply(seq_len(nrow(z)), FUN = function(i) {
-        corr <- 0.1
-        mzRange <- z[i, c("mzmin", "mzmax")] + c(-0.001, 
-                                                 0.001)
-        rtRange <- z[i, c("rtmin", "rtmax")]
-        suppressWarnings(ints <- MSnbase::intensity(MSnbase::filterMz(MSnbase::filterRt(currentSample, 
-                                                                                        rtRange), mzRange)))
-        ints[lengths(ints) == 0] <- 0
-        ints <- as.integer(unlist(ints))
-        ints <- ints[!is.na(ints)]
-        ints <- ints[ints > useNoise]
-        if (length(ints)) {
-          ints <- ints - min(ints)
-          if (max(ints) > 0) 
-            ints <- ints/max(ints)
-          fit <- try(nls(y ~ SSgauss(x, mu, sigma, h), 
-                         data.frame(x = 1:length(ints), y = ints)), 
-                     silent = TRUE)
-          if (class(fit) == "try-error") {
-            corr <- 0.1
-          }
-          else {
-            if (sum(!is.na(ints - fitted(fit))) > 4 && 
-                sum(!is.na(unique(ints))) > 4 && sum(!is.na(unique(fitted(fit)))) > 
-                4) {
-              cor <- NULL
-              options(show.error.messages = FALSE)
-              cor <- try(cor.test(ints, fitted(fit), 
-                                  method = "pearson", use = "complete"))
-              options(show.error.messages = TRUE)
-              if (!is.null(cor) && cor$p.value <= 0.05) {
-                corr <- cor$estimate
-              }
-              else if (!is.null(cor) && cor$p.value > 
-                       0.05) {
-                corr <- cor$estimate * 0.85
-              }
-            }
-            else {
-              corr <- 0.1
-            }
-          }
-        }
-        return(corr)
-      }))
-      gaussian.peak.ratio <- nrow(z[corr >= 0.9, , drop = FALSE])/nrow(z)
-      return(gaussian.peak.ratio)
-    }
-    
+
     res <- lapply(peakmat_set, extFUN, object = object, 
                   useNoise = useNoise)
     res <- unlist(res)

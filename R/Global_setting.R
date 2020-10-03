@@ -81,9 +81,7 @@ suppressGlobalBindingNotes(
                            "getEIC",
                            "getMZ",
                            "weighted.mean"
-                           
-                           
-)
+                           )
 
 # Used to defined the parallel namespace for parameters optimization
 .optimize_function_list <- c(list("PeakPicking_prep",
@@ -116,7 +114,9 @@ suppressGlobalBindingNotes(
                                  "decodeAll",
                                  "encode",
                                  "attachList",
-                                 "checkParams"),
+                                 "checkParams",
+                                 ".optimize_switch"
+                                 ),
                             .peak_function_list)
 
 # ####Scheduler - outdated functions

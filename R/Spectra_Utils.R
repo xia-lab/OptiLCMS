@@ -35,6 +35,9 @@ PerformPeakPicking<-function(mSet, BPPARAM = bpparam()){
                            FUN = filterFile,
                            object = object_mslevel)
   
+  
+  param$.optimize_switch <- .optimize_switch;
+  
   # Peak picking runnning - centWave mode
   if (param$Peak_method == "centWave")
     resList <- bplapply(object_mslevel,
@@ -106,7 +109,16 @@ PerformPeakPicking<-function(mSet, BPPARAM = bpparam()){
 #' @references Smith, C.A. et al. 2006. {Analytical Chemistry}, 78, 779-787
 #'
 PeakPicking_centWave_slave <- function(x, param){
-
+  
+  if(!exists(".optimize_switch")){
+    if(!is.null(param$.optimize_switch)){
+      .optimize_switch <- param$.optimize_switch;
+    } else {
+      .optimize_switch <- TRUE;
+    }
+   
+  }
+ 
   if(.on.public.web){
     dyn.load(.getDynLoadPath());
   }
@@ -182,7 +194,6 @@ PeakPicking_centWave_slave <- function(x, param){
     scales <- scalerange
   }
   
-  
   minPeakWidth <-  scales[1]
   noiserange <- c(minPeakWidth * 3, max(scales) * 3)
   maxGaussOverlap <- 0.5
@@ -190,7 +201,7 @@ PeakPicking_centWave_slave <- function(x, param){
   minCentroids <- minPtsAboveBaseLine
   scRangeTol <-  maxDescOutlier <- floor(minPeakWidth / 2)
   scanrange <- c(1, length(scantime))
-  
+
   ## If no ROIs are supplied then search for them.
   roiList <- list()
   if (length(roiList) == 0) {
