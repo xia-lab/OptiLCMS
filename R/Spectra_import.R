@@ -78,7 +78,8 @@ InitDataObjects <- function(data.type, anal.type, paired=FALSE){
 #' ## Perform the optimization
 #' # best_parameters <- PerformParamsOptimization(mSet = mSet, SetPeakParam(), ncore = 4);
 #' ## Perform data import of all samples
-#' # mSet <- ImportRawMSData(mSet = mSet, foldername = data_folder_Sample, plotSettings = SetPlotParam(Plot=T));
+#' # mSet <- ImportRawMSData(mSet = mSet, foldername = data_folder_Sample, 
+#' #                         plotSettings = SetPlotParam(Plot=T));
 #' ## Perform peak profiling
 #' # mSet <- PerformPeakProfiling(mSet = mSet, Params = param, plotSettings = SetPlotParam(Plot=T));
 #' ## Set annotation parameters
@@ -86,26 +87,57 @@ InitDataObjects <- function(data.type, anal.type, paired=FALSE){
 #' ## Perform peak annotation
 #' # mSet <- PerformPeakAnnotation(mSet = mSet, annotaParam = annParams, ncore =1);
 #' ## Format the peak table
-#' # maPeaks <- FormatPeakList(mSet = mSet, annParams, filtIso =F, filtAdducts = FALSE,missPercent = 1);
+#' # maPeaks <- FormatPeakList(mSet = mSet, annParams, filtIso =F, 
+#' #                           filtAdducts = FALSE, missPercent = 1);
 #' 
 #' #### Running as resumable procedure: seamless pipeline
+#' ## load googledrive package to download example data
+#' # library("googledrive");
+#'
+#' # Set data folder
+#' # data_folder_Sample <- "~/Data_IBD";
+#' # temp <- tempfile(fileext = ".zip");
+#'
+#' # Please authorize the package to download the data from web
+#' # dl <- drive_download(as_id("1CjEPed1WZrwd5T3Ovuic1KVF-Uz13NjO"), path = temp, overwrite = TRUE);
+#' # out <- unzip(temp, exdir = data_folder_Sample);
+#' # out;
+# 
+#' #### Running as resumable procedure: seamless pipeline
 #' ## Initialize running plan
-#' plan <- InitializaPlan("raw_opt","~/Data_IBD/")
+#' # plan <- InitializaPlan("raw_opt","~/Data_IBD/")
 #' ## define/set running plan
-#' plan <- running.plan(plan,
-#'                      data_folder_QC <- data_folder_QC,
-#'                      mSet <- PerformROIExtraction(datapath = data_folder_QC, rt.idx = 0.95, plot = F, rmConts = F, running.controller = rc),
-#'                      param_initial <- SetPeakParam(),
-#'                      best_parameters <- PerformParamsOptimization(mSet = mSet, param_initial, ncore = 2, running.controller = rc),
-#'                      data_folder_Sample <- '',
-#'                      param <- best_parameters,
-#'                      plotSettings1 <- SetPlotParam(Plot=T),
-#'                      plotSettings2 <- SetPlotParam(Plot=T),
-#'                      mSet <- ImportRawMSData(mSet = mSet, foldername = data_folder_Sample, plotSettings = plotSettings1, running.controller = rc),
-#'                      mSet <- PerformPeakProfiling(mSet = mSet, Params = param, plotSettings = plotSettings2, running.controller = rc),
-#'                      annParams <- SetAnnotationParam(polarity = 'negative', mz_abs_add = 0.025),
-#'                      mSet <- PerformPeakAnnotation(mSet = mSet, annotaParam = annParams, ncore =1, running.controller = rc),
-#'                      maPeaks <- FormatPeakList(mSet = mSet, annParams, filtIso =F, filtAdducts = FALSE,missPercent = 1));
+#' # plan <- running.plan(plan,
+#' #                      data_folder_QC <- "~/Data_IBD/QC",
+#' #                      mSet <- PerformROIExtraction(datapath = data_folder_QC, 
+#' #                                                   rt.idx = 0.95, plot = F, 
+#' #                                                   rmConts = F, 
+#' #                                                   running.controller = rc),
+#' #                      param_initial <- SetPeakParam(),
+#' #                      best_parameters <- PerformParamsOptimization(mSet = mSet, 
+#' #                                                   param_initial, ncore = 2, 
+#' #                                                   running.controller = rc),
+#' #                      data_folder_Sample <- '',
+#' #                      param <- best_parameters,
+#' #                      plotSettings1 <- SetPlotParam(Plot=T),
+#' #                      plotSettings2 <- SetPlotParam(Plot=T),
+#' #                      mSet <- ImportRawMSData(mSet = mSet, 
+#' #                                              foldername = data_folder_Sample, 
+#' #                                              plotSettings = plotSettings1, 
+#' #                                              running.controller = rc),
+#' #                      mSet <- PerformPeakProfiling(mSet = mSet, 
+#' #                                              Params = param, 
+#' #                                              plotSettings = plotSettings2, 
+#' #                                              running.controller = rc),
+#' #                      annParams <- SetAnnotationParam(polarity = 'negative', 
+#' #                                              mz_abs_add = 0.025),
+#' #                      mSet <- PerformPeakAnnotation(mSet = mSet, 
+#' #                                              annotaParam = annParams, 
+#' #                                              ncore =1, 
+#' #                                              running.controller = rc),
+#' #                      maPeaks <- FormatPeakList(mSet = mSet, annParams, filtIso =F, 
+#' #                                              filtAdducts = FALSE ,
+#' #                                              missPercent = 1));
 #' ## Execute the defined plan
 #' # ExecutePlan(plan)
 
@@ -936,7 +968,8 @@ read.OnDiskMS.data <- function(files,
 #' # library(OptiLCMS);
 #' # mSet<-InitDataObjects("spec", "raw", FALSE);
 #' ## include only two samples CD_SM-77FXR.mzML and CD_SM-6KUCT.mzML for data import.
-#' # mSet<-UpdateRawfiles(mSet, c("Raw_data_example/CD/CD_SM-77FXR.mzML", "Raw_data_example/CD/CD_SM-6KUCT.mzML"))
+#' # mSet<-UpdateRawfiles(mSet, c("Raw_data_example/CD/CD_SM-77FXR.mzML", 
+#' #                      "Raw_data_example/CD/CD_SM-6KUCT.mzML"))
 
 UpdateRawfiles <- function(mSet, filesIncluded = NULL){
   

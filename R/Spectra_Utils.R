@@ -138,9 +138,9 @@ PeakPicking_centWave_slave <- function(x, param){
    
   }
  
-  if(.on.public.web){
-    dyn.load(.getDynLoadPath());
-  }
+  # if(.on.public.web){
+  #   dyn.load(.getDynLoadPath());
+  # }
   # load necessary C code for data processing
   # for raw data processing
   if (class(x)=="OnDiskMSnExp"){ 
@@ -671,9 +671,9 @@ PeakPicking_centWave_slave <- function(x, param){
 #'
 PeakPicking_Massifquant_slave <- function(x, param){
   
-  if(.on.public.web){
-    dyn.load(.getDynLoadPath());
-  }
+  # if(.on.public.web){
+  #   dyn.load(.getDynLoadPath());
+  # }
   # load necessary C code for data processing
   
   if (class(x)=="OnDiskMSnExp"){ # for raw data processing
@@ -873,9 +873,9 @@ PeakPicking_Massifquant_slave <- function(x, param){
 #'
 PeakPicking_MatchedFilter_slave <- function(x,param){
   
-  if(.on.public.web){
-    dyn.load(.getDynLoadPath());
-  }
+  # if(.on.public.web){
+  #   dyn.load(.getDynLoadPath());
+  # }
   
   if (class(x)=="OnDiskMSnExp"){ # for raw data processing
     
@@ -6004,9 +6004,9 @@ profMat <- function(object,method = "bin",step = 0.1,baselevel = NULL,
                                                           breturnBreaks) {
     #require(xcms, quietly = TRUE)
     
-    if(.on.public.web){
-      dyn.load(.getDynLoadPath());
-    }
+    # if(.on.public.web){
+    #   dyn.load(.getDynLoadPath());
+    # }
     sps <- spectra(z, BPPARAM = SerialParam())
     mzs <- lapply(sps, mz)
     ## Fix for issue #301: got spectra with m/z being NA.

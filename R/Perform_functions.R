@@ -38,7 +38,8 @@
 #' ## Perform the optimization
 #' # best_parameters <- PerformParamsOptimization(mSet = mSet, SetPeakParam(), ncore = 4);
 #' ## Perform data import of all samples
-#' # mSet <- ImportRawMSData(mSet = mSet, foldername = data_folder_Sample, plotSettings = SetPlotParam(Plot=T));
+#' # mSet <- ImportRawMSData(mSet = mSet, foldername = data_folder_Sample, 
+#' #                         plotSettings = SetPlotParam(Plot=T));
 #' ## Perform peak profiling
 #' # mSet <- PerformPeakProfiling(mSet = mSet, Params = param, plotSettings = SetPlotParam(Plot=T));
 #' ## Set annotation parameters
@@ -46,7 +47,8 @@
 #' ## Perform peak annotation
 #' # mSet <- PerformPeakAnnotation(mSet = mSet, annotaParam = annParams, ncore =1);
 #' ## Format the peak table
-#' # maPeaks <- FormatPeakList(mSet = mSet, annParams, filtIso =F, filtAdducts = FALSE,missPercent = 1);
+#' # maPeaks <- FormatPeakList(mSet = mSet, annParams, filtIso =F, 
+#' #                           filtAdducts = FALSE,missPercent = 1);
 
 PerformPeakProfiling <-
   function(mSet,
@@ -403,7 +405,8 @@ PerformPeakProfiling <-
 #' ## Perform the optimization
 #' # best_parameters <- PerformParamsOptimization(mSet = mSet, SetPeakParam(), ncore = 4);
 #' ## Perform data import of all samples
-#' # mSet <- ImportRawMSData(mSet = mSet, foldername = data_folder_Sample, plotSettings = SetPlotParam(Plot=T));
+#' # mSet <- ImportRawMSData(mSet = mSet, foldername = data_folder_Sample, 
+#' #                         plotSettings = SetPlotParam(Plot=T));
 #' ## Perform peak profiling
 #' # mSet <- PerformPeakProfiling(mSet = mSet, Params = param, plotSettings = SetPlotParam(Plot=T));
 #' ## Set annotation parameters
@@ -411,7 +414,8 @@ PerformPeakProfiling <-
 #' ## Perform peak annotation
 #' # mSet <- PerformPeakAnnotation(mSet = mSet, annotaParam = annParams, ncore =1);
 #' ## Format the peak table
-#' # maPeaks <- FormatPeakList(mSet = mSet, annParams, filtIso =F, filtAdducts = FALSE,missPercent = 1);
+#' # maPeaks <- FormatPeakList(mSet = mSet, annParams, filtIso =F, 
+#' #                           filtAdducts = FALSE,missPercent = 1);
 
 SetAnnotationParam <-
   function(polarity = "positive",
@@ -489,7 +493,8 @@ SetAnnotationParam <-
 #' ## Perform the optimization
 #' # best_parameters <- PerformParamsOptimization(mSet = mSet, SetPeakParam(), ncore = 4);
 #' ## Perform data import of all samples
-#' # mSet <- ImportRawMSData(mSet = mSet, foldername = data_folder_Sample, plotSettings = SetPlotParam(Plot=T));
+#' # mSet <- ImportRawMSData(mSet = mSet, foldername = data_folder_Sample, 
+#' #                         plotSettings = SetPlotParam(Plot=T));
 #' ## Perform peak profiling
 #' # mSet <- PerformPeakProfiling(mSet = mSet, Params = param, plotSettings = SetPlotParam(Plot=T));
 #' ## Set annotation parameters
@@ -497,7 +502,8 @@ SetAnnotationParam <-
 #' ## Perform peak annotation
 #' # mSet <- PerformPeakAnnotation(mSet = mSet, annotaParam = annParams, ncore =1);
 #' ## Format the peak table
-#' # maPeaks <- FormatPeakList(mSet = mSet, annParams, filtIso =F, filtAdducts = FALSE,missPercent = 1);
+#' # maPeaks <- FormatPeakList(mSet = mSet, annParams, filtIso =F, 
+#' #                           filtAdducts = FALSE,missPercent = 1);
 
 PerformPeakAnnotation <-
   function(mSet,
@@ -1404,7 +1410,8 @@ PerformPeakAnnotation <-
 #' ## Perform the optimization
 #' # best_parameters <- PerformParamsOptimization(mSet = mSet, SetPeakParam(), ncore = 4);
 #' ## Perform data import of all samples
-#' # mSet <- ImportRawMSData(mSet = mSet, foldername = data_folder_Sample, plotSettings = SetPlotParam(Plot=T));
+#' # mSet <- ImportRawMSData(mSet = mSet, foldername = data_folder_Sample, 
+#' #                         plotSettings = SetPlotParam(Plot=T));
 #' ## Perform peak profiling
 #' # mSet <- PerformPeakProfiling(mSet = mSet, Params = param, plotSettings = SetPlotParam(Plot=T));
 #' ## Set annotation parameters
@@ -1412,7 +1419,8 @@ PerformPeakAnnotation <-
 #' ## Perform peak annotation
 #' # mSet <- PerformPeakAnnotation(mSet = mSet, annotaParam = annParams, ncore =1);
 #' ## Format the peak table
-#' # maPeaks <- FormatPeakList(mSet = mSet, annParams, filtIso =F, filtAdducts = FALSE,missPercent = 1);
+#' # maPeaks <- FormatPeakList(mSet = mSet, annParams, filtIso =F, 
+#' #                           filtAdducts = FALSE,missPercent = 1);
 
 
 FormatPeakList <-

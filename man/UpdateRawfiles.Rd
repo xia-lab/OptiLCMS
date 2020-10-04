@@ -27,7 +27,8 @@ NOTE: this function is only effective before data import stage.
 # library(OptiLCMS);
 # mSet<-InitDataObjects("spec", "raw", FALSE);
 ## include only two samples CD_SM-77FXR.mzML and CD_SM-6KUCT.mzML for data import.
-# mSet<-UpdateRawfiles(mSet, c("Raw_data_example/CD/CD_SM-77FXR.mzML", "Raw_data_example/CD/CD_SM-6KUCT.mzML"))
+# mSet<-UpdateRawfiles(mSet, c("Raw_data_example/CD/CD_SM-77FXR.mzML", 
+#                      "Raw_data_example/CD/CD_SM-6KUCT.mzML"))
 }
 \author{
 Zhiqiang Pang \email{zhiqiang.pang@mail.mcgill.ca} and Jeff Xia \email{jeff.xia@mcgill.ca}

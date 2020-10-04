@@ -40,7 +40,8 @@ the xset object created using the PerformPeakPicking function.
 ## Perform the optimization
 # best_parameters <- PerformParamsOptimization(mSet = mSet, SetPeakParam(), ncore = 4);
 ## Perform data import of all samples
-# mSet <- ImportRawMSData(mSet = mSet, foldername = data_folder_Sample, plotSettings = SetPlotParam(Plot=T));
+# mSet <- ImportRawMSData(mSet = mSet, foldername = data_folder_Sample, 
+#                         plotSettings = SetPlotParam(Plot=T));
 ## Perform peak profiling
 # mSet <- PerformPeakProfiling(mSet = mSet, Params = param, plotSettings = SetPlotParam(Plot=T));
 ## Set annotation parameters
@@ -48,7 +49,8 @@ the xset object created using the PerformPeakPicking function.
 ## Perform peak annotation
 # mSet <- PerformPeakAnnotation(mSet = mSet, annotaParam = annParams, ncore =1);
 ## Format the peak table
-# maPeaks <- FormatPeakList(mSet = mSet, annParams, filtIso =F, filtAdducts = FALSE,missPercent = 1);
+# maPeaks <- FormatPeakList(mSet = mSet, annParams, filtIso =F, 
+#                           filtAdducts = FALSE,missPercent = 1);
 }
 \references{
 Kuhl C, Tautenhahn R, Boettcher C, Larson TR, Neumann S (2012).

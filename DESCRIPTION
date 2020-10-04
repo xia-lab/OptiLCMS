@@ -17,10 +17,10 @@ Maintainer: Zhiqiang Pang <zhiqiang.pang@mail.mcgill.ca>
 Description: A workflow for users to do the MS raw data processing with automatically optimized parameters.
 License: MIT + file LICENSE
 Depends: R (>= 4.0.0), methods, Biobase, BiocParallel (>= 1.8.0), stats, utils
-Imports: mzR (>= 2.19.5), ProtGenerics (>= 1.17.2), lattice, RColorBrewer, plyr, MassSpecWavelet (>= 1.5.2), 
-         RBGL, S4Vectors, robustbase, IRanges, ggplot2, graph, progress, rsm, Cairo, Hmisc, entropy, cluster, data.table,
+Imports: mzR (>= 2.19.5), ProtGenerics (>= 1.17.2), lattice, RColorBrewer, plyr, 
+         RBGL, S4Vectors, ggplot2, graph, progress, rsm, Cairo, Hmisc, entropy, cluster, data.table,
          scales, ggrepel, MSnbase (>= 2.14.0)
-Suggests: knitr (>= 1.1.0), ncdf4, MALDIquant, SummarizedExperiment, RANN, googledrive
+Suggests: knitr (>= 1.1.0), ncdf4, MALDIquant, SummarizedExperiment, RANN, googledrive, IRanges, robustbase, MassSpecWavelet
 Enhances: Rgraphviz, XML, parallel
 BugReports: https://github.com/xia-lab/OptiLCMS/issues/new
 biocViews: MassSpectrometry, Metabolomics, Malaria
