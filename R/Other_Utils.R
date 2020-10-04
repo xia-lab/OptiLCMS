@@ -125,9 +125,9 @@ featureSUM <- function(MS_group, frtr) {
   rt_max_corrected <- sum(rt_max_sum * inten_sum) / sum(inten_sum)
   rt_range_cor <- abs(rt_max_corrected - rt_min_corrected)
   
-  if(.on.public.web){
-    load_scales()
-  }
+  # if(.on.public.web){
+  #   load_scales()
+  # }
   
   MS_group <-
     sapply(

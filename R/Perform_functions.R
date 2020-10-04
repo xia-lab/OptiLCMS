@@ -320,9 +320,9 @@ PerformPeakProfiling <-
         )
         
         ### 2. PCA plotting -----
-        if (.on.public.web) {
-          load_ggplot()
-        }
+        # if (.on.public.web) {
+        #   load_ggplot()
+        # }
         
         PlotSpectraPCA(
           mSet,
@@ -425,7 +425,9 @@ SetAnnotationParam <-
            max_iso = 2,
            corr_eic_th = 0.85,
            mz_abs_add = 0.001) {
+    
     annParams <- list()
+    peakParams <- NULL;
     
     if (.on.public.web) {
       load("params.rda")
@@ -587,63 +589,63 @@ PerformPeakAnnotation <-
       runParallel <- list();
       runParallel$enable <- 0;
       
-      if (ncore > 1) {
-        ## If MPI is available ...
-        rmpi = "Rmpi"
-        opt.warn <- options("warn")$warn
-        options("warn" = -1)
-        if ((Sys.info()["sysname"] != "Windows") &&
-            require(rmpi, character.only = TRUE) &&
-            !is.null(ncore)) {
-          if (is.loaded('mpi_initialize')) {
-            #test if not already slaves are running!
-            if (mpi.comm.size() > 0) {
-              warning(
-                "There are already intialized mpi slaves on your machine.\nCamera will try to uses them!\n"
-              )
-              
-              runParallel$enable <- 1
-              runParallel$mode <- rmpi
-              
-            } else{
-              mpi.spawn.Rslaves(ncore = ncore, needlog = FALSE)
-              if (mpi.comm.size() > 1) {
-                #Slaves have successfull spawned
-                runParallel$enable <- 1
-                runParallel$mode <- rmpi
-                
-              } else{
-                warning(
-                  "Spawning of mpi slaves have failed. CAMERA will run without parallelization.\n"
-                )
-              }
-            }
-          } else {
-            #And now??
-            warning("DLL mpi_initialize is not loaded. Run single core mode!\n")
-          }
-          
-        } else {
-          #try local sockets using snow package
-          snow = "snow"
-          if (try(require(snow, character.only = TRUE, quietly = TRUE))) {
-            cat("Starting snow cluster with",
-                ncore,
-                "local sockets.\n")
-            snowclust <- makeCluster(ncore, type = "SOCK")
-            runParallel$enable <- 1
-            runParallel$mode <- snow
-            runParallel$cluster <- snowclust
-          }
-        }
-        
-        options("warn" = opt.warn);
-        
-        MessageOutput(mes = "Run cleanParallel after processing to remove the spawned slave processes!",
-                      ecol = "\n",
-                      progress = NULL);
-        
-      }
+      # if (ncore > 1) {
+      #   ## If MPI is available ...
+      #   rmpi = "Rmpi"
+      #   opt.warn <- options("warn")$warn
+      #   options("warn" = -1)
+      #   if ((Sys.info()["sysname"] != "Windows") &&
+      #       require(rmpi, character.only = TRUE) &&
+      #       !is.null(ncore)) {
+      #     if (is.loaded('mpi_initialize')) {
+      #       #test if not already slaves are running!
+      #       if (mpi.comm.size() > 0) {
+      #         warning(
+      #           "There are already intialized mpi slaves on your machine.\nCamera will try to uses them!\n"
+      #         )
+      #         
+      #         runParallel$enable <- 1
+      #         runParallel$mode <- rmpi
+      #         
+      #       } else{
+      #         mpi.spawn.Rslaves(ncore = ncore, needlog = FALSE)
+      #         if (mpi.comm.size() > 1) {
+      #           #Slaves have successfull spawned
+      #           runParallel$enable <- 1
+      #           runParallel$mode <- rmpi
+      #           
+      #         } else{
+      #           warning(
+      #             "Spawning of mpi slaves have failed. CAMERA will run without parallelization.\n"
+      #           )
+      #         }
+      #       }
+      #     } else {
+      #       #And now??
+      #       warning("DLL mpi_initialize is not loaded. Run single core mode!\n")
+      #     }
+      #     
+      #   } else {
+      #     #try local sockets using snow package
+      #     snow = "snow"
+      #     if (try(require(snow, character.only = TRUE, quietly = TRUE))) {
+      #       cat("Starting snow cluster with",
+      #           ncore,
+      #           "local sockets.\n")
+      #       snowclust <- makeCluster(ncore, type = "SOCK")
+      #       runParallel$enable <- 1
+      #       runParallel$mode <- snow
+      #       runParallel$cluster <- snowclust
+      #     }
+      #   }
+      #   
+      #   options("warn" = opt.warn);
+      #   
+      #   MessageOutput(mes = "Run cleanParallel after processing to remove the spawned slave processes!",
+      #                 ecol = "\n",
+      #                 progress = NULL);
+      #   
+      # }
       
       if (!is.null(annotaParam[["polarity"]])) {
         if (is.na(match.arg(annotaParam[["polarity"]], c("positive", "negative")))) {

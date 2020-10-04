@@ -452,10 +452,10 @@ PlotXIC <-
     
     peak_width <- max(res$RT) - min(res$RT);
     
-    if(.on.public.web){
-      load_ggplot2();
-      load_ggrepel();
-    }
+    # if(.on.public.web){
+    #   load_ggplot2();
+    #   load_ggrepel();
+    # }
     
     Cairo::Cairo(
       file = paste0("EIC_", title, "_sample_", dpi, ".", format),
@@ -671,12 +671,14 @@ PlotSpectraInsensityStistics <-
 #' @param width Numeric, to define the width of the figure. Height = width * 0.618. 
 #' @importFrom ggrepel geom_text_repel
 #' @export
+
 PlotSpectraPCA <-
   function(mSet,
            imgName,
            format = "png",
            dpi = 72,
            width = NA) {
+    
     Cairo::Cairo(
       file = imgName,
       unit = "in",
@@ -688,7 +690,7 @@ PlotSpectraPCA <-
     )
     
     sample_idx <-
-      mSet@rawOnDisk@phenoData@data[["sample_group"]]
+      mSet@rawOnDisk@phenoData@data[["sample_group"]];
     
     feature_value <-
       .feature_values(
@@ -699,9 +701,9 @@ PlotSpectraPCA <-
         intensity = "into",
         colnames = mSet@rawOnDisk@phenoData@data[["sample_name"]],
         missing = NA
-      )
+      );
     
-    pca_feats <- log2(feature_value)
+    pca_feats <- log2(feature_value);
     
     if (nrow(feature_value) < 2) {
       MessageOutput(
@@ -712,34 +714,34 @@ PlotSpectraPCA <-
         ),
         ecol = "\n",
         progress = 65
-      )
+      );
       
       dev.off()
       return(NULL)
     }
     
-    df0 <- na.omit(pca_feats)
+    df0 <- na.omit(pca_feats);
     
-    df1 <- df0[is.finite(rowSums(df0)),]
-    df <- t(df1)
+    df1 <- df0[is.finite(rowSums(df0)),];
+    df <- t(df1);
     
-    mSet_pca <- prcomp(df, center = TRUE, scale = T)
-    sum.pca <- summary(mSet_pca)
+    mSet_pca <- prcomp(df, center = TRUE, scale = T);
+    sum.pca <- summary(mSet_pca);
     var.pca <-
-      sum.pca$importance[2,] # variance explained by each PCA
+      sum.pca$importance[2,]; # variance explained by each PCA
     
-    xlabel <- paste("PC1", "(", round(100 * var.pca[1], 1), "%)")
-    ylabel <- paste("PC2", "(", round(100 * var.pca[2], 1), "%)")
+    xlabel <- paste("PC1", "(", round(100 * var.pca[1], 1), "%)");
+    ylabel <- paste("PC2", "(", round(100 * var.pca[2], 1), "%)");
     
     # using ggplot2
-    df <- as.data.frame(mSet_pca$x)
-    df$group <- sample_idx
+    df <- as.data.frame(mSet_pca$x);
+    df$group <- sample_idx;
     
-    if(.on.public.web){
-      load_ggplot2();
-      load_ggrepel();
-    }
-    
+    # if(.on.public.web){
+    #   load_ggplot2();
+    #   load_ggrepel();
+    # }
+    # 
     if (nrow(df) < 30) {
       if (length(unique(sample_idx)) > 9) {
         col.fun <-
@@ -777,13 +779,13 @@ PlotSpectraPCA <-
         p <-
           ggplot2::ggplot(df, aes(x = PC1,
                                   y = PC2,
-                                  color = group)) + geom_point(size = 5) + scale_color_brewer(palette = "Set1")
+                                  color = group)) + geom_point(size = 5) + scale_color_brewer(palette = "Set1");
       }
     }
     
     p <-
-      p + xlab(xlabel) + ylab(ylabel) + theme_bw() + theme(axis.title = element_text(size =
-                                                                                       12))
+      p + xlab(xlabel) + ylab(ylabel) + theme_bw() + theme(axis.title = element_text(size = 12));
+    
     print(p)
     dev.off()
   }
@@ -1013,12 +1015,12 @@ PlotSpectraBPIadj <-
 plotMSfeature <- function(FeatureNM,
                           dpi = 72,
                           format = "png") {
-  if(.on.public.web){
-    load_ggplot2();
-    load_ggrepel();
-    load_RColorBrewer();
-  }
-  
+  # if(.on.public.web){
+  #   load_ggplot2();
+  #   load_ggrepel();
+  #   load_RColorBrewer();
+  # }
+  # 
   peakdata <- readRDS("annotated_peaklist.rds");
   peakdata1 <-
     peakdata[, c(-1:-6,-ncol(peakdata),-ncol(peakdata) + 1,-ncol(peakdata) + 2)]

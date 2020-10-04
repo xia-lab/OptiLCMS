@@ -44,7 +44,7 @@ PerformPeakPicking<-function(mSet, BPPARAM = bpparam()){
   
   object_mslevel <- MSnbase::filterMsLevel(
     MSnbase::selectFeatureData(object,
-                               fcol = c(MSnbase:::.MSnExpReqFvarLabels,
+                               fcol = c(.MSnExpReqFvarLabels,
                                         "centroided")), msLevel. = 1)
   
 
@@ -790,19 +790,19 @@ PeakPicking_Massifquant_slave <- function(x, param){
 
   #if (withWave) {
   if (F) {
-    featlist <- do_findChromPeaks_centWave(mz = mz, int = int,
-                                           scantime = scantime,
-                                           valsPerSpect = valsPerSpect,
-                                           ppm = ppm, peakwidth = peakwidth,
-                                           snthresh = snthresh,
-                                           prefilter = prefilter,
-                                           mzCenterFun = mzCenterFun,
-                                           integrate = integrate,
-                                           mzdiff = mzdiff,
-                                           fitgauss = fitgauss,
-                                           noise = noise,
-                                           verboseColumns = verboseColumns,
-                                           roiList = massifquantROIs)
+    # featlist <- do_findChromPeaks_centWave(mz = mz, int = int,
+    #                                        scantime = scantime,
+    #                                        valsPerSpect = valsPerSpect,
+    #                                        ppm = ppm, peakwidth = peakwidth,
+    #                                        snthresh = snthresh,
+    #                                        prefilter = prefilter,
+    #                                        mzCenterFun = mzCenterFun,
+    #                                        integrate = integrate,
+    #                                        mzdiff = mzdiff,
+    #                                        fitgauss = fitgauss,
+    #                                        noise = noise,
+    #                                        verboseColumns = verboseColumns,
+    #                                        roiList = massifquantROIs)
   } else {
     ## Get index vector for C calls
     scanindex <- as.integer(c(0, valsPerSpect[-length(valsPerSpect)]))
@@ -1715,7 +1715,7 @@ adjustRtime_obiwarp <- function(mSet, param, msLevel = 1L) {
   object <- mSet@rawOnDisk;
   object_sub <- MSnbase::filterMsLevel(
     MSnbase::selectFeatureData(object,
-                               fcol = c(MSnbase:::.MSnExpReqFvarLabels,
+                               fcol = c(.MSnExpReqFvarLabels,
                                         "centroided")), msLevel. = 1);          
   
   
@@ -3275,6 +3275,175 @@ trimm <- function(x, trim=c(0.05,0.95)) {
   quant <- round((Na*trim[1])+1):round(Na*trim[2])
   a[quant]
 }
+gaussCoverage <- function(xlim,h1,mu1,s1,h2,mu2,s2) {
+  overlap <- NA
+  by = 0.05
+  ## Calculate points of intersection
+  a <- s2^2 - s1^2
+  cc <- -( 2 * s1^2 * s2^2 * (log(h1) - log(h2)) + (s1^2 * mu2^2) - (s2^2 * mu1^2) )
+  b <- ((2 * s1^2 *mu2) - (2 * s2^2 * mu1))
+  D <- b^2 - (a*cc)
+  if (a==0) {
+    S1 <- -cc/b
+    S2 <- NA
+  } else if ((D < 0) || ((b^2 - (4*a*cc)) < 0)) {
+    S1 <- S2 <- NA
+  } else {
+    S1 <- (-b + sqrt(b^2 - (4*a*cc))) / (2*a)
+    S2 <- (-b - sqrt(b^2 - (4*a*cc))) / (2*a)
+    if (S2 < S1)
+    {
+      tmp <- S1
+      S1 <- S2
+      S2 <- tmp
+    }
+  }
+  if (!is.na(S1)) if (S1 < xlim[1] || S1 > xlim[2]) S1 <- NA
+  if (!is.na(S2)) if (S2 < xlim[1] || S2 > xlim[2]) S2 <- NA
+  
+  x <- seq(xlim[1],xlim[2],by=by)
+  vsmall <- min(sum(gauss(x,h1,mu1,s1)), sum(gauss(x,h2,mu2,s2)))
+  
+  if (!is.na(S1) && !is.na(S2)) {
+    x0 <- seq(xlim[1],S1,by=by)
+    xo <- seq(S1,S2,by=by)
+    x1 <- seq(S2,xlim[2],by=by)
+    if (gauss(x0[cent(x0)],h1,mu1,s1) < gauss(x0[cent(x0)],h2,mu2,s2)) {
+      ov1 <- sum(gauss(x0,h1,mu1,s1))
+    } else {
+      ov1 <- sum(gauss(x0,h2,mu2,s2))
+    }
+    if (gauss(xo[cent(xo)],h1,mu1,s1) < gauss(xo[cent(xo)],h2,mu2,s2)) {
+      ov <- sum(gauss(xo,h1,mu1,s1))
+    } else {
+      ov <- sum(gauss(xo,h2,mu2,s2))
+    }
+    if (gauss(x1[cent(x1)],h1,mu1,s1) < gauss(x1[cent(x1)],h2,mu2,s2)) {
+      ov2 <- sum(gauss(x1,h1,mu1,s1))
+    } else {
+      ov2 <- sum(gauss(x1,h2,mu2,s2))
+    }
+    overlap <- ov1 + ov + ov2
+  } else
+    if (is.na(S1) && is.na(S2)) { ## no overlap -> intergrate smaller function
+      if (gauss(x[cent(x)],h1,mu1,s1) < gauss(x[cent(x)],h2,mu2,s2)) {
+        overlap <- sum(gauss(x,h1,mu1,s1))
+      } else {
+        overlap <- sum(gauss(x,h2,mu2,s2))
+      }
+    } else
+      if (!is.na(S1) || !is.na(S2)) {
+        if (is.na(S1)) S0 <- S2 else S0 <- S1
+        x0 <- seq(xlim[1],S0,by=by)
+        x1 <- seq(S0,xlim[2],by=by)
+        g01 <- gauss(x0[cent(x0)],h1,mu1,s1)
+        g02 <- gauss(x0[cent(x0)],h2,mu2,s2)
+        g11 <- gauss(x1[cent(x1)],h1,mu1,s1)
+        g12 <- gauss(x1[cent(x1)],h2,mu2,s2)
+        if (g01 < g02) ov1 <- sum(gauss(x0,h1,mu1,s1)) else ov1 <- sum(gauss(x0,h2,mu2,s2))
+        if (g11 < g12) ov2 <- sum(gauss(x1,h1,mu1,s1)) else ov2 <- sum(gauss(x1,h2,mu2,s2))
+        if ((g01 == g02) && (g01==0)) ov1 <- 0
+        if ((g11 == g12) && (g11==0)) ov2 <- 0
+        overlap <- ov1 + ov2
+      }
+  
+  overlap / vsmall
+}
+gauss <- function(x, h, mu, sigma){
+  h*exp(-(x-mu)^2/(2*sigma^2))
+}
+fitGauss <- function(td, d, pgauss = NA) {
+  if (length(d) < 3) return(rep(NA,3))
+  if (!any(is.na(pgauss))) { mu <- pgauss$mu; sigma <- pgauss$sigma;h <- pgauss$h }
+  fit <- try(nls(d ~ SSgauss(td,mu,sigma,h)), silent = TRUE)
+  if (class(fit) == "try-error")
+    fit <- try(nls(d ~ SSgauss(td, mu, sigma, h), algorithm = 'port'),
+               silent = TRUE)
+  if (class(fit) == "try-error")  return(rep(NA, 3))
+  
+  as.data.frame(t(fit$m$getPars()))
+}
+running <- function (X, Y = NULL, fun = mean, width = min(length(X), 20),
+                     allow.fewer = FALSE, pad = FALSE, align = c("right", "center",
+                                                                 "left"), simplify = TRUE, by, ...) {   ## from package gtools
+  align = match.arg(align)
+  n <- length(X)
+  if (align == "left") {
+    from <- 1:n
+    to <- pmin((1:n) + width - 1, n)
+  }
+  else if (align == "right") {
+    from <- pmax((1:n) - width + 1, 1)
+    to <- 1:n
+  }
+  else {
+    from <- pmax((2 - width):n, 1)
+    to <- pmin(1:(n + width - 1), n)
+    if (!odd(width))
+      stop("width must be odd for center alignment")
+  }
+  elements <- apply(cbind(from, to), 1, function(x) seq(x[1],
+                                                        x[2]))
+  if (is.matrix(elements))
+    elements <- as.data.frame(elements)
+  names(elements) <- paste(from, to, sep = ":")
+  if (!allow.fewer) {
+    len <- sapply(elements, length)
+    skip <- (len < width)
+  }
+  else {
+    skip <- 0
+  }
+  run.elements <- elements[!skip]
+  if (!invalid(by))
+    run.elements <- run.elements[seq(from = 1, to = length(run.elements),
+                                     by = by)]
+  if (is.null(Y)) {
+    funct1 <- function(which, what, fun, ...) fun(what[which],
+                                                 ...)
+    if (simplify)
+      Xvar <- sapply(run.elements, funct1, what = X, fun = fun,
+                     ...)
+    else Xvar <- lapply(run.elements, funct1, what = X, fun = fun,
+                        ...)
+  } else {
+    funct2 <- function(which, XX, YY, fun, ...) fun(XX[which],
+                                                   YY[which], ...)
+    if (simplify)
+      Xvar <- sapply(run.elements, funct2, XX = X, YY = Y,
+                     fun = fun, ...)
+    else Xvar <- lapply(run.elements, funct2, XX = X, YY = Y,
+                        fun = fun, ...)
+  }
+  if (allow.fewer || !pad)
+    return(Xvar)
+  if (simplify)
+    if (is.matrix(Xvar)) {
+      wholemat <- matrix(new(class(Xvar[1, 1]), NA), ncol = length(to),
+                         nrow = nrow(Xvar))
+      colnames(wholemat) <- paste(from, to, sep = ":")
+      wholemat[, -skip] <- Xvar
+      Xvar <- wholemat
+    }
+  else {
+    wholelist <- rep(new(class(Xvar[1]), NA), length(from))
+    names(wholelist) <- names(elements)
+    wholelist[names(Xvar)] <- Xvar
+    Xvar <- wholelist
+  }
+  return(Xvar)
+}
+invalid <- function (x) {   ## from package gtools
+  if (missing(x) || is.null(x) || length(x) == 0)
+    return(TRUE)
+  if (is.list(x))
+    return(all(sapply(x, invalid)))
+  else if (is.vector(x))
+    return(all(is.na(x)))
+  else return(FALSE)
+}
+
+odd <- function (x) x != as.integer(x/2) * 2;
 
 na.flatfill <- function(x) {
   
@@ -3806,14 +3975,14 @@ PeakPicking_core <-function(object, object_mslevel, param, msLevel = 1L){
   if (is.null(param$fwhm)){
 
     resList <- try(BiocParallel::bplapply(object_mslevel,
-                        FUN = OptiLCMS:::PeakPicking_centWave_slave,
+                        FUN = PeakPicking_centWave_slave,
                         param = param,
                         BPPARAM = SerialParam()),silent = T)
 
   } else {
     
     resList <- BiocParallel::bplapply(object_mslevel,
-                        FUN = OptiLCMS:::PeakPicking_MatchedFilter_slave,
+                        FUN = PeakPicking_MatchedFilter_slave,
                         param = param,
                         BPPARAM = SerialParam())
     
@@ -4256,14 +4425,69 @@ findIsotopesPspec <- function(isomatrix, mz, ipeak, int, params){
   
   return(isomatrix)
 }
-
+resolveFragmentConnections <- function(hypothese){
+  #Order hypothese after mass
+  hypothese <- hypothese[order(hypothese[, "mass"], decreasing=TRUE), ]
+  
+  for(massgrp in unique(hypothese[, "massgrp"])){
+    index <- which(hypothese[, "massgrp"] == massgrp & !is.na(hypothese[, "parent"]))
+    if(length(index) > 0) {
+      index2 <- which(hypothese[, "massID"] %in% hypothese[index, "massID"] & hypothese[, "massgrp"] != massgrp)
+      if(length(index2) > 0){
+        massgrp2del <- which(hypothese[, "massgrp"] %in% unique(hypothese[index2, "massgrp"]))
+        hypothese <- hypothese[-massgrp2del, ]
+      }
+    }
+  }
+  return(hypothese)
+}
+addFragments <- function(hypothese, rules, mz){
+  #check every hypothese grp
+  fragments <- rules[which(rules[, "typ"] == "F"), , drop=FALSE]
+  hypothese <- cbind(hypothese, NA);
+  colnames(hypothese)[ncol(hypothese)] <- "parent"
+  if(nrow(fragments) < 1){
+    #no fragment exists in rules
+    return(hypothese)
+  }
+  
+  orderMZ <- cbind(order(mz),order(order(mz)))
+  sortMZ <- cbind(mz,1:length(mz))
+  sortMZ <- sortMZ[order(sortMZ[,1]),]
+  
+  for(massgrp in unique(hypothese[, "massgrp"])){
+    for(index in which(hypothese[, "ruleID"] %in% unique(fragments[, "parent"]) & 
+                       hypothese[, "massgrp"] == massgrp)){
+      massID <- hypothese[index, "massID"]
+      ruleID <- hypothese[index, "ruleID"]
+      indexFrag <- which(fragments[, "parent"] == ruleID)
+      
+      while(length(massID) > 0){
+        result <- fastMatch(sortMZ[1:orderMZ[massID[1],2],1], mz[massID[1]] + 
+                              fragments[indexFrag, "massdiff"], tol=0.05)
+        invisible(sapply(1:orderMZ[massID[1],2], function(x){
+          if(!is.null(result[[x]])){
+            massID <<- c(massID, orderMZ[x,1]);        
+            indexFrags <- indexFrag[result[[x]]];
+            tmpRes <- cbind(orderMZ[x,1], as.numeric(rownames(fragments)[indexFrags]), fragments[indexFrags, c("nmol", "charge")],
+                            hypothese[index, "mass"], fragments[indexFrags, c("score")],
+                            massgrp, 1, massID[1], deparse.level=0)
+            colnames(tmpRes) <- colnames(hypothese)
+            hypothese <<- rbind(hypothese, tmpRes);
+          }
+        }))
+        massID <- massID[-1];
+      }    
+    }
+  }
+  return(hypothese)
+}
 create.matrix <- function(dim1,dim2) {
   x <- matrix()
   length(x) <- dim1*dim2
   dim(x) <- c(dim1,dim2)
   x
 }
-
 getAllPeakEICs <- function(mSet, index=NULL){
   
   #Checking parameter index
@@ -4360,7 +4584,93 @@ getAllPeakEICs <- function(mSet, index=NULL){
   }
   invisible(list(scantimes=scantimes,EIC=EIC)); 
 }
-
+fastMatch <- function(x,y,tol=0.001, symmetric=FALSE) {
+  
+  if (any(is.na(y)))
+    stop("NA's are not allowed in y !\n")
+  ok <- !(is.na(x))
+  ans <- order(x)
+  keep <- seq_along(ok)[ok]
+  xidx <- ans[ans %in% keep]
+  xs <- x[xidx]
+  yidx <- order(y)
+  ys <- y[yidx] 
+  if (!is.double(xs)) 
+    xs <- as.double(xs)
+  if (!is.double(ys)) 
+    ys<- as.double(ys)
+  if (!is.integer(xidx)) 
+    xidx <- as.integer(xidx)
+  if (!is.integer(yidx)) 
+    yidx <- as.integer(yidx)  
+  
+  fm <- .Call("fastMatch", xs, ys, xidx, yidx, as.integer(length(x)), as.double(tol) , PACKAGE ='OptiLCMS' ) 
+  fm2 <- vector("list", length=length(fm))
+  #stop("!")
+  if (symmetric){  
+    for (a in 1:length(fm)) {
+      if (!is.null(fm[[a]][1])){
+        tmp<-NULL
+        for (b in 1:length(fm[[a]])){
+          if ((abs(x[a]-y[fm[[a]]][b]) == min(abs(x[a]-y[fm[[a]][b]]),
+                                              abs(x[a]  -y[fm[[a]][b]-1]),
+                                              abs(x[a]  -y[fm[[a]][b]+1]),
+                                              abs(x[a-1]-y[fm[[a]][b]]),
+                                              abs(x[a+1]-y[fm[[a]][b]]), na.rm=T)
+          )) {
+            tmp<-c(tmp, fm[[a]][b])
+          }
+        }
+        fm2[[a]]<-tmp
+      }
+    }
+  }else {
+    fm2 <- fm}
+  fm2
+}
+combineCalc <- function(object1, object2, method = "sum"){
+  
+  if(ncol(object1) != 4){
+    stop("first object is not a matrix with 4 columns");
+  }
+  if(ncol(object2) != 4){
+    stop("second object is not a matrix with 4 columns");
+  }
+  
+  combination = new.env(hash = TRUE)
+  
+  apply(object1,1,function(x){ 
+    combination[[paste(x[c(1,2,4)],collapse=" ")]]<- x[3] 
+  })
+  
+  apply(object2,1,function(x){
+    if(is.null(combination[[paste(x[c(1,2,4)],collapse=" ")]])){
+      combination[[paste(x[c(1,2,4)],collapse=" ")]]<- x[3]
+    }else{
+      combination[[paste(x[c(1,2,4)],collapse=" ")]]<- combination[[paste(x[c(1,2,4)],collapse=" ")]] + x[3];
+    }
+  })
+  
+  if(!is.null(combination[["NA NA NA"]])){
+    rm("NA NA NA",envir=combination)
+  }
+  
+  resMat <- matrix(ncol=4, nrow=length(ls(combination)));
+  
+  i<-1;y<-c();
+  sapply(ls(combination), function(x) {
+    y[c(1,2,4)] <- unlist(strsplit(x," "));
+    y[3] <- combination[[x]];
+    resMat[i,] <<- y; i<<-i+1;
+  })
+  resMat <- matrix(as.numeric(resMat), ncol=4);
+  colnames(resMat) <- c("x","y","cor","ps")
+  
+  return(invisible(resMat));
+}
+mpi.comm.size <- function(){
+  return(1)
+}
 
 #' calcCiS
 #' @noRd
@@ -4655,7 +4965,7 @@ findAdducts <- function(mSet, ppm=5, mzabs=0.015, multiplier=3, polarity=NULL, r
   
   ##Run as single or parallel mode
   runParallel <- 0;
-  
+
   if(mSet@peakAnnotation$AnnotateObject$runParallel$enable == 1){
     if(!(is.null(mSet@peakAnnotation$AnnotateObject$runParallel$cluster)) || mpi.comm.size() > 0 ){
       runParallel <- 1;
@@ -4666,7 +4976,7 @@ findAdducts <- function(mSet, ppm=5, mzabs=0.015, multiplier=3, polarity=NULL, r
   }else{
     runParallel <- 0;
   }
-  
+
   if("quasi" %in% colnames(rules)){
     #backup for old rule sets
     quasimolion <- which(rules[, "quasi"]== 1) 
@@ -5897,87 +6207,6 @@ getderivativeIons <- function(annoID, annoGrp, rules, npeaks){
   }
   return(derivativeIons);
 }
-getIsotopeCluster <- function(object, number=NULL, value="maxo", 
-                              sampleIndex=NULL){
-  
-  #check values
-  if(is.null(object)) { 
-    stop("No xsa argument was given.\n"); 
-  }else if(!class(object)=="xsAnnotate"){
-    stop("Object parameter is no xsAnnotate object.\n");
-  }
-  
-  value <- match.arg(value, c("maxo", "into", "intb"), several.ok=FALSE)
-  
-  if(!is.null(number) & !is.numeric(number)){
-    stop("Number must be NULL or numeric");
-  }
-  
-  if(!is.null(sampleIndex) & !all(is.numeric(sampleIndex))){
-    stop("Parameter sampleIndex must be NULL or numeric");
-  }
-  
-  if(is.null(sampleIndex)){
-    nSamples <- 1;
-  } else if( all(sampleIndex <= length(object@xcmsSet@filepaths) & sampleIndex > 0)){
-    nSamples <- length(sampleIndex);
-  } else {
-    stop("All values in parameter sampleIndex must be lower equal 
-         the number of samples and greater than 0.\n")
-  }
-  
-  if(length(sampnames(object@xcmsSet)) > 1){  ## more than one sample
-    gvals <- groupval(object@xcmsSet, value=value);
-    groupmat <- object@groupInfo;
-    iso.matrix <- matrix(0, ncol=nSamples, nrow=length(object@isotopes));
-    if(is.null(sampleIndex)){
-      for(i in 1:length(object@pspectra)){
-        iso.matrix[object@pspectra[[i]],1] <- gvals[object@pspectra[[i]],object@psSamples[i]]; 
-      }
-    } else {
-      for(i in 1:length(object@pspectra)){
-        iso.matrix[object@pspectra[[i]], ] <- gvals[object@pspectra[[i]], sampleIndex]
-      }
-    }
-    peakmat <- cbind(groupmat[, "mz"], iso.matrix );
-    rownames(peakmat) <- NULL;
-    if(is.null(sampleIndex)){
-      colnames(peakmat) <- c("mz",value);
-    }else{
-      colnames(peakmat) <- c("mz", sampnames(object@xcmsSet)[sampleIndex]);
-    }
-    
-    if(any(is.na(peakmat))){
-      cat("Warning: peak table contains NA values. To remove apply fillpeaks on xcmsSet.");
-    }
-    
-  } else if(length(sampnames(object@xcmsSet)) == 1){  ## only one sample was 
-    peakmat <- object@groupInfo[, c("mz", value)];
-  } else { 
-    stop("sampnames could not extracted from the xcmsSet.\n"); 
-  }
-  
-  #collect isotopes
-  
-  index <- which(!sapply(object@isotopes, is.null));
-  
-  tmp.Matrix <- cbind(index, matrix(unlist(object@isotopes[index]), ncol=4, byrow=TRUE))
-  colnames(tmp.Matrix) <- c("Index","IsoCluster","Type","Charge","Val")
-  
-  max.cluster <- max(tmp.Matrix[,"IsoCluster"])
-  max.type    <- max(tmp.Matrix[,"Type"])
-  
-  isotope.Matrix <- matrix(NA, nrow=max.cluster, ncol=(max.type+2));
-  invisible(apply(tmp.Matrix,1, function(x) {
-    isotope.Matrix[x["IsoCluster"],x["Type"]+2] <<- x["Index"];
-    isotope.Matrix[x["IsoCluster"],1] <<- x["Charge"];
-  }))
-  
-  invisible(apply(isotope.Matrix,1, function(x) {
-    list(peaks=peakmat[na.omit(x[-1]),],charge=x[1])
-  }))
-}
-
 
 profMat <- function(object,method = "bin",step = 0.1,baselevel = NULL,
                     basespace = NULL,mzrange. = NULL,fileIndex,...) {
@@ -6043,7 +6272,6 @@ profMat <- function(object,method = "bin",step = 0.1,baselevel = NULL,
   bbasespace = basespace, bmzrange. = mzrange., breturnBreaks = returnBreaks)
   res
 }
-
 
 .createProfileMatrix <- function(mz, int, valsPerSpect,
                                  method, step = 0.1, baselevel = NULL,
@@ -6139,6 +6367,25 @@ profMat <- function(object,method = "bin",step = 0.1,baselevel = NULL,
     buf <- list(profMat = buf, breaks = brks)
   buf
 }
+.insertColumn <- function(x, pos = integer(), val = NULL) {
+  if (length(pos)) {
+    if (length(val) == 1)
+      val <- rep(val, length(pos))
+    if (length(val) != length(pos))
+      stop("length of 'pos' and 'val' have to match")
+  }
+  for (i in seq_along(pos)) {
+    if (pos[i] == 1) {
+      x <- cbind(val[[i]], x)
+    } else {
+      if (pos[i] == ncol(x))
+        x <- cbind(x, val[[i]])
+      else
+        x <- cbind(x[, 1:(pos[i]-1)], val[[i]], x[, pos[i]:ncol(x)])
+    }
+  }
+  x
+}
 
 valueCount2ScanIndex <- function(valCount){
   ## Convert into 0 based.
@@ -6150,7 +6397,6 @@ naOmit <- function(x) {
   return (x[!is.na(x)]);
 }
 ####### ------------ ======== Bottom of this kit ========= ------------ ######\
-
 
 .getDataPath <- function() {
   

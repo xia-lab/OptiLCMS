@@ -110,10 +110,11 @@ PerformROIExtraction <-
       if (.on.public.web) {
         #TODO: need to configure with the online pipeline
         dda_file <- list.files(datapath, recursive = T, full.names = TRUE);
+        rawfilenms <- mSet@rawfiles;
         
         if (basename(datapath) == "QC") {
           QC_uploaded_list <- basename(dda_file);
-          QC_index <- QC_uploaded_list %in% rawfilenms; #TODO: need to deal with the included files by using mSet@rawfiles;
+          QC_index <- QC_uploaded_list %in% rawfilenms;
           QC_count <- length(which(QC_index));
           
           if (QC_count > 1) {
@@ -302,6 +303,7 @@ PerformROIExtraction <-
         
         if(.on.public.web){
           rmConts <- FALSE;
+          peakParams <- NULL;
           tmp_mes <- try(suppressWarnings(load("params.rda")),silent = T);
         } else {
           tmp_mes <- 0;
@@ -313,9 +315,14 @@ PerformROIExtraction <-
             raw_data <- ContaminatsRemoval(raw_data, ms_list);
             #save(raw_data, file = "Contaminats_free_raw_data.rda");
           } else if (.on.public.web) {
-            if(peakParams[["rmConts"]]){
+            
+            if(exists("peakParams")){
+              if(peakParams[["rmConts"]]){
+                raw_data <- ContaminatsRemoval(raw_data, ms_list);
+                #save(raw_data, file = "Contaminats_free_raw_data.rda");
+              }
+            } else {
               raw_data <- ContaminatsRemoval(raw_data, ms_list);
-              #save(raw_data, file = "Contaminats_free_raw_data.rda");
             }
           }
           
@@ -394,9 +401,9 @@ PerformROIExtraction <-
       if (plot == T) {
         MessageOutput("Chromatogram Plotting Begin...",ecol = "\n",NULL);
         
-        if (.on.public.web) {
-          load_RColorBrewer();
-        } 
+        # if (.on.public.web) {
+        #   load_RColorBrewer();
+        # } 
         
         ch.xdata <- chromatogram(trimed_MSnExp)
         group.col <-
@@ -930,12 +937,13 @@ PerformMSDataOutput<-function(raw_data){
 
 #' Function for 3D ms plotting
 #' @description Function for 3D ms plotting (internal use only)
+#' @importFrom lattice cloud
 #' @author Zhiqiang Pang \email{zhiqiang.pang@mail.mcgill.ca}
 #' @noRd
 plot.MS_3D<-function(object) {
   
-  if (.on.public.web){load_lattice()};
-  
+  # if (.on.public.web){load_lattice()};
+  # 
   dd <- as(object, "data.frame")
   
   ms <- NULL ## get rid of 'no visible global function definition' note

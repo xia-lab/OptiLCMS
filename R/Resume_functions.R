@@ -108,11 +108,11 @@ InitializaPlan <- function(type="spec", path){
     envir <<- new.env()
     saveRDS(envir, file = paste0(envir.path, "/envir.rds"))
     #----------------------
-    if (.on.public.web) {
-      rawFileNames <- paste0(getwd(), "/temp/plan")
-      saveRDS(rawfilenms,
-              file = paste0(rawFileNames, "/rawfilenms_", .plan_count, ".rds"))
-    }
+    # if (.on.public.web) {
+    #   rawFileNames <- paste0(getwd(), "/temp/plan")
+    #   saveRDS(rawfilenms,
+    #           file = paste0(rawFileNames, "/rawfilenms_", .plan_count, ".rds"))
+    # }
     #----------------------
     
     if (exists(".plan_count") & .plan_count > 0) {
@@ -154,15 +154,15 @@ InitializaPlan <- function(type="spec", path){
     envir <<- new.env();
     saveRDS(envir, file = paste0(envir.path, "/envir.rds"))
     #----------------------
-    rawFileNames <- paste0(getwd(), "/temp/plan")
-    
-    if (.on.public.web) {
-      saveRDS(rawfilenms,
-              file = paste0(rawFileNames, "/rawfilenms_", .plan_count, ".rds"))
-    } else {
-      # do nothing for local
-    }
-    
+    # rawFileNames <- paste0(getwd(), "/temp/plan")
+    # 
+    # if (.on.public.web) {
+    #   saveRDS(rawfilenms,
+    #           file = paste0(rawFileNames, "/rawfilenms_", .plan_count, ".rds"))
+    # } else {
+    #   # do nothing for local
+    # }
+    # 
     #----------------------
     if (exists(".plan_count") & .plan_count > 0) {
       return(plan)
@@ -279,7 +279,7 @@ InitializaPlan <- function(type="spec", path){
 running.plan <- function(plan=NULL,...){
   
   #plan <- .get.current.plan(plan);
-  commands <<- match.call(expand.dots = FALSE)$...
+  commands <- match.call(expand.dots = FALSE)$...
   
   ## Declare controller
   plan@running.controller <- controller.resetter();
@@ -839,6 +839,7 @@ controller.modifier <- function(new_command_set, last_command_set, plan){
   }
   
   if(.on.public.web){
+    peakParams <- NULL;
     # load params.rda and envir.rds and do a comparison
     envir.path <- paste0(getwd(),"/temp/envir");
     envir_tmp <- readRDS(paste0(envir.path,"/envir.rds"));
