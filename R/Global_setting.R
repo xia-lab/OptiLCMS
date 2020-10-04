@@ -163,7 +163,6 @@ suppressGlobalBindingNotes(
 #   return(rawClassNms)
 # }
 
-
 #' MessageOutput
 #' @noRd
 MessageOutput <- function(mes, ecol, progress) {

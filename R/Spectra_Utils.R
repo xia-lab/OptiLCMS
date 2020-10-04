@@ -20,6 +20,17 @@
 #'
 PerformPeakPicking<-function(mSet, BPPARAM = bpparam()){
   
+  if(missing(mSet) & file.exists("mSet.rda")){
+    load("mSet.rda")
+  } else if(missing(mSet) & !file.exists("mSet.rda")){
+    if(.on.public.web){
+      MessageOutput("ERROR: mSet is missing !", NULL, NULL);
+      stop();
+    } else {
+      stop("mSet is missing ! Please make sure mSet is well defined !");
+    }
+  }
+  
   object <- mSet@rawOnDisk;
   param <- mSet@params;
   
@@ -110,6 +121,7 @@ PerformPeakPicking<-function(mSet, BPPARAM = bpparam()){
 #'@description PeakPicking_centWave_slave
 #'@param x ms objects
 #'@param param parameters set for processing
+#'@noRd
 #'@author Zhiqiang Pang, Jeff Xia \email{jeff.xia@mcgill.ca}
 #'McGill University, Canada
 #'License: GNU GPL (>= 2)
@@ -651,6 +663,7 @@ PeakPicking_centWave_slave <- function(x, param){
 #'@description PeakPicking_Massifquant_slave
 #'@param x ms objects
 #'@param param parameters set for processing
+#'@noRd
 #'@author Zhiqiang Pang, Jeff Xia \email{jeff.xia@mcgill.ca}
 #'McGill University, Canada
 #'License: GNU GPL (>= 2)
@@ -852,6 +865,7 @@ PeakPicking_Massifquant_slave <- function(x, param){
 #'@description PeakPicking_MatchedFilter_slave
 #'@param x ms objects
 #'@param param parameters set for processing
+#'@noRd
 #'@author Zhiqiang Pang, Jeff Xia \email{jeff.xia@mcgill.ca}
 #'McGill University, Canada
 #'License: GNU GPL (>= 2)
@@ -1052,13 +1066,33 @@ PeakPicking_MatchedFilter_slave <- function(x,param){
 #'
 PerformPeakGrouping<-function(mSet){
   
+  if(missing(mSet) & file.exists("mSet.rda")){
+    load("mSet.rda")
+  } else if(missing(mSet) & !file.exists("mSet.rda")){
+    if(.on.public.web){
+      MessageOutput("ERROR: mSet is missing !", NULL, NULL);
+      stop();
+    } else {
+      stop("mSet is missing ! Please make sure mSet is well defined !");
+    }
+  }
+  
   # if(.on.public.web){
   #   dyn.load(.getDynLoadPath());
   # }
   
   param <- mSet@params;
   
-  ## 1. Extract Information-------
+  ## 1. Verify & Extract Information-------
+  
+  if(length(mSet@rawOnDisk) == 0 & length(mSet@rawInMemory) == 0){
+    if(.on.public.web){
+      MessageOutput("ERROR: No MS data imported, please import the MS data with 'ImportRawMSData' first !", NULL, NULL)
+    } else {
+      stop("No MS data Imported, please import the MS data with 'ImportRawMSData' first !")
+    }
+  }
+  
   if(length(mSet@peakRTcorrection)==0){
     
     if(length(mSet@peakpicking) == 0){
@@ -1169,7 +1203,8 @@ PerformPeakGrouping<-function(mSet){
   FeatureGroupTable <- df;
   n <- length(mSet@peakgrouping) + 1;
   mSet@peakgrouping[[n]] <- FeatureGroupTable;
-
+  
+  save(mSet, file = "mSet.rda");
   return(mSet)
 }
 
@@ -1259,6 +1294,17 @@ PerformRTcorrection <- function(mSet){
   # }
   # 
   
+  if(missing(mSet) & file.exists("mSet.rda")){
+    load("mSet.rda")
+  } else if(missing(mSet) & !file.exists("mSet.rda")){
+    if(.on.public.web){
+      MessageOutput("ERROR: mSet is missing !", NULL, NULL);
+      stop();
+    } else {
+      stop("mSet is missing ! Please make sure mSet is well defined !");
+    }
+  }
+  
   #TODO: add a function to verify the param in mSet
   
   if(length(mSet@rawOnDisk) == 0 & length(mSet@rawInMemory) == 0){
@@ -1316,7 +1362,6 @@ PerformRTcorrection <- function(mSet){
     stop("EXCEPTION POINT CODE: RT1");
   }
   
-  
   #
   if (!.optimize_switch){
     MessageOutput(
@@ -1324,7 +1369,9 @@ PerformRTcorrection <- function(mSet){
       ecol = "\n",
       progress = 88
     )
-  } 
+  }
+  
+  save(mSet, file = "mSet.rda");
   
   return(mSet);
 }
@@ -1342,7 +1389,8 @@ PerformRTcorrection <- function(mSet){
 #' @param family family
 #' @param peakGroupsMatrix peakGroupsMatrix
 #' @param subset subset
-#' @param subsetAdjust subsetAdjust#' 
+#' @param subsetAdjust subsetAdjust
+#' @noRd
 #' @author Zhiqiang Pang, Jeff Xia \email{jeff.xia@mcgill.ca}
 #'McGill University, Canada
 #'License: GNU GPL (>= 2)
@@ -2053,7 +2101,36 @@ mSet.obiwarp <- function(mSet, object, param) { ## Do not use the params defined
 #'
 PerformPeakFiling <- function(mSet,BPPARAM=bpparam()){
   
+  if(missing(mSet) & file.exists("mSet.rda")){
+    load("mSet.rda")
+  } else if(missing(mSet) & !file.exists("mSet.rda")){
+    if(.on.public.web){
+      MessageOutput("ERROR: mSet is missing !", NULL, NULL);
+      stop();
+    } else {
+      stop("mSet is missing ! Please make sure mSet is well defined !");
+    }
+  }
+  
   param <- mSet@params;
+  
+  if(length(mSet@rawOnDisk) == 0 & length(mSet@rawInMemory) == 0){
+    if(.on.public.web){
+      MessageOutput("ERROR: No MS data imported, please import the MS data with 'ImportRawMSData' first !", NULL, NULL);
+      stop();
+    } else {
+      stop("No MS data Imported, please import the MS data with 'ImportRawMSData' first !");
+    }
+  }
+  
+  if(length(mSet@peakRTcorrection) == 0){
+    if(.on.public.web){
+      MessageOutput("ERROR: No Retention Time Correction results found. Please \"PerformRTcorrection\" or \"PerformPeakAlignment\" first !");
+      stop();
+    } else {
+      stop("No Retention Time Correction results found. Please \"PerformRTcorrection\" or \"PerformPeakAlignment\" first !");
+    }
+  }  
   ## Preparing Something
   if (!.optimize_switch) {
     MessageOutput(paste("Starting peak filling!"), ecol = "\n", 74)
@@ -2074,16 +2151,7 @@ PerformPeakFiling <- function(mSet,BPPARAM=bpparam()){
   
   aggFunLow <- median
   aggFunHigh <- median;
-  
-  if(length(mSet@peakRTcorrection) == 0){
-    if(.on.public.web){
-      MessageOutput("ERROR: No Retention Time Correction results found. Please \"PerformRTcorrection\" or \"PerformPeakAlignment\" first !");
-      stop();
-    } else {
-      stop("No Retention Time Correction results found. Please \"PerformRTcorrection\" or \"PerformPeakAlignment\" first !")
-    }
-  }
-  
+
   ngroup <- length(mSet@peakgrouping);
   #tmp_pks <- mSet$msFeatureData$chromPeaks[, c("rtmin", "rtmax", "mzmin", "mzmax")];
   tmp_pks <- mSet@peakRTcorrection$chromPeaks[, c("rtmin", "rtmax", "mzmin", "mzmax")];
@@ -2160,6 +2228,8 @@ PerformPeakFiling <- function(mSet,BPPARAM=bpparam()){
   if (!any(is.na(rowSums(pkGrpVal)))) {
     MessageOutput("\nNo missing peaks present.","\n",76)
     mSet@peakfilling <-""; # need to save something there
+    
+    save(mSet, file = "mSet.rda");
     return(mSet)
   }
   
@@ -2337,7 +2407,10 @@ PerformPeakFiling <- function(mSet,BPPARAM=bpparam()){
   
   if (nrow(res) == 0) {
     warning("Could not integrate any signal for the missing ",
-            "peaks! Consider increasing 'expandMz' and 'expandRt'.")
+            "peaks! Consider increasing 'expandMz' and 'expandRt'.");
+    
+    save(mSet, file = "mSet.rda");
+    
     return(mSet)
   }
   
@@ -2376,6 +2449,8 @@ PerformPeakFiling <- function(mSet,BPPARAM=bpparam()){
   mSet@peakfilling$FeatureGroupTable <- fdef;
   
   #mSet$xcmsSet <- mSet2xcmsSet(mSet)
+  
+  save(mSet, file = "mSet.rda");
   
   return(mSet)
 }
@@ -2445,7 +2520,7 @@ mSet2xcmsSet <- function(mSet) {
 #'@param Params object generated by SetPeakParams function.
 #'@author Zhiqiang Pang, Jeff Xia \email{jeff.xia@mcgill.ca}
 #'McGill University, Canada
-#'@export
+#'@noRd
 #' @references Smith, C.A. et al. 2006. {Analytical Chemistry}, 78, 779-787
 #' Mcgill University
 #' License: GNU GPL (>= 2)
@@ -2568,6 +2643,7 @@ updateRawSpectraParam <- function (Params){
 #' creatPeakTable
 #' @description creatPeakTable
 #' @param mSet mSet object, usually generated by 'PerformPeakAnnotation' here.
+#' @noRd
 #' @author Zhiqiang Pang, Jeff Xia \email{jeff.xia@mcgill.ca}
 #' McGill University, Canada
 #' License: GNU GPL (>= 2)
@@ -3637,6 +3713,7 @@ filtfft <- function(y, filt) {
 ### Functions_Peak Peaking _ used for parameters optimization
 #' @title Data Preparation for ChromPeaking Finding
 #' @param object MSnExp object.
+#' @noRd
 #' @import MSnbase
 #' @author Zhiqiang Pang \email{zhiqiang.pang@mail.mcgill.ca}
 #' Mcgill University

@@ -15,6 +15,9 @@
 #'@import methods
 #'@import BiocParallel
 #'@importFrom  Cairo CairoFonts
+#'@examples 
+#' library(OptiLCMS);
+#' mSet<-InitDataObjects("spec", "raw", FALSE)
 
 InitDataObjects <- function(data.type, anal.type, paired=FALSE){
   
@@ -55,6 +58,56 @@ InitDataObjects <- function(data.type, anal.type, paired=FALSE){
 #' @import parallel
 #' @importFrom tools file_path_as_absolute
 #' @importFrom Cairo Cairo
+#' @examples 
+#' ## load googledrive package to download example data
+#' # library("googledrive");
+#'
+#' ## Set data folder
+#' # data_folder_Sample <- "~/Data_IBD";
+#' # data_folder_QC <- "~/Data_IBD/QC";
+#' # temp <- tempfile(fileext = ".zip");
+#'
+#' ## Please authorize the package to download the data from web
+#' # dl <- drive_download(as_id("1CjEPed1WZrwd5T3Ovuic1KVF-Uz13NjO"), path = temp, overwrite = TRUE);
+#' # out <- unzip(temp, exdir = data_folder_Sample);
+#' # out;
+# 
+#' #### Running as regular procedure: step by step
+#' ## Extract ROI for parameters' optimization
+#' # mSet <- PerformROIExtraction(datapath = data_folder_QC, rt.idx = 0.95, plot = F, rmConts = F);
+#' ## Perform the optimization
+#' # best_parameters <- PerformParamsOptimization(mSet = mSet, SetPeakParam(), ncore = 4);
+#' ## Perform data import of all samples
+#' # mSet <- ImportRawMSData(mSet = mSet, foldername = data_folder_Sample, plotSettings = SetPlotParam(Plot=T));
+#' ## Perform peak profiling
+#' # mSet <- PerformPeakProfiling(mSet = mSet, Params = param, plotSettings = SetPlotParam(Plot=T));
+#' ## Set annotation parameters
+#' # annParams <- SetAnnotationParam(polarity = 'negative', mz_abs_add = 0.025);
+#' ## Perform peak annotation
+#' # mSet <- PerformPeakAnnotation(mSet = mSet, annotaParam = annParams, ncore =1);
+#' ## Format the peak table
+#' # maPeaks <- FormatPeakList(mSet = mSet, annParams, filtIso =F, filtAdducts = FALSE,missPercent = 1);
+#' 
+#' #### Running as resumable procedure: seamless pipeline
+#' ## Initialize running plan
+#' plan <- InitializaPlan("raw_opt","~/Data_IBD/")
+#' ## define/set running plan
+#' plan <- running.plan(plan,
+#'                      data_folder_QC <- data_folder_QC,
+#'                      mSet <- PerformROIExtraction(datapath = data_folder_QC, rt.idx = 0.95, plot = F, rmConts = F, running.controller = rc),
+#'                      param_initial <- SetPeakParam(),
+#'                      best_parameters <- PerformParamsOptimization(mSet = mSet, param_initial, ncore = 2, running.controller = rc),
+#'                      data_folder_Sample <- '',
+#'                      param <- best_parameters,
+#'                      plotSettings1 <- SetPlotParam(Plot=T),
+#'                      plotSettings2 <- SetPlotParam(Plot=T),
+#'                      mSet <- ImportRawMSData(mSet = mSet, foldername = data_folder_Sample, plotSettings = plotSettings1, running.controller = rc),
+#'                      mSet <- PerformPeakProfiling(mSet = mSet, Params = param, plotSettings = plotSettings2, running.controller = rc),
+#'                      annParams <- SetAnnotationParam(polarity = 'negative', mz_abs_add = 0.025),
+#'                      mSet <- PerformPeakAnnotation(mSet = mSet, annotaParam = annParams, ncore =1, running.controller = rc),
+#'                      maPeaks <- FormatPeakList(mSet = mSet, annParams, filtIso =F, filtAdducts = FALSE,missPercent = 1));
+#' ## Execute the defined plan
+#' # ExecutePlan(plan)
 
 ImportRawMSData <-
   function(mSet = NULL,
@@ -77,8 +130,10 @@ ImportRawMSData <-
     foldername <- tools::file_path_as_absolute(folderPath);
 
     if(missing(mSet)){
+      message("No initialized mSet found, will initialize one automatically !")
       mSet <- new("mSet")
     } else if(is.null(mSet)){
+      message("Not a real initialized mSet found, will re-initialize one automatically !")
       mSet <- new("mSet")
     }
     
@@ -115,6 +170,10 @@ ImportRawMSData <-
         recursive = T,
         full.names = TRUE
       )
+    
+    # Centroid check & filter
+    Centroididx <- unname(sapply(files, CentroidCheck));
+    files <- files[Centroididx];
     
     if (length(files) == 0) {
       MessageOutput(
@@ -158,9 +217,9 @@ ImportRawMSData <-
       }
     }
     
-    toKeepInx = !(files %in% toRemove)
-    files = files[toKeepInx]
-
+    toKeepInx = !(files %in% toRemove);
+    files = files[toKeepInx];
+    
     snames <- gsub("\\.[^.]*$", "", basename(files))
     msg <- c(msg, paste("A total of ", length(files), "samples were found."))
     sclass <- gsub("^\\.$", "sample", dirname(files))
@@ -394,29 +453,6 @@ ImportRawMSData <-
       
     return(mSet)
   }
-
-
-updateSpectraFiles <- function(mSet, workingDir, filesNames){
-  
-  if(missing(mSet) | .on.public.web){
-    load("mSet.rda");
-  }
-  
-  if(missing(workingDir)){
-    mSet@WorkingDir <- getwd();
-  }
-  
-  if(!missing(filesNames)){
-    mSet@rawfiles <- filesNames;  
-  }
-  
-  if(.on.public.web){
-    save(mSet, file = "mSet.rda")
-  } else {
-    return(mSet)
-  }
-  
-}
 
 read.MSdata <- function(files, 
                         pdata = NULL, 
@@ -879,4 +915,198 @@ read.OnDiskMS.data <- function(files,
   return(res)
 }
 
+#' UpdateRawfiles
+#' @description Update the Raw spectra included for Processing. All wrong format and uncentroided files will be filtered. 
+#' NOTE: this function is only effective before data import stage.
+#' @param mSet mSet objects generated with \"mSet<-InitDataObjects(\"spec\", \"raw\", FALSE)\";
+#' @param filesIncluded filesIncluded is a vector containing the files' paths for the following processing;
+#' @author Zhiqiang Pang \email{zhiqiang.pang@mail.mcgill.ca} and Jeff Xia \email{jeff.xia@mcgill.ca}
+#' McGill University, Canada
+#' License: GNU GPL (>= 2)
+#' @export
+#' @examples 
+#' ## load googledrive package to download example data
+#' # library("googledrive");
+#' # data_folder_Sample <- "Raw_data_example"
+#' # temp <- tempfile(fileext = ".zip");
+#' ## Please authorize the package to download the data from web
+#' # dl <- drive_download(as_id("1CjEPed1WZrwd5T3Ovuic1KVF-Uz13NjO"), path = temp, overwrite = TRUE);
+#' # out <- unzip(temp, exdir = data_folder_Sample);
+#' # out;
+#' # library(OptiLCMS);
+#' # mSet<-InitDataObjects("spec", "raw", FALSE);
+#' ## include only two samples CD_SM-77FXR.mzML and CD_SM-6KUCT.mzML for data import.
+#' # mSet<-UpdateRawfiles(mSet, c("Raw_data_example/CD/CD_SM-77FXR.mzML", "Raw_data_example/CD/CD_SM-6KUCT.mzML"))
+
+UpdateRawfiles <- function(mSet, filesIncluded = NULL){
+  
+  # TODO: to develope a shiny interface for user to select their files to include
+  # if (interactive()) {
+  #   
+  #   options(shiny.maxRequestSize=400*1024^2) 
+  #   
+  #   ui <- fluidPage(
+  #     titlePanel("Multiple Spectral file read"),
+  #     sidebarLayout(
+  #       sidebarPanel(
+  #         fileInput("SpectralFiles", "Choose Spectra File", accept = c(".mzML",".mzXML","mzml","mzxml","mzData"),
+  #                   multiple = TRUE),
+  #         
+  #       ),
+  #       mainPanel(
+  #         textOutput("count")
+  #       )
+  #     )
+  #   )
+  # 
+  #   server <- function(input, output) {
+  # 
+  #     output$contents <- renderTable({
+  #       file <- input$SpectralFiles
+  #       ext <- tools::file_ext(file$datapath)
+  # 
+  #       req(file)
+  #       validate(need(ext %in% c(".mzML",".mzXML","mzml","mzxml","mzData"), "Please upload a spectral file !"))
+  # 
+  #       file;
+  #     })
+  #     
+  #     return(output)
+  #   }
+  #   
+  #   shinyApp(ui, server)
+  # }
+  
+  if(!is.null(filesIncluded)){
+    
+    # file exits check
+    fileIdx <- file.exists(filesIncluded);
+    if(!any(fileIdx)){
+      stop("No valid files provided ! Please check !")
+    }
+    filesIncluded_exited <- filesIncluded[fileIdx];
+    filesIncluded_full <- unname(sapply(filesIncluded_exited, tools::file_path_as_absolute));
+    
+    # file format check
+    exts <- tools::file_ext(filesIncluded_full);
+    extsIdx <- exts %in% c("mzML","mzXML","mzml","mzxml","mzData", "mzdata");
+    if(!any(extsIdx)){
+      stop("No valid format files provided ! Only files with extension of \"mzML\", \"mzml\", \"mzXML\", \"mzxml\", \"mzData\" and \"mzdata\" are supported!")
+    }
+    filesIncluded_formated <- filesIncluded_full[extsIdx];
+    
+    # file centroid check
+    Centroididx <- unname(sapply(filesIncluded_formated, CentroidCheck));
+    if(!any(Centroididx)){
+      stop("No centroided spectrum found ! Please Centroid them first !")
+    }
+    filesIncluded_centroided <- filesIncluded_formated[Centroididx];
+    message(paste0(filesIncluded_centroided, "will be included for further processing !"))
+    
+    # file size check
+    fileSizeInfo <- file.size(filesIncluded_centroided)/1024^2;
+    largeFileIdx <- fileSizeInfo > 200;
+    if(any(fileSizeInfo)){
+      message(paste0(filesIncluded_centroided[largeFileIdx]), "is larger than 200MB, please note your memory !")
+    }
+    
+    filesIncluded <- filesIncluded_centroided;
+    
+  } else {
+    warning("No files will be included for mSet !")
+  }
+  
+  
+  if(is.null(filesIncluded)){
+    message("No files will be used to update the files inclusion for mSet!")
+  }
+  
+  mSet@rawfiles <- filesIncluded;
+  
+  save(mSet, file = "mSet.rda");
+  return(mSet);
+}
+
+#' Verify the data is centroid or not
+#' @param filename single file name, should contain the absolute path
+#' @author Zhiqiang Pang \email{zhiqiang.pang@mail.mcgill.ca} and Jeff Xia \email{jeff.xia@mcgill.ca}
+#' McGill University, Canada
+#' License: GNU GPL (>= 2)
+#' @importFrom stats quantile
+#' @export
+#' @examples  
+#' ## load googledrive package to download example data
+#' # library("googledrive");
+#' # data_folder_Sample <- "Raw_data_example"
+#' # temp <- tempfile(fileext = ".zip");
+#' ## Please authorize the package to download the data from web
+#' # dl <- drive_download(as_id("1CjEPed1WZrwd5T3Ovuic1KVF-Uz13NjO"), path = temp, overwrite = TRUE);
+#' # out <- unzip(temp, exdir = data_folder_Sample);
+#' # out;
+#' # library(OptiLCMS);
+#' # mSet<-InitDataObjects("spec", "raw", FALSE);
+#' ## input CD_SM-77FXR.mzML to check. TRUE means has been centroided well.
+#' # res <- CentroidCheck("Raw_data_example/CD/CD_SM-77FXR.mzML")
+
+
+CentroidCheck <- function(filename) {
+  fileh <- MSnbase:::.openMSfile(filename)
+  
+  allSpect <- mzR::peaks(fileh, c(1:10))
+  
+  nValues <- base::lengths(allSpect, use.names = FALSE) / 2
+  allSpect <- do.call(rbind, allSpect)
+  
+  res <- MSnbase:::Spectra1_mz_sorted(
+    peaksCount = nValues,
+    rt = c(1:10),
+    acquisitionNum = c(1:10),
+    scanIndex = c(1:10),
+    tic = c(1:10),
+    mz = allSpect[, 1],
+    intensity = allSpect[, 2],
+    fromFile = c(1:10),
+    centroided = rep(NA, 10),
+    smoothed =  rep(NA, 10),
+    polarity =  rep(-1, 10),
+    nvalues = nValues
+  )
+  names(res) <-
+    paste0("F1.s100",
+           c("01", "02", "03", "04", "05", "06", "07", "08", "09", "10"))
+  
+  
+  mzR::close(fileh)
+  rm(fileh)
+  
+  res <- lapply(
+    res,
+    FUN = function(z, APPLF, ...) {
+      pk <- as.data.frame(list(z))
+      
+      k = 0.025
+      qtl = 0.9
+      .qtl <- quantile(pk[, 2], qtl)
+      x <- pk[pk[, 2] > .qtl, 1]
+      quantile(diff(x), 0.25) > k
+      
+    }
+  )
+  
+  return(sum(unlist(res)) > 8)
+}
+
+#' Set class information for MS data
+#' @description This function sets the class information
+#' for preprocessing MS data.
+#' @param class class/group of samples.
+#' @noRd
+#' @author Jasmine Chong \email{jasmine.chong@mail.mcgill.ca},
+#' Mai Yamamoto \email{yamamoto.mai@mail.mcgill.ca}, and Jeff Xia \email{jeff.xia@mcgill.ca}
+#' McGill University, Canada
+#' License: GNU GPL (>= 2)
+
+SetClass <- function(class) {
+  groupInfo <<- class
+}
 

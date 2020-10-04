@@ -20,6 +20,10 @@ cmpdmap, smpmap, or pathinteg}
 This functions handles the construction of a mSetObj object for storing data for further processing and analysis.
 It is necessary to utilize this function to specify to MetaboAnalystR the type of data and the type of analysis you will perform.
 }
+\examples{
+library(OptiLCMS);
+mSet<-InitDataObjects("spec", "raw", FALSE)
+}
 \author{
 Jeff Xia \email{jeff.xia@mcgill.ca}
 McGill University, Canada

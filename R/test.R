@@ -3,7 +3,7 @@
 # mSet<-InitDataObjects("spec", "raw", FALSE)
 # mSet <- PerformROIExtraction("/home/glassfish/projects/MetaboDemoRawData/upload/QC/",rt.idx = 0.9);
 # param_initial <- SetPeakParam(platform = "UPLC-Q/E");
-# param_optimized <- PerformParamsOptimization(mSet, ncore = 8)
+# param_optimized <- PerformParamsOptimization(mSet, ncore = 2)
 
 # mSet <- ImportRawMSData(mSet, "/home/glassfish/projects/MetaboDemoRawData/upload/",ncores = 10, plotSettings = SetPlotParam(Plot = F))
 # mSet@params <- updateRawSpectraParam (param_optimized$best_parameters);
@@ -30,7 +30,7 @@
 #                      data_folder_QC <- 'data/QC/',
 #                      mSet <- PerformROIExtraction(datapath = data_folder_QC, rt.idx = 0.95, plot = F, rmConts = F, running.controller = rc),
 #                      param_initial <- SetPeakParam(),
-#                      best_parameters <- PerformParamsOptimization(mSet = mSet, param_initial, ncore = 8, running.controller = rc),
+#                      best_parameters <- PerformParamsOptimization(mSet = mSet, param_initial, ncore = 2, running.controller = rc),
 #                      data_folder_Sample <- 'data/',
 #                      param <- best_parameters,
 #                      plotSettings1 <- SetPlotParam(Plot=T),
@@ -70,7 +70,7 @@
 #                      data_folder_QC <- data_folder_QC,
 #                      mSet <- PerformROIExtraction(datapath = data_folder_QC, rt.idx = 0.95, plot = F, rmConts = F, running.controller = rc),
 #                      param_initial <- SetPeakParam(),
-#                      best_parameters <- PerformParamsOptimization(mSet = mSet, param_initial, ncore = 8, running.controller = rc),
+#                      best_parameters <- PerformParamsOptimization(mSet = mSet, param_initial, ncore = 2, running.controller = rc),
 #                      data_folder_Sample <- '',
 #                      param <- best_parameters,
 #                      plotSettings1 <- SetPlotParam(Plot=T),
@@ -98,5 +98,23 @@
 #                      maPeaks <- FormatPeakList(mSet = mSet, annParams, filtIso =F, filtAdducts = FALSE,missPercent = 1));
 # ExecutePlan(plan)
 
-
+#Or download from this link: https://drive.google.com/file/d/1CjEPed1WZrwd5T3Ovuic1KVF-Uz13NjO/view?usp=sharing
 # load("mSet.rda") # load mSet for further analysis, e.g. Statistics/ Mummichog etc.
+
+
+
+# importFrom("grDevices", "boxplot.stats", "dev.off", "jpeg")
+# importFrom("graphics", "abline", "boxplot", "contour", "grid",
+#            "legend", "par", "points")
+# importFrom("stats", "approx", "approxfun", "as.formula", "convolve",
+#            "cor", "cor.test", "cutree", "deriv3", "dist", "dnorm",
+#            "fft", "fitted", "hclust", "kmeans", "lm", "loess", "lsfit",
+#            "na.omit", "nextn", "nls", "prcomp", "predict", "sd",
+#            "smooth.spline", "weighted.mean")
+
+
+
+
+
+
+

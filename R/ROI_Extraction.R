@@ -420,9 +420,11 @@ PerformROIExtraction <-
       MessageOutput("Optimization will be started soon...", "\n", NULL);
     }
 
-    save(trimed_MSnExp, file = "raw_data.rda");
+    #save(trimed_MSnExp, file = "raw_data.rda");
     mSet <- new("mSet");
     mSet@rawInMemory <- trimed_MSnExp;
+    
+    save(mSet, file = "mSet.rda");
     
     return(mSet)
   }
@@ -437,6 +439,7 @@ PerformROIExtraction <-
 #' @param raw_data MSnExp object, the raw data that has been read in memory.
 #' @param ms_list List, the names list of all scans.
 #' @param rt.idx Numeric, the retention time percentage, from 0 to 1. Default is 1/15.
+#' @noRd
 #' @import progress
 #' @import BiocParallel
 #' @import Biobase
@@ -609,6 +612,7 @@ ssm_trim <- function(raw_data, ms_list, rt.idx){
 #' @description Trim raw data scan signal randomly in the mz dimension.
 #' @param raw_data MSnExp object, the raw data that has been read in memory.
 #' @param ms_list List, the names list of all scans.
+#' @noRd
 #' @import progress
 #' @author Zhiqiang Pang \email{zhiqiang.pang@mail.mcgill.ca} Jeff Xia \email{jeff.xia@mcgill.ca}
 #' Mcgill University
@@ -649,6 +653,7 @@ mz.trim_random <- function(raw_data, ms_list){
 #' @description Trim raw data scan signal randomly in the RT dimension.
 #' @param raw_data MSnExp object, the raw data that has been read in memory.
 #' @param ms_list List, the names list of all scans.
+#' @noRd
 #' @import progress
 #' @author Zhiqiang Pang \email{zhiqiang.pang@mail.mcgill.ca} Jeff Xia \email{jeff.xia@mcgill.ca}
 #' Mcgill University
@@ -712,6 +717,7 @@ rt.trim_random <- function(raw_data, ms_list){
 #' @param ms_list List, the names list of all scans.
 #' @param mz Numeric, the specifric mz value that will be kept or removed.
 #' @param mzdiff Numeric, the deviation (ppm) for the 'mz' values. Default is 100.
+#' @noRd
 #' @import progress
 #' @author Zhiqiang Pang \email{zhiqiang.pang@mail.mcgill.ca} Jeff Xia \email{jeff.xia@mcgill.ca}
 #' Mcgill University
@@ -790,6 +796,7 @@ mz.trim_specific<-function(raw_data, ms_list, mz, mzdiff=100){
 #' @param ms_list List, the names list of all scans.
 #' @param rt Numeric, the specifric RT value that will be kept or removed.
 #' @param rtdiff Numeric, the deviation (ppm) for the 'rt' values. Default is 100.
+#' @noRd
 #' @import progress
 #' @author Zhiqiang Pang \email{zhiqiang.pang@mail.mcgill.ca} Jeff Xia \email{jeff.xia@mcgill.ca}
 #' Mcgill University
@@ -905,8 +912,8 @@ rt.trim_specific<-function(raw_data,ms_list,rt,rtdiff=10){
 #' Function MS Generation
 #' @description Output the MS data. This function will generate .mzML MS data in the working dirctory.
 #' @param raw_data MS data in R environment with "MSnExp" class.
+#' @noRd
 #' @import MSnbase
-#' @export
 #' @author Zhiqiang Pang \email{zhiqiang.pang@mail.mcgill.ca} Jeff Xia \email{jeff.xia@mcgill.ca}
 #' Mcgill University
 #' License: GNU GPL (>= 2)
@@ -949,6 +956,7 @@ plot.MS_3D<-function(object) {
   
 }
 
+#' @noRd
 ContaminatsRemoval <- function(raw_data, ms_list){
   
   scan_names <- sort(names(raw_data@assayData));
@@ -992,7 +1000,7 @@ ContaminatsRemoval <- function(raw_data, ms_list){
   }
   
   MessageOutput("Done!", "\n", NULL)
-  save(topScan_stats, file = "topScan_stats.rda")
+  #save(topScan_stats, file = "topScan_stats.rda")
   mzs_toRemove <- topScan_stats[topScan_stats[,3] > 0.5, 4]
   
   raw_data_clean <- mz.trim_specific(raw_data, ms_list, -mzs_toRemove, mzdiff=10)

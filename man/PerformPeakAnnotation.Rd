@@ -21,6 +21,35 @@ raw MS data pre-processing.}
 This function performs peak annotation on
 the xset object created using the PerformPeakPicking function.
 }
+\examples{
+## load googledrive package to download example data
+# library("googledrive");
+
+## Set data folder
+# data_folder_Sample <- "~/Data_IBD";
+# data_folder_QC <- "~/Data_IBD/QC";
+# temp <- tempfile(fileext = ".zip");
+
+## Please authorize the package to download the data from web
+# dl <- drive_download(as_id("1CjEPed1WZrwd5T3Ovuic1KVF-Uz13NjO"), path = temp, overwrite = TRUE);
+# out <- unzip(temp, exdir = data_folder_Sample);
+# out;
+#### Running as regular procedure: step by step
+## Extract ROI for parameters' optimization
+# mSet <- PerformROIExtraction(datapath = data_folder_QC, rt.idx = 0.95, plot = F, rmConts = F);
+## Perform the optimization
+# best_parameters <- PerformParamsOptimization(mSet = mSet, SetPeakParam(), ncore = 4);
+## Perform data import of all samples
+# mSet <- ImportRawMSData(mSet = mSet, foldername = data_folder_Sample, plotSettings = SetPlotParam(Plot=T));
+## Perform peak profiling
+# mSet <- PerformPeakProfiling(mSet = mSet, Params = param, plotSettings = SetPlotParam(Plot=T));
+## Set annotation parameters
+# annParams <- SetAnnotationParam(polarity = 'negative', mz_abs_add = 0.025);
+## Perform peak annotation
+# mSet <- PerformPeakAnnotation(mSet = mSet, annotaParam = annParams, ncore =1);
+## Format the peak table
+# maPeaks <- FormatPeakList(mSet = mSet, annParams, filtIso =F, filtAdducts = FALSE,missPercent = 1);
+}
 \references{
 Kuhl C, Tautenhahn R, Boettcher C, Larson TR, Neumann S (2012).
 "CAMERA: an integrated strategy for compound spectra extraction and annotation of

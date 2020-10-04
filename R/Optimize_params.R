@@ -16,6 +16,56 @@
 #' @author Zhiqiang Pang \email{zhiqiang.pang@mail.mcgill.ca} Jeff Xia \email{jeff.xia@mcgill.ca}
 #' Mcgill University
 #' License: GNU GPL (>= 2)
+#' @examples 
+#' ## load googledrive package to download example data
+#' # library("googledrive");
+#'
+#' ## Set data folder
+#' # data_folder_Sample <- "~/Data_IBD";
+#' # data_folder_QC <- "~/Data_IBD/QC";
+#' # temp <- tempfile(fileext = ".zip");
+#'
+#' ## Please authorize the package to download the data from web
+#' # dl <- drive_download(as_id("1CjEPed1WZrwd5T3Ovuic1KVF-Uz13NjO"), path = temp, overwrite = TRUE);
+#' # out <- unzip(temp, exdir = data_folder_Sample);
+#' # out;
+# 
+#' #### Running as regular procedure: step by step
+#' ## Extract ROI for parameters' optimization
+#' # mSet <- PerformROIExtraction(datapath = data_folder_QC, rt.idx = 0.95, plot = F, rmConts = F);
+#' ## Perform the optimization
+#' # best_parameters <- PerformParamsOptimization(mSet = mSet, SetPeakParam(), ncore = 4);
+#' ## Perform data import of all samples
+#' # mSet <- ImportRawMSData(mSet = mSet, foldername = data_folder_Sample, plotSettings = SetPlotParam(Plot=T));
+#' ## Perform peak profiling
+#' # mSet <- PerformPeakProfiling(mSet = mSet, Params = param, plotSettings = SetPlotParam(Plot=T));
+#' ## Set annotation parameters
+#' # annParams <- SetAnnotationParam(polarity = 'negative', mz_abs_add = 0.025);
+#' ## Perform peak annotation
+#' # mSet <- PerformPeakAnnotation(mSet = mSet, annotaParam = annParams, ncore =1);
+#' ## Format the peak table
+#' # maPeaks <- FormatPeakList(mSet = mSet, annParams, filtIso =F, filtAdducts = FALSE,missPercent = 1);
+#' 
+#' #### Running as resumable procedure: seamless pipeline
+#' ## Initialize running plan
+#' plan <- InitializaPlan("raw_opt","~/Data_IBD/")
+#' ## define/set running plan
+#' plan <- running.plan(plan,
+#'                      data_folder_QC <- data_folder_QC,
+#'                      mSet <- PerformROIExtraction(datapath = data_folder_QC, rt.idx = 0.95, plot = F, rmConts = F, running.controller = rc),
+#'                      param_initial <- SetPeakParam(),
+#'                      best_parameters <- PerformParamsOptimization(mSet = mSet, param_initial, ncore = 2, running.controller = rc),
+#'                      data_folder_Sample <- '',
+#'                      param <- best_parameters,
+#'                      plotSettings1 <- SetPlotParam(Plot=T),
+#'                      plotSettings2 <- SetPlotParam(Plot=T),
+#'                      mSet <- ImportRawMSData(mSet = mSet, foldername = data_folder_Sample, plotSettings = plotSettings1, running.controller = rc),
+#'                      mSet <- PerformPeakProfiling(mSet = mSet, Params = param, plotSettings = plotSettings2, running.controller = rc),
+#'                      annParams <- SetAnnotationParam(polarity = 'negative', mz_abs_add = 0.025),
+#'                      mSet <- PerformPeakAnnotation(mSet = mSet, annotaParam = annParams, ncore =1, running.controller = rc),
+#'                      maPeaks <- FormatPeakList(mSet = mSet, annParams, filtIso =F, filtAdducts = FALSE,missPercent = 1));
+#' ## Execute the defined plan
+#' # ExecutePlan(plan)
 
 PerformParamsOptimization <- function(mSet, param=p0, method="DoE", ncore=4, running.controller=NULL){
   
@@ -195,6 +245,7 @@ PerformParamsOptimization <- function(mSet, param=p0, method="DoE", ncore=4, run
 #' @param param List, the parameters lists set by 'SetPeakParam' function. The noise, prefilter and ppm values should 
 #' be defined by AutoTuner in the previous steps.
 #' @param ncore Numeric, core number used to perform the parallel based optimization. 
+#' @noRd
 #' @import MSnbase
 #' @import progress
 #' @import parallel
@@ -521,6 +572,7 @@ optimizxcms.doe.peakpicking <- function(object = NULL, params = params,
 #' @param BPPARAM MulticoreParam method, used to set the parallel method. Default is bpparam().
 #' @param nSlaves Numeric, core number used to perform the parallel based optimization.
 #' @param iterator round of DoE
+#' @noRd
 #' @import MSnbase
 #' @importFrom rsm decode.data ccd rsm
 #' @import progress
@@ -714,6 +766,7 @@ ExperimentsCluster_doe <-function(object, object_mslevel,params,
 #' @param index.set List, the indexes set (including PPS, CV, RCS, GS and Gaussian Index) produced by 
 #' ExperiemntCluster.
 #' @param useNoise Numeric, the noise level removed to evalute the gaussian peak.
+#' @noRd
 #' @import MSnbase
 #' @import parallel
 #' @author Zhiqiang Pang \email{zhiqiang.pang@mail.mcgill.ca} Jeff Xia \email{jeff.xia@mcgill.ca}
@@ -808,6 +861,7 @@ Statistic_doe <-function(object, object_mslevel, isotopeIdentification,
 #' @param object_mslevel List, the parsed metabolomics scans produced by PeakPicking_prep.
 #' @param isotopeIdentification Character, IsotopeIdentidication method, usually includes 'IPO' and 'CAMERA'.
 #' @param BPPARAM MulticoreParam method, used to set the parallel method. Default is bpparam().
+#' @noRd
 #' @import MSnbase
 #' @author Zhiqiang Pang \email{zhiqiang.pang@mail.mcgill.ca} Jeff Xia \email{jeff.xia@mcgill.ca}
 #' Mcgill University
@@ -882,6 +936,7 @@ SlaveCluster_doe <-function(task, Set_parameters, object, object_mslevel,
 #' the primary parameters input.
 #' @param task Numeric, task order for XCMS paramters table to run the peak picking and alignment.
 #' @param BPPARAM MulticoreParam method, used to set the parallel method. Default is bpparam().
+#' @noRd
 #' @import MSnbase
 #' @author Zhiqiang Pang \email{zhiqiang.pang@mail.mcgill.ca} Jeff Xia \email{jeff.xia@mcgill.ca}
 #' Mcgill University
@@ -1051,6 +1106,7 @@ calcPPS2 <- function(mSet, isotopeIdentification=c("IPO", "CAMERA")) {
 
 #' @title Calculatre CV method
 #' @param mSet mSet Object, this object is produced by 'calculateSet_doe' function.
+#' @noRd
 #' @author Zhiqiang Pang \email{zhiqiang.pang@mail.mcgill.ca} Jeff Xia \email{jeff.xia@mcgill.ca}
 #' Mcgill University
 #' License: GNU GPL (>= 2)
@@ -1077,6 +1133,7 @@ calcCV<-function(mSet){
 
 #' @title Calculatre RCS and GS method
 #' @param mSet mSet Object, this object is produced by 'calculateSet_doe' function.
+#' @noRd
 #' @author Zhiqiang Pang \email{zhiqiang.pang@mail.mcgill.ca} Jeff Xia \email{jeff.xia@mcgill.ca}
 #' Mcgill University
 #' License: GNU GPL (>= 2)
@@ -1095,183 +1152,6 @@ calcRCS_GSValues<-function(mSet){
 #' @author Zhiqiang Pang \email{zhiqiang.pang@mail.mcgill.ca} Jeff Xia \email{jeff.xia@mcgill.ca}
 #' Mcgill University
 #' License: GNU GPL (>= 2)
-
-# calcGaussianS<-function(mSet, object, useNoise, BPPARAM = bpparam()){                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  
-#   
-#   if (identical(useNoise, numeric(0))) {
-#     useNoise <- 0
-#   }
-#   peakmat <- mSet@peakfilling$msFeatureData$chromPeaks;
-#   peakmat_set <- split.data.frame(peakmat, peakmat[, "sample"])
-#   
-#   object <- mSet@rawInMemory;
-#   
-#   ## Adjusted RT application
-#   scan_names <- sort(names(object@assayData));
-#   adjRTs <- unname(unlist(mSet@peakfilling[["msFeatureData"]][["adjustedRT"]]))
-#   
-#   for(s in 1:length(object)){
-#     scanNM <- scan_names[s];
-#     object@assayData[[scanNM]]@rt <- adjRTs[s];
-#   }
-#   
-#   ## select different platforms
-#   if (.Platform$OS.type == "unix") {
-#     
-#     BPPARAM = MulticoreParam();
-#     extFUN <- function(z, object, useNoise) {
-#       
-#       if (nrow(z) > 150) {
-#         z <- z[sort(sample(1:nrow(z), 150)), ]
-#       }
-#       currentSample <- suppressMessages(MSnbase::filterRt(MSnbase::filterFile(object, 
-#                                                                               z[1, "sample"]), 
-#                                                           rt = range(z[, c("rtmin", "rtmax")])))
-#       
-#       corr <- unlist(sapply(seq_len(nrow(z)), FUN = function(i) {
-#         
-#         corr <- 0.1;
-#         mzRange <- z[i, c("mzmin", "mzmax")] + c(-0.001, 0.001);
-#         rtRange <- z[i, c("rtmin", "rtmax")];
-#         
-#         ints <- try(MSnbase::intensity(MSnbase::filterMz(MSnbase::filterRt(currentSample,
-#                                                                            rtRange),
-#                                                          mzRange)), silent = TRUE)
-#         
-#         if(class(ints) == "try-error"){
-#           return(corr);
-#         }
-#         
-#         ints[lengths(ints) == 0] <- 0
-#         ints <- as.integer(unlist(ints))
-#         ints <- ints[!is.na(ints)]
-#         ints <- ints[ints > useNoise]
-#         if (length(ints)) {
-#           ints <- ints - min(ints)
-#           # if (max(ints) > 0)
-#           #   ints <- ints/max(ints)
-#           fit <- try(nls(y ~ SSgauss(x, mu, sigma, h), 
-#                          data.frame(x = 1:length(ints), y = ints)), 
-#                      silent = TRUE)
-#           # 
-#           # if (class(fit) == "try-error") { # error - do normalization transform
-#           #   ints_nor <- ints/max(ints);
-#           #   fit <- try(nls(y ~ SSgauss(x, mu, sigma, h), 
-#           #                  data.frame(x = 1:length(ints_nor), y = ints_nor)), 
-#           #              silent = TRUE);
-#           # }
-#           # 
-#           # if (class(fit) == "try-error") { # Still error - do log transform
-#           #   ints_log <- log(ints+1);
-#           #   fit <- try(nls(y ~ SSgauss(x, mu, sigma, h), 
-#           #                  data.frame(x = 1:length(ints_log), y = ints_log)), 
-#           #              silent = TRUE);
-#           # }
-#           
-#           if (class(fit) == "try-error") { # Still error - record error !
-#             #write.table(paste0(fit[[1]],Sys.time()), file = "error_report.txt",append = T,eol = "\n");
-#             #save(ints,file = paste0("ints_",Sys.time(),".rda"));
-#             corr <- 0.1;
-#           } else {
-#             if (sum(!is.na(ints - fitted(fit))) > 4 && 
-#                 sum(!is.na(unique(ints))) > 4 && sum(!is.na(unique(fitted(fit)))) > 
-#                 4) {
-#               
-#               cor <- NULL;
-#               options(show.error.messages = FALSE);
-#               cor <- try(cor.test(ints, fitted(fit), 
-#                                   method = "pearson", use = "complete"));
-#               options(show.error.messages = TRUE);
-#               
-#               if (!is.null(cor) && cor$p.value <= 0.05) {
-#                 corr <- cor$estimate
-#               }
-#               else if (!is.null(cor) && cor$p.value > 
-#                        0.05) {
-#                 corr <- cor$estimate * 0.85 # Give a penalty on that!
-#               }
-#             }
-#             else {
-#               corr <- 0.1
-#             }
-#           }
-#         }
-#         return(corr)
-#       }))
-#       gaussian.peak.ratio <- nrow(z[corr >= 0.9, , drop = FALSE])/nrow(z)
-#       return(gaussian.peak.ratio)
-#     }
-#     
-#     res <- bplapply(peakmat_set, extFUN, object = object, 
-#                     useNoise = useNoise, BPPARAM = BPPARAM)
-#     
-#   }
-#   if (.Platform$OS.type == "windows") {
-#     
-#     extFUN <- function(z, object, useNoise) {
-#       if (nrow(z) > 150) {
-#         z <- z[sort(sample(1:nrow(z), 150)), ]
-#       }
-#       currentSample <- suppressMessages(MSnbase::filterRt(MSnbase::filterFile(object, 
-#                                                                               z[1, "sample"]), rt = range(z[, c("rtmin", "rtmax")])))
-#       corr <- unlist(sapply(seq_len(nrow(z)), FUN = function(i) {
-#         corr <- 0.1
-#         mzRange <- z[i, c("mzmin", "mzmax")] + c(-0.001, 
-#                                                  0.001)
-#         rtRange <- z[i, c("rtmin", "rtmax")]
-#         suppressWarnings(ints <- MSnbase::intensity(MSnbase::filterMz(MSnbase::filterRt(currentSample, 
-#                                                                                         rtRange), mzRange)))
-#         ints[lengths(ints) == 0] <- 0
-#         ints <- as.integer(unlist(ints))
-#         ints <- ints[!is.na(ints)]
-#         ints <- ints[ints > useNoise]
-#         if (length(ints)) {
-#           ints <- ints - min(ints)
-#           if (max(ints) > 0) 
-#             ints <- ints/max(ints)
-#           fit <- try(nls(y ~ SSgauss(x, mu, sigma, h), 
-#                          data.frame(x = 1:length(ints), y = ints)), 
-#                      silent = TRUE)
-#           if (class(fit) == "try-error") {
-#             corr <- 0.1
-#           }
-#           else {
-#             if (sum(!is.na(ints - fitted(fit))) > 4 && 
-#                 sum(!is.na(unique(ints))) > 4 && sum(!is.na(unique(fitted(fit)))) > 
-#                 4) {
-#               cor <- NULL
-#               options(show.error.messages = FALSE)
-#               cor <- try(cor.test(ints, fitted(fit), 
-#                                   method = "pearson", use = "complete"))
-#               options(show.error.messages = TRUE)
-#               if (!is.null(cor) && cor$p.value <= 0.05) {
-#                 corr <- cor$estimate
-#               }
-#               else if (!is.null(cor) && cor$p.value > 
-#                        0.05) {
-#                 corr <- cor$estimate * 0.85
-#               }
-#             }
-#             else {
-#               corr <- 0.1
-#             }
-#           }
-#         }
-#         return(corr)
-#       }))
-#       gaussian.peak.ratio <- nrow(z[corr >= 0.9, , drop = FALSE])/nrow(z)
-#       return(gaussian.peak.ratio)
-#     }
-#     
-#     res <- lapply(peakmat_set, extFUN, object = object, 
-#                   useNoise = useNoise)
-#     res <- unlist(res)
-#   }
-#   return(mean(sapply(res, FUN = function(x) {
-#     x
-#   })))
-#   
-# }
 
 calcGaussianS <-function(mSet, object, useNoise, BPPARAM = bpparam()){                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  
   
@@ -1395,9 +1275,9 @@ extFUN <- function(z, object, useNoise) {
   return(gaussian.peak.ratio)
 }
 
-
 #' @title Identify whether results improved or not
 #' @param history List, an interal media objects used to save the optimization results of peaks.
+#' @noRd
 #' @author Zhiqiang Pang \email{zhiqiang.pang@mail.mcgill.ca} Jeff Xia \email{jeff.xia@mcgill.ca}
 #' Mcgill University
 #' License: GNU GPL (>= 2)
@@ -1689,7 +1569,6 @@ Noise_evaluate <- function (raw_data) {
   param
 }
 
-
 ##### ------------------=========   function kit from package IPO  ======----------------######
 
 #' @references Gunnar Libiseller et al. 2015. IPO: a tool for automated optimization of XCMS parameters
@@ -1804,7 +1683,6 @@ expand.grid.subset  <- function(subset, sequence, dimensions) {
   res[[1]] <- vars[[1]][subset] 
   as.data.frame(res) 
 } 
-
 plotContours <- function(model, maximum_slice, plot_name = NULL) {
   # generate for all variable combinations formulas
   # (which will give the plots)
@@ -1845,7 +1723,6 @@ plotContours <- function(model, maximum_slice, plot_name = NULL) {
   }
   par(op)
 }
-
 typeCastParams <- function(params) {
   ret_1 <- list()
   ret_2 <- list()  
@@ -2359,7 +2236,6 @@ checkParams <- function(params, quantitative_parameters,qualitative_parameters, 
   
 }
 
-
 #
 ##### -----------------==========    Bottom of this function kit   ======----------------######
 
@@ -2727,7 +2603,6 @@ estimateSNThresh <- function(no_match, sortedAllEIC, approvedPeaks) {
   
   return(unlist(SN))
 }
-
 
 #' filterPpmError
 #' @noRd
