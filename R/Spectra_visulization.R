@@ -25,6 +25,9 @@ PerformDataInspect <-
            res = 100) {
     
     if(.on.public.web){
+      
+      fullUserPath <- getwd();
+      
       if (datapath == "null" | is.null(datapath)) {
         if (.on.public.web & dir.exists("upload/QC")) {
           datapath <- "upload/QC"

@@ -2,7 +2,7 @@
 
 #' Initializing running plan
 #' @param type Initialized plan type for a resumable running mode. Can be "raw_opt" for automated optimization option, or "raw_ms" for customized pipeline.
-#' @param path this parameter is used to define the working directory (also is where the raw spectra data exists).
+#' @param WorkingDir this parameter is used to define the working directory (also is where the raw spectra data exists).
 #' @author Zhiqiang Pang \email{zhiqiang.pang@mail.mcgill.ca} Jeff Xia \email{jeff.xia@mcgill.ca}
 #' Mcgill University
 #' License: GNU GPL (>= 2)
@@ -57,13 +57,13 @@
 #' ## Execute the defined plan
 #' # ExecutePlan(plan)
 
-InitializaPlan <- function(type="spec", path){
+InitializaPlan <- function(type="spec", WorkingDir=NULL){
   
-  if(path != ""){
-    setwd(path);
-    fullUserPath <<- path;
+  if(!is.null(WorkingDir)){
+    setwd(WorkingDir);
+    fullUserPath <- WorkingDir;
   } else {
-    fullUserPath <<- "";
+    fullUserPath <- getwd();
   };
   
   MessageOutput(paste0("Running Status -- Plan Initialized Successfully at: ", Sys.time(), "\nPlease define your running plan ..."), "\n", 0);
@@ -81,19 +81,19 @@ InitializaPlan <- function(type="spec", path){
     
     if (!dir.exists(plan.path)) {
       dir.create(paste0(getwd(), "/temp/plan"),
-                 recursive = T)
+                 recursive = TRUE)
     }
     
-    .running.as.plan <<- T;
+    .running.as.plan <- .GlobalEnv$.running.as.plan <- TRUE;
     plan <- new("ResumingePlan");
-    .plan_count <<- plan@PlanNumber <- 0;
+    .plan_count <- plan@PlanNumber <- 0;
     plan@WorkingDir <- fullUserPath;
     
     saveRDS(plan, file = paste0(plan.path, "/plan.rds"));
     saveRDS(.running.as.plan, file = paste0(plan.path, "/running.as.plan.rds"));
     saveRDS(.plan_count, file = paste0(plan.path, "/plan_count.rds"));
     #----------------------
-    .optimize_switch <<- TRUE;
+    .optimize_switch <- .GlobalEnv$.optimize_switch <- TRUE;
     switch.path <- paste0(getwd(), "/temp/plan")
     saveRDS(.optimize_switch,
             file = paste0(switch.path, "/optimize_switch_", .plan_count, ".rds"))
@@ -105,7 +105,7 @@ InitializaPlan <- function(type="spec", path){
                  recursive = T)
     }
     
-    envir <<- new.env()
+    envir <- .GlobalEnv$envir <- new.env()
     saveRDS(envir, file = paste0(envir.path, "/envir.rds"))
     #----------------------
     # if (.on.public.web) {
@@ -130,16 +130,16 @@ InitializaPlan <- function(type="spec", path){
     }
     
     #---------------
-    .running.as.plan <<- T;
+    .running.as.plan <- .GlobalEnv$.running.as.plan <- TRUE;
     plan <- new("ResumingePlan");
-    .plan_count <<- plan@PlanNumber <- 0;
+    .plan_count <- plan@PlanNumber <- 0;
     plan@WorkingDir <- fullUserPath;
     
     saveRDS(plan, file = paste0(plan.path, "/plan.rds"));
     saveRDS(.running.as.plan, file = paste0(plan.path, "/running.as.plan.rds"));
     saveRDS(.plan_count, file = paste0(plan.path, "/plan_count.rds"));
     #----------------------
-    .optimize_switch <<- FALSE;
+    .optimize_switch <- .GlobalEnv$.optimize_switch <- FALSE;
     switch.path <- paste0(getwd(), "/temp/plan");
     saveRDS(.optimize_switch,
             file = paste0(switch.path, "/optimize_switch_", .plan_count, ".rds"));
@@ -151,7 +151,7 @@ InitializaPlan <- function(type="spec", path){
                  recursive = T)
     }
     
-    envir <<- new.env();
+    envir <- .GlobalEnv$envir <- new.env()
     saveRDS(envir, file = paste0(envir.path, "/envir.rds"))
     #----------------------
     # rawFileNames <- paste0(getwd(), "/temp/plan")
@@ -289,7 +289,7 @@ running.plan <- function(plan=NULL,...){
     stop("No command provided to run !");
   }
   
-  plan@PlanNumber <- .plan_count <<- .plan_count + 1;
+  plan@PlanNumber <- .plan_count <- .plan_count + 1;
   
   CommandsVerified <- CommandsVerify(commands);
   MessageOutput("Commands Origanization Finished!", ecol = "\n", NULL);
@@ -379,14 +379,17 @@ ExecutePlan <- function(plan=NULL){
     stop("No running plan input. Please design you plan first with 'running.plan' function !")
   };
   
+  .plan_count <- plan@PlanNumber;
+  
   # Reset running.controller to make sure everything is normal at beginning
   plan@running.controller <- controller.resetter();
   
   if (length(plan@CommandSet) == 1){
     
-    envir$rc <<- plan@running.controller;
+    .GlobalEnv$envir$rc <- plan@running.controller;
     perform.plan(plan@CommandSet[["command_set_1"]]);
     
+    envir <- .GlobalEnv$envir;
     envir.path <- paste0(getwd(),"/temp/envir");
     saveRDS(envir, file = paste0(envir.path,"/envir.rds"));
     
@@ -415,7 +418,7 @@ ExecutePlan <- function(plan=NULL){
     ## Module 8 - Dectect whether current plan type (raw_ms or raw_pre) is different from the last one (Final Decision switch)
     # plan <- planType_identifier(plan);
     
-    envir$rc <<- plan@running.controller
+    .GlobalEnv$envir$rc <- plan@running.controller
     # define.plan.controller <- str2lang('rc <- plan$running.controller');
     # eval (define.plan.controller,envir = envir);
     #perform.plan(new_command_set);
@@ -434,6 +437,7 @@ ExecutePlan <- function(plan=NULL){
       stop(paste0("EXCEPTION POINT CODE: ", mSetInfo$message));
     }
     
+    envir <- .GlobalEnv$envir;
     envir.path <- paste0(getwd(),"/temp/envir");
     saveRDS(envir, file = paste0(envir.path,"/envir.rds"));
     
@@ -446,6 +450,7 @@ ExecutePlan <- function(plan=NULL){
 #' @noRd
 recording_identifier <- function(plan) {
   
+  .plan_count <- plan@PlanNumber;
   record.path <- paste0(getwd(),"/temp/records");
   
   if(file.exists(paste0(record.path,"/records_marker_",.plan_count-1,".rds"))){
@@ -519,7 +524,11 @@ recordMarker_resetter <- function(.plan_count){
 
 #' @noRd
 marker_record <- function(functionNM){
+  
   record.path <- paste0(getwd(),"/temp/records");
+  plan.path <- paste0(getwd(),"/temp/plan/");
+  
+  .plan_count <- readRDS(paste0(plan.path,"plan_count.rds"))
   
   if (!file.exists(paste0(record.path,"/records_marker_",.plan_count,".rds"))){
     record.marker <- matrix(nrow = 28,ncol = 2);
@@ -535,7 +544,6 @@ marker_record <- function(functionNM){
   } else {
     record.marker <- readRDS(paste0(record.path,"/records_marker_",.plan_count,".rds"));
   };
-  
   
   # If this step has been run at ".plan_count" time, is will be marked as T
   if(functionNM=="ROI_extract_c1"){record.marker[1,2] <- TRUE};
@@ -955,6 +963,8 @@ perform.plan <- function(plan.set){
 #' @noRd
 perform.command <- function(command){
   
+  envir <- .GlobalEnv$envir;
+  
   if (as.character(command[[1]])=="<-"){
     
     eval(command,envir = envir);
@@ -1019,6 +1029,8 @@ cache.read <- function(function.name, point){
 
 #' @noRd
 profiling_param_identifier <- function(new_command,last_command){
+  
+  envir <- .GlobalEnv$envir
   
   new <- eval(new_command,envir = envir);
   last <- eval(last_command,envir = envir);
@@ -1403,36 +1415,5 @@ ParamsChanged <- function(lastParamArgus, newParamArgus){
   
 }
 
-#' @noRd
-OptiFileChanged <- function(data_trim_folder){
-  
-  envir_previous <- readRDS(paste0(fullUserPath,"/temp/envir/envir.rds"));
-  optifiles_last <- try(envir_previous[["mSet"]]@rawInMemory@phenoData@data[["sample_name"]],silent = T);
-  optifiles_current <- list.files(data_trim_folder,recursive = TRUE);
-  
-  if(is.null(optifiles_last) | class(optifiles_last) == "try-error"){
-    return(FALSE);
-  }
-  
-  if(all(nchar(optifiles_last) != nchar(optifiles_current))){
-    return(TRUE);
-  }
-}
-
-#' @noRd
-ProcessFileChanged <- function(data_process_folder){
-  
-  envir_previous <- readRDS(paste0(fullUserPath,"/temp/envir/envir.rds"));
-  optifiles_last <- try(basename(envir_previous[["mSet"]]@rawOnDisk@processingData@files),silent = T);
-  optifiles_current <- list.files(data_process_folder, recursive = TRUE);
-  
-  if(is.null(optifiles_last) | class(optifiles_last) == "try-error"){
-    return(FALSE);
-  }
-  
-  if(all(nchar(optifiles_last) != nchar(optifiles_current))){
-    return(TRUE);
-  }
-}
 
 ## End of the resuming script ---

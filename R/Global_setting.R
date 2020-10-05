@@ -5,21 +5,6 @@
 
 
 # OTHER SETTINGS
-# 1. Avoid binding visible notes
-#utils::globalVariables();
-
-suppressGlobalBindingNotes <- function(variablesMentionedInNotes) {
-  for(variable in variablesMentionedInNotes) {
-    utils::globalVariables(variable, "OptiLCMS", TRUE);
-  }
-}
-
-suppressGlobalBindingNotes(
-  c(
-    ".plan_count"
-  )
-)
-
 #' @references Gatto L, Gibb S, Rainer J (2020). “MSnbase, efficient and elegant R-based processing and visualisation of raw mass spectrometry data.” bioRxiv.
 .MSnExpReqFvarLabels <- c("fileIdx", "spIdx", "acquisitionNum",
                           "retentionTime", "msLevel", "precursorScanNum")
@@ -149,7 +134,7 @@ MessageOutput <- function(mes, ecol, progress) {
     
     write.table(
       progress,
-      file = paste0(fullUserPath, "log_progress.txt"),
+      file = "log_progress.txt",
       row.names = F,
       col.names = F
     )

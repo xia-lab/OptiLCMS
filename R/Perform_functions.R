@@ -61,8 +61,8 @@ PerformPeakProfiling <-
     function.name <- "peak_profiling";
     
     if (is.null(running.controller)) {
-      c1 <- c2 <- c3 <- c4 <- T;
-      .running.as.plan <<- FALSE;
+      c1 <- c2 <- c3 <- c4 <- TRUE;
+      .running.as.plan <- FALSE;
     } else {
       c1 <-
         running.controller@peak_profiling[["c1"]] # used to control peak picking
@@ -72,9 +72,11 @@ PerformPeakProfiling <-
         running.controller@peak_profiling[["c3"]] # used to control peak filing
       c4 <-
         running.controller@peak_profiling[["c4"]] # used to control plotting
+      
+      .running.as.plan <- TRUE;
     }
     
-    .optimize_switch <<- FALSE;
+    .optimize_switch <- .GlobalEnv$.optimize_switch <- FALSE;
     
     if(.on.public.web){
       ### Update parameters' style
@@ -553,10 +555,10 @@ PerformPeakAnnotation <-
     
     if (is.null(running.controller)) {
       c1 <- TRUE;
-      .running.as.plan <<- FALSE;
+      .running.as.plan <- FALSE;
     } else {
       c1 <- running.controller@peak_annotation[["c1"]];
-      .running.as.plan <<- TRUE;
+      .running.as.plan <- TRUE;
     }
     
     if (c1) {
@@ -1337,6 +1339,7 @@ PerformPeakAnnotation <-
       endGroup <- 7 + groupNum
       camera_output <- camera_output[,-c(7:endGroup)]
       fullUserPath <- mSet@WorkingDir;
+      
       if(is.null(fullUserPath) | length(fullUserPath) == 0){
         fullUserPath <- getwd();
       }

@@ -112,8 +112,7 @@ PerformParamsOptimization <- function(mSet, param=p0, method="DoE", ncore=4, run
   if(missing(param)) {
     param <- SetPeakParam();
   }
-  
-  .optimize_switch <<- TRUE;
+  .optimize_switch <- .GlobalEnv$.optimize_switch <- TRUE;
   
   #Build Running plan for optimization - Indentify the controller
   if (is.null(running.controller)) {
@@ -731,7 +730,7 @@ ExperimentsCluster_doe <-function(object, object_mslevel,params,
         totalcount <- formals(count_tmp[["initialize"]])[["total"]];
         currentcount <- environment(count_tmp[["tick"]])[["private"]][["current"]];
         
-        write.table((w/nstep*(iterator/4)*3.5+(iterator-1)*3.5+5), file = paste0(fullUserPath, "log_progress.txt"),row.names = F,col.names = F);
+        write.table((w/nstep*(iterator/4)*3.5+(iterator-1)*3.5+5), file = "log_progress.txt", row.names = F,col.names = F);
         print_mes <- paste(round(w/nstep, digits=2)*100, "%");    
         write.table(print_mes,file="metaboanalyst_spec_proc.txt",append = T,row.names = F,col.names = F, quote = F, eol = " | ");
         
@@ -1387,7 +1386,9 @@ Noise_evaluate <- function (raw_data) {
                          Groups = Groups)
   
   sample_names <- paste(unlist(metadata[, factorCol]), seq_len(nrow(metadata)))
-  peakList <- list()
+  peakList <- list();
+  varExpThresh <- 0.8;
+  
   for (index in seq_along(sample_names)) {
     peaks <- rle(signals[[index]]$signals)
     counter <- 1

@@ -698,6 +698,9 @@ massifquantROIs <- function(mz,
                             criticalVal,
                             segs,
                             scanBack) {
+  
+  .optimize_switch <- .GlobalEnv$.optimize_switch;
+  
   if (.on.public.web & !.optimize_switch) {
     massifquantROIs <-
       .Call(

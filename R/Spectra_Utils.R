@@ -31,6 +31,11 @@ PerformPeakPicking<-function(mSet, BPPARAM = bpparam()){
     }
   }
   
+  .optimize_switch <- .GlobalEnv$.optimize_switch;
+  if(is.null(.optimize_switch)){
+    .optimize_switch <- FALSE;
+  }
+  
   object <- mSet@rawOnDisk;
   param <- mSet@params;
   
@@ -53,8 +58,7 @@ PerformPeakPicking<-function(mSet, BPPARAM = bpparam()){
                            FUN = filterFile,
                            object = object_mslevel)
   
-  
-  param$.optimize_switch <- .optimize_switch;
+  param$.optimize_switch <- .GlobalEnv$.optimize_switch;
   
   # Peak picking runnning - centWave mode
   if (param$Peak_method == "centWave")
@@ -301,7 +305,8 @@ PeakPicking_centWave_slave <- function(x, param){
     #write.table(print_mes,file="metaboanalyst_spec_proc.txt",append = T,row.names = F,col.names = F, quote = F, eol = " ");
     print_mes <- paste0(print_mes,print_mes_tmp)
     
-    count_current_sample <<- count_current_sample +1;
+    .GlobalEnv$count_current_sample <- count_current_sample <- .GlobalEnv$count_current_sample +1;
+    count_total_sample <- .GlobalEnv$count_total_sample;
     #write.table(count_current_sample, file = "log_progress.txt",row.names = F,col.names = F)
     write.table(25 + count_current_sample*3/count_total_sample*25, file = "log_progress.txt",row.names = F,col.names = F)
     
@@ -746,7 +751,8 @@ PeakPicking_Massifquant_slave <- function(x, param){
     #write.table(print_mes,file="metaboanalyst_spec_proc.txt",append = T,row.names = F,col.names = F, quote = F, eol = " ");
     #print_mes <- paste0(print_mes,print_mes_tmp)
     
-    count_current_sample <<- count_current_sample +1;
+    .GlobalEnv$count_current_sample <- count_current_sample <- .GlobalEnv$count_current_sample +1;
+    count_total_sample <- .GlobalEnv$count_total_sample;
     write.table(count_current_sample, file = "log_progress.txt",row.names = F,col.names = F)
     write.table(25 + count_current_sample*3/count_total_sample*25, file = "log_progress.txt",row.names = F,col.names = F)
     
@@ -842,6 +848,11 @@ PeakPicking_Massifquant_slave <- function(x, param){
     uindex <- rectUnique(pm, uorder, mzdiff, ydiff = -0.00001) ## allow adjacent peaks;
     featlist <- p[uindex, , drop = FALSE]
     #message(" ", dim(featlist)[1]," Peaks.");
+    
+    .optimize_switch <- .GlobalEnv$.optimize_switch;
+    if(is.null(.optimize_switch)){
+      .optimize_switch <- FALSE;
+    }
     
     if(.on.public.web & !.optimize_switch){
       
@@ -1077,6 +1088,11 @@ PerformPeakGrouping<-function(mSet){
     }
   }
   
+  .optimize_switch <- .GlobalEnv$.optimize_switch;
+  if(is.null(.optimize_switch)){
+    .optimize_switch <- FALSE;
+  }
+  
   # if(.on.public.web){
   #   dyn.load(.getDynLoadPath());
   # }
@@ -1293,7 +1309,7 @@ PerformRTcorrection <- function(mSet){
   #   dyn.load(.getDynLoadPath());
   # }
   # 
-  
+
   if(missing(mSet) & file.exists("mSet.rda")){
     load("mSet.rda")
   } else if(missing(mSet) & !file.exists("mSet.rda")){
@@ -1324,6 +1340,11 @@ PerformRTcorrection <- function(mSet){
   }
   
   param <- mSet@params;
+  
+  .optimize_switch <- .GlobalEnv$.optimize_switch;
+  if(is.null(.optimize_switch)){
+    .optimize_switch <- FALSE;
+  }
   
   if (.on.public.web & !.optimize_switch){
     MessageOutput(mes = paste("Retention time correction is running."),
@@ -1403,6 +1424,11 @@ RT.Adjust_peakGroup <-
            peakGroupsMatrix = matrix(ncol = 0, nrow = 0),
            subset = integer(),
            subsetAdjust = c("average", "previous"))  {
+   
+    .optimize_switch <- .GlobalEnv$.optimize_switch;
+    if(is.null(.optimize_switch)){
+      .optimize_switch <- FALSE;
+    }
     
     subsetAdjust <- match.arg(subsetAdjust)
     ## Check input.
@@ -1657,6 +1683,11 @@ adjustRtime_peakGroup <- function(mSet, param, msLevel = 1L) {
                                      extraPeaks = param$extraPeaks
   )
   
+  .optimize_switch <- .GlobalEnv$.optimize_switch;
+  if(is.null(.optimize_switch)){
+    .optimize_switch <- FALSE;
+  }
+  
   if (is.null(pkGrpMat) & !.optimize_switch){
     MessageOutput(mes = paste0("<font color=\"red\">","\nERROR:","No enough peaks detected, please adjust your parameters or use other Peak/Alignment method","</font>"),
                   ecol = "\n",
@@ -1707,6 +1738,11 @@ adjustRtime_peakGroup <- function(mSet, param, msLevel = 1L) {
 
 
 adjustRtime_obiwarp <- function(mSet, param, msLevel = 1L) {
+  
+  .optimize_switch <- .GlobalEnv$.optimize_switch;
+  if(is.null(.optimize_switch)){
+    .optimize_switch <- FALSE;
+  }
   
   ## Filter for MS level, perform adjustment and if the object
   ## contains spectra from other MS levels too, adjust all raw
@@ -1799,6 +1835,11 @@ adjustRtime_obiwarp <- function(mSet, param, msLevel = 1L) {
 }
 
 mSet.obiwarp <- function(mSet, object, param) { ## Do not use the params defined by user for now!
+  
+  .optimize_switch <- .GlobalEnv$.optimize_switch;
+  if(is.null(.optimize_switch)){
+    .optimize_switch <- FALSE;
+  }
   
   param <- list();
   
@@ -2110,6 +2151,11 @@ PerformPeakFiling <- function(mSet,BPPARAM=bpparam()){
     } else {
       stop("mSet is missing ! Please make sure mSet is well defined !");
     }
+  }
+  
+  .optimize_switch <- .GlobalEnv$.optimize_switch;
+  if(is.null(.optimize_switch)){
+    .optimize_switch <- FALSE;
   }
   
   param <- mSet@params;
@@ -2632,7 +2678,10 @@ updateRawSpectraParam <- function (Params){
   param$subsetAdjust <- "average";
   
   # Finished !
-  
+  .optimize_switch <- .GlobalEnv$.optimize_switch;
+  if(is.null(.optimize_switch)){
+    .optimize_switch <- FALSE;
+  }
   if (.on.public.web & !.optimize_switch){
     MessageOutput(paste("Parameters for",param$Peak_method, "have been successfully parsed!"), "\n", NULL);
   }
@@ -3986,6 +4035,11 @@ PeakPicking_core <-function(object, object_mslevel, param, msLevel = 1L){
                         param = param,
                         BPPARAM = SerialParam())
     
+  }
+  
+  .optimize_switch <- .GlobalEnv$.optimize_switch;
+  if(is.null(.optimize_switch)){
+    .optimize_switch <- FALSE;
   }
   
   if(!.optimize_switch){

@@ -182,8 +182,8 @@ ImportRawMSData <-
         running.controller@data_import[["c2"]] # used to control plotting option
     }
     
-    .optimize_switch <<- FALSE;
-
+    .GlobalEnv$.optimize_switch <- FALSE;
+    
     start.time <- Sys.time()
     # msg.vec <<- vector(mode = "character")
     # msg <- c("The uploaded files are raw MS spectra.")
@@ -231,8 +231,8 @@ ImportRawMSData <-
       )
     }
     
-    count_total_sample <<- length(files);
-    count_current_sample <<- 0;
+    .GlobalEnv$count_total_sample <- length(files);
+    .GlobalEnv$count_current_sample <- 0;
     toRemove = vector();
     
     # Update first
@@ -253,7 +253,7 @@ ImportRawMSData <-
     files = files[toKeepInx];
     
     snames <- gsub("\\.[^.]*$", "", basename(files))
-    msg <- c(msg, paste("A total of ", length(files), "samples were found."))
+    # msg <- c(msg, paste("A total of ", length(files), "samples were found."))
     sclass <- gsub("^\\.$", "sample", dirname(files))
     
     scomp <- strsplit(substr(sclass, 1, min(nchar(sclass))), "", fixed = TRUE)
@@ -699,7 +699,7 @@ read.InMemMSd.data <- function(files,
       write.table(print_mes,file="metaboanalyst_spec_proc.txt",append = T,row.names = F,col.names = F, quote = F, eol = "\n");
       
       count.idx <- count.idx + 1;  
-      write.table(1.0 + count.idx/length(files)*3, file = paste0(fullUserPath, "log_progress.txt"),row.names = F,col.names = F);
+      write.table(1.0 + count.idx/length(files)*3, file = "log_progress.txt", row.names = F,col.names = F);
     }
     
     cat(paste0("Reading from ", basename(f), " finished successfully !\n"));

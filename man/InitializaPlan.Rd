@@ -4,12 +4,12 @@
 \alias{InitializaPlan}
 \title{Initializing running plan}
 \usage{
-InitializaPlan(type = "spec", path)
+InitializaPlan(type = "spec", WorkingDir = NULL)
 }
 \arguments{
 \item{type}{Initialized plan type for a resumable running mode. Can be "raw_opt" for automated optimization option, or "raw_ms" for customized pipeline.}
 
-\item{path}{this parameter is used to define the working directory (also is where the raw spectra data exists).}
+\item{WorkingDir}{this parameter is used to define the working directory (also is where the raw spectra data exists).}
 }
 \description{
 Initializing running plan

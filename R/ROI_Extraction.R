@@ -94,14 +94,14 @@ PerformROIExtraction <-
     
     if (is.null(running.controller)) {
       c1 <- c2 <- c3 <- c4 <- c5 <- TRUE;
-      .running.as.plan <<- FALSE;
+      .running.as.plan <- FALSE;
     } else {
       c1 <- running.controller@ROI_extract[["c1"]]; # Data read part
       c2 <- running.controller@ROI_extract[["c2"]]; # Data trim part
       c3 <- running.controller@ROI_extract[["c3"]]; # Data write part
       c4 <- running.controller@ROI_extract[["c4"]]; # Data plot part
       c5 <- running.controller@ROI_extract[["c5"]]; # Data rmConts part
-      .running.as.plan <<- TRUE;
+      .running.as.plan <- TRUE;
     }
     
     if (c1) {
