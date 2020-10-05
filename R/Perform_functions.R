@@ -155,6 +155,8 @@ PerformPeakProfiling <-
       marker_record("peak_profiling_c1")
     }
     
+    .GlobalEnv$envir$mSet <- mSet;
+    
     if (.on.public.web) {
       if (class(mSet)[1] == "simpleError") {
         MessageOutput(
@@ -169,13 +171,14 @@ PerformPeakProfiling <-
         )
         stop("EXCEPTION POINT CODE: PU1")
       }
-      
-      MessageOutput(
-        mes =  paste0("Step 3/6: Peak picking finished ! (", Sys.time(), ")"),
-        ecol = "\n",
-        progress = 50
-      )
+
     }
+    
+    MessageOutput(
+      mes =  paste0("Step 3/6: Peak picking finished ! (", Sys.time(), ")"),
+      ecol = "\n",
+      progress = 50
+    )
     
     #   --------===========----- II. Peak alignment -----===========------------
     if (c2) {
@@ -220,13 +223,15 @@ PerformPeakProfiling <-
         )
         stop("EXCEPTION POINT CODE: PU2")
       }
-      
-      MessageOutput(
-        mes = paste0("Step 4/6: Peak alignment finished ! (", Sys.time(), ")"),
-        ecol = "\n",
-        progress = 73
-      )
     }
+    
+    .GlobalEnv$envir$mSet <- mSet;
+    
+    MessageOutput(
+      mes = paste0("Step 4/6: Peak alignment finished ! (", Sys.time(), ")"),
+      ecol = "\n",
+      progress = 73
+    )
     
     #   --------===========----- III. Peak filling -----===========------------
     if (c3) {
@@ -285,6 +290,7 @@ PerformPeakProfiling <-
     )
 
     save(mSet, file = "mSet.rda")
+    .GlobalEnv$envir$mSet <- mSet;
 
     MessageOutput(
       mes = paste0("Begin to plotting figures..."),

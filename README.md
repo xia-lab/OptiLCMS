@@ -29,19 +29,19 @@ BiocManager::install("OptiLCMS")
 
 ```R
 # Latest features could only be obtained from this approach, make sure 'devtools' installed first
-devtools::install_github("xia-lab/OptiLCMS", build = TRUE, build_vignettes = TRUE, build_manual =T)
+devtools::install_github("xia-lab/OptiLCMS", build = TRUE, build_vignettes = FALSE, build_manual =T)
 
 ```
 
 ### Tutorial
 
-A step-by-step tutorial is prepared [here]() for users to start their analysis by following them.
+A step-by-step tutorial will be prepared for users to start their analysis by following them.
 
 ### Citation
 
 OptiLCMS package has been developed by the [XiaLab](https://www.xialab.ca/) at McGill University. If you use the R package, please cite us: 
 
-* Zhiqiang Pang, Guangyan Zhou, Jasmine CHong, Shuzhao Li and Jianguo Xia. "Automatically Optimized Web-based Raw Spectra Processing Workflow in MetaboAnalyst" [link]()
+* Pang, Z., Chong, J., Li, S. and Xia, J. (2020) MetaboAnalystR 3.0: Toward an Optimized Workflow for Global Metabolomics. Metabolites 10(5) 186 [link](https://doi.org/10.3390/metabo10050186)
 
 *From within R:*
 

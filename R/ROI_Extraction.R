@@ -263,14 +263,14 @@ PerformROIExtraction <-
     if (c2) {
       if (!mode == "none") {
         ## Data Trim
-        a <-
-          suppressMessages(unlist(lapply(
-            ls(raw_data@assayData),
-            FUN = function(x) {
-              unlockBinding(sym = x, env = raw_data@assayData)
-            }
-          )));
-        
+        # a <-
+        #   suppressMessages(unlist(lapply(
+        #     ls(raw_data@assayData),
+        #     FUN = function(x) {
+        #       unlockBinding(sym = x, env = raw_data@assayData)
+        #     }
+        #   )));
+
         ms_list <-
           sapply(
             ls(raw_data@assayData),

@@ -2,7 +2,10 @@
 # Setting .on.public.web
 .on.public.web <- FALSE;
 
-
+# Setting the global Variable to avoid notes in R CMD Check
+# utils::globalVariables(c("Group", "Groups", "Intensity", 
+#                          "Labels", "PC1", "PC2", "RT", 
+#                          "Samples", "group", "value"))
 
 # OTHER SETTINGS
 #' @references Gatto L, Gibb S, Rainer J (2020). “MSnbase, efficient and elegant R-based processing and visualisation of raw mass spectrometry data.” bioRxiv.

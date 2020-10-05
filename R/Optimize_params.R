@@ -866,7 +866,7 @@ Statistic_doe <-function(object, object_mslevel, isotopeIdentification,
   mSet_OPT$PPS$GaussianSI <-
     calcGaussianS(mSet, object, useNoise = useNoise)
   
-  cat(paste0("Gaussian peak statistics (%): ", mSet_OPT$PPS$GaussianSI, " of this round !"))
+  cat(paste0("Gaussian peak statistics (%): ", round(mSet_OPT$PPS$GaussianSI,2)*100, " of this round !\n"))
   
   #save(mSet_OPT, file = paste0("mSet_",Sys.time(),"_780.rda"));
   ## Normalize the CV, RCS, GS, GaussianSI

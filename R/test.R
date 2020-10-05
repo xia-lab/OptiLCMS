@@ -23,15 +23,15 @@
 # PerformDataInspect("data/QC/Trimmed_0020a_XAV_iHMP2_FFA_PREFA02.mzML",res = 35)
 # a1 <- PerformROIExtraction("/home/qiang/Data_IBD/test/upload/",mode = "rt_specific",write = T,rt = seq(480, 660, 0.2),
 #                            rtdiff = 0.101,rmConts = F,plot = F)
-# 
+# # 
 # library(OptiLCMS);
 # plan <- InitializaPlan("raw_opt","/home/glassfish/projects/MetaboDemoRawData/")
 # plan <- running.plan(plan,
-#                      data_folder_QC <- 'data/QC/',
+#                      data_folder_QC <- 'upload/QC/',
 #                      mSet <- PerformROIExtraction(datapath = data_folder_QC, rt.idx = 0.95, plot = F, rmConts = F, running.controller = rc),
 #                      param_initial <- SetPeakParam(),
 #                      best_parameters <- PerformParamsOptimization(mSet = mSet, param_initial, ncore = 2, running.controller = rc),
-#                      data_folder_Sample <- 'data/',
+#                      data_folder_Sample <- 'upload/',
 #                      param <- best_parameters,
 #                      plotSettings1 <- SetPlotParam(Plot=T),
 #                      plotSettings2 <- SetPlotParam(Plot=T),

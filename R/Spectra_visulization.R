@@ -470,7 +470,7 @@ PlotXIC <-
     )
     
     s_image <-
-      ggplot(res, aes(x = RT, y = Intensity, color = Samples)) + #geom_line() #+
+      ggplot(res, aes_string(x = "RT", y = "Intensity", color = "Samples")) + #geom_line() #+
       stat_smooth(
         geom = 'area',
         method = "loess",
@@ -479,7 +479,7 @@ PlotXIC <-
         size = 0.35,
         formula = "y ~ x",
         alpha = 1 / 4,
-        aes(fill = Samples)
+        aes_string(fill = "Samples")
       ) +
       theme_bw() +
       ylim(0, NA) +
@@ -499,7 +499,7 @@ PlotXIC <-
     
     if (sample_labeled) {
       s_image <-
-        s_image + geom_text_repel(aes(y = Intensity * 0.2, label = Labels),
+        s_image + geom_text_repel(aes_string(y = "Intensity * 0.2", label = "Labels"),
                                   force = 1.5,
                                   show.legend = FALSE)
     }
@@ -545,7 +545,7 @@ PlotXIC <-
     )
     
     g_image <-
-      ggplot(res_data, aes(x = RT, y = Intensity, color = Groups)) + #geom_line() +
+      ggplot(res_data, aes_string(x = "RT", y = "Intensity", color = "Groups")) + #geom_line() +
       stat_smooth(
         geom = 'area',
         method = "loess",
@@ -554,7 +554,7 @@ PlotXIC <-
         size = 0.35,
         formula = "y ~ x",
         alpha = 1 / 4,
-        aes(fill = Groups)
+        aes_string(fill = "Groups")
       ) +
       theme_bw() +
       ylim(0, NA) +
@@ -575,7 +575,7 @@ PlotXIC <-
     
     if (Group_labeled) {
       g_image <-
-        g_image + geom_text_repel(aes(y = Intensity * 0.2, label = Labels),
+        g_image + geom_text_repel(aes_string(y = "Intensity * 0.2", label = "Labels"),
                                   force = 1.5,
                                   show.legend = FALSE)
     }
@@ -750,22 +750,22 @@ PlotSpectraPCA <-
           grDevices::colorRampPalette(RColorBrewer::brewer.pal(12, "Set3"));
 
         p <-
-          ggplot2::ggplot(df, aes(
-            x = PC1,
-            y = PC2,
-            color = group,
-            label = row.names(df)
+          ggplot2::ggplot(df, aes_string(
+            x = "PC1",
+            y = "PC2",
+            color = "group",
+            label = "row.names(df)"
           )) +
           geom_text_repel(force = 1.5) + geom_point(size = 5,  fill = col.fun(length(unique(sample_idx)))) + theme(axis.text =
                                                                                                                      element_text(size = 12))
 
       } else{
         p <-
-          ggplot2::ggplot(df, aes(
-            x = PC1,
-            y = PC2,
-            color = group,
-            label = row.names(df)
+          ggplot2::ggplot(df, aes_string(
+            x = "PC1",
+            y = "PC2",
+            color = "group",
+            label = "row.names(df)"
           )) +
           geom_text_repel(force = 1.5) + geom_point(size = 5) + scale_color_brewer(palette =
                                                                                      "Set1") + theme(axis.text = element_text(size = 12))
@@ -774,15 +774,15 @@ PlotSpectraPCA <-
     } else {
       if (length(unique(sample_idx)) > 9) {
         p <-
-          ggplot2::ggplot(df, aes(x = PC1,
-                                  y = PC2,
-                                  color = group)) + geom_point(size = 5)
+          ggplot2::ggplot(df, aes_string(x = "PC1",
+                                  y = "PC2",
+                                  color = "group")) + geom_point(size = 5)
 
       } else{
         p <-
-          ggplot2::ggplot(df, aes(x = PC1,
-                                  y = PC2,
-                                  color = group)) + geom_point(size = 5) + scale_color_brewer(palette = "Set1");
+          ggplot2::ggplot(df, aes_string(x = "PC1",
+                                  y = "PC2",
+                                  color = "group")) + geom_point(size = 5) + scale_color_brewer(palette = "Set1");
       }
     }
 
@@ -1053,10 +1053,10 @@ plotMSfeature <- function(FeatureNM,
   )
   
   p1 <-
-    ggplot(data_table, aes(
-      x = Group,
-      y = log2(value + 1),
-      fill = Group
+    ggplot(data_table, aes_string(
+      x = "Group",
+      y = "log2(value + 1)",
+      fill = "Group"
     )) + # geom_violin(trim = T,draw_quantiles = T) +
     stat_boxplot(geom = "errorbar", width = 0.15, aes(color = "black")) +
     geom_boxplot(
@@ -1066,7 +1066,7 @@ plotMSfeature <- function(FeatureNM,
       outlier.fill = "white",
       outlier.color = "white"
     ) +
-    geom_jitter(aes(fill = Group),
+    geom_jitter(aes_string(fill = "Group"),
                 width = 0.2,
                 shape = 21,
                 size = 2.5) +
