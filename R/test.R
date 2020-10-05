@@ -25,7 +25,7 @@
 #                            rtdiff = 0.101,rmConts = F,plot = F)
 # 
 # library(OptiLCMS);
-# plan <- InitializaPlan("raw_opt","/home/qiang/Data_IBD/test/upload/trimmed/")
+# plan <- InitializaPlan("raw_opt","/home/glassfish/projects/MetaboDemoRawData/")
 # plan <- running.plan(plan,
 #                      data_folder_QC <- 'data/QC/',
 #                      mSet <- PerformROIExtraction(datapath = data_folder_QC, rt.idx = 0.95, plot = F, rmConts = F, running.controller = rc),
@@ -41,8 +41,8 @@
 #                      mSet <- PerformPeakAnnotation(mSet = mSet, annotaParam = annParams, ncore =1, running.controller = rc),
 #                      maPeaks <- FormatPeakList(mSet = mSet, annParams, filtIso =F, filtAdducts = FALSE,missPercent = 1));
 # ExecutePlan(plan);
-
 # #
+# plan <- InitializaPlan("raw_ms","/home/glassfish/projects/MetaboDemoRawData/")
 # plan <- running.plan(plan,
 #                      data_folder_Sample <- 'upload/',
 #                      param <- SetPeakParam(),

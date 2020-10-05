@@ -44,6 +44,11 @@
 #' @param corr_eic_th PeakAnnotation parameters, (Only effective for website pipeline, for local package, OptiLCMS, please use SetAnnotationParam to define the annotation parameters).
 #' @param mz_abs_add PeakAnnotation parameters, (Only effective for website pipeline, for local package, OptiLCMS, please use SetAnnotationParam to define the annotation parameters).
 #' @param rmConts Logical, specify whether to exclude/remove the potential contaminations (the ones with RT range over 50% of the whole spetra).
+#' @param criticalValue criticalValue for massifquant (supported later).
+#' @param consecMissedLimit consecMissedLimit for massifquant (supported later).
+#' @param unions unions for massifquant (supported later).
+#' @param checkBack checkBack for massifquant (supported later).
+#' @param withWave withWave for massifquant (supported later).
 #' need to change.
 #' @author Zhiqiang Pang \email{zhiqiang.pang@mail.mcgill.ca}, Jasmine Chong \email{jasmine.chong@mail.mcgill.ca},
 #' Mai Yamamoto \email{yamamoto.mai@mail.mcgill.ca}, and Jeff Xia \email{jeff.xia@mcgill.ca}
@@ -57,6 +62,7 @@ SetPeakParam <- function(platform = "general", Peak_method = "centWave", RT_meth
                          mzdiff, snthresh, bw,
                          ppm, min_peakwidth, max_peakwidth, noise, prefilter, value_of_prefilter,
                          fwhm, steps, sigma,
+                         criticalValue, consecMissedLimit, unions, checkBack, withWave,
                          profStep, minFraction, minSamples, maxFeatures,
                          extra, span, smooth, family, fitgauss,
                          mzCenterFun, integrate,

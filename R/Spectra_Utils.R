@@ -248,44 +248,7 @@ PeakPicking_centWave_slave <- function(x, param){
         }
       }),
       fixSort = function() {
-        ## Force ordering of values within spectrum by mz:
-        ##  o split values into a list -> mz per spectrum, intensity per
-        ##    spectrum.
-        ##  o define the ordering.
-        ##  o re-order the mz and intensity and unlist again.
-        ## Note: the Rle split is faster than the "conventional" factor split.
-        splitF <- Rle(1:length(valsPerSpect), valsPerSpect)
-        mzl <- as.list(S4Vectors::split(mz, f = splitF))
-        oidx <- lapply(mzl, order)
-        mz <<- unlist(mapply(
-          mzl,
-          oidx,
-          FUN = function(y, z) {
-            return(y[z])
-          },
-          SIMPLIFY = FALSE,
-          USE.NAMES = FALSE
-        ),
-        use.names = FALSE)
-        int <<-
-          unlist(
-            mapply(
-              as.list(split(int, f = splitF)),
-              oidx,
-              FUN = function(y, z) {
-                return(y[z])
-              },
-              SIMPLIFY = FALSE,
-              USE.NAMES = FALSE
-            ),
-            use.names = FALSE
-          )
-        rm(mzl)
-        rm(splitF)
-        tmp <- capture.output(
-          roiList <- findmzROI (mz, int, scanindex, scanrange, scantime, param,
-                                 minCentroids)
-        )
+        print("m/z sort assumption violated !")
       }
     )
     
@@ -790,8 +753,8 @@ PeakPicking_Massifquant_slave <- function(x, param){
       massifquantROIs <- massifquantROIs(mz, int, scanindex, scantime,
                           mzrange, scanrange,
                           scantime, minIntensity,
-                          minCentroids, consecMissedLim,
-                          ppm, criticalVal, segs,
+                          minCentroids, consecMissedLimit,
+                          ppm, criticalValue, segs,
                           scanBack))
 
   #if (withWave) {
@@ -3398,6 +3361,11 @@ gaussCoverage <- function(xlim,h1,mu1,s1,h2,mu2,s2) {
   
   overlap / vsmall
 }
+cent <- function(x) {
+  N <- length(x)
+  if (N == 1) return(1)
+  floor(N/2)
+}
 gauss <- function(x, h, mu, sigma){
   h*exp(-(x-mu)^2/(2*sigma^2))
 }
@@ -5053,112 +5021,112 @@ findAdducts <- function(mSet, ppm=5, mzabs=0.015, multiplier=3, polarity=NULL, r
   ncl <- sum(sapply(mSet@peakAnnotation$AnnotateObject$pspectra, length));  
   
   if (runParallel == 1) { ## ... we run in parallel mode
-    if(is.null(psg_list)){
-      MessageOutput(paste('Calculating possible adducts in',npspectra,'Groups... '), "\n", NULL)
-
-      lp <- -1;
-      pspectra_list <- 1:npspectra;
-    }else{
-      MessageOutput(paste('Calculating possible adducts in',length(psg_list),'Groups... '), "\n", NULL)
-      lp <- -1;
-      pspectra_list <- psg_list;
-    }
-    
-    argList <- list();
-    
-    cnt_peak <- 0;
-    if(is.null(max_peaks)){
-      max_peaks=100;
-    }
-    paramsGlobal <- list();
-    if("typ" %in% colnames(rules)){
-      rules.idx <- which(rules[, "typ"]== "A")
-      parent <- TRUE;
-    }else{
-      #backup for old rule sets
-      rules.idx <- 1:nrow(rules);
-      parent <- FALSE;
-    }
-    
-    #Add params to env
-    paramsGlobal <- list()
-    paramsGlobal$pspectra <- mSet@peakAnnotation$AnnotateObject$pspectra;
-    paramsGlobal$imz <- imz;
-    paramsGlobal$rules <- rules;
-    paramsGlobal$mzabs <- mzabs;
-    paramsGlobal$devppm <- devppm;
-    paramsGlobal$isotopes <- isotopes;
-    paramsGlobal$quasimolion <- quasimolion;
-    paramsGlobal$parent <- parent;
-    paramsGlobal$rules.idx <- rules.idx;
-    #create params
-    #paramsGlobal <- list2env(params)
-    
-    params <- list();
-    
-    for(j in 1:length(pspectra_list)){
-      i <- pspectra_list[j];
-      params$i[[length(params$i)+1]] <- i;
-      cnt_peak <- cnt_peak+length(mSet@peakAnnotation$AnnotateObject$pspectra[[i]]);
-      if(cnt_peak > max_peaks || j == length(pspectra_list)){
-        argList[[length(argList)+1]] <- params
-        cnt_peak <- 0;
-        params <- list();
-      }
-    }
-    
-    #Some informationen for the user
-    cat(paste("Parallel mode: There are",length(argList), "tasks.\n"))
-    
-    if(is.null(mSet@peakAnnotation$AnnotateObject$runParallel$cluster)){
-      #Use MPI
-      #result <- xcmsPapply(argList, annotateGrpMPI2, paramsGlobal)
-    }else{
-      #For snow
-      #result <- xcms:::xcmsClusterApply(cl=mSet$AnnotateObject$runParallel$cluster, 
-      #                                  x=argList, fun=annotateGrpMPI, 
-      #                                  msgfun=msgfun.snowParallel,
-      #                                  paramsGlobal)
-    }
-    
-    for(ii in 1:length(result)){
-      if(length(result[[ii]]) == 0){
-        next;
-      }
-      for(iii in 1:length(result[[ii]])){
-        hypothese <- result[[ii]][[iii]];
-        if(is.null(hypothese)){
-          next;
-        }
-        charge <- 0;
-        old_massgrp <- 0;
-        index <- argList[[ii]]$i[[iii]];
-        ipeak <- mSet@peakAnnotation$AnnotateObject$pspectra[[index]];
-        for(hyp in 1:nrow(hypothese)){
-          peakid <- as.numeric(ipeak[hypothese[hyp, "massID"]]);
-          if(old_massgrp != hypothese[hyp,"massgrp"]) {
-            massgrp <- massgrp+1;
-            old_massgrp <- hypothese[hyp,"massgrp"];
-            annoGrp <- rbind(annoGrp,c(massgrp,hypothese[hyp,"mass"],
-                                       sum(hypothese[ which(hypothese[,"massgrp"]==old_massgrp),"score"]),i) ) 
-          }
-          
-          if(parent){
-            annoID <- rbind(annoID, cbind(peakid, massgrp, hypothese[hyp, c("ruleID","parent")]))  
-          }else{
-            annoID <- rbind(annoID, cbind(peakid, massgrp, hypothese[hyp, c("ruleID")],NA))
-          }
-          
-        }
-      }
-    }
-    
-    derivativeIons <- getderivativeIons(annoID,annoGrp,rules,length(imz));
-    
-    mSet@peakAnnotation$AnnotateObject$derivativeIons <- derivativeIons;
-    mSet@peakAnnotation$AnnotateObject$annoID  <- annoID;
-    mSet@peakAnnotation$AnnotateObject$annoGrp <- annoGrp;
-    return(object)
+    # if(is.null(psg_list)){
+    #   MessageOutput(paste('Calculating possible adducts in',npspectra,'Groups... '), "\n", NULL)
+    # 
+    #   lp <- -1;
+    #   pspectra_list <- 1:npspectra;
+    # }else{
+    #   MessageOutput(paste('Calculating possible adducts in',length(psg_list),'Groups... '), "\n", NULL)
+    #   lp <- -1;
+    #   pspectra_list <- psg_list;
+    # }
+    # 
+    # argList <- list();
+    # 
+    # cnt_peak <- 0;
+    # if(is.null(max_peaks)){
+    #   max_peaks=100;
+    # }
+    # paramsGlobal <- list();
+    # if("typ" %in% colnames(rules)){
+    #   rules.idx <- which(rules[, "typ"]== "A")
+    #   parent <- TRUE;
+    # }else{
+    #   #backup for old rule sets
+    #   rules.idx <- 1:nrow(rules);
+    #   parent <- FALSE;
+    # }
+    # 
+    # #Add params to env
+    # paramsGlobal <- list()
+    # paramsGlobal$pspectra <- mSet@peakAnnotation$AnnotateObject$pspectra;
+    # paramsGlobal$imz <- imz;
+    # paramsGlobal$rules <- rules;
+    # paramsGlobal$mzabs <- mzabs;
+    # paramsGlobal$devppm <- devppm;
+    # paramsGlobal$isotopes <- isotopes;
+    # paramsGlobal$quasimolion <- quasimolion;
+    # paramsGlobal$parent <- parent;
+    # paramsGlobal$rules.idx <- rules.idx;
+    # #create params
+    # #paramsGlobal <- list2env(params)
+    # 
+    # params <- list();
+    # 
+    # for(j in 1:length(pspectra_list)){
+    #   i <- pspectra_list[j];
+    #   params$i[[length(params$i)+1]] <- i;
+    #   cnt_peak <- cnt_peak+length(mSet@peakAnnotation$AnnotateObject$pspectra[[i]]);
+    #   if(cnt_peak > max_peaks || j == length(pspectra_list)){
+    #     argList[[length(argList)+1]] <- params
+    #     cnt_peak <- 0;
+    #     params <- list();
+    #   }
+    # }
+    # 
+    # #Some informationen for the user
+    # cat(paste("Parallel mode: There are",length(argList), "tasks.\n"))
+    # 
+    # if(is.null(mSet@peakAnnotation$AnnotateObject$runParallel$cluster)){
+    #   #Use MPI
+    #   #result <- xcmsPapply(argList, annotateGrpMPI2, paramsGlobal)
+    # }else{
+    #   #For snow
+    #   #result <- xcms:::xcmsClusterApply(cl=mSet$AnnotateObject$runParallel$cluster, 
+    #   #                                  x=argList, fun=annotateGrpMPI, 
+    #   #                                  msgfun=msgfun.snowParallel,
+    #   #                                  paramsGlobal)
+    # }
+    # 
+    # for(ii in 1:length(result)){
+    #   if(length(result[[ii]]) == 0){
+    #     next;
+    #   }
+    #   for(iii in 1:length(result[[ii]])){
+    #     hypothese <- result[[ii]][[iii]];
+    #     if(is.null(hypothese)){
+    #       next;
+    #     }
+    #     charge <- 0;
+    #     old_massgrp <- 0;
+    #     index <- argList[[ii]]$i[[iii]];
+    #     ipeak <- mSet@peakAnnotation$AnnotateObject$pspectra[[index]];
+    #     for(hyp in 1:nrow(hypothese)){
+    #       peakid <- as.numeric(ipeak[hypothese[hyp, "massID"]]);
+    #       if(old_massgrp != hypothese[hyp,"massgrp"]) {
+    #         massgrp <- massgrp+1;
+    #         old_massgrp <- hypothese[hyp,"massgrp"];
+    #         annoGrp <- rbind(annoGrp,c(massgrp,hypothese[hyp,"mass"],
+    #                                    sum(hypothese[ which(hypothese[,"massgrp"]==old_massgrp),"score"]),i) ) 
+    #       }
+    #       
+    #       if(parent){
+    #         annoID <- rbind(annoID, cbind(peakid, massgrp, hypothese[hyp, c("ruleID","parent")]))  
+    #       }else{
+    #         annoID <- rbind(annoID, cbind(peakid, massgrp, hypothese[hyp, c("ruleID")],NA))
+    #       }
+    #       
+    #     }
+    #   }
+    # }
+    # 
+    # derivativeIons <- getderivativeIons(annoID,annoGrp,rules,length(imz));
+    # 
+    # mSet@peakAnnotation$AnnotateObject$derivativeIons <- derivativeIons;
+    # mSet@peakAnnotation$AnnotateObject$annoID  <- annoID;
+    # mSet@peakAnnotation$AnnotateObject$annoGrp <- annoGrp;
+    # return(object)
   } else {
     ##Parallel Core Mode
     if(is.null(psg_list)){

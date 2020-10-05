@@ -99,7 +99,7 @@
 #' ## Execute the defined plan
 #' # ExecutePlan(plan)
 
-PerformParamsOptimization <- function(mSet, param=p0, method="DoE", ncore=4, running.controller=NULL){
+PerformParamsOptimization <- function(mSet, param= NULL, method="DoE", ncore=4, running.controller=NULL){
   
   if (class(mSet) == "mSet") {
     raw_data <- mSet@rawInMemory;
@@ -109,7 +109,7 @@ PerformParamsOptimization <- function(mSet, param=p0, method="DoE", ncore=4, run
     stop("Wrong mSet object provided !")
   }
   
-  if(missing(param)) {
+  if(missing(param) | is.null(param)) {
     param <- SetPeakParam();
   }
   .optimize_switch <- .GlobalEnv$.optimize_switch <- TRUE;
@@ -1931,6 +1931,7 @@ findIsotopes.IPO <- function(mSet, checkPeakShape=c("none", "borderIntensity", "
     #only looking into peaks from current sample   
     speaks <- peak_source[peak_source[,"sample"]==sample,,drop=FALSE]
     split <- 250
+    rawdata <- NULL;
     if(!(checkPeakShape=="none"))
       # rawdata <- loadRaw(xcmsSource(xset@filepaths[sample]))
       stop("Other PeakShapeChecking Method will be supported later !")

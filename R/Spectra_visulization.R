@@ -311,7 +311,7 @@ PlotXIC <-
     if (missing(height)) {
       height <- width * 1.05
     }
-    
+    mSet <- NULL;
     # Load data results
     load("mSet.rda")
     
@@ -319,9 +319,9 @@ PlotXIC <-
     #   load_MSnbase()
     # }
     
-    raw_data <- mSet[["onDiskData"]]
+    raw_data <- mSet@rawOnDisk
     raw_data@featureData$retentionTime <-
-      unlist(mSet[["msFeatureData"]][["adjustedRT"]])
+      unlist(mSet@peakRTcorrection$adjustedRT);
     
     # Get groups information
     groupsInfo <- raw_data@phenoData@data[["sample_group"]]
@@ -338,8 +338,7 @@ PlotXIC <-
     samples_names <- raw_data@phenoData@data[["sample_name"]]
     
     # Get current feature information
-    peak_idx_current <-
-      mSet[["FeatureGroupTable"]]@listData[["peakidx"]][[featureNum]]
+    peak_idx_current <-mSet@peakfilling$FeatureGroupTable@listData$peakidx[[featureNum]]
     
     #peak_table <- mSet[["msFeatureData"]][["chromPeaks"]][peak_idx_current,];
     peak_table <- mSet[["xcmsSet"]]@peaks[peak_idx_current,]
@@ -748,7 +747,8 @@ PlotSpectraPCA <-
     if (nrow(df) < 30) {
       if (length(unique(sample_idx)) > 9) {
         col.fun <-
-          grDevices::colorRampPalette(RColorBrewer::brewer.pal(12, "Set3"))
+          grDevices::colorRampPalette(RColorBrewer::brewer.pal(12, "Set3"));
+
         p <-
           ggplot2::ggplot(df, aes(
             x = PC1,
@@ -756,9 +756,9 @@ PlotSpectraPCA <-
             color = group,
             label = row.names(df)
           )) +
-          geom_text_repel(force = 1.5) + geom_point(size = 5) + fill = col.fun(length(unique(sample_idx))) + theme(axis.text =
+          geom_text_repel(force = 1.5) + geom_point(size = 5,  fill = col.fun(length(unique(sample_idx)))) + theme(axis.text =
                                                                                                                      element_text(size = 12))
-        
+
       } else{
         p <-
           ggplot2::ggplot(df, aes(
@@ -770,14 +770,14 @@ PlotSpectraPCA <-
           geom_text_repel(force = 1.5) + geom_point(size = 5) + scale_color_brewer(palette =
                                                                                      "Set1") + theme(axis.text = element_text(size = 12))
       }
-      
+
     } else {
       if (length(unique(sample_idx)) > 9) {
         p <-
           ggplot2::ggplot(df, aes(x = PC1,
                                   y = PC2,
                                   color = group)) + geom_point(size = 5)
-        
+
       } else{
         p <-
           ggplot2::ggplot(df, aes(x = PC1,
@@ -785,10 +785,10 @@ PlotSpectraPCA <-
                                   color = group)) + geom_point(size = 5) + scale_color_brewer(palette = "Set1");
       }
     }
-    
+
     p <-
       p + xlab(xlabel) + ylab(ylabel) + theme_bw() + theme(axis.title = element_text(size = 12));
-    
+
     print(p)
     dev.off()
   }
@@ -1136,6 +1136,9 @@ plotMSfeature <- function(FeatureNM,
 #' @importFrom Cairo Cairo
 plotSingleTIC <- function(filename, imagename) {
   # load_msnbase()
+  
+  raw_data_filt <- NULL;
+  tics <- NULL;
   
   load("raw_data_filt.rda")
   load("tics.rda")

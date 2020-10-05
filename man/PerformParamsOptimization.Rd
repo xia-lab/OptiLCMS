@@ -6,7 +6,7 @@
 \usage{
 PerformParamsOptimization(
   mSet,
-  param = p0,
+  param = NULL,
   method = "DoE",
   ncore = 4,
   running.controller = NULL

@@ -289,7 +289,7 @@ running.plan <- function(plan=NULL,...){
     stop("No command provided to run !");
   }
   
-  plan@PlanNumber <- .plan_count <- .plan_count + 1;
+  plan@PlanNumber <- .plan_count <- plan@PlanNumber + 1;
   
   CommandsVerified <- CommandsVerify(commands);
   MessageOutput("Commands Origanization Finished!", ecol = "\n", NULL);
