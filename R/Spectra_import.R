@@ -373,7 +373,7 @@ ImportRawMSData <-
           # just for plotting
         }
         
-        #save(raw_data_filt, file = "raw_data_filt.rda")
+        save(raw_data_filt, file = "raw_data_filt.rda")
         
         if (plot.opts == "all") {
           h <-

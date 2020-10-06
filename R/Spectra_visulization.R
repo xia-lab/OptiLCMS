@@ -341,23 +341,23 @@ PlotXIC <-
     peak_idx_current <-mSet@peakfilling$FeatureGroupTable@listData$peakidx[[featureNum]]
     
     #peak_table <- mSet[["msFeatureData"]][["chromPeaks"]][peak_idx_current,];
-    peak_table <- mSet[["xcmsSet"]]@peaks[peak_idx_current,]
+    peak_table <- mSet@peakfilling[["msFeatureData"]][["chromPeaks"]][peak_idx_current,]
     peak_table <- peakTableSUM(peak_table)
     
     rtrange <-
-      c(mSet[["FeatureGroupTable"]]@listData[["rtmin"]][featureNum] - 10,
-        mSet[["FeatureGroupTable"]]@listData[["rtmax"]][featureNum] + 10)
+      c(mSet@peakfilling[["FeatureGroupTable"]]@listData[["rtmin"]][featureNum] - 10,
+        mSet@peakfilling[["FeatureGroupTable"]]@listData[["rtmax"]][featureNum] + 10)
     
     mzrange <-
-      c(mSet[["FeatureGroupTable"]]@listData[["mzmin"]][featureNum] - 0.2,
-        mSet[["FeatureGroupTable"]]@listData[["mzmax"]][featureNum] + 0.2)
+      c(mSet@peakfilling[["FeatureGroupTable"]]@listData[["mzmin"]][featureNum] - 0.2,
+        mSet@peakfilling[["FeatureGroupTable"]]@listData[["mzmax"]][featureNum] + 0.2)
     
     RawData <- filterMz(filterRt(raw_data, rtrange), mzrange)
     
     title <-
-      paste0(round(mSet[["FeatureGroupTable"]]@listData[["mzmed"]][[featureNum]], 4),
+      paste0(round(mSet@peakfilling[["FeatureGroupTable"]]@listData[["mzmed"]][[featureNum]], 4),
              "mz@",
-             round(mSet[["FeatureGroupTable"]]@listData[["rtmed"]][[featureNum]], 2),
+             round(mSet@peakfilling[["FeatureGroupTable"]]@listData[["rtmed"]][[featureNum]], 2),
              "s")
     
     
@@ -598,11 +598,15 @@ PlotXIC <-
 #' @export
 #' @importFrom Cairo Cairo
 PlotSpectraInsensityStistics <-
-  function(mSet,
+  function(mSet = NULL,
            imgName,
            format = "png",
            dpi = 72,
            width = NA) {
+    
+    if(is.null(mSet)){
+      load("mSet.rda");
+    }
     
     sample_idx <- mSet@rawOnDisk@phenoData@data[["sample_group"]]
     
@@ -675,7 +679,7 @@ PlotSpectraInsensityStistics <-
 #' @export
 
 PlotSpectraPCA <-
-  function(mSet,
+  function(mSet = NULL,
            imgName,
            format = "png",
            dpi = 72,
@@ -804,11 +808,15 @@ PlotSpectraPCA <-
 #' @export
 #' @importFrom Cairo Cairo
 PlotSpectraRTadj <-
-  function(mSet,
+  function(mSet = NULL,
            imgName,
            format = "png",
            dpi = 72,
            width = NA) {
+    
+    if(is.null(mSet)){
+      load("mSet.rda")
+    }
     
     sample_idx <- mSet@rawOnDisk@phenoData@data[["sample_group"]];
     
@@ -930,11 +938,15 @@ PlotSpectraRTadj <-
 #' @export
 #' @importFrom Cairo Cairo
 PlotSpectraBPIadj <-
-  function(mSet,
+  function(mSet = NULL,
            imgName,
            format = "png",
            dpi = 72,
            width = NA) {
+    
+    if(is.null(mSet)){
+      load("mSet.rda")
+    }
     
     Cairo::Cairo(
       file = imgName,
