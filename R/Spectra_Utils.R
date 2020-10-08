@@ -5898,16 +5898,16 @@ setDefaultLists <- function(object, lib.loc=.libPaths()) {
     
   } else {
     ##Read Tabellen
-    object@ionlistfile <- system.file('lists/ions.csv', package = "MetaboAnalystR",
+    object@ionlistfile <- system.file('lists/ions.csv', package = "OptiLCMS",
                                       lib.loc=lib.loc)[1]
     if (!file.exists(object@ionlistfile)) stop('ions.csv not found.')
     
     object@neutrallossfile <- system.file('lists/neutralloss.csv', 
-                                          package = "MetaboAnalystR", lib.loc=lib.loc)[1]
+                                          package = "OptiLCMS", lib.loc=lib.loc)[1]
     if (!file.exists(object@neutrallossfile)) stop('neutralloss.csv not found.')
     
     object@neutraladditionfile <- system.file('lists/neutraladdition.csv', 
-                                              package = "MetaboAnalystR", lib.loc=lib.loc)[1]
+                                              package = "OptiLCMS", lib.loc=lib.loc)[1]
     if (!file.exists(object@neutraladditionfile)) stop('neutraladdition.csv not found.')
     object
   }
