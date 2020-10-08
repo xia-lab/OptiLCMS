@@ -64,6 +64,8 @@ ImportRawMSData <-
            plotSettings,
            running.controller = NULL) {
     
+    foldername <- normalizePath(foldername);
+    
     if (!dir.exists(foldername) & .on.public.web) {
       foldername <- "/home/glassfish/projects/MetaboDemoRawData/upload"
     } else if(!dir.exists(foldername)){

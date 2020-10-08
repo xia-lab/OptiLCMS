@@ -53,6 +53,8 @@ PerformROIExtraction <-
            plot = T,
            running.controller = NULL) {
     
+    datapath <- normalizePath(datapath);
+    
     if(!.on.public.web){
       #Local R package running
       if (!dir.exists(datapath)) {
