@@ -96,14 +96,14 @@ PerformROIExtraction <-
     
     if (is.null(running.controller)) {
       c1 <- c2 <- c3 <- c4 <- c5 <- TRUE;
-      .running.as.plan <<- FALSE;
+      .running.as.plan <- FALSE;
     } else {
       c1 <- running.controller@ROI_extract[["c1"]]; # Data read part
       c2 <- running.controller@ROI_extract[["c2"]]; # Data trim part
       c3 <- running.controller@ROI_extract[["c3"]]; # Data write part
       c4 <- running.controller@ROI_extract[["c4"]]; # Data plot part
       c5 <- running.controller@ROI_extract[["c5"]]; # Data rmConts part
-      .running.as.plan <<- TRUE;
+      .running.as.plan <- TRUE;
     }
     
     if (c1) {
@@ -112,10 +112,11 @@ PerformROIExtraction <-
       if (.on.public.web) {
         #TODO: need to configure with the online pipeline
         dda_file <- list.files(datapath, recursive = T, full.names = TRUE);
+        rawfilenms <- mSet@rawfiles;
         
         if (basename(datapath) == "QC") {
           QC_uploaded_list <- basename(dda_file);
-          QC_index <- QC_uploaded_list %in% rawfilenms; #TODO: need to deal with the included files by using mSet@rawfiles;
+          QC_index <- QC_uploaded_list %in% rawfilenms;
           QC_count <- length(which(QC_index));
           
           if (QC_count > 1) {
@@ -264,14 +265,14 @@ PerformROIExtraction <-
     if (c2) {
       if (!mode == "none") {
         ## Data Trim
-        a <-
-          suppressMessages(unlist(lapply(
-            ls(raw_data@assayData),
-            FUN = function(x) {
-              unlockBinding(sym = x, env = raw_data@assayData)
-            }
-          )));
-        
+        # a <-
+        #   suppressMessages(unlist(lapply(
+        #     ls(raw_data@assayData),
+        #     FUN = function(x) {
+        #       unlockBinding(sym = x, env = raw_data@assayData)
+        #     }
+        #   )));
+
         ms_list <-
           sapply(
             ls(raw_data@assayData),
@@ -304,6 +305,7 @@ PerformROIExtraction <-
         
         if(.on.public.web){
           rmConts <- FALSE;
+          peakParams <- NULL;
           tmp_mes <- try(suppressWarnings(load("params.rda")),silent = T);
         } else {
           tmp_mes <- 0;
@@ -315,9 +317,14 @@ PerformROIExtraction <-
             raw_data <- ContaminatsRemoval(raw_data, ms_list);
             #save(raw_data, file = "Contaminats_free_raw_data.rda");
           } else if (.on.public.web) {
-            if(peakParams[["rmConts"]]){
+            
+            if(exists("peakParams")){
+              if(peakParams[["rmConts"]]){
+                raw_data <- ContaminatsRemoval(raw_data, ms_list);
+                #save(raw_data, file = "Contaminats_free_raw_data.rda");
+              }
+            } else {
               raw_data <- ContaminatsRemoval(raw_data, ms_list);
-              #save(raw_data, file = "Contaminats_free_raw_data.rda");
             }
           }
           
@@ -396,9 +403,9 @@ PerformROIExtraction <-
       if (plot == T) {
         MessageOutput("Chromatogram Plotting Begin...",ecol = "\n",NULL);
         
-        if (.on.public.web) {
-          load_RColorBrewer();
-        } 
+        # if (.on.public.web) {
+        #   load_RColorBrewer();
+        # } 
         
         ch.xdata <- chromatogram(trimed_MSnExp)
         group.col <-
@@ -422,9 +429,11 @@ PerformROIExtraction <-
       MessageOutput("Optimization will be started soon...", "\n", NULL);
     }
 
-    save(trimed_MSnExp, file = "raw_data.rda");
+    #save(trimed_MSnExp, file = "raw_data.rda");
     mSet <- new("mSet");
     mSet@rawInMemory <- trimed_MSnExp;
+    
+    save(mSet, file = "mSet.rda");
     
     return(mSet)
   }
@@ -439,6 +448,7 @@ PerformROIExtraction <-
 #' @param raw_data MSnExp object, the raw data that has been read in memory.
 #' @param ms_list List, the names list of all scans.
 #' @param rt.idx Numeric, the retention time percentage, from 0 to 1. Default is 1/15.
+#' @noRd
 #' @import progress
 #' @import BiocParallel
 #' @import Biobase
@@ -611,6 +621,7 @@ ssm_trim <- function(raw_data, ms_list, rt.idx){
 #' @description Trim raw data scan signal randomly in the mz dimension.
 #' @param raw_data MSnExp object, the raw data that has been read in memory.
 #' @param ms_list List, the names list of all scans.
+#' @noRd
 #' @import progress
 #' @author Zhiqiang Pang \email{zhiqiang.pang@mail.mcgill.ca} Jeff Xia \email{jeff.xia@mcgill.ca}
 #' Mcgill University
@@ -651,6 +662,7 @@ mz.trim_random <- function(raw_data, ms_list){
 #' @description Trim raw data scan signal randomly in the RT dimension.
 #' @param raw_data MSnExp object, the raw data that has been read in memory.
 #' @param ms_list List, the names list of all scans.
+#' @noRd
 #' @import progress
 #' @author Zhiqiang Pang \email{zhiqiang.pang@mail.mcgill.ca} Jeff Xia \email{jeff.xia@mcgill.ca}
 #' Mcgill University
@@ -714,6 +726,7 @@ rt.trim_random <- function(raw_data, ms_list){
 #' @param ms_list List, the names list of all scans.
 #' @param mz Numeric, the specifric mz value that will be kept or removed.
 #' @param mzdiff Numeric, the deviation (ppm) for the 'mz' values. Default is 100.
+#' @noRd
 #' @import progress
 #' @author Zhiqiang Pang \email{zhiqiang.pang@mail.mcgill.ca} Jeff Xia \email{jeff.xia@mcgill.ca}
 #' Mcgill University
@@ -792,6 +805,7 @@ mz.trim_specific<-function(raw_data, ms_list, mz, mzdiff=100){
 #' @param ms_list List, the names list of all scans.
 #' @param rt Numeric, the specifric RT value that will be kept or removed.
 #' @param rtdiff Numeric, the deviation (ppm) for the 'rt' values. Default is 100.
+#' @noRd
 #' @import progress
 #' @author Zhiqiang Pang \email{zhiqiang.pang@mail.mcgill.ca} Jeff Xia \email{jeff.xia@mcgill.ca}
 #' Mcgill University
@@ -907,8 +921,8 @@ rt.trim_specific<-function(raw_data,ms_list,rt,rtdiff=10){
 #' Function MS Generation
 #' @description Output the MS data. This function will generate .mzML MS data in the working dirctory.
 #' @param raw_data MS data in R environment with "MSnExp" class.
+#' @noRd
 #' @import MSnbase
-#' @export
 #' @author Zhiqiang Pang \email{zhiqiang.pang@mail.mcgill.ca} Jeff Xia \email{jeff.xia@mcgill.ca}
 #' Mcgill University
 #' License: GNU GPL (>= 2)
@@ -925,12 +939,13 @@ PerformMSDataOutput<-function(raw_data){
 
 #' Function for 3D ms plotting
 #' @description Function for 3D ms plotting (internal use only)
+#' @importFrom lattice cloud
 #' @author Zhiqiang Pang \email{zhiqiang.pang@mail.mcgill.ca}
 #' @noRd
 plot.MS_3D<-function(object) {
   
-  if (.on.public.web){load_lattice()};
-  
+  # if (.on.public.web){load_lattice()};
+  # 
   dd <- as(object, "data.frame")
   
   ms <- NULL ## get rid of 'no visible global function definition' note
@@ -951,6 +966,7 @@ plot.MS_3D<-function(object) {
   
 }
 
+#' @noRd
 ContaminatsRemoval <- function(raw_data, ms_list){
   
   scan_names <- sort(names(raw_data@assayData));
@@ -994,7 +1010,7 @@ ContaminatsRemoval <- function(raw_data, ms_list){
   }
   
   MessageOutput("Done!", "\n", NULL)
-  save(topScan_stats, file = "topScan_stats.rda")
+  #save(topScan_stats, file = "topScan_stats.rda")
   mzs_toRemove <- topScan_stats[topScan_stats[,3] > 0.5, 4]
   
   raw_data_clean <- mz.trim_specific(raw_data, ms_list, -mzs_toRemove, mzdiff=10)

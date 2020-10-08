@@ -1,160 +1,3 @@
-#' Set class information for MS data
-#' @description This function sets the class information
-#' for preprocessing MS data.
-#' @param class class/group of samples.
-#' @author Jasmine Chong \email{jasmine.chong@mail.mcgill.ca},
-#' Mai Yamamoto \email{yamamoto.mai@mail.mcgill.ca}, and Jeff Xia \email{jeff.xia@mcgill.ca}
-#' McGill University, Canada
-#' License: GNU GPL (>= 2)
-SetClass <- function(class) {
-  groupInfo <<- class
-}
-
-#' featureSUM
-#'
-#' @param MS_group MS_group
-#' @param frtr frtr
-#' @import scales
-featureSUM <- function(MS_group, frtr) {
-  # sanity check
-  if (identical(MS_group, list())) {
-    rts <- quantile(frtr)
-    res <- data.frame(rts[1], 0)
-    res[2, ] <- c(rts[2], 0.5)
-    res[3, ] <- c(rts[3], 1)
-    res[4, ] <- c(rts[4], 0.5)
-    res[5, ] <- c(rts[5], 0)
-    colnames(res) <- c("RT_mean", "Inten_mean")
-    
-    return(res)
-  }
-  
-  # summarize intensity and RT
-  inten_sum <-
-    sapply(
-      MS_group,
-      FUN = function(x) {
-        sum(x@intensity, na.rm = T)
-      }
-    )
-  
-  inten_sum[(inten_sum == 0)] <- 1
-  
-  rt_min_sum <- sapply(
-    MS_group,
-    FUN = function(x) {
-      min(x@rtime)
-    }
-  )
-  
-  rt_max_sum <- sapply(
-    MS_group,
-    FUN = function(x) {
-      max(x@rtime)
-    }
-  )
-  
-  scan_sum <- sapply(
-    MS_group,
-    FUN = function(x) {
-      length(x@rtime)
-    }
-  )
-  
-  # correct RT
-  rt_min_corrected <- sum(rt_min_sum * inten_sum) / sum(inten_sum)
-  rt_max_corrected <- sum(rt_max_sum * inten_sum) / sum(inten_sum)
-  rt_range_cor <- abs(rt_max_corrected - rt_min_corrected)
-
-  if(.on.public.web){
-    load_scales()
-  }
-  
-  MS_group <-
-    sapply(
-      MS_group,
-      FUN = function(x, rt_min_corrected, rt_max_corrected) {
-        x@rtime <- rescale(x@rtime, c(rt_min_corrected, rt_max_corrected))
-        
-        return(x)
-      },
-      rt_min_corrected = rt_min_corrected,
-      rt_max_corrected = rt_max_corrected
-    )
-  
-  # extract information
-  df <- data.frame()
-  
-  for (u in 1:length(MS_group)) {
-    ddf <- data.frame(MS_group[[u]]@rtime, MS_group[[u]]@intensity)
-    df <- rbind(df, ddf)
-  }
-  
-  df[is.na(df)] <- 0
-  colnames(df) <- c("rt", "intensity")
-  df <- df[order(df$rt),]
-  res <- data.frame()
-  
-  # bin all scans
-  binsize <-
-    rt_range_cor / (max(scan_sum) - 1) - 0.001
-  # Avoid the boundary effect by minus 0.001
-  rt_now <- rt_min_corrected + binsize
-  
-  if (length(MS_group) > 1) {
-    while (rt_now < rt_max_corrected + binsize) {
-      Inten_mean <-
-        mean(df[df$rt <= rt_now & df$rt >= (rt_now - binsize), 2])
-      
-      RT_mean <-
-        mean(df[df$rt < rt_now & df$rt >= (rt_now - binsize), 1])
-      res <- rbind(res, data.frame(RT_mean, Inten_mean))
-      rt_now <- rt_now + binsize
-    }
-    
-  } else {
-    # if only one sample, use it diresctly
-    res <- df
-    rownames(res) <- NULL
-  }
-  
-  colnames(res) <- c("RT_mean", "Inten_mean")
-  # remove the empty bin
-  if (any(is.nan(res$RT_mean) | is.nan(res$Inten_mean))) {
-    res <- res[-which(is.nan(res$RT_mean) | is.nan(res$Inten_mean)),]
-  }
-  
-  # manually add 2 empty points before and after the range
-  res[nrow(res) + 1, ] <- c(min(res$RT_mean) - binsize, 0)
-  res[nrow(res) + 1, ] <- c(min(res$RT_mean) - 2 * binsize, 0)
-  res[nrow(res) + 1, ] <- c(max(res$RT_mean) + binsize, 0)
-  res[nrow(res) + 1, ] <- c(max(res$RT_mean) + 2 * binsize, 0)
-  
-  return(res)
-}
-
-peakTableSUM <- function(peak_table) {
-  max_peaks <- vector()
-  
-  if (length(unique(peak_table[, ncol(peak_table)])) != length(peak_table[, ncol(peak_table)])) {
-    for (i in unique(peak_table[, ncol(peak_table)])) {
-      tmp_table <- peak_table[peak_table[, ncol(peak_table)] == i, ]
-      
-      if (!is.null(nrow(tmp_table))) {
-        max_peaks <-
-          c(max_peaks, names(which.max(tmp_table[, which(colnames(tmp_table) == "into")])))
-      } else {
-        max_peaks <-
-          c(max_peaks, names(which(peak_table[, ncol(peak_table)] == i)))
-      }
-    }
-    
-    return(peak_table[max_peaks, ])
-  } else {
-    return(peak_table)
-  }
-}
-
 #' Perform peak profiling
 #' This function performs feature extraction of user's raw MS data using
 #' the rawData object created using the ImportRawMSData function.
@@ -175,6 +18,37 @@ peakTableSUM <- function(peak_table) {
 #' @import MSnbase
 #' @import BiocParallel
 #' @import ggplot2
+#' @examples 
+#' ## load googledrive package to download example data
+#' # library("googledrive");
+#'
+#' ## Set data folder
+#' # data_folder_Sample <- "~/Data_IBD";
+#' # data_folder_QC <- "~/Data_IBD/QC";
+#' # temp <- tempfile(fileext = ".zip");
+#'
+#' ## Please authorize the package to download the data from web
+#' # dl <- drive_download(as_id("1CjEPed1WZrwd5T3Ovuic1KVF-Uz13NjO"), path = temp, overwrite = TRUE);
+#' # out <- unzip(temp, exdir = data_folder_Sample);
+#' # out;
+# 
+#' #### Running as regular procedure: step by step
+#' ## Extract ROI for parameters' optimization
+#' # mSet <- PerformROIExtraction(datapath = data_folder_QC, rt.idx = 0.95, plot = F, rmConts = F);
+#' ## Perform the optimization
+#' # best_parameters <- PerformParamsOptimization(mSet = mSet, SetPeakParam(), ncore = 4);
+#' ## Perform data import of all samples
+#' # mSet <- ImportRawMSData(mSet = mSet, foldername = data_folder_Sample, 
+#' #                         plotSettings = SetPlotParam(Plot=T));
+#' ## Perform peak profiling
+#' # mSet <- PerformPeakProfiling(mSet = mSet, Params = param, plotSettings = SetPlotParam(Plot=T));
+#' ## Set annotation parameters
+#' # annParams <- SetAnnotationParam(polarity = 'negative', mz_abs_add = 0.025);
+#' ## Perform peak annotation
+#' # mSet <- PerformPeakAnnotation(mSet = mSet, annotaParam = annParams, ncore =1);
+#' ## Format the peak table
+#' # maPeaks <- FormatPeakList(mSet = mSet, annParams, filtIso =F, 
+#' #                           filtAdducts = FALSE,missPercent = 1);
 
 PerformPeakProfiling <-
   function(mSet,
@@ -187,8 +61,8 @@ PerformPeakProfiling <-
     function.name <- "peak_profiling";
     
     if (is.null(running.controller)) {
-      c1 <- c2 <- c3 <- c4 <- T;
-      .running.as.plan <<- FALSE;
+      c1 <- c2 <- c3 <- c4 <- TRUE;
+      .running.as.plan <- FALSE;
     } else {
       c1 <-
         running.controller@peak_profiling[["c1"]] # used to control peak picking
@@ -198,9 +72,11 @@ PerformPeakProfiling <-
         running.controller@peak_profiling[["c3"]] # used to control peak filing
       c4 <-
         running.controller@peak_profiling[["c4"]] # used to control plotting
+      
+      .running.as.plan <- TRUE;
     }
     
-    .optimize_switch <<- FALSE;
+    .optimize_switch <- .GlobalEnv$.optimize_switch <- FALSE;
     
     if(.on.public.web){
       ### Update parameters' style
@@ -279,6 +155,8 @@ PerformPeakProfiling <-
       marker_record("peak_profiling_c1")
     }
     
+    .GlobalEnv$envir$mSet <- mSet;
+    
     if (.on.public.web) {
       if (class(mSet)[1] == "simpleError") {
         MessageOutput(
@@ -293,13 +171,14 @@ PerformPeakProfiling <-
         )
         stop("EXCEPTION POINT CODE: PU1")
       }
-      
-      MessageOutput(
-        mes =  paste0("Step 3/6: Peak picking finished ! (", Sys.time(), ")"),
-        ecol = "\n",
-        progress = 50
-      )
+
     }
+    
+    MessageOutput(
+      mes =  paste0("Step 3/6: Peak picking finished ! (", Sys.time(), ")"),
+      ecol = "\n",
+      progress = 50
+    )
     
     #   --------===========----- II. Peak alignment -----===========------------
     if (c2) {
@@ -344,13 +223,15 @@ PerformPeakProfiling <-
         )
         stop("EXCEPTION POINT CODE: PU2")
       }
-      
-      MessageOutput(
-        mes = paste0("Step 4/6: Peak alignment finished ! (", Sys.time(), ")"),
-        ecol = "\n",
-        progress = 73
-      )
     }
+    
+    .GlobalEnv$envir$mSet <- mSet;
+    
+    MessageOutput(
+      mes = paste0("Step 4/6: Peak alignment finished ! (", Sys.time(), ")"),
+      ecol = "\n",
+      progress = 73
+    )
     
     #   --------===========----- III. Peak filling -----===========------------
     if (c3) {
@@ -407,10 +288,10 @@ PerformPeakProfiling <-
       ecol = "\n",
       progress = 88
     )
-    if(.on.public.web){
-      save(mSet, file = "mSet.rda")
-    }
-    
+
+    save(mSet, file = "mSet.rda")
+    .GlobalEnv$envir$mSet <- mSet;
+
     MessageOutput(
       mes = paste0("Begin to plotting figures..."),
       ecol = "\n",
@@ -447,9 +328,9 @@ PerformPeakProfiling <-
         )
         
         ### 2. PCA plotting -----
-        if (.on.public.web) {
-          load_ggplot()
-        }
+        # if (.on.public.web) {
+        #   load_ggplot()
+        # }
         
         PlotSpectraPCA(
           mSet,
@@ -486,7 +367,7 @@ PerformPeakProfiling <-
     
     MessageOutput(mes = NULL,
                   ecol = NULL,
-                  progress = 90)
+                  progress = 90);
     
     return(mSet)
   }
@@ -512,6 +393,38 @@ PerformPeakProfiling <-
 #' McGill University, Canada
 #' License: GNU GPL (>= 2)
 #' @export
+#' @examples 
+#' ## load googledrive package to download example data
+#' # library("googledrive");
+#'
+#' ## Set data folder
+#' # data_folder_Sample <- "~/Data_IBD";
+#' # data_folder_QC <- "~/Data_IBD/QC";
+#' # temp <- tempfile(fileext = ".zip");
+#'
+#' ## Please authorize the package to download the data from web
+#' # dl <- drive_download(as_id("1CjEPed1WZrwd5T3Ovuic1KVF-Uz13NjO"), path = temp, overwrite = TRUE);
+#' # out <- unzip(temp, exdir = data_folder_Sample);
+#' # out;
+# 
+#' #### Running as regular procedure: step by step
+#' ## Extract ROI for parameters' optimization
+#' # mSet <- PerformROIExtraction(datapath = data_folder_QC, rt.idx = 0.95, plot = F, rmConts = F);
+#' ## Perform the optimization
+#' # best_parameters <- PerformParamsOptimization(mSet = mSet, SetPeakParam(), ncore = 4);
+#' ## Perform data import of all samples
+#' # mSet <- ImportRawMSData(mSet = mSet, foldername = data_folder_Sample, 
+#' #                         plotSettings = SetPlotParam(Plot=T));
+#' ## Perform peak profiling
+#' # mSet <- PerformPeakProfiling(mSet = mSet, Params = param, plotSettings = SetPlotParam(Plot=T));
+#' ## Set annotation parameters
+#' # annParams <- SetAnnotationParam(polarity = 'negative', mz_abs_add = 0.025);
+#' ## Perform peak annotation
+#' # mSet <- PerformPeakAnnotation(mSet = mSet, annotaParam = annParams, ncore =1);
+#' ## Format the peak table
+#' # maPeaks <- FormatPeakList(mSet = mSet, annParams, filtIso =F, 
+#' #                           filtAdducts = FALSE,missPercent = 1);
+
 SetAnnotationParam <-
   function(polarity = "positive",
            perc_fwhm = 0.6,
@@ -520,7 +433,9 @@ SetAnnotationParam <-
            max_iso = 2,
            corr_eic_th = 0.85,
            mz_abs_add = 0.001) {
+    
     annParams <- list()
+    peakParams <- NULL;
     
     if (.on.public.web) {
       load("params.rda")
@@ -568,6 +483,38 @@ SetAnnotationParam <-
 #' "CAMERA: an integrated strategy for compound spectra extraction and annotation of
 #' liquid chromatography/mass spectrometry data sets." Analytical Chemistry, 84, 283-289.
 #' http://pubs.acs.org/doi/abs/10.1021/ac202450g.
+#' @examples 
+#' ## load googledrive package to download example data
+#' # library("googledrive");
+#'
+#' ## Set data folder
+#' # data_folder_Sample <- "~/Data_IBD";
+#' # data_folder_QC <- "~/Data_IBD/QC";
+#' # temp <- tempfile(fileext = ".zip");
+#'
+#' ## Please authorize the package to download the data from web
+#' # dl <- drive_download(as_id("1CjEPed1WZrwd5T3Ovuic1KVF-Uz13NjO"), path = temp, overwrite = TRUE);
+#' # out <- unzip(temp, exdir = data_folder_Sample);
+#' # out;
+# 
+#' #### Running as regular procedure: step by step
+#' ## Extract ROI for parameters' optimization
+#' # mSet <- PerformROIExtraction(datapath = data_folder_QC, rt.idx = 0.95, plot = F, rmConts = F);
+#' ## Perform the optimization
+#' # best_parameters <- PerformParamsOptimization(mSet = mSet, SetPeakParam(), ncore = 4);
+#' ## Perform data import of all samples
+#' # mSet <- ImportRawMSData(mSet = mSet, foldername = data_folder_Sample, 
+#' #                         plotSettings = SetPlotParam(Plot=T));
+#' ## Perform peak profiling
+#' # mSet <- PerformPeakProfiling(mSet = mSet, Params = param, plotSettings = SetPlotParam(Plot=T));
+#' ## Set annotation parameters
+#' # annParams <- SetAnnotationParam(polarity = 'negative', mz_abs_add = 0.025);
+#' ## Perform peak annotation
+#' # mSet <- PerformPeakAnnotation(mSet = mSet, annotaParam = annParams, ncore =1);
+#' ## Format the peak table
+#' # maPeaks <- FormatPeakList(mSet = mSet, annParams, filtIso =F, 
+#' #                           filtAdducts = FALSE,missPercent = 1);
+
 PerformPeakAnnotation <-
   function(mSet,
            annotaParam,
@@ -580,13 +527,30 @@ PerformPeakAnnotation <-
       progress = 91
     )
     
-    if (.on.public.web) {
-      dyn.load(.getDynLoadPath());
-      
-      load_progress();
-      load_graph();
-      load_RBGL();
+    if(length(mSet@rawOnDisk) == 0){
+      if(.on.public.web){
+        MessageOutput("ERROR: No MS data imported, please import the MS data with 'ImportRawMSData' first !", NULL, NULL)
+      } else {
+        stop("No MS data Imported, please import the MS data with 'ImportRawMSData' first !")
+      }
     }
+    
+    if(is.null(mSet@peakfilling$FeatureGroupTable)){
+      if(.on.public.web){
+        MessageOutput("ERROR: No features found for annotation, please do the \"ImportRawMSData\", \"PerformPeakProfiling\", first before annotation !");
+        stop();
+      } else {
+        stop("No features found for annotation, please do the \"ImportRawMSData\", \"PerformPeakProfiling\", first before annotation !")
+      }
+    }
+    
+    # if (.on.public.web) {
+    #   dyn.load(.getDynLoadPath());
+    #   
+    #   load_progress();
+    #   load_graph();
+    #   load_RBGL();
+    # }
     
     if (ncore > 1) {
       cat("Only single core mode is supported now. Parallel will be supported later !\n")
@@ -597,10 +561,10 @@ PerformPeakAnnotation <-
     
     if (is.null(running.controller)) {
       c1 <- TRUE;
-      .running.as.plan <<- FALSE;
+      .running.as.plan <- FALSE;
     } else {
       c1 <- running.controller@peak_annotation[["c1"]];
-      .running.as.plan <<- TRUE;
+      .running.as.plan <- TRUE;
     }
     
     if (c1) {
@@ -633,63 +597,63 @@ PerformPeakAnnotation <-
       runParallel <- list();
       runParallel$enable <- 0;
       
-      if (ncore > 1) {
-        ## If MPI is available ...
-        rmpi = "Rmpi"
-        opt.warn <- options("warn")$warn
-        options("warn" = -1)
-        if ((Sys.info()["sysname"] != "Windows") &&
-            require(rmpi, character.only = TRUE) &&
-            !is.null(ncore)) {
-          if (is.loaded('mpi_initialize')) {
-            #test if not already slaves are running!
-            if (mpi.comm.size() > 0) {
-              warning(
-                "There are already intialized mpi slaves on your machine.\nCamera will try to uses them!\n"
-              )
-              
-              runParallel$enable <- 1
-              runParallel$mode <- rmpi
-              
-            } else{
-              mpi.spawn.Rslaves(ncore = ncore, needlog = FALSE)
-              if (mpi.comm.size() > 1) {
-                #Slaves have successfull spawned
-                runParallel$enable <- 1
-                runParallel$mode <- rmpi
-                
-              } else{
-                warning(
-                  "Spawning of mpi slaves have failed. CAMERA will run without parallelization.\n"
-                )
-              }
-            }
-          } else {
-            #And now??
-            warning("DLL mpi_initialize is not loaded. Run single core mode!\n")
-          }
-          
-        } else {
-          #try local sockets using snow package
-          snow = "snow"
-          if (try(require(snow, character.only = TRUE, quietly = TRUE))) {
-            cat("Starting snow cluster with",
-                ncore,
-                "local sockets.\n")
-            snowclust <- makeCluster(ncore, type = "SOCK")
-            runParallel$enable <- 1
-            runParallel$mode <- snow
-            runParallel$cluster <- snowclust
-          }
-        }
-        
-        options("warn" = opt.warn);
-        
-        MessageOutput(mes = "Run cleanParallel after processing to remove the spawned slave processes!",
-                      ecol = "\n",
-                      progress = NULL);
-        
-      }
+      # if (ncore > 1) {
+      #   ## If MPI is available ...
+      #   rmpi = "Rmpi"
+      #   opt.warn <- options("warn")$warn
+      #   options("warn" = -1)
+      #   if ((Sys.info()["sysname"] != "Windows") &&
+      #       require(rmpi, character.only = TRUE) &&
+      #       !is.null(ncore)) {
+      #     if (is.loaded('mpi_initialize')) {
+      #       #test if not already slaves are running!
+      #       if (mpi.comm.size() > 0) {
+      #         warning(
+      #           "There are already intialized mpi slaves on your machine.\nCamera will try to uses them!\n"
+      #         )
+      #         
+      #         runParallel$enable <- 1
+      #         runParallel$mode <- rmpi
+      #         
+      #       } else{
+      #         mpi.spawn.Rslaves(ncore = ncore, needlog = FALSE)
+      #         if (mpi.comm.size() > 1) {
+      #           #Slaves have successfull spawned
+      #           runParallel$enable <- 1
+      #           runParallel$mode <- rmpi
+      #           
+      #         } else{
+      #           warning(
+      #             "Spawning of mpi slaves have failed. CAMERA will run without parallelization.\n"
+      #           )
+      #         }
+      #       }
+      #     } else {
+      #       #And now??
+      #       warning("DLL mpi_initialize is not loaded. Run single core mode!\n")
+      #     }
+      #     
+      #   } else {
+      #     #try local sockets using snow package
+      #     snow = "snow"
+      #     if (try(require(snow, character.only = TRUE, quietly = TRUE))) {
+      #       cat("Starting snow cluster with",
+      #           ncore,
+      #           "local sockets.\n")
+      #       snowclust <- makeCluster(ncore, type = "SOCK")
+      #       runParallel$enable <- 1
+      #       runParallel$mode <- snow
+      #       runParallel$cluster <- snowclust
+      #     }
+      #   }
+      #   
+      #   options("warn" = opt.warn);
+      #   
+      #   MessageOutput(mes = "Run cleanParallel after processing to remove the spawned slave processes!",
+      #                 ecol = "\n",
+      #                 progress = NULL);
+      #   
+      # }
       
       if (!is.null(annotaParam[["polarity"]])) {
         if (is.na(match.arg(annotaParam[["polarity"]], c("positive", "negative")))) {
@@ -1381,6 +1345,7 @@ PerformPeakAnnotation <-
       endGroup <- 7 + groupNum
       camera_output <- camera_output[,-c(7:endGroup)]
       fullUserPath <- mSet@WorkingDir;
+      
       if(is.null(fullUserPath) | length(fullUserPath) == 0){
         fullUserPath <- getwd();
       }
@@ -1411,6 +1376,8 @@ PerformPeakAnnotation <-
       marker_record("peak_annotation_c1");
     }
     
+    save(mSet, file = "mSet.rda");
+    
     return(mSet)
   }
 
@@ -1434,6 +1401,39 @@ PerformPeakAnnotation <-
 #' McGill University, Canada
 #' License: GNU GPL (>= 2)
 #' @export
+#' @examples 
+#' ## load googledrive package to download example data
+#' # library("googledrive");
+#'
+#' ## Set data folder
+#' # data_folder_Sample <- "~/Data_IBD";
+#' # data_folder_QC <- "~/Data_IBD/QC";
+#' # temp <- tempfile(fileext = ".zip");
+#'
+#' ## Please authorize the package to download the data from web
+#' # dl <- drive_download(as_id("1CjEPed1WZrwd5T3Ovuic1KVF-Uz13NjO"), path = temp, overwrite = TRUE);
+#' # out <- unzip(temp, exdir = data_folder_Sample);
+#' # out;
+# 
+#' #### Running as regular procedure: step by step
+#' ## Extract ROI for parameters' optimization
+#' # mSet <- PerformROIExtraction(datapath = data_folder_QC, rt.idx = 0.95, plot = F, rmConts = F);
+#' ## Perform the optimization
+#' # best_parameters <- PerformParamsOptimization(mSet = mSet, SetPeakParam(), ncore = 4);
+#' ## Perform data import of all samples
+#' # mSet <- ImportRawMSData(mSet = mSet, foldername = data_folder_Sample, 
+#' #                         plotSettings = SetPlotParam(Plot=T));
+#' ## Perform peak profiling
+#' # mSet <- PerformPeakProfiling(mSet = mSet, Params = param, plotSettings = SetPlotParam(Plot=T));
+#' ## Set annotation parameters
+#' # annParams <- SetAnnotationParam(polarity = 'negative', mz_abs_add = 0.025);
+#' ## Perform peak annotation
+#' # mSet <- PerformPeakAnnotation(mSet = mSet, annotaParam = annParams, ncore =1);
+#' ## Format the peak table
+#' # maPeaks <- FormatPeakList(mSet = mSet, annParams, filtIso =F, 
+#' #                           filtAdducts = FALSE,missPercent = 1);
+
+
 FormatPeakList <-
   function(mSet,
            annParams,
@@ -1445,7 +1445,20 @@ FormatPeakList <-
     if(is.null(fullUserPath) | length(fullUserPath) == 0){
       fullUserPath <- getwd();
     }
-    camera_output <- readRDS("annotated_peaklist.rds");
+    
+    if(file.exists("annotated_peaklist.rds")){
+      camera_output <- readRDS("annotated_peaklist.rds");
+    } else {
+      stop(paste0("File \"annotated_peaklist.rds\" doesn't exit in ", fullUserPath, ", please update the working directory !"))
+    }
+    
+    if(length(mSet@rawOnDisk) == 0){
+      if(.on.public.web){
+        MessageOutput("ERROR: No MS data imported, please import the MS data with 'ImportRawMSData' first !", NULL, NULL)
+      } else {
+        stop("No MS data Imported, please import the MS data with 'ImportRawMSData' first !")
+      }
+    }
     
     length <- ncol(camera_output);
     end <- length - 3;
@@ -1656,166 +1669,3 @@ FormatPeakList <-
     return(ma_feats_miss)
   }
 
-
-GeneratePeakList <- function(userPath) {
-  setwd(userPath)
-  
-  ## Claculate the mean internsity of all groups
-  sample_data <-
-    read.csv("metaboanalyst_input.csv",
-             header = T,
-             stringsAsFactors = F)
-  
-  groups <- as.character(as.matrix(sample_data[1, ]))[-1]
-  
-  sample_data <- sample_data[-1, -1]
-  
-  
-  if (length(unique(groups)) == 1) {
-    sample_data_mean  <-
-      apply(
-        sample_data,
-        1,
-        FUN = function(x) {
-          mean(as.numeric(x), na.rm = T)
-        }
-      )
-    
-  } else {
-    sample_data1 <- matrix(nrow = nrow(sample_data))
-    
-    
-    for (i in 1:length(unique(groups))) {
-      columnnum <- unique(groups)[i] == groups
-      sample_data0  <-
-        subset.data.frame(sample_data, subset = T, select = columnnum)
-      
-      sample_data0  <-
-        round(apply(
-          sample_data0,
-          1,
-          FUN = function(x) {
-            mean(as.numeric(x), na.rm = T)
-          }
-        ), 2)
-      
-      sample_data1 <- cbind(sample_data1, sample_data0)
-    }
-    sample_data_mean <- sample_data1[, -1]
-    colnames(sample_data_mean) <- unique(groups)
-  }
-  
-  ## Prepare other information
-  ann_data <- readRDS("annotated_peaklist.rds")
-  
-  ann_data <-
-    ann_data[, c(1, 4, ncol(ann_data) - 1, ncol(ann_data) - 2)]
-  ann_data[, 1] <- round(ann_data[, 1], 4)
-  ann_data[, 2] <- round(ann_data[, 2], 2)
-  
-  write.csv(
-    cbind(ann_data, sample_data_mean),
-    file = "peak_feature_summary.csv",
-    col.names = TRUE,
-    row.names = F,
-    quote = F
-  )
-  
-  return (nrow(ann_data))
-}
-
-#' Verify the data is centroid or not
-#'
-#' @param filename single file name, should contain the absolute path
-#'
-#' @author Zhiqiang Pang \email{zhiqiang.pang@mail.mcgill.ca} and Jeff Xia \email{jeff.xia@mcgill.ca}
-#' McGill University, Canada
-#' License: GNU GPL (>= 2)
-#' @importFrom stats quantile
-#' @export
-CentroidCheck <- function(filename) {
-  fileh <- MSnbase:::.openMSfile(filename)
-  
-  allSpect <- mzR::peaks(fileh, c(1:10))
-  
-  nValues <- base::lengths(allSpect, use.names = FALSE) / 2
-  allSpect <- do.call(rbind, allSpect)
-  
-  res <- MSnbase:::Spectra1_mz_sorted(
-    peaksCount = nValues,
-    rt = c(1:10),
-    acquisitionNum = c(1:10),
-    scanIndex = c(1:10),
-    tic = c(1:10),
-    mz = allSpect[, 1],
-    intensity = allSpect[, 2],
-    fromFile = c(1:10),
-    centroided = rep(NA, 10),
-    smoothed =  rep(NA, 10),
-    polarity =  rep(-1, 10),
-    nvalues = nValues
-  )
-  names(res) <-
-    paste0("F1.s100",
-           c("01", "02", "03", "04", "05", "06", "07", "08", "09", "10"))
-  
-  
-  mzR::close(fileh)
-  rm(fileh)
-  
-  res <- lapply(
-    res,
-    FUN = function(z, APPLF, ...) {
-      pk <- as.data.frame(list(z))
-      
-      k = 0.025
-      qtl = 0.9
-      .qtl <- quantile(pk[, 2], qtl)
-      x <- pk[pk[, 2] > .qtl, 1]
-      quantile(diff(x), 0.25) > k
-      
-    }
-  )
-  
-  return(sum(unlist(res)) > 8)
-}
-
-#' MessageOutput
-#' @noRd
-MessageOutput <- function(mes, ecol, progress) {
-  if (!is.null(mes)) {
-    if (.on.public.web) {
-      # write down message
-      write.table(
-        mes,
-        file = "metaboanalyst_spec_proc.txt",
-        append = T,
-        row.names = F,
-        col.names = F,
-        quote = F,
-        eol = ecol
-      )
-    } else {
-      # print message
-      if(ecol == "\n"){
-        message(mes)
-      } else {
-        message(mes,appendLF = FALSE)
-      }
-      
-    }
-  }
-  
-  # write down progress
-  if (.on.public.web & !is.null(progress)) {
-    progress <- as.numeric(progress)
-    
-    write.table(
-      progress,
-      file = paste0(fullUserPath, "log_progress.txt"),
-      row.names = F,
-      col.names = F
-    )
-  }
-  
-}

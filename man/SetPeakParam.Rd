@@ -20,6 +20,11 @@ SetPeakParam(
   fwhm,
   steps,
   sigma,
+  criticalValue,
+  consecMissedLimit,
+  unions,
+  checkBack,
+  withWave,
   profStep,
   minFraction,
   minSamples,
@@ -78,6 +83,17 @@ smoothing kernel to be applied during peak grouping.}
 
 \item{sigma}{numeric specifying the standard deviation (width) of the matched filtration model peak. Only work for 'matchedFilter'.}
 
+\item{criticalValue}{criticalValue for massifquant (supported later).}
+
+\item{consecMissedLimit}{consecMissedLimit for massifquant (supported later).}
+
+\item{unions}{unions for massifquant (supported later).}
+
+\item{checkBack}{checkBack for massifquant (supported later).}
+
+\item{withWave}{withWave for massifquant (supported later).
+need to change.}
+
 \item{profStep}{numeric defining the bin size (in mz dimension) to be used for the profile matrix generation. Only work for 'obiwarp'.}
 
 \item{minFraction}{Numeric, specify fraction of samples in each group that contain the feature for it to be grouped.}
@@ -114,8 +130,7 @@ smoothing kernel to be applied during peak grouping.}
 
 \item{mz_abs_add}{PeakAnnotation parameters, (Only effective for website pipeline, for local package, OptiLCMS, please use SetAnnotationParam to define the annotation parameters).}
 
-\item{rmConts}{Logical, specify whether to exclude/remove the potential contaminations (the ones with RT range over 50\% of the whole spetra).
-need to change.}
+\item{rmConts}{Logical, specify whether to exclude/remove the potential contaminations (the ones with RT range over 50\% of the whole spetra).}
 }
 \description{
 This function sets all the parameters used for downstream

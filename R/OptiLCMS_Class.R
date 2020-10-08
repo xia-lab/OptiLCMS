@@ -51,7 +51,8 @@ setClass("mSet",
 ##' "CAMERA: an integrated strategy for compound spectra extraction and annotation of 
 ##' liquid chromatography/mass spectrometry data sets." Analytical Chemistry, 84, 283-289. 
 ##' http://pubs.acs.org/doi/abs/10.1021/ac202450g.
-
+#' @noRd
+#' 
 setClass("mSetRule",
          representation(ionlistfile="character",
                         ionlist="data.frame", 

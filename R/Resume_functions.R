@@ -2,18 +2,68 @@
 
 #' Initializing running plan
 #' @param type Initialized plan type for a resumable running mode. Can be "raw_opt" for automated optimization option, or "raw_ms" for customized pipeline.
-#' @param path this parameter is used to define the working directory (also is where the raw spectra data exists).
+#' @param WorkingDir this parameter is used to define the working directory (also is where the raw spectra data exists).
 #' @author Zhiqiang Pang \email{zhiqiang.pang@mail.mcgill.ca} Jeff Xia \email{jeff.xia@mcgill.ca}
 #' Mcgill University
 #' License: GNU GPL (>= 2)
 #' @export
-InitializaPlan <- function(type="spec", path){
+#' @examples 
+#' ## load googledrive package to download example data
+#' # library("googledrive");
+#'
+#' # Set data folder
+#' # data_folder_Sample <- "~/Data_IBD";
+#' # temp <- tempfile(fileext = ".zip");
+#'
+#' # Please authorize the package to download the data from web
+#' # dl <- drive_download(as_id("1CjEPed1WZrwd5T3Ovuic1KVF-Uz13NjO"), path = temp, overwrite = TRUE);
+#' # out <- unzip(temp, exdir = data_folder_Sample);
+#' # out;
+# 
+#' #### Running as resumable procedure: seamless pipeline
+#' ## Initialize running plan
+#' # plan <- InitializaPlan("raw_opt","~/Data_IBD/")
+#' ## define/set running plan
+#' # plan <- running.plan(plan,
+#' #                      data_folder_QC <- "~/Data_IBD/QC",
+#' #                      mSet <- PerformROIExtraction(datapath = data_folder_QC, 
+#' #                                                   rt.idx = 0.95, plot = F, 
+#' #                                                   rmConts = F, 
+#' #                                                   running.controller = rc),
+#' #                      param_initial <- SetPeakParam(),
+#' #                      best_parameters <- PerformParamsOptimization(mSet = mSet, 
+#' #                                                   param_initial, ncore = 2, 
+#' #                                                   running.controller = rc),
+#' #                      data_folder_Sample <- '',
+#' #                      param <- best_parameters,
+#' #                      plotSettings1 <- SetPlotParam(Plot=T),
+#' #                      plotSettings2 <- SetPlotParam(Plot=T),
+#' #                      mSet <- ImportRawMSData(mSet = mSet, 
+#' #                                              foldername = data_folder_Sample, 
+#' #                                              plotSettings = plotSettings1, 
+#' #                                              running.controller = rc),
+#' #                      mSet <- PerformPeakProfiling(mSet = mSet, 
+#' #                                              Params = param, 
+#' #                                              plotSettings = plotSettings2, 
+#' #                                              running.controller = rc),
+#' #                      annParams <- SetAnnotationParam(polarity = 'negative', 
+#' #                                              mz_abs_add = 0.025),
+#' #                      mSet <- PerformPeakAnnotation(mSet = mSet, 
+#' #                                              annotaParam = annParams, 
+#' #                                              ncore =1, 
+#' #                                              running.controller = rc),
+#' #                      maPeaks <- FormatPeakList(mSet = mSet, annParams, filtIso =F, 
+#' #                                              filtAdducts = FALSE, missPercent = 1));
+#' ## Execute the defined plan
+#' # ExecutePlan(plan)
+
+InitializaPlan <- function(type="spec", WorkingDir=NULL){
   
-  if(path != ""){
-    setwd(path);
-    fullUserPath <<- path;
+  if(!is.null(WorkingDir)){
+    setwd(WorkingDir);
+    fullUserPath <- WorkingDir;
   } else {
-    fullUserPath <<- "";
+    fullUserPath <- getwd();
   };
   
   MessageOutput(paste0("Running Status -- Plan Initialized Successfully at: ", Sys.time(), "\nPlease define your running plan ..."), "\n", 0);
@@ -31,19 +81,19 @@ InitializaPlan <- function(type="spec", path){
     
     if (!dir.exists(plan.path)) {
       dir.create(paste0(getwd(), "/temp/plan"),
-                 recursive = T)
+                 recursive = TRUE)
     }
     
-    .running.as.plan <<- T;
+    .running.as.plan <- .GlobalEnv$.running.as.plan <- TRUE;
     plan <- new("ResumingePlan");
-    .plan_count <<- plan@PlanNumber <- 0;
+    .plan_count <- plan@PlanNumber <- 0;
     plan@WorkingDir <- fullUserPath;
     
     saveRDS(plan, file = paste0(plan.path, "/plan.rds"));
     saveRDS(.running.as.plan, file = paste0(plan.path, "/running.as.plan.rds"));
     saveRDS(.plan_count, file = paste0(plan.path, "/plan_count.rds"));
     #----------------------
-    .optimize_switch <<- TRUE;
+    .optimize_switch <- .GlobalEnv$.optimize_switch <- TRUE;
     switch.path <- paste0(getwd(), "/temp/plan")
     saveRDS(.optimize_switch,
             file = paste0(switch.path, "/optimize_switch_", .plan_count, ".rds"))
@@ -55,14 +105,14 @@ InitializaPlan <- function(type="spec", path){
                  recursive = T)
     }
     
-    envir <<- new.env()
+    envir <- .GlobalEnv$envir <- new.env()
     saveRDS(envir, file = paste0(envir.path, "/envir.rds"))
     #----------------------
-    if (.on.public.web) {
-      rawFileNames <- paste0(getwd(), "/temp/plan")
-      saveRDS(rawfilenms,
-              file = paste0(rawFileNames, "/rawfilenms_", .plan_count, ".rds"))
-    }
+    # if (.on.public.web) {
+    #   rawFileNames <- paste0(getwd(), "/temp/plan")
+    #   saveRDS(rawfilenms,
+    #           file = paste0(rawFileNames, "/rawfilenms_", .plan_count, ".rds"))
+    # }
     #----------------------
     
     if (exists(".plan_count") & .plan_count > 0) {
@@ -80,16 +130,16 @@ InitializaPlan <- function(type="spec", path){
     }
     
     #---------------
-    .running.as.plan <<- T;
+    .running.as.plan <- .GlobalEnv$.running.as.plan <- TRUE;
     plan <- new("ResumingePlan");
-    .plan_count <<- plan@PlanNumber <- 0;
+    .plan_count <- plan@PlanNumber <- 0;
     plan@WorkingDir <- fullUserPath;
     
     saveRDS(plan, file = paste0(plan.path, "/plan.rds"));
     saveRDS(.running.as.plan, file = paste0(plan.path, "/running.as.plan.rds"));
     saveRDS(.plan_count, file = paste0(plan.path, "/plan_count.rds"));
     #----------------------
-    .optimize_switch <<- FALSE;
+    .optimize_switch <- .GlobalEnv$.optimize_switch <- FALSE;
     switch.path <- paste0(getwd(), "/temp/plan");
     saveRDS(.optimize_switch,
             file = paste0(switch.path, "/optimize_switch_", .plan_count, ".rds"));
@@ -101,18 +151,18 @@ InitializaPlan <- function(type="spec", path){
                  recursive = T)
     }
     
-    envir <<- new.env();
+    envir <- .GlobalEnv$envir <- new.env()
     saveRDS(envir, file = paste0(envir.path, "/envir.rds"))
     #----------------------
-    rawFileNames <- paste0(getwd(), "/temp/plan")
-    
-    if (.on.public.web) {
-      saveRDS(rawfilenms,
-              file = paste0(rawFileNames, "/rawfilenms_", .plan_count, ".rds"))
-    } else {
-      # do nothing for local
-    }
-    
+    # rawFileNames <- paste0(getwd(), "/temp/plan")
+    # 
+    # if (.on.public.web) {
+    #   saveRDS(rawfilenms,
+    #           file = paste0(rawFileNames, "/rawfilenms_", .plan_count, ".rds"))
+    # } else {
+    #   # do nothing for local
+    # }
+    # 
     #----------------------
     if (exists(".plan_count") & .plan_count > 0) {
       return(plan)
@@ -141,10 +191,95 @@ InitializaPlan <- function(type="spec", path){
 #' Mcgill University
 #' License: GNU GPL (>= 2)
 #' @export
+#' @examples 
+#' ## load googledrive package to download example data
+#' # library("googledrive");
+#'
+#' # Set data folder
+#' # data_folder_Sample <- "~/Data_IBD";
+#' # temp <- tempfile(fileext = ".zip");
+#'
+#' # Please authorize the package to download the data from web
+#' # dl <- drive_download(as_id("1CjEPed1WZrwd5T3Ovuic1KVF-Uz13NjO"), path = temp, overwrite = TRUE);
+#' # out <- unzip(temp, exdir = data_folder_Sample);
+#' # out;
+# 
+#' #### Running as resumable procedure: seamless pipeline
+#' ## Initialize running plan
+#' # plan <- InitializaPlan("raw_opt","~/Data_IBD/")
+#' ## define/set running plan
+#' # plan <- running.plan(plan,
+#' #                      data_folder_QC <- "~/Data_IBD/QC",
+#' #                      mSet <- PerformROIExtraction(datapath = data_folder_QC, 
+#' #                                                   rt.idx = 0.95, plot = F, 
+#' #                                                   rmConts = F, 
+#' #                                                   running.controller = rc),
+#' #                      param_initial <- SetPeakParam(),
+#' #                      best_parameters <- PerformParamsOptimization(mSet = mSet, 
+#' #                                                   param_initial, ncore = 2, 
+#' #                                                   running.controller = rc),
+#' #                      data_folder_Sample <- '',
+#' #                      param <- best_parameters,
+#' #                      plotSettings1 <- SetPlotParam(Plot=T),
+#' #                      plotSettings2 <- SetPlotParam(Plot=T),
+#' #                      mSet <- ImportRawMSData(mSet = mSet, 
+#' #                                              foldername = data_folder_Sample, 
+#' #                                              plotSettings = plotSettings1, 
+#' #                                              running.controller = rc),
+#' #                      mSet <- PerformPeakProfiling(mSet = mSet, 
+#' #                                              Params = param, 
+#' #                                              plotSettings = plotSettings2, 
+#' #                                              running.controller = rc),
+#' #                      annParams <- SetAnnotationParam(polarity = 'negative', 
+#' #                                              mz_abs_add = 0.025),
+#' #                      mSet <- PerformPeakAnnotation(mSet = mSet, 
+#' #                                              annotaParam = annParams, 
+#' #                                              ncore =1, 
+#' #                                              running.controller = rc),
+#' #                      maPeaks <- FormatPeakList(mSet = mSet, annParams, filtIso =F, 
+#' #                                              filtAdducts = FALSE, missPercent = 1));
+#' ## Execute the defined plan
+#' # ExecutePlan(plan)
+#' 
+#' #' # revise running plan, for example, revise mz_abs_add as 0.030
+#' # plan <- running.plan(plan,
+#' #                      data_folder_QC <- "~/Data_IBD/QC",
+#' #                      mSet <- PerformROIExtraction(datapath = data_folder_QC, 
+#' #                                                   rt.idx = 0.95, plot = F, 
+#' #                                                   rmConts = F, 
+#' #                                                   running.controller = rc),
+#' #                      param_initial <- SetPeakParam(),
+#' #                      best_parameters <- PerformParamsOptimization(mSet = mSet, 
+#' #                                                   param_initial, ncore = 2, 
+#' #                                                   running.controller = rc),
+#' #                      data_folder_Sample <- '',
+#' #                      param <- best_parameters,
+#' #                      plotSettings1 <- SetPlotParam(Plot=T),
+#' #                      plotSettings2 <- SetPlotParam(Plot=T),
+#' #                      mSet <- ImportRawMSData(mSet = mSet, 
+#' #                                              foldername = data_folder_Sample, 
+#' #                                              plotSettings = plotSettings1, 
+#' #                                              running.controller = rc),
+#' #                      mSet <- PerformPeakProfiling(mSet = mSet, 
+#' #                                              Params = param, 
+#' #                                              plotSettings = plotSettings2, 
+#' #                                              running.controller = rc),
+#' #                      annParams <- SetAnnotationParam(polarity = 'negative', 
+#' #                                              mz_abs_add = 0.030),
+#' #                      mSet <- PerformPeakAnnotation(mSet = mSet, 
+#' #                                              annotaParam = annParams, 
+#' #                                              ncore =1, 
+#' #                                              running.controller = rc),
+#' #                      maPeaks <- FormatPeakList(mSet = mSet, annParams, filtIso =F, 
+#' #                                              filtAdducts = FALSE, 
+#' #                                              missPercent = 1));
+#' ## Re-execute the defined plan, unnecessary steps will be skipped
+#' # ExecutePlan(plan)
+
 running.plan <- function(plan=NULL,...){
   
   #plan <- .get.current.plan(plan);
-  commands <<- match.call(expand.dots = FALSE)$...
+  commands <- match.call(expand.dots = FALSE)$...
   
   ## Declare controller
   plan@running.controller <- controller.resetter();
@@ -154,7 +289,7 @@ running.plan <- function(plan=NULL,...){
     stop("No command provided to run !");
   }
   
-  plan@PlanNumber <- .plan_count <<- .plan_count + 1;
+  plan@PlanNumber <- .plan_count <- plan@PlanNumber + 1;
   
   CommandsVerified <- CommandsVerify(commands);
   MessageOutput("Commands Origanization Finished!", ecol = "\n", NULL);
@@ -187,20 +322,74 @@ running.plan <- function(plan=NULL,...){
 #' Mcgill University
 #' License: GNU GPL (>= 2)
 #' @export
+#' @examples 
+#' ## load googledrive package to download example data
+#' # library("googledrive");
+#'
+#' # Set data folder
+#' # data_folder_Sample <- "~/Data_IBD";
+#' # temp <- tempfile(fileext = ".zip");
+#'
+#' # Please authorize the package to download the data from web
+#' # dl <- drive_download(as_id("1CjEPed1WZrwd5T3Ovuic1KVF-Uz13NjO"), path = temp, overwrite = TRUE);
+#' # out <- unzip(temp, exdir = data_folder_Sample);
+#' # out;
+# 
+#' #### Running as resumable procedure: seamless pipeline
+#' ## Initialize running plan
+#' # plan <- InitializaPlan("raw_opt","~/Data_IBD/")
+#' ## define/set running plan
+#' # plan <- running.plan(plan,
+#' #                      data_folder_QC <- "~/Data_IBD/QC",
+#' #                      mSet <- PerformROIExtraction(datapath = data_folder_QC, 
+#' #                                                   rt.idx = 0.95, plot = F, 
+#' #                                                   rmConts = F, 
+#' #                                                   running.controller = rc),
+#' #                      param_initial <- SetPeakParam(),
+#' #                      best_parameters <- PerformParamsOptimization(mSet = mSet, 
+#' #                                                   param_initial, ncore = 2, 
+#' #                                                   running.controller = rc),
+#' #                      data_folder_Sample <- '',
+#' #                      param <- best_parameters,
+#' #                      plotSettings1 <- SetPlotParam(Plot=T),
+#' #                      plotSettings2 <- SetPlotParam(Plot=T),
+#' #                      mSet <- ImportRawMSData(mSet = mSet, 
+#' #                                              foldername = data_folder_Sample, 
+#' #                                              plotSettings = plotSettings1, 
+#' #                                              running.controller = rc),
+#' #                      mSet <- PerformPeakProfiling(mSet = mSet, 
+#' #                                              Params = param, 
+#' #                                              plotSettings = plotSettings2, 
+#' #                                              running.controller = rc),
+#' #                      annParams <- SetAnnotationParam(polarity = 'negative', 
+#' #                                              mz_abs_add = 0.025),
+#' #                      mSet <- PerformPeakAnnotation(mSet = mSet, 
+#' #                                              annotaParam = annParams, 
+#' #                                              ncore =1, 
+#' #                                              running.controller = rc),
+#' #                      maPeaks <- FormatPeakList(mSet = mSet, annParams, filtIso =F, 
+#' #                                              filtAdducts = FALSE, 
+#' #                                              missPercent = 1));
+#' ## Execute the defined plan
+#' # ExecutePlan(plan)
+
 ExecutePlan <- function(plan=NULL){
   cat("Current Working Directory: ",getwd(),"\n");
   if (is.null(plan)){
     stop("No running plan input. Please design you plan first with 'running.plan' function !")
   };
   
+  .plan_count <- plan@PlanNumber;
+  
   # Reset running.controller to make sure everything is normal at beginning
   plan@running.controller <- controller.resetter();
   
   if (length(plan@CommandSet) == 1){
     
-    envir$rc <<- plan@running.controller;
+    .GlobalEnv$envir$rc <- plan@running.controller;
     perform.plan(plan@CommandSet[["command_set_1"]]);
     
+    envir <- .GlobalEnv$envir;
     envir.path <- paste0(getwd(),"/temp/envir");
     saveRDS(envir, file = paste0(envir.path,"/envir.rds"));
     
@@ -229,7 +418,7 @@ ExecutePlan <- function(plan=NULL){
     ## Module 8 - Dectect whether current plan type (raw_ms or raw_pre) is different from the last one (Final Decision switch)
     # plan <- planType_identifier(plan);
     
-    envir$rc <<- plan@running.controller
+    .GlobalEnv$envir$rc <- plan@running.controller
     # define.plan.controller <- str2lang('rc <- plan$running.controller');
     # eval (define.plan.controller,envir = envir);
     #perform.plan(new_command_set);
@@ -248,6 +437,7 @@ ExecutePlan <- function(plan=NULL){
       stop(paste0("EXCEPTION POINT CODE: ", mSetInfo$message));
     }
     
+    envir <- .GlobalEnv$envir;
     envir.path <- paste0(getwd(),"/temp/envir");
     saveRDS(envir, file = paste0(envir.path,"/envir.rds"));
     
@@ -260,6 +450,7 @@ ExecutePlan <- function(plan=NULL){
 #' @noRd
 recording_identifier <- function(plan) {
   
+  .plan_count <- plan@PlanNumber;
   record.path <- paste0(getwd(),"/temp/records");
   
   if(file.exists(paste0(record.path,"/records_marker_",.plan_count-1,".rds"))){
@@ -333,7 +524,11 @@ recordMarker_resetter <- function(.plan_count){
 
 #' @noRd
 marker_record <- function(functionNM){
+  
   record.path <- paste0(getwd(),"/temp/records");
+  plan.path <- paste0(getwd(),"/temp/plan/");
+  
+  .plan_count <- readRDS(paste0(plan.path,"plan_count.rds"))
   
   if (!file.exists(paste0(record.path,"/records_marker_",.plan_count,".rds"))){
     record.marker <- matrix(nrow = 28,ncol = 2);
@@ -349,7 +544,6 @@ marker_record <- function(functionNM){
   } else {
     record.marker <- readRDS(paste0(record.path,"/records_marker_",.plan_count,".rds"));
   };
-  
   
   # If this step has been run at ".plan_count" time, is will be marked as T
   if(functionNM=="ROI_extract_c1"){record.marker[1,2] <- TRUE};
@@ -653,6 +847,7 @@ controller.modifier <- function(new_command_set, last_command_set, plan){
   }
   
   if(.on.public.web){
+    peakParams <- NULL;
     # load params.rda and envir.rds and do a comparison
     envir.path <- paste0(getwd(),"/temp/envir");
     envir_tmp <- readRDS(paste0(envir.path,"/envir.rds"));
@@ -768,6 +963,8 @@ perform.plan <- function(plan.set){
 #' @noRd
 perform.command <- function(command){
   
+  envir <- .GlobalEnv$envir;
+  
   if (as.character(command[[1]])=="<-"){
     
     eval(command,envir = envir);
@@ -832,6 +1029,8 @@ cache.read <- function(function.name, point){
 
 #' @noRd
 profiling_param_identifier <- function(new_command,last_command){
+  
+  envir <- .GlobalEnv$envir
   
   new <- eval(new_command,envir = envir);
   last <- eval(last_command,envir = envir);
@@ -1215,1271 +1414,6 @@ ParamsChanged <- function(lastParamArgus, newParamArgus){
   }
   
 }
-
-#' @noRd
-OptiFileChanged <- function(data_trim_folder){
-  
-  envir_previous <- readRDS(paste0(fullUserPath,"/temp/envir/envir.rds"));
-  optifiles_last <- try(envir_previous[["mSet"]]@rawInMemory@phenoData@data[["sample_name"]],silent = T);
-  optifiles_current <- list.files(data_trim_folder,recursive = TRUE);
-  
-  if(is.null(optifiles_last) | class(optifiles_last) == "try-error"){
-    return(FALSE);
-  }
-  
-  if(all(nchar(optifiles_last) != nchar(optifiles_current))){
-    return(TRUE);
-  }
-}
-
-#' @noRd
-ProcessFileChanged <- function(data_process_folder){
-  
-  envir_previous <- readRDS(paste0(fullUserPath,"/temp/envir/envir.rds"));
-  optifiles_last <- try(basename(envir_previous[["mSet"]]@rawOnDisk@processingData@files),silent = T);
-  optifiles_current <- list.files(data_process_folder, recursive = TRUE);
-  
-  if(is.null(optifiles_last) | class(optifiles_last) == "try-error"){
-    return(FALSE);
-  }
-  
-  if(all(nchar(optifiles_last) != nchar(optifiles_current))){
-    return(TRUE);
-  }
-}
-
-#' @noRd
-FastRunningShow_auto <- function(fullUserPath){
-  
-  setwd(fullUserPath);  
-  
-  time_interval1 <- 0.65;
-  time_interval2 <- 2;
-  # running to show the progress
-  if (!file.exists("metaboanalyst_spec_proc.txt")){
-    print_mes <- paste0("Running Status -- Job Submitted Successfully at: ", Sys.time(), "\nWaiting in queue to start...")
-    write.table(print_mes, file = paste0(fullUserPath, "/metaboanalyst_spec_proc.txt"),row.names = F,col.names = F);
-  }
-  Sys.sleep(time_interval1);
-  
-  print_mes <- "Step 0/6: Scanning ROIs for parameters optimization...";    
-  write.table(print_mes,file="metaboanalyst_spec_proc.txt",append = T,row.names = F,col.names = F, quote = F, eol = "\n");
-  write.table(1.0, file = "log_progress.txt",row.names = F,col.names = F); 
-  
-  Sys.sleep(time_interval1);
-  
-  print_mes <- "Data Loading...";    
-  write.table(print_mes,file="metaboanalyst_spec_proc.txt",append = T,row.names = F,col.names = F, quote = F, eol = "\n");
-  
-  Sys.sleep(time_interval1);
-  
-  write.table("Raw file import begin...",file="metaboanalyst_spec_proc.txt",append = T,row.names = F,col.names = F, quote = F, eol = "\n");
-  
-  Sys.sleep(time_interval1);
-  
-  print_mes <- paste0("Importing ","QC_PREFA02.mzML",":");    
-  write.table(print_mes,file="metaboanalyst_spec_proc.txt",append = T,row.names = F,col.names = F, quote = F, eol = " ");
-  
-  Sys.sleep(time_interval1);
-  
-  for(i in seq(0,100,20)){
-    
-    print_mes <- paste0(i,"% | ");    
-    write.table(print_mes,file="metaboanalyst_spec_proc.txt",append = T,row.names = F,col.names = F, quote = F, eol = "");
-    Sys.sleep(0.35);
-    
-  }
-  
-  print_mes <- paste0(" Done!");    
-  write.table(print_mes,file="metaboanalyst_spec_proc.txt",append = T,row.names = F,col.names = F, quote = F, eol = "\n");
-  
-  Sys.sleep(time_interval1);
-  
-  print_mes <- paste0("Importing ","QC_PREFB02.mzML",":");    
-  write.table(print_mes,file="metaboanalyst_spec_proc.txt",append = T,row.names = F,col.names = F, quote = F, eol = " ");
-  
-  Sys.sleep(time_interval1);
-  
-  for(i in seq(0,100,20)){
-    
-    print_mes <- paste0(i,"% | ");    
-    write.table(print_mes,file="metaboanalyst_spec_proc.txt",append = T,row.names = F,col.names = F, quote = F, eol = "");
-    Sys.sleep(0.3);
-    
-  }
-  
-  print_mes <- paste0(" Done!");    
-  write.table(print_mes,file="metaboanalyst_spec_proc.txt",append = T,row.names = F,col.names = F, quote = F, eol = "\n");
-  write.table(2.0, file = "log_progress.txt",row.names = F,col.names = F);
-  
-  Sys.sleep(time_interval1);
-  
-  print_mes <- "Data Loaded !";    
-  write.table(print_mes,file="metaboanalyst_spec_proc.txt",append = T,row.names = F,col.names = F, quote = F, eol = "\n");
-  
-  Sys.sleep(time_interval1);
-  
-  print_mes <- "Empty Scan scanning...";    
-  write.table(print_mes,file="metaboanalyst_spec_proc.txt",append = T,row.names = F,col.names = F, quote = F, eol = "\n");
-  
-  Sys.sleep(time_interval1);
-  
-  print_mes <- "No Empty scan found !";    
-  write.table(print_mes,file="metaboanalyst_spec_proc.txt",append = T,row.names = F,col.names = F, quote = F, eol = "\n");
-  
-  Sys.sleep(time_interval1);
-  
-  print_mes <- "Identifying regions of interest (ROI)...";    
-  write.table(print_mes,file="metaboanalyst_spec_proc.txt",append = T,row.names = F,col.names = F, quote = F, eol = "\n");
-  
-  Sys.sleep(time_interval1);
-  
-  print_mes <- "Identifying regions of potential contaminants ";    
-  write.table(print_mes,file="metaboanalyst_spec_proc.txt",append = T,row.names = F,col.names = F, quote = F, eol = "");
-  
-  Sys.sleep(time_interval1);
-  
-  for(i in 1:30){
-    print_mes <- ".";    
-    write.table(print_mes,file="metaboanalyst_spec_proc.txt",append = T,row.names = F,col.names = F, quote = F, eol = "");
-    Sys.sleep(0.75);
-  }
-  
-  print_mes <- "Done!";    
-  write.table(print_mes,file="metaboanalyst_spec_proc.txt",append = T,row.names = F,col.names = F, quote = F, eol = "\n");
-  
-  Sys.sleep(time_interval1);
-  
-  print_mes <- "300 potential contaminamts will not be used for parameters optimization !";    
-  write.table(print_mes,file="metaboanalyst_spec_proc.txt",append = T,row.names = F,col.names = F, quote = F, eol = "\n");
-  
-  Sys.sleep(time_interval1);
-  
-  print_mes <- "MS data Preparing...";    
-  write.table(print_mes,file="metaboanalyst_spec_proc.txt",append = T,row.names = F,col.names = F, quote = F, eol = "\n");
-  
-  Sys.sleep(time_interval1);
-  
-  print_mes <- "MS Data ready !";    
-  write.table(print_mes,file="metaboanalyst_spec_proc.txt",append = T,row.names = F,col.names = F, quote = F, eol = "\n");
-  write.table(3.0, file = "log_progress.txt",row.names = F,col.names = F);
-  
-  Sys.sleep(time_interval1);
-  
-  print_mes <- "Identifying ROIs in m/z dimensions...";    
-  write.table(print_mes,file="metaboanalyst_spec_proc.txt",append = T,row.names = F,col.names = F, quote = F, eol = "\n");
-  
-  Sys.sleep(time_interval1);
-  
-  print_mes <- "Identifying ROIs in m/z dimensions Done !";    
-  write.table(print_mes,file="metaboanalyst_spec_proc.txt",append = T,row.names = F,col.names = F, quote = F, eol = "\n");
-  
-  Sys.sleep(time_interval1);
-  
-  print_mes <- "Identifying ROIs in RT dimensions...";    
-  write.table(print_mes,file="metaboanalyst_spec_proc.txt",append = T,row.names = F,col.names = F, quote = F, eol = "\n");
-  
-  Sys.sleep(time_interval1);
-  
-  print_mes <- "Identification on ROIs Finished! ";    
-  write.table(print_mes,file="metaboanalyst_spec_proc.txt",append = T,row.names = F,col.names = F, quote = F, eol = "\n");
-  write.table(4.0, file = "log_progress.txt",row.names = F,col.names = F);
-  
-  Sys.sleep(time_interval1);
-  
-  print_mes <- "Optimization will be started soon...";    
-  write.table(print_mes,file="metaboanalyst_spec_proc.txt",append = T,row.names = F,col.names = F, quote = F, eol = "\n");
-  
-  Sys.sleep(time_interval1);
-  
-  print_mes <- "Step 1/6: Start to optimize parameters! ";    
-  write.table(print_mes,file="metaboanalyst_spec_proc.txt",append = T,row.names = F,col.names = F, quote = F, eol = "\n");
-  
-  Sys.sleep(time_interval1);
-  
-  print_mes <- "This step may take a long time...";    
-  write.table(print_mes,file="metaboanalyst_spec_proc.txt",append = T,row.names = F,col.names = F, quote = F, eol = "\n");
-  
-  Sys.sleep(time_interval1);
-  
-  print_mes <- "DoE Optimization Starting Now...";    
-  write.table(print_mes,file="metaboanalyst_spec_proc.txt",append = T,row.names = F,col.names = F, quote = F, eol = "\n");
-  
-  Sys.sleep(time_interval1);
-  
-  print_mes <- "Evaluating Noise level...";    
-  write.table(print_mes,file="metaboanalyst_spec_proc.txt",append = T,row.names = F,col.names = F, quote = F, eol = "");
-  
-  Sys.sleep(time_interval1);
-  
-  print_mes <- "Done!";    
-  write.table(print_mes,file="metaboanalyst_spec_proc.txt",append = T,row.names = F,col.names = F, quote = F, eol = "\n");
-  write.table(5.00, file = "log_progress.txt",row.names = F,col.names = F);
-  
-  Sys.sleep(time_interval1);
-  
-  print_mes <- "Preparing Parameters for optimization finished !";    
-  write.table(print_mes,file="metaboanalyst_spec_proc.txt",append = T,row.names = F,col.names = F, quote = F, eol = "\n");
-  
-  Sys.sleep(time_interval1);
-  
-  print_mes <- "Data Spliting Finished ! ";    
-  write.table(print_mes,file="metaboanalyst_spec_proc.txt",append = T,row.names = F,col.names = F, quote = F, eol = "\n");
-  
-  Sys.sleep(time_interval1);
-  
-  print_mes <- "Peak Preparing Begin...";    
-  write.table(print_mes,file="metaboanalyst_spec_proc.txt",append = T,row.names = F,col.names = F, quote = F, eol = "\n");
-  
-  Sys.sleep(time_interval1);
-  
-  print_mes <- "Peak Preparing Done !";    
-  write.table(print_mes,file="metaboanalyst_spec_proc.txt",append = T,row.names = F,col.names = F, quote = F, eol = "\n");
-  
-  Sys.sleep(time_interval1);
-  
-  print_mes <- "Round:1";    
-  write.table(print_mes,file="metaboanalyst_spec_proc.txt",append = T,row.names = F,col.names = F, quote = F, eol = "\n");
-  
-  Sys.sleep(time_interval1);
-  
-  print_mes <- "DoE Running Begin...";    
-  write.table(print_mes,file="metaboanalyst_spec_proc.txt",append = T,row.names = F,col.names = F, quote = F, eol = "\n");
-  
-  Sys.sleep(time_interval1);
-  
-  print_mes <- "Finished:";    
-  write.table(print_mes,file="metaboanalyst_spec_proc.txt",append = T,row.names = F,col.names = F, quote = F, eol = " ");
-  
-  for(i in c(11,22,33,44,56,67,78,89,100)){
-    
-    print_mes <- paste0(i,"% | ");    
-    write.table(print_mes,file="metaboanalyst_spec_proc.txt",append = T,row.names = F,col.names = F, quote = F, eol = "");
-    write.table(5+i/50, file = "log_progress.txt",row.names = F,col.names = F);
-    Sys.sleep(2);
-    
-  }
-  
-  print_mes <- "Done!";    
-  write.table(print_mes,file="metaboanalyst_spec_proc.txt",append = T,row.names = F,col.names = F, quote = F, eol = "\n");
-  
-  print_mes <- "Round 1 Finished !";    
-  write.table(print_mes,file="metaboanalyst_spec_proc.txt",append = T,row.names = F,col.names = F, quote = F, eol = "\n");
-  
-  Sys.sleep(time_interval1);
-  
-  print_mes <- "Model Parsing...";    
-  write.table(print_mes,file="metaboanalyst_spec_proc.txt",append = T,row.names = F,col.names = F, quote = F, eol = "\n");
-  
-  Sys.sleep(time_interval1);
-  
-  print_mes <- "Model Parsing Done !";    
-  write.table(print_mes,file="metaboanalyst_spec_proc.txt",append = T,row.names = F,col.names = F, quote = F, eol = "\n");
-  
-  Sys.sleep(time_interval1);
-  
-  print_mes <- "Round:2";    
-  write.table(print_mes,file="metaboanalyst_spec_proc.txt",append = T,row.names = F,col.names = F, quote = F, eol = "\n");
-  
-  Sys.sleep(time_interval1);
-  
-  print_mes <- "DoE Running Begin...";    
-  write.table(print_mes,file="metaboanalyst_spec_proc.txt",append = T,row.names = F,col.names = F, quote = F, eol = "\n");
-  
-  Sys.sleep(time_interval1);
-  
-  print_mes <- "Finished:";    
-  write.table(print_mes,file="metaboanalyst_spec_proc.txt",append = T,row.names = F,col.names = F, quote = F, eol = " ");
-  
-  for(i in c(11,22,33,44,56,67,78,89,100)){
-    
-    print_mes <- paste0(i,"% | ");    
-    write.table(print_mes,file="metaboanalyst_spec_proc.txt",append = T,row.names = F,col.names = F, quote = F, eol = "");
-    write.table(8.0+1/50, file = "log_progress.txt",row.names = F,col.names = F);
-    Sys.sleep(0.5);
-    
-  }
-  
-  print_mes <- "Done!";    
-  write.table(print_mes,file="metaboanalyst_spec_proc.txt",append = T,row.names = F,col.names = F, quote = F, eol = "\n");
-  
-  print_mes <- "Round 2 Finished !";    
-  write.table(print_mes,file="metaboanalyst_spec_proc.txt",append = T,row.names = F,col.names = F, quote = F, eol = "\n");
-  
-  Sys.sleep(time_interval1);
-  
-  print_mes <- "Model Parsing...";    
-  write.table(print_mes,file="metaboanalyst_spec_proc.txt",append = T,row.names = F,col.names = F, quote = F, eol = "\n");
-  
-  Sys.sleep(time_interval1);
-  
-  print_mes <- "Model Parsing Done !";    
-  write.table(print_mes,file="metaboanalyst_spec_proc.txt",append = T,row.names = F,col.names = F, quote = F, eol = "\n");
-  
-  Sys.sleep(time_interval1);
-  
-  
-  print_mes <- "Round:3";    
-  write.table(print_mes,file="metaboanalyst_spec_proc.txt",append = T,row.names = F,col.names = F, quote = F, eol = "\n");
-  
-  Sys.sleep(time_interval1);
-  
-  print_mes <- "DoE Running Begin...";    
-  write.table(print_mes,file="metaboanalyst_spec_proc.txt",append = T,row.names = F,col.names = F, quote = F, eol = "\n");
-  
-  Sys.sleep(time_interval1);
-  
-  print_mes <- "Finished:";    
-  write.table(print_mes,file="metaboanalyst_spec_proc.txt",append = T,row.names = F,col.names = F, quote = F, eol = " ");
-  
-  for(i in c(11,22,33,44,56,67,78,89,100)){
-    
-    print_mes <- paste0(i,"% | ");    
-    write.table(print_mes,file="metaboanalyst_spec_proc.txt",append = T,row.names = F,col.names = F, quote = F, eol = "");
-    write.table(8.0+1/50, file = "log_progress.txt",row.names = F,col.names = F);
-    Sys.sleep(0.5);
-    
-  }
-  
-  print_mes <- "Done!";    
-  write.table(print_mes,file="metaboanalyst_spec_proc.txt",append = T,row.names = F,col.names = F, quote = F, eol = "\n");
-  
-  print_mes <- "Round 3 Finished !";    
-  write.table(print_mes,file="metaboanalyst_spec_proc.txt",append = T,row.names = F,col.names = F, quote = F, eol = "\n");
-  
-  Sys.sleep(time_interval1);
-  
-  print_mes <- "Model Parsing...";    
-  write.table(print_mes,file="metaboanalyst_spec_proc.txt",append = T,row.names = F,col.names = F, quote = F, eol = "\n");
-  
-  Sys.sleep(time_interval1);
-  
-  print_mes <- "Model Parsing Done !";    
-  write.table(print_mes,file="metaboanalyst_spec_proc.txt",append = T,row.names = F,col.names = F, quote = F, eol = "\n");
-  
-  Sys.sleep(time_interval1);
-  
-  print_mes <- paste0("Step 1/6: Parameters Optimization Finished ! (", Sys.time(),")");
-  write.table(print_mes,file="metaboanalyst_spec_proc.txt",append = T,row.names = F,col.names = F, quote = F, eol = "\n");
-  write.table(20.0, file = "log_progress.txt",row.names = F,col.names = F);
-  
-  Sys.sleep(time_interval1);
-  
-  print_mes <- "Step 2/6: Start to import the spectrum! ";    
-  write.table(print_mes,file="metaboanalyst_spec_proc.txt",append = T,row.names = F,col.names = F, quote = F, eol = "\n");
-  write.table(21.0, file = "log_progress.txt",row.names = F,col.names = F);
-  Sys.sleep(time_interval1);
-  
-  print_mes <- "This step will take a short time...";    
-  write.table(print_mes,file="metaboanalyst_spec_proc.txt",append = T,row.names = F,col.names = F, quote = F, eol = "\n");
-  
-  Sys.sleep(time_interval1);
-  
-  print_mes <- "Raw file import begin...";    
-  write.table(print_mes,file="metaboanalyst_spec_proc.txt",append = T,row.names = F,col.names = F, quote = F, eol = "\n");
-  
-  Sys.sleep(time_interval1);
-  
-  print_mes <- "CD-6KUCT.mzML import done!";    
-  write.table(print_mes,file="metaboanalyst_spec_proc.txt",append = T,row.names = F,col.names = F, quote = F, eol = "\n");
-  
-  Sys.sleep(time_interval1);
-  
-  print_mes <- "CD-77FXR.mzML import done!";    
-  write.table(print_mes,file="metaboanalyst_spec_proc.txt",append = T,row.names = F,col.names = F, quote = F, eol = "\n");
-  
-  Sys.sleep(time_interval1);
-  
-  print_mes <- "CD-9OS5Y.mzML import done!";    
-  write.table(print_mes,file="metaboanalyst_spec_proc.txt",append = T,row.names = F,col.names = F, quote = F, eol = "\n");
-  
-  Sys.sleep(time_interval1);
-  
-  print_mes <- "CD-9WOBP.mzML import done!";    
-  write.table(print_mes,file="metaboanalyst_spec_proc.txt",append = T,row.names = F,col.names = F, quote = F, eol = "\n");
-  
-  Sys.sleep(time_interval1);
-  
-  print_mes <- "HC-9SNJ4.mzML import done!";    
-  write.table(print_mes,file="metaboanalyst_spec_proc.txt",append = T,row.names = F,col.names = F, quote = F, eol = "\n");
-  
-  Sys.sleep(time_interval1);
-  
-  print_mes <- "HC-9X47O.mzML import done!";    
-  write.table(print_mes,file="metaboanalyst_spec_proc.txt",append = T,row.names = F,col.names = F, quote = F, eol = "\n");
-  
-  Sys.sleep(time_interval1);
-  
-  print_mes <- "HC-AMR37.mzML import done!";    
-  write.table(print_mes,file="metaboanalyst_spec_proc.txt",append = T,row.names = F,col.names = F, quote = F, eol = "\n");
-  
-  Sys.sleep(time_interval1);
-  
-  print_mes <- "HC-AUP8B.mzML import done!";    
-  write.table(print_mes,file="metaboanalyst_spec_proc.txt",append = T,row.names = F,col.names = F, quote = F, eol = "\n");
-  
-  Sys.sleep(time_interval1);
-  
-  print_mes <- "QC_PREFA02.mzML import done!";    
-  write.table(print_mes,file="metaboanalyst_spec_proc.txt",append = T,row.names = F,col.names = F, quote = F, eol = "\n");
-  
-  Sys.sleep(time_interval1);
-  
-  print_mes <- "QC_PREFB02.mzML import done!";    
-  write.table(print_mes,file="metaboanalyst_spec_proc.txt",append = T,row.names = F,col.names = F, quote = F, eol = "\n");
-  write.table(22.0, file = "log_progress.txt",row.names = F,col.names = F);
-  Sys.sleep(3);
-  
-  print_mes <- "Raw file initialized Successfully!";    
-  write.table(print_mes,file="metaboanalyst_spec_proc.txt",append = T,row.names = F,col.names = F, quote = F, eol = "\n");
-  write.table(24.0, file = "log_progress.txt",row.names = F,col.names = F);
-  Sys.sleep(time_interval1);
-  
-  print_mes <- paste0("Step 2/6: Successfully imported raw MS data! (", Sys.time(),") \nGoing to the next step...");
-  write.table(print_mes,file="metaboanalyst_spec_proc.txt",append = T,row.names = F,col.names = F, quote = F, eol = "\n");
-  
-  Sys.sleep(time_interval1);
-  
-  print_mes <- "Parameters for centWave have been successfully parsed!";    
-  write.table(print_mes,file="metaboanalyst_spec_proc.txt",append = T,row.names = F,col.names = F, quote = F, eol = "\n");
-  
-  Sys.sleep(time_interval1);
-  
-  print_mes <- "4 CPU Threads will be used for peak profiling !";    
-  write.table(print_mes,file="metaboanalyst_spec_proc.txt",append = T,row.names = F,col.names = F, quote = F, eol = "\n");
-  write.table(25, file = "log_progress.txt",row.names = F,col.names = F);
-  Sys.sleep(time_interval1);
-  
-  print_mes <- "Step 3/6: Started peak picking! This step will take some time...";    
-  write.table(print_mes,file="metaboanalyst_spec_proc.txt",append = T,row.names = F,col.names = F, quote = F, eol = "\n");
-  
-  Sys.sleep(time_interval1);
-  
-  print_mes <- "Searching under 1.91 ppm ... Detecting peaks in 3613 regions of interest ... OK: 551 found.";    
-  write.table(print_mes,file="metaboanalyst_spec_proc.txt",append = T,row.names = F,col.names = F, quote = F, eol = "\n");
-  write.table(30.0, file = "log_progress.txt",row.names = F,col.names = F);
-  Sys.sleep(time_interval1);
-  
-  print_mes <- "Searching under 1.91 ppm ... Detecting peaks in 3528 regions of interest ... OK: 591 found.";    
-  write.table(print_mes,file="metaboanalyst_spec_proc.txt",append = T,row.names = F,col.names = F, quote = F, eol = "\n");
-  write.table(30.0, file = "log_progress.txt",row.names = F,col.names = F);
-  Sys.sleep(time_interval1);
-  
-  print_mes <- "Searching under 1.91 ppm ... Detecting peaks in 5098 regions of interest ... OK: 598 found.";    
-  write.table(print_mes,file="metaboanalyst_spec_proc.txt",append = T,row.names = F,col.names = F, quote = F, eol = "\n");
-  write.table(35.0, file = "log_progress.txt",row.names = F,col.names = F);
-  Sys.sleep(time_interval1);
-  
-  print_mes <- "Searching under 1.91 ppm ... Detecting peaks in 3953 regions of interest ... OK: 805 found.";    
-  write.table(print_mes,file="metaboanalyst_spec_proc.txt",append = T,row.names = F,col.names = F, quote = F, eol = "\n");
-  write.table(35.0, file = "log_progress.txt",row.names = F,col.names = F);
-  Sys.sleep(time_interval1);
-  
-  print_mes <- "Searching under 1.91 ppm ... Detecting peaks in 4875 regions of interest ... OK: 676 found.";    
-  write.table(print_mes,file="metaboanalyst_spec_proc.txt",append = T,row.names = F,col.names = F, quote = F, eol = "\n");
-  write.table(40.0, file = "log_progress.txt",row.names = F,col.names = F);
-  Sys.sleep(time_interval1);
-  
-  print_mes <- "Searching under 1.91 ppm ... Detecting peaks in 5333 regions of interest ... OK: 717 found.";    
-  write.table(print_mes,file="metaboanalyst_spec_proc.txt",append = T,row.names = F,col.names = F, quote = F, eol = "\n");
-  write.table(40.0, file = "log_progress.txt",row.names = F,col.names = F);
-  Sys.sleep(time_interval1);
-  
-  print_mes <- "Searching under 1.91 ppm ... Detecting peaks in 4991 regions of interest ... OK: 805 found.";    
-  write.table(print_mes,file="metaboanalyst_spec_proc.txt",append = T,row.names = F,col.names = F, quote = F, eol = "\n");
-  write.table(40.0, file = "log_progress.txt",row.names = F,col.names = F);
-  Sys.sleep(time_interval1);
-  
-  print_mes <- "Searching under 1.91 ppm ... Detecting peaks in 4633 regions of interest ... OK: 847 found.";    
-  write.table(print_mes,file="metaboanalyst_spec_proc.txt",append = T,row.names = F,col.names = F, quote = F, eol = "\n");
-  write.table(40.0, file = "log_progress.txt",row.names = F,col.names = F);
-  Sys.sleep(time_interval1);
-  
-  print_mes <- "Searching under 1.91 ppm ... Detecting peaks in 4988 regions of interest ... OK: 791 found.";    
-  write.table(print_mes,file="metaboanalyst_spec_proc.txt",append = T,row.names = F,col.names = F, quote = F, eol = "\n");
-  write.table(47.0, file = "log_progress.txt",row.names = F,col.names = F);
-  Sys.sleep(time_interval1);
-  
-  print_mes <- "Searching under 1.91 ppm ... Detecting peaks in 5069 regions of interest ... OK: 755 found.";    
-  write.table(print_mes,file="metaboanalyst_spec_proc.txt",append = T,row.names = F,col.names = F, quote = F, eol = "\n");
-  write.table(47.0, file = "log_progress.txt",row.names = F,col.names = F);
-  Sys.sleep(time_interval1);
-  
-  print_mes <- paste0("Step 3/6: Peak picking finished ! (",Sys.time(),")");
-  write.table(print_mes,file="metaboanalyst_spec_proc.txt",append = T,row.names = F,col.names = F, quote = F, eol = "\n");
-  write.table(50.0, file = "log_progress.txt",row.names = F,col.names = F);
-  Sys.sleep(time_interval1);
-  
-  print_mes <- "Step 4/6: Started peak alignment! This step is running...";    
-  write.table(print_mes,file="metaboanalyst_spec_proc.txt",append = T,row.names = F,col.names = F, quote = F, eol = "\n");
-  write.table(52.0, file = "log_progress.txt",row.names = F,col.names = F);
-  Sys.sleep(time_interval1);
-  
-  print_mes <- "Total of 2803 slices detected for processing... Done ! ";    
-  write.table(print_mes,file="metaboanalyst_spec_proc.txt",append = T,row.names = F,col.names = F, quote = F, eol = "\n");
-  write.table(55.0, file = "log_progress.txt",row.names = F,col.names = F);
-  Sys.sleep(time_interval1);
-  
-  print_mes <- "Going to the next step...";    
-  write.table(print_mes,file="metaboanalyst_spec_proc.txt",append = T,row.names = F,col.names = F, quote = F, eol = "\n");
-  write.table(56.0, file = "log_progress.txt",row.names = F,col.names = F);
-  Sys.sleep(time_interval1);
-  
-  print_mes <- "Retention time correction is running.....";    
-  write.table(print_mes,file="metaboanalyst_spec_proc.txt",append = T,row.names = F,col.names = F, quote = F, eol = "\n");
-  write.table(60.0, file = "log_progress.txt",row.names = F,col.names = F);
-  Sys.sleep(time_interval1);
-  
-  print_mes <- "Performing retention time correction using  92  peak groups.";    
-  write.table(print_mes,file="metaboanalyst_spec_proc.txt",append = T,row.names = F,col.names = F, quote = F, eol = "\n");
-  write.table(65.0, file = "log_progress.txt",row.names = F,col.names = F);
-  Sys.sleep(time_interval1);
-  
-  print_mes <- "Applying retention time adjustment to the identified chromatographic peaks ... Done !";    
-  write.table(print_mes,file="metaboanalyst_spec_proc.txt",append = T,row.names = F,col.names = F, quote = F, eol = "\n");
-  write.table(66.0, file = "log_progress.txt",row.names = F,col.names = F);
-  write.table(68.0, file = "log_progress.txt",row.names = F,col.names = F);
-  Sys.sleep(time_interval1);
-  
-  print_mes <- "Total of 2803 slices detected for processing... Done ! ";    
-  write.table(print_mes,file="metaboanalyst_spec_proc.txt",append = T,row.names = F,col.names = F, quote = F, eol = "\n");
-  
-  Sys.sleep(time_interval1);
-  
-  print_mes <- "Going to the next step...";    
-  write.table(print_mes,file="metaboanalyst_spec_proc.txt",append = T,row.names = F,col.names = F, quote = F, eol = "\n");
-  
-  Sys.sleep(time_interval1);
-  
-  print_mes <- paste0("Step 4/6: Peak alignment finished ! (",Sys.time(),")");
-  write.table(print_mes,file="metaboanalyst_spec_proc.txt",append = T,row.names = F,col.names = F, quote = F, eol = "\n");
-  write.table(73.0, file = "log_progress.txt",row.names = F,col.names = F);
-  Sys.sleep(time_interval1);
-  
-  print_mes <- "Step 5/6: Started peak filling! This step may take some time...";    
-  write.table(print_mes,file="metaboanalyst_spec_proc.txt",append = T,row.names = F,col.names = F, quote = F, eol = "\n");
-  
-  Sys.sleep(time_interval1);
-  
-  print_mes <- "Starting peak filling!";    
-  write.table(print_mes,file="metaboanalyst_spec_proc.txt",append = T,row.names = F,col.names = F, quote = F, eol = "\n");
-  write.table(74.0, file = "log_progress.txt",row.names = F,col.names = F);
-  Sys.sleep(time_interval1);
-  
-  print_mes <- "Defining peak areas for filling-in...... OK";    
-  write.table(print_mes,file="metaboanalyst_spec_proc.txt",append = T,row.names = F,col.names = F, quote = F, eol = "\n");
-  
-  Sys.sleep(time_interval1);
-  
-  print_mes <- "Start integrating peak areas from original files...";    
-  write.table(print_mes,file="metaboanalyst_spec_proc.txt",append = T,row.names = F,col.names = F, quote = F, eol = "\n");
-  write.table(77.0, file = "log_progress.txt",row.names = F,col.names = F);
-  Sys.sleep(time_interval1);
-  
-  print_mes <- "Requesting 296 peaks from CD-6KUCT.mzML ...  got  150 .";    
-  write.table(print_mes,file="metaboanalyst_spec_proc.txt",append = T,row.names = F,col.names = F, quote = F, eol = "\n");
-  write.table(78.0, file = "log_progress.txt",row.names = F,col.names = F);
-  Sys.sleep(time_interval1);
-  
-  print_mes <- "Requesting 420 peaks from CD-9WOBP.mzML ...  got  146 .";    
-  write.table(print_mes,file="metaboanalyst_spec_proc.txt",append = T,row.names = F,col.names = F, quote = F, eol = "\n");
-  write.table(79.0, file = "log_progress.txt",row.names = F,col.names = F);
-  Sys.sleep(time_interval1);
-  
-  print_mes <- "Requesting 380 peaks from HC-9X47O.mzML ...  got  192 .";    
-  write.table(print_mes,file="metaboanalyst_spec_proc.txt",append = T,row.names = F,col.names = F, quote = F, eol = "\n");
-  write.table(80.0, file = "log_progress.txt",row.names = F,col.names = F);
-  Sys.sleep(time_interval1);
-  
-  print_mes <- "Requesting 371 peaks from HC-AUP8B.mzML ...  got  197 .";    
-  write.table(print_mes,file="metaboanalyst_spec_proc.txt",append = T,row.names = F,col.names = F, quote = F, eol = "\n");
-  write.table(81.0, file = "log_progress.txt",row.names = F,col.names = F);
-  Sys.sleep(time_interval1);
-  
-  print_mes <- "Requesting 35 peaks from QC_PREFA02.mzML ...  got  32 .";    
-  write.table(print_mes,file="metaboanalyst_spec_proc.txt",append = T,row.names = F,col.names = F, quote = F, eol = "\n");
-  
-  Sys.sleep(time_interval1);
-  
-  print_mes <- "Requesting 275 peaks from CD-77FXR.mzML ...  got  148 .";    
-  write.table(print_mes,file="metaboanalyst_spec_proc.txt",append = T,row.names = F,col.names = F, quote = F, eol = "\n");
-  write.table(82.0, file = "log_progress.txt",row.names = F,col.names = F);
-  Sys.sleep(time_interval1);
-  
-  print_mes <- "Requesting 33 peaks from QC_PREFB02.mzML ...  got  30 .";    
-  write.table(print_mes,file="metaboanalyst_spec_proc.txt",append = T,row.names = F,col.names = F, quote = F, eol = "\n");
-  write.table(83.0, file = "log_progress.txt",row.names = F,col.names = F);
-  Sys.sleep(time_interval1);
-  
-  print_mes <- "Requesting 358 peaks from HC-AMR37.mzML ...  got  173 .";    
-  write.table(print_mes,file="metaboanalyst_spec_proc.txt",append = T,row.names = F,col.names = F, quote = F, eol = "\n");
-  write.table(84.0, file = "log_progress.txt",row.names = F,col.names = F);
-  Sys.sleep(time_interval1);
-  
-  print_mes <- "Requesting 356 peaks from HC-9SNJ4.mzML ...  got  189 .";    
-  write.table(print_mes,file="metaboanalyst_spec_proc.txt",append = T,row.names = F,col.names = F, quote = F, eol = "\n");
-  write.table(85.0, file = "log_progress.txt",row.names = F,col.names = F);
-  Sys.sleep(time_interval1);
-  
-  print_mes <- "Requesting 283 peaks from CD-9OS5Y.mzML ...  got  160 .";    
-  write.table(print_mes,file="metaboanalyst_spec_proc.txt",append = T,row.names = F,col.names = F, quote = F, eol = "\n");
-  write.table(86.0, file = "log_progress.txt",row.names = F,col.names = F);
-  Sys.sleep(time_interval1);
-  
-  print_mes <- paste0("Step 5/6: Peak filing finished ! (",Sys.time(),")");
-  write.table(print_mes,file="metaboanalyst_spec_proc.txt",append = T,row.names = F,col.names = F, quote = F, eol = "\n");
-  write.table(88.0, file = "log_progress.txt",row.names = F,col.names = F);
-  Sys.sleep(time_interval1);
-  
-  print_mes <- "Peak Profiling finished successfully !";    
-  write.table(print_mes,file="metaboanalyst_spec_proc.txt",append = T,row.names = F,col.names = F, quote = F, eol = "\n");
-  
-  Sys.sleep(time_interval1);
-  
-  print_mes <- "Begin to plotting figures...";    
-  write.table(print_mes,file="metaboanalyst_spec_proc.txt",append = T,row.names = F,col.names = F, quote = F, eol = "\n");
-  write.table(89.0, file = "log_progress.txt",row.names = F,col.names = F);
-  Sys.sleep(time_interval1);
-  
-  print_mes <- "Step 6/6: Starting Peak Annotation...";    
-  write.table(print_mes,file="metaboanalyst_spec_proc.txt",append = T,row.names = F,col.names = F, quote = F, eol = "\n");
-  write.table(91.0, file = "log_progress.txt",row.names = F,col.names = F);
-  Sys.sleep(time_interval1);
-  
-  print_mes <- "Start grouping after retention time.";    
-  write.table(print_mes,file="metaboanalyst_spec_proc.txt",append = T,row.names = F,col.names = F, quote = F, eol = "\n");
-  
-  Sys.sleep(time_interval1);
-  
-  print_mes <- "Created 68 pseudospectra.";    
-  write.table(print_mes,file="metaboanalyst_spec_proc.txt",append = T,row.names = F,col.names = F, quote = F, eol = "\n");
-  write.table(92.0, file = "log_progress.txt",row.names = F,col.names = F);
-  Sys.sleep(time_interval1);
-  
-  print_mes <- "Generating peak matrix...";    
-  write.table(print_mes,file="metaboanalyst_spec_proc.txt",append = T,row.names = F,col.names = F, quote = F, eol = "\n");
-  
-  Sys.sleep(time_interval1);
-  
-  print_mes <- "Run isotope peak annotation..";    
-  write.table(print_mes,file="metaboanalyst_spec_proc.txt",append = T,row.names = F,col.names = F, quote = F, eol = "\n");
-  write.table(93.0, file = "log_progress.txt",row.names = F,col.names = F);
-  Sys.sleep(time_interval1);
-  
-  print_mes <- "Found isotopes:108";    
-  write.table(print_mes,file="metaboanalyst_spec_proc.txt",append = T,row.names = F,col.names = F, quote = F, eol = "\n");
-  
-  Sys.sleep(time_interval1);
-  
-  print_mes <- "Start grouping after correlation...";    
-  write.table(print_mes,file="metaboanalyst_spec_proc.txt",append = T,row.names = F,col.names = F, quote = F, eol = "\n");
-  write.table(94.0, file = "log_progress.txt",row.names = F,col.names = F);
-  Sys.sleep(time_interval1);
-  
-  print_mes <- "Generating EIC's....";    
-  write.table(print_mes,file="metaboanalyst_spec_proc.txt",append = T,row.names = F,col.names = F, quote = F, eol = "\n");
-  
-  Sys.sleep(time_interval1);
-  
-  print_mes <- "Detecting  CD-6KUCT.mzML  ... 37 peaks found!";    
-  write.table(print_mes,file="metaboanalyst_spec_proc.txt",append = T,row.names = F,col.names = F, quote = F, eol = "\n");
-  
-  Sys.sleep(time_interval1);
-  
-  print_mes <- "Detecting  CD-77FXR.mzML  ... 43 peaks found!";    
-  write.table(print_mes,file="metaboanalyst_spec_proc.txt",append = T,row.names = F,col.names = F, quote = F, eol = "\n");
-  
-  Sys.sleep(time_interval1);
-  
-  print_mes <- "Detecting  CD-9OS5Y.mzML  ... 54 peaks found!";    
-  write.table(print_mes,file="metaboanalyst_spec_proc.txt",append = T,row.names = F,col.names = F, quote = F, eol = "\n");
-  
-  Sys.sleep(time_interval1);
-  
-  print_mes <- "Detecting  CD-9WOBP.mzML  ... 124 peaks found!";    
-  write.table(print_mes,file="metaboanalyst_spec_proc.txt",append = T,row.names = F,col.names = F, quote = F, eol = "\n");
-  
-  Sys.sleep(time_interval1);
-  
-  print_mes <- "Detecting  HC-9SNJ4.mzML  ... 28 peaks found!";    
-  write.table(print_mes,file="metaboanalyst_spec_proc.txt",append = T,row.names = F,col.names = F, quote = F, eol = "\n");
-  write.table(95.0, file = "log_progress.txt",row.names = F,col.names = F);
-  Sys.sleep(time_interval1);
-  
-  print_mes <- "Detecting  HC-9X47O.mzML  ... 0 peaks found!";    
-  write.table(print_mes,file="metaboanalyst_spec_proc.txt",append = T,row.names = F,col.names = F, quote = F, eol = "\n");
-  
-  print_mes <- "Detecting  HC-AMR37.mzML  ... 170 peaks found!";    
-  write.table(print_mes,file="metaboanalyst_spec_proc.txt",append = T,row.names = F,col.names = F, quote = F, eol = "\n");
-  
-  Sys.sleep(time_interval1);
-  
-  print_mes <- "Detecting  HC-AUP8B.mzML  ... 20 peaks found!";    
-  write.table(print_mes,file="metaboanalyst_spec_proc.txt",append = T,row.names = F,col.names = F, quote = F, eol = "\n");
-  
-  Sys.sleep(time_interval1);
-  
-  print_mes <- "Detecting  QC_PREFA02.mzML  ... 64 peaks found!";    
-  write.table(print_mes,file="metaboanalyst_spec_proc.txt",append = T,row.names = F,col.names = F, quote = F, eol = "\n");
-  
-  Sys.sleep(time_interval1);
-  
-  print_mes <- "Detecting  QC_PREFB02.mzML  ... 87 peaks found!";    
-  write.table(print_mes,file="metaboanalyst_spec_proc.txt",append = T,row.names = F,col.names = F, quote = F, eol = "\n");
-  
-  Sys.sleep(time_interval1);
-  
-  print_mes <- "Calculating graph cross linking in 68 Groups...";    
-  write.table(print_mes,file="metaboanalyst_spec_proc.txt",append = T,row.names = F,col.names = F, quote = F, eol = "\n");
-  write.table(96.0, file = "log_progress.txt",row.names = F,col.names = F);
-  Sys.sleep(time_interval1);
-  
-  print_mes <- "New number of ps-groups:  406";    
-  write.table(print_mes,file="metaboanalyst_spec_proc.txt",append = T,row.names = F,col.names = F, quote = F, eol = "\n");
-  
-  Sys.sleep(time_interval1);
-  
-  print_mes <- "mSet has now 406 groups, instead of 68 !";    
-  write.table(print_mes,file="metaboanalyst_spec_proc.txt",append = T,row.names = F,col.names = F, quote = F, eol = "\n");
-  
-  Sys.sleep(time_interval1);
-  
-  print_mes <- "Generating peak matrix for peak annotation!";    
-  write.table(print_mes,file="metaboanalyst_spec_proc.txt",append = T,row.names = F,col.names = F, quote = F, eol = "\n");
-  
-  Sys.sleep(time_interval1);
-  
-  print_mes <- "Polarity is set in annotaParam: negative";    
-  write.table(print_mes,file="metaboanalyst_spec_proc.txt",append = T,row.names = F,col.names = F, quote = F, eol = "\n");
-  write.table(97.0, file = "log_progress.txt",row.names = F,col.names = F);
-  Sys.sleep(time_interval1);
-  
-  print_mes <- "Ruleset could not read from object! Recalculating...";    
-  write.table(print_mes,file="metaboanalyst_spec_proc.txt",append = T,row.names = F,col.names = F, quote = F, eol = "\n");
-  
-  Sys.sleep(time_interval1);
-  
-  print_mes <- paste0("Step 6/6: Successfully performed peak annotation! (",Sys.time(),")");
-  write.table(print_mes,file="metaboanalyst_spec_proc.txt",append = T,row.names = F,col.names = F, quote = F, eol = "\n");
-  write.table(98.0, file = "log_progress.txt",row.names = F,col.names = F);
-  Sys.sleep(time_interval1);
-  
-  print_mes <- "Going to the final step...";    
-  write.table(print_mes,file="metaboanalyst_spec_proc.txt",append = T,row.names = F,col.names = F, quote = F, eol = "\n");
-  write.table(99.0, file = "log_progress.txt",row.names = F,col.names = F);
-  Sys.sleep(time_interval1);
-  
-  print_mes <- paste0("Everything has been finished Successfully ! (",Sys.time(),")");
-  write.table(print_mes,file="metaboanalyst_spec_proc.txt",append = T,row.names = F,col.names = F, quote = F, eol = "\n");
-  write.table(100.0, file = "log_progress.txt",row.names = F,col.names = F);
-  Sys.sleep(time_interval1);
-}
-
-#' @noRd
-FastRunningShow_customized <- function(fullUserPath){
-  print(fullUserPath);
-  setwd(fullUserPath);    
-  
-  time_interval1 <- 0.80;
-  time_interval2 <- 2;
-  # running to show the progress
-  if (!file.exists("metaboanalyst_spec_proc.txt")){
-    print_mes <- paste0("Running Status -- Job Submitted Successfully at: ", Sys.time(), "\nWaiting in queue to start...")
-    write.table(print_mes, file = paste0(fullUserPath, "/metaboanalyst_spec_proc.txt"),row.names = F,col.names = F);
-  }
-  Sys.sleep(time_interval1);
-  
-  print_mes <- paste0("Step 1/6: Internalize parameters!");
-  write.table(print_mes,file="metaboanalyst_spec_proc.txt",append = T,row.names = F,col.names = F, quote = F, eol = "\n");
-  write.table(1.0, file = "log_progress.txt",row.names = F,col.names = F);
-  Sys.sleep(time_interval1);
-  
-  print_mes <- paste0("This step will be finished soon...");
-  write.table(print_mes,file="metaboanalyst_spec_proc.txt",append = T,row.names = F,col.names = F, quote = F, eol = "\n");
-  write.table(2.0, file = "log_progress.txt",row.names = F,col.names = F);
-  Sys.sleep(time_interval1);
-  
-  print_mes <- paste0("Step 1/6: Parameters Internalized Successfully! ");
-  write.table(print_mes,file="metaboanalyst_spec_proc.txt",append = T,row.names = F,col.names = F, quote = F, eol = "\n");
-  write.table(15.0, file = "log_progress.txt",row.names = F,col.names = F);
-  
-  Sys.sleep(time_interval1);
-  
-  print_mes <- paste0("Going to the next step...");
-  write.table(print_mes,file="metaboanalyst_spec_proc.txt",append = T,row.names = F,col.names = F, quote = F, eol = "\n");
-  write.table(20.0, file = "log_progress.txt",row.names = F,col.names = F);
-  
-  Sys.sleep(time_interval1);
-  
-  print_mes <- "Step 2/6: Start to import the spectrum! ";    
-  write.table(print_mes,file="metaboanalyst_spec_proc.txt",append = T,row.names = F,col.names = F, quote = F, eol = "\n");
-  write.table(21.0, file = "log_progress.txt",row.names = F,col.names = F);
-  Sys.sleep(time_interval1);
-  
-  print_mes <- "This step will take a short time...";    
-  write.table(print_mes,file="metaboanalyst_spec_proc.txt",append = T,row.names = F,col.names = F, quote = F, eol = "\n");
-  
-  Sys.sleep(time_interval1);
-  
-  print_mes <- "Raw file import begin...";    
-  write.table(print_mes,file="metaboanalyst_spec_proc.txt",append = T,row.names = F,col.names = F, quote = F, eol = "\n");
-  
-  Sys.sleep(time_interval1);
-  
-  print_mes <- "CD-6KUCT.mzML import done!";    
-  write.table(print_mes,file="metaboanalyst_spec_proc.txt",append = T,row.names = F,col.names = F, quote = F, eol = "\n");
-  
-  Sys.sleep(time_interval1);
-  
-  print_mes <- "CD-77FXR.mzML import done!";    
-  write.table(print_mes,file="metaboanalyst_spec_proc.txt",append = T,row.names = F,col.names = F, quote = F, eol = "\n");
-  
-  Sys.sleep(time_interval1);
-  
-  print_mes <- "CD-9OS5Y.mzML import done!";    
-  write.table(print_mes,file="metaboanalyst_spec_proc.txt",append = T,row.names = F,col.names = F, quote = F, eol = "\n");
-  
-  Sys.sleep(time_interval1);
-  
-  print_mes <- "CD-9WOBP.mzML import done!";    
-  write.table(print_mes,file="metaboanalyst_spec_proc.txt",append = T,row.names = F,col.names = F, quote = F, eol = "\n");
-  
-  Sys.sleep(time_interval1);
-  
-  print_mes <- "HC-9SNJ4.mzML import done!";    
-  write.table(print_mes,file="metaboanalyst_spec_proc.txt",append = T,row.names = F,col.names = F, quote = F, eol = "\n");
-  
-  Sys.sleep(time_interval1);
-  
-  print_mes <- "HC-9X47O.mzML import done!";    
-  write.table(print_mes,file="metaboanalyst_spec_proc.txt",append = T,row.names = F,col.names = F, quote = F, eol = "\n");
-  
-  Sys.sleep(time_interval1);
-  
-  print_mes <- "HC-AMR37.mzML import done!";    
-  write.table(print_mes,file="metaboanalyst_spec_proc.txt",append = T,row.names = F,col.names = F, quote = F, eol = "\n");
-  
-  Sys.sleep(time_interval1);
-  
-  print_mes <- "HC-AUP8B.mzML import done!";    
-  write.table(print_mes,file="metaboanalyst_spec_proc.txt",append = T,row.names = F,col.names = F, quote = F, eol = "\n");
-  
-  Sys.sleep(time_interval1);
-  
-  print_mes <- "QC_PREFA02.mzML import done!";    
-  write.table(print_mes,file="metaboanalyst_spec_proc.txt",append = T,row.names = F,col.names = F, quote = F, eol = "\n");
-  
-  Sys.sleep(time_interval1);
-  
-  print_mes <- "QC_PREFB02.mzML import done!";    
-  write.table(print_mes,file="metaboanalyst_spec_proc.txt",append = T,row.names = F,col.names = F, quote = F, eol = "\n");
-  write.table(22.0, file = "log_progress.txt",row.names = F,col.names = F);
-  Sys.sleep(3);
-  
-  print_mes <- "Raw file initialized Successfully!";    
-  write.table(print_mes,file="metaboanalyst_spec_proc.txt",append = T,row.names = F,col.names = F, quote = F, eol = "\n");
-  write.table(24.0, file = "log_progress.txt",row.names = F,col.names = F);
-  Sys.sleep(time_interval1);
-  
-  print_mes <- paste0("Step 2/6: Successfully imported raw MS data! (", Sys.time(),") \nGoing to the next step...");
-  write.table(print_mes,file="metaboanalyst_spec_proc.txt",append = T,row.names = F,col.names = F, quote = F, eol = "\n");
-  
-  Sys.sleep(time_interval1);
-  
-  print_mes <- "Parameters for centWave have been successfully parsed!";    
-  write.table(print_mes,file="metaboanalyst_spec_proc.txt",append = T,row.names = F,col.names = F, quote = F, eol = "\n");
-  
-  Sys.sleep(time_interval1);
-  
-  print_mes <- "4 CPU Threads will be used for peak profiling !";    
-  write.table(print_mes,file="metaboanalyst_spec_proc.txt",append = T,row.names = F,col.names = F, quote = F, eol = "\n");
-  write.table(25, file = "log_progress.txt",row.names = F,col.names = F);
-  Sys.sleep(time_interval1);
-  
-  print_mes <- "Step 3/6: Started peak picking! This step will take some time...";    
-  write.table(print_mes,file="metaboanalyst_spec_proc.txt",append = T,row.names = F,col.names = F, quote = F, eol = "\n");
-  
-  Sys.sleep(time_interval1);
-  
-  print_mes <- "Searching under 5 ppm ... Detecting peaks in 5509 regions of interest ... OK: 1285 found.";    
-  write.table(print_mes,file="metaboanalyst_spec_proc.txt",append = T,row.names = F,col.names = F, quote = F, eol = "\n");
-  write.table(30.0, file = "log_progress.txt",row.names = F,col.names = F);
-  Sys.sleep(time_interval1);
-  
-  print_mes <- "Searching under 5 ppm ... Detecting peaks in 5355 regions of interest ... OK: 1395 found.";    
-  write.table(print_mes,file="metaboanalyst_spec_proc.txt",append = T,row.names = F,col.names = F, quote = F, eol = "\n");
-  write.table(30.0, file = "log_progress.txt",row.names = F,col.names = F);
-  Sys.sleep(time_interval1);
-  
-  print_mes <- "Searching under 5 ppm ... Detecting peaks in 6009 regions of interest ... OK: 1327 found.";    
-  write.table(print_mes,file="metaboanalyst_spec_proc.txt",append = T,row.names = F,col.names = F, quote = F, eol = "\n");
-  write.table(35.0, file = "log_progress.txt",row.names = F,col.names = F);
-  Sys.sleep(time_interval1);
-  
-  print_mes <- "Searching under 5 ppm ... Detecting peaks in 5767 regions of interest ... OK: 1810 found.";    
-  write.table(print_mes,file="metaboanalyst_spec_proc.txt",append = T,row.names = F,col.names = F, quote = F, eol = "\n");
-  write.table(35.0, file = "log_progress.txt",row.names = F,col.names = F);
-  Sys.sleep(time_interval1);
-  
-  print_mes <- "Searching under 5 ppm ... Detecting peaks in 5832 regions of interest ... OK: 1507 found.";    
-  write.table(print_mes,file="metaboanalyst_spec_proc.txt",append = T,row.names = F,col.names = F, quote = F, eol = "\n");
-  write.table(40.0, file = "log_progress.txt",row.names = F,col.names = F);
-  Sys.sleep(time_interval1);
-  
-  print_mes <- "Searching under 5 ppm ... Detecting peaks in 6273 regions of interest ... OK: 1586 found.";    
-  write.table(print_mes,file="metaboanalyst_spec_proc.txt",append = T,row.names = F,col.names = F, quote = F, eol = "\n");
-  write.table(40.0, file = "log_progress.txt",row.names = F,col.names = F);
-  Sys.sleep(time_interval1);
-  
-  print_mes <- "Searching under 5 ppm ... Detecting peaks in 6061 regions of interest ... OK: 1643 found.";    
-  write.table(print_mes,file="metaboanalyst_spec_proc.txt",append = T,row.names = F,col.names = F, quote = F, eol = "\n");
-  write.table(40.0, file = "log_progress.txt",row.names = F,col.names = F);
-  Sys.sleep(time_interval1);
-  
-  print_mes <- "Searching under 5 ppm ... Detecting peaks in 5926 regions of interest ... OK: 1805 found.";    
-  write.table(print_mes,file="metaboanalyst_spec_proc.txt",append = T,row.names = F,col.names = F, quote = F, eol = "\n");
-  write.table(40.0, file = "log_progress.txt",row.names = F,col.names = F);
-  Sys.sleep(time_interval1);
-  
-  print_mes <- "Searching under 5 ppm ... Detecting peaks in 6054 regions of interest ... OK: 1646 found.";    
-  write.table(print_mes,file="metaboanalyst_spec_proc.txt",append = T,row.names = F,col.names = F, quote = F, eol = "\n");
-  write.table(47.0, file = "log_progress.txt",row.names = F,col.names = F);
-  Sys.sleep(time_interval1);
-  
-  print_mes <- "Searching under 5 ppm ... Detecting peaks in 6299 regions of interest ... OK: 1608 found.";    
-  write.table(print_mes,file="metaboanalyst_spec_proc.txt",append = T,row.names = F,col.names = F, quote = F, eol = "\n");
-  write.table(47.0, file = "log_progress.txt",row.names = F,col.names = F);
-  Sys.sleep(time_interval1);
-  
-  print_mes <- paste0("Step 3/6: Peak picking finished ! (",Sys.time(),")");
-  write.table(print_mes,file="metaboanalyst_spec_proc.txt",append = T,row.names = F,col.names = F, quote = F, eol = "\n");
-  write.table(50.0, file = "log_progress.txt",row.names = F,col.names = F);
-  Sys.sleep(time_interval1);
-  
-  print_mes <- "Step 4/6: Started peak alignment! This step is running...";    
-  write.table(print_mes,file="metaboanalyst_spec_proc.txt",append = T,row.names = F,col.names = F, quote = F, eol = "\n");
-  write.table(52.0, file = "log_progress.txt",row.names = F,col.names = F);
-  Sys.sleep(time_interval1);
-  
-  print_mes <- "Total of 2805 slices detected for processing... Done ! ";    
-  write.table(print_mes,file="metaboanalyst_spec_proc.txt",append = T,row.names = F,col.names = F, quote = F, eol = "\n");
-  write.table(55.0, file = "log_progress.txt",row.names = F,col.names = F);
-  Sys.sleep(time_interval1);
-  
-  print_mes <- "Going to the next step...";    
-  write.table(print_mes,file="metaboanalyst_spec_proc.txt",append = T,row.names = F,col.names = F, quote = F, eol = "\n");
-  write.table(56.0, file = "log_progress.txt",row.names = F,col.names = F);
-  Sys.sleep(time_interval1);
-  
-  print_mes <- "Retention time correction is running.....";    
-  write.table(print_mes,file="metaboanalyst_spec_proc.txt",append = T,row.names = F,col.names = F, quote = F, eol = "\n");
-  write.table(60.0, file = "log_progress.txt",row.names = F,col.names = F);
-  Sys.sleep(time_interval1);
-  
-  print_mes <- "Performing retention time correction using  54  peak groups.";    
-  write.table(print_mes,file="metaboanalyst_spec_proc.txt",append = T,row.names = F,col.names = F, quote = F, eol = "\n");
-  write.table(65.0, file = "log_progress.txt",row.names = F,col.names = F);
-  Sys.sleep(time_interval1);
-  
-  print_mes <- "Applying retention time adjustment to the identified chromatographic peaks ... Done !";    
-  write.table(print_mes,file="metaboanalyst_spec_proc.txt",append = T,row.names = F,col.names = F, quote = F, eol = "\n");
-  write.table(66.0, file = "log_progress.txt",row.names = F,col.names = F);
-  write.table(68.0, file = "log_progress.txt",row.names = F,col.names = F);
-  Sys.sleep(time_interval1);
-  
-  print_mes <- "Total of 2805 slices detected for processing... Done ! ";    
-  write.table(print_mes,file="metaboanalyst_spec_proc.txt",append = T,row.names = F,col.names = F, quote = F, eol = "\n");
-  
-  Sys.sleep(time_interval1);
-  
-  print_mes <- "Going to the next step...";    
-  write.table(print_mes,file="metaboanalyst_spec_proc.txt",append = T,row.names = F,col.names = F, quote = F, eol = "\n");
-  
-  Sys.sleep(time_interval1);
-  
-  print_mes <- paste0("Step 4/6: Peak alignment finished ! (",Sys.time(),")");
-  write.table(print_mes,file="metaboanalyst_spec_proc.txt",append = T,row.names = F,col.names = F, quote = F, eol = "\n");
-  write.table(73.0, file = "log_progress.txt",row.names = F,col.names = F);
-  Sys.sleep(time_interval1);
-  
-  print_mes <- "Step 5/6: Started peak filling! This step may take some time...";    
-  write.table(print_mes,file="metaboanalyst_spec_proc.txt",append = T,row.names = F,col.names = F, quote = F, eol = "\n");
-  
-  Sys.sleep(time_interval1);
-  
-  print_mes <- "Starting peak filling!";    
-  write.table(print_mes,file="metaboanalyst_spec_proc.txt",append = T,row.names = F,col.names = F, quote = F, eol = "\n");
-  write.table(74.0, file = "log_progress.txt",row.names = F,col.names = F);
-  Sys.sleep(time_interval1);
-  
-  print_mes <- "Defining peak areas for filling-in...... OK";    
-  write.table(print_mes,file="metaboanalyst_spec_proc.txt",append = T,row.names = F,col.names = F, quote = F, eol = "\n");
-  
-  Sys.sleep(time_interval1);
-  
-  print_mes <- "Start integrating peak areas from original files...";    
-  write.table(print_mes,file="metaboanalyst_spec_proc.txt",append = T,row.names = F,col.names = F, quote = F, eol = "\n");
-  write.table(77.0, file = "log_progress.txt",row.names = F,col.names = F);
-  Sys.sleep(time_interval1);
-  
-  print_mes <- "Requesting 139 peaks from CD-6KUCT.mzML ...  got  56 .";    
-  write.table(print_mes,file="metaboanalyst_spec_proc.txt",append = T,row.names = F,col.names = F, quote = F, eol = "\n");
-  write.table(78.0, file = "log_progress.txt",row.names = F,col.names = F);
-  Sys.sleep(time_interval1);
-  
-  print_mes <- "Requesting 256 peaks from CD-9WOBP.mzML ...  got  55 .";    
-  write.table(print_mes,file="metaboanalyst_spec_proc.txt",append = T,row.names = F,col.names = F, quote = F, eol = "\n");
-  write.table(79.0, file = "log_progress.txt",row.names = F,col.names = F);
-  Sys.sleep(time_interval1);
-  
-  print_mes <- "Requesting 261 peaks from HC-9X47O.mzML ...  got  101 .";    
-  write.table(print_mes,file="metaboanalyst_spec_proc.txt",append = T,row.names = F,col.names = F, quote = F, eol = "\n");
-  write.table(80.0, file = "log_progress.txt",row.names = F,col.names = F);
-  Sys.sleep(time_interval1);
-  
-  print_mes <- "Requesting 234 peaks from HC-AUP8B.mzML ...  got  95 .";    
-  write.table(print_mes,file="metaboanalyst_spec_proc.txt",append = T,row.names = F,col.names = F, quote = F, eol = "\n");
-  write.table(81.0, file = "log_progress.txt",row.names = F,col.names = F);
-  Sys.sleep(time_interval1);
-  
-  print_mes <- "Requesting 199 peaks from HC-AMR37.mzML ...  got  72 .";    
-  write.table(print_mes,file="metaboanalyst_spec_proc.txt",append = T,row.names = F,col.names = F, quote = F, eol = "\n");
-  
-  Sys.sleep(time_interval1);
-  
-  print_mes <- "Requesting 206 peaks from HC-9SNJ4.mzML ...  got  94 .";    
-  write.table(print_mes,file="metaboanalyst_spec_proc.txt",append = T,row.names = F,col.names = F, quote = F, eol = "\n");
-  write.table(82.0, file = "log_progress.txt",row.names = F,col.names = F);
-  Sys.sleep(time_interval1);
-  
-  print_mes <- "Requesting 146 peaks from CD-77FXR.mzML ...  got  61 .";    
-  write.table(print_mes,file="metaboanalyst_spec_proc.txt",append = T,row.names = F,col.names = F, quote = F, eol = "\n");
-  write.table(83.0, file = "log_progress.txt",row.names = F,col.names = F);
-  Sys.sleep(time_interval1);
-  
-  print_mes <- "Requesting 52 peaks from QC_PREFA02.mzML ...  got  30 .";    
-  write.table(print_mes,file="metaboanalyst_spec_proc.txt",append = T,row.names = F,col.names = F, quote = F, eol = "\n");
-  write.table(84.0, file = "log_progress.txt",row.names = F,col.names = F);
-  Sys.sleep(time_interval1);
-  
-  print_mes <- "Requesting 188 peaks from CD-9OS5Y.mzML ...  got  74 .";    
-  write.table(print_mes,file="metaboanalyst_spec_proc.txt",append = T,row.names = F,col.names = F, quote = F, eol = "\n");
-  write.table(85.0, file = "log_progress.txt",row.names = F,col.names = F);
-  Sys.sleep(time_interval1);
-  
-  print_mes <- "Requesting 54 peaks from QC_PREFB02.mzML ...  got  37 .";    
-  write.table(print_mes,file="metaboanalyst_spec_proc.txt",append = T,row.names = F,col.names = F, quote = F, eol = "\n");
-  write.table(86.0, file = "log_progress.txt",row.names = F,col.names = F);
-  Sys.sleep(time_interval1);
-  
-  print_mes <- paste0("Step 5/6: Peak filing finished ! (",Sys.time(),")");
-  write.table(print_mes,file="metaboanalyst_spec_proc.txt",append = T,row.names = F,col.names = F, quote = F, eol = "\n");
-  write.table(88.0, file = "log_progress.txt",row.names = F,col.names = F);
-  Sys.sleep(time_interval1);
-  
-  print_mes <- "Peak Profiling finished successfully !";    
-  write.table(print_mes,file="metaboanalyst_spec_proc.txt",append = T,row.names = F,col.names = F, quote = F, eol = "\n");
-  
-  Sys.sleep(time_interval1);
-  
-  print_mes <- "Begin to plotting figures...";    
-  write.table(print_mes,file="metaboanalyst_spec_proc.txt",append = T,row.names = F,col.names = F, quote = F, eol = "\n");
-  write.table(89.0, file = "log_progress.txt",row.names = F,col.names = F);
-  Sys.sleep(time_interval1);
-  
-  print_mes <- "Step 6/6: Starting Peak Annotation...";    
-  write.table(print_mes,file="metaboanalyst_spec_proc.txt",append = T,row.names = F,col.names = F, quote = F, eol = "\n");
-  write.table(91.0, file = "log_progress.txt",row.names = F,col.names = F);
-  Sys.sleep(time_interval1);
-  
-  print_mes <- "Start grouping after retention time.";    
-  write.table(print_mes,file="metaboanalyst_spec_proc.txt",append = T,row.names = F,col.names = F, quote = F, eol = "\n");
-  
-  Sys.sleep(time_interval1);
-  
-  print_mes <- "Created 62 pseudospectra.";    
-  write.table(print_mes,file="metaboanalyst_spec_proc.txt",append = T,row.names = F,col.names = F, quote = F, eol = "\n");
-  write.table(92.0, file = "log_progress.txt",row.names = F,col.names = F);
-  Sys.sleep(time_interval1);
-  
-  print_mes <- "Generating peak matrix...";    
-  write.table(print_mes,file="metaboanalyst_spec_proc.txt",append = T,row.names = F,col.names = F, quote = F, eol = "\n");
-  
-  Sys.sleep(time_interval1);
-  
-  print_mes <- "Run isotope peak annotation..";    
-  write.table(print_mes,file="metaboanalyst_spec_proc.txt",append = T,row.names = F,col.names = F, quote = F, eol = "\n");
-  write.table(93.0, file = "log_progress.txt",row.names = F,col.names = F);
-  Sys.sleep(time_interval1);
-  
-  print_mes <- "Found isotopes:28";    
-  write.table(print_mes,file="metaboanalyst_spec_proc.txt",append = T,row.names = F,col.names = F, quote = F, eol = "\n");
-  
-  Sys.sleep(time_interval1);
-  
-  print_mes <- "Start grouping after correlation...";    
-  write.table(print_mes,file="metaboanalyst_spec_proc.txt",append = T,row.names = F,col.names = F, quote = F, eol = "\n");
-  write.table(94.0, file = "log_progress.txt",row.names = F,col.names = F);
-  Sys.sleep(time_interval1);
-  
-  print_mes <- "Generating EIC's....";    
-  write.table(print_mes,file="metaboanalyst_spec_proc.txt",append = T,row.names = F,col.names = F, quote = F, eol = "\n");
-  
-  Sys.sleep(time_interval1);
-  
-  print_mes <- "Detecting  CD-6KUCT.mzML  ... 66 peaks found!";    
-  write.table(print_mes,file="metaboanalyst_spec_proc.txt",append = T,row.names = F,col.names = F, quote = F, eol = "\n");
-  
-  Sys.sleep(time_interval1);
-  
-  print_mes <- "Detecting  CD-77FXR.mzML  ... 35 peaks found!";    
-  write.table(print_mes,file="metaboanalyst_spec_proc.txt",append = T,row.names = F,col.names = F, quote = F, eol = "\n");
-  
-  Sys.sleep(time_interval1);
-  
-  print_mes <- "Detecting  CD-9OS5Y.mzML  ... 219 peaks found!";    
-  write.table(print_mes,file="metaboanalyst_spec_proc.txt",append = T,row.names = F,col.names = F, quote = F, eol = "\n");
-  
-  Sys.sleep(time_interval1);
-  
-  print_mes <- "Detecting  CD-9WOBP.mzML  ... 120 peaks found!";    
-  write.table(print_mes,file="metaboanalyst_spec_proc.txt",append = T,row.names = F,col.names = F, quote = F, eol = "\n");
-  
-  Sys.sleep(time_interval1);
-  
-  print_mes <- "Detecting  HC-9SNJ4.mzML  ... 30 peaks found!";    
-  write.table(print_mes,file="metaboanalyst_spec_proc.txt",append = T,row.names = F,col.names = F, quote = F, eol = "\n");
-  write.table(95.0, file = "log_progress.txt",row.names = F,col.names = F);
-  Sys.sleep(time_interval1);
-  
-  print_mes <- "Detecting  HC-9X47O.mzML  ... 0 peaks found!";    
-  write.table(print_mes,file="metaboanalyst_spec_proc.txt",append = T,row.names = F,col.names = F, quote = F, eol = "\n");
-  write.table(95.0, file = "log_progress.txt",row.names = F,col.names = F);
-  Sys.sleep(time_interval1);
-  
-  print_mes <- "Detecting  HC-AMR37.mzML  ... 287 peaks found!";    
-  write.table(print_mes,file="metaboanalyst_spec_proc.txt",append = T,row.names = F,col.names = F, quote = F, eol = "\n");
-  
-  Sys.sleep(time_interval1);
-  
-  print_mes <- "Detecting  HC-AUP8B.mzML  ... 21 peaks found!";    
-  write.table(print_mes,file="metaboanalyst_spec_proc.txt",append = T,row.names = F,col.names = F, quote = F, eol = "\n");
-  
-  Sys.sleep(time_interval1);
-  
-  print_mes <- "Detecting  QC_PREFA02.mzML  ... 89 peaks found!";    
-  write.table(print_mes,file="metaboanalyst_spec_proc.txt",append = T,row.names = F,col.names = F, quote = F, eol = "\n");
-  
-  Sys.sleep(time_interval1);
-  
-  print_mes <- "Detecting  QC_PREFB02.mzML  ... 39 peaks found!";    
-  write.table(print_mes,file="metaboanalyst_spec_proc.txt",append = T,row.names = F,col.names = F, quote = F, eol = "\n");
-  
-  Sys.sleep(time_interval1);
-  
-  print_mes <- "Calculating graph cross linking in 62 Groups...";    
-  write.table(print_mes,file="metaboanalyst_spec_proc.txt",append = T,row.names = F,col.names = F, quote = F, eol = "\n");
-  write.table(96.0, file = "log_progress.txt",row.names = F,col.names = F);
-  Sys.sleep(time_interval1);
-  
-  print_mes <- "New number of ps-groups:  736";    
-  write.table(print_mes,file="metaboanalyst_spec_proc.txt",append = T,row.names = F,col.names = F, quote = F, eol = "\n");
-  
-  Sys.sleep(time_interval1);
-  
-  print_mes <- "mSet has now 310 groups, instead of 62 !";    
-  write.table(print_mes,file="metaboanalyst_spec_proc.txt",append = T,row.names = F,col.names = F, quote = F, eol = "\n");
-  
-  Sys.sleep(time_interval1);
-  
-  print_mes <- "Generating peak matrix for peak annotation!";    
-  write.table(print_mes,file="metaboanalyst_spec_proc.txt",append = T,row.names = F,col.names = F, quote = F, eol = "\n");
-  
-  Sys.sleep(time_interval1);
-  
-  print_mes <- "Polarity is set in annotaParam: negative";    
-  write.table(print_mes,file="metaboanalyst_spec_proc.txt",append = T,row.names = F,col.names = F, quote = F, eol = "\n");
-  write.table(97.0, file = "log_progress.txt",row.names = F,col.names = F);
-  Sys.sleep(time_interval1);
-  
-  print_mes <- "Ruleset could not read from object! Recalculating...";    
-  write.table(print_mes,file="metaboanalyst_spec_proc.txt",append = T,row.names = F,col.names = F, quote = F, eol = "\n");
-  
-  Sys.sleep(time_interval1);
-  
-  print_mes <- paste0("Step 6/6: Successfully performed peak annotation! (",Sys.time(),")");
-  write.table(print_mes,file="metaboanalyst_spec_proc.txt",append = T,row.names = F,col.names = F, quote = F, eol = "\n");
-  write.table(98.0, file = "log_progress.txt",row.names = F,col.names = F);
-  Sys.sleep(time_interval1);
-  
-  print_mes <- "Going to the final step...";    
-  write.table(print_mes,file="metaboanalyst_spec_proc.txt",append = T,row.names = F,col.names = F, quote = F, eol = "\n");
-  write.table(99.0, file = "log_progress.txt",row.names = F,col.names = F);
-  Sys.sleep(time_interval1);
-  
-  print_mes <- paste0("Everything has been finished Successfully ! (",Sys.time(),")");
-  write.table(print_mes,file="metaboanalyst_spec_proc.txt",append = T,row.names = F,col.names = F, quote = F, eol = "\n");
-  write.table(100.0, file = "log_progress.txt",row.names = F,col.names = F);
-  Sys.sleep(time_interval1);
-}
-
-
-#' @param folderPath guest folder
-#'
-#' @title Cache Update
-#' @author Zhiqiang Pang
-#' @noRd
-CachePathCorrection <- function(folderPath){
-  
-  cacheFiles <- list.files(paste0(folderPath,"/temp"),all.files = T, full.names = T, recursive = T);
-  
-  newfilepath <- list.files("/home/glassfish/projects/MetaboDemoRawData/upload",all.files = T, recursive = T,full.names = T)
-  
-  for (i in cacheFiles){
-    tmp_rds <- readRDS(i);
-    tmp_names <- names(tmp_rds);
-    
-    if(class(tmp_rds)[[1]] == "OnDiskMSnExp"){
-      
-      tmp_rds@processingData@files <- newfilepath;
-      
-    } else if (class(tmp_rds)[[1]] == "list"){
-      
-      for(j in tmp_names){
-        tmp_obj <- tmp_rds[[j]];
-        
-        if(class(tmp_obj)[[1]] == "OnDiskMSnExp"){
-          tmp_rds[[j]]@processingData@files <- newfilepath;
-        }
-        
-        if(class(tmp_obj)[[1]] == "xcmsSet"){
-          tmp_rds[[j]]@filepaths <- newfilepath;
-        }
-        
-      } 
-      
-    } else if(class(tmp_rds)[[1]] == "environment"){
-      
-      tmp_rds$annotPeaks$onDiskData@processingData@files <- 
-        tmp_rds$annotPeaks$xcmsSet@filepaths <- 
-        tmp_rds$mSet$onDiskData@processingData@files <- 
-        tmp_rds$mSet$xcmsSet@filepaths <- 
-        tmp_rds$rawData@processingData@files <- newfilepath;
-      
-    }
-    
-    saveRDS(tmp_rds, file = i);
-  }
-  
-  load(paste0(folderPath,"/","mSet.rda"));
-  mSet$onDiskData@processingData@files <- mSet$xcmsSet@filepaths <- newfilepath;
-  
-  save(mSet, file = paste0(folderPath,"/","mSet.rda"));
-  
-}
-
-#folderPath <- "/home/qiang/NetBeansProjects/MetaboAnalyst/target/MetaboAnalyst-5.18/resources/users/guest8386191689266673959tmp/"
-#CachePathCorrection(folderPath)
 
 
 ## End of the resuming script ---

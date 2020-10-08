@@ -2,29 +2,15 @@
 # Setting .on.public.web
 .on.public.web <- FALSE;
 
-
+# Setting the global Variable to avoid notes in R CMD Check
+# utils::globalVariables(c("Group", "Groups", "Intensity", 
+#                          "Labels", "PC1", "PC2", "RT", 
+#                          "Samples", "group", "value"))
 
 # OTHER SETTINGS
-# 1. Avoid binding visible notes
-#utils::globalVariables();
-
-suppressGlobalBindingNotes <- function(variablesMentionedInNotes) {
-  for(variable in variablesMentionedInNotes) {
-    utils::globalVariables(variable, "OptiLCMS", TRUE);
-  }
-}
-
-suppressGlobalBindingNotes(
-  c(
-    "envir",
-    ".plan_count",
-    ".optimize_switch",
-    "msg.vec",
-    "fullUserPath",
-    "count_total_sample",
-    "count_current_sample"
-  )
-)
+#' @references Gatto L, Gibb S, Rainer J (2020). “MSnbase, efficient and elegant R-based processing and visualisation of raw mass spectrometry data.” bioRxiv.
+.MSnExpReqFvarLabels <- c("fileIdx", "spIdx", "acquisitionNum",
+                          "retentionTime", "msLevel", "precursorScanNum")
 
 
 # Used to defined the parallel namespace for peak picking
@@ -39,7 +25,6 @@ suppressGlobalBindingNotes(
                            "adjustRtime_peakGroup",
                            "mSet.obiwarp",
                            "PerformPeakFiling",
-                           "mSet2xcmsSet",
                            "updateRawSpectraParam",
                            "continuousPtsAboveThreshold",
                            "getLocalNoiseEstimate",
@@ -119,51 +104,6 @@ suppressGlobalBindingNotes(
                                  ),
                             .peak_function_list)
 
-# ####Scheduler - outdated functions
-# 
-# SetRawFileNames <- function(filenms){
-#   cat(filenms)
-#   rawfilenms.vec <<- filenms
-#   return(1);
-# }
-# 
-# ####Raw Spectra Upload
-# ReadRawMeta<-function(fileName){
-#   if(grepl(".txt", fileName, fixed=T)){
-#     tbl=read.table(fileName,header=TRUE, stringsAsFactors = F);
-#   }else if(grepl(".csv", fileName, fixed=T)){
-#     tbl = read.csv(fileName,header=TRUE, stringsAsFactors = F);
-#   }else{
-#     cat("wrongfiletype\n")
-#   }
-#   
-#   rawFileNms<-as.vector(tbl[,1])
-#   rawClassNms<-as.vector(tbl[,2])
-#   rawFileNms <- sapply(strsplit(rawFileNms, "\\."), function(x) paste0(head(x,-1), collapse="."));
-#   clsTable = table(rawClassNms)
-#   #check replicate number
-#   clsTypes = names(table(rawClassNms))
-#   for(name in clsTypes){
-#     if(toupper(name) !="QC"){
-#       replicateNum = clsTable[[name]]
-#       cat(replicateNum,"\n")
-#     }
-#   }
-#   
-#   rawFileNms<<-rawFileNms
-#   rawClassNms<<-rawClassNms
-#   return(1);
-# }
-# 
-# GetRawFileNms <- function(){
-#   return(rawFileNms)
-# }
-# 
-# GetRawClassNms <- function(){
-#   return(rawClassNms)
-# }
-
-
 #' MessageOutput
 #' @noRd
 MessageOutput <- function(mes, ecol, progress) {
@@ -196,7 +136,7 @@ MessageOutput <- function(mes, ecol, progress) {
     
     write.table(
       progress,
-      file = paste0(fullUserPath, "log_progress.txt"),
+      file = "log_progress.txt",
       row.names = F,
       col.names = F
     )

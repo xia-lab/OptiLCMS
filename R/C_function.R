@@ -304,10 +304,10 @@ R_set_obiwarp <-
            scantime2,
            curP,
            parms) {
-    if (.on.public.web) {
-      dyn.load(.getDynLoadPath())
-      
-    }
+    # if (.on.public.web) {
+    #   dyn.load(.getDynLoadPath())
+    #   
+    # }
     
     rtadj <-
       .Call(
@@ -698,6 +698,9 @@ massifquantROIs <- function(mz,
                             criticalVal,
                             segs,
                             scanBack) {
+  
+  .optimize_switch <- .GlobalEnv$.optimize_switch;
+  
   if (.on.public.web & !.optimize_switch) {
     massifquantROIs <-
       .Call(

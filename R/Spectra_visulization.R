@@ -25,6 +25,9 @@ PerformDataInspect <-
            res = 100) {
     
     if(.on.public.web){
+      
+      fullUserPath <- getwd();
+      
       if (datapath == "null" | is.null(datapath)) {
         if (.on.public.web & dir.exists("upload/QC")) {
           datapath <- "upload/QC"
@@ -308,7 +311,7 @@ PlotXIC <-
     if (missing(height)) {
       height <- width * 1.05
     }
-    
+    mSet <- NULL;
     # Load data results
     load("mSet.rda")
     
@@ -316,9 +319,9 @@ PlotXIC <-
     #   load_MSnbase()
     # }
     
-    raw_data <- mSet[["onDiskData"]]
+    raw_data <- mSet@rawOnDisk
     raw_data@featureData$retentionTime <-
-      unlist(mSet[["msFeatureData"]][["adjustedRT"]])
+      unlist(mSet@peakRTcorrection$adjustedRT);
     
     # Get groups information
     groupsInfo <- raw_data@phenoData@data[["sample_group"]]
@@ -335,27 +338,26 @@ PlotXIC <-
     samples_names <- raw_data@phenoData@data[["sample_name"]]
     
     # Get current feature information
-    peak_idx_current <-
-      mSet[["FeatureGroupTable"]]@listData[["peakidx"]][[featureNum]]
+    peak_idx_current <-mSet@peakfilling$FeatureGroupTable@listData$peakidx[[featureNum]]
     
     #peak_table <- mSet[["msFeatureData"]][["chromPeaks"]][peak_idx_current,];
-    peak_table <- mSet[["xcmsSet"]]@peaks[peak_idx_current,]
+    peak_table <- mSet@peakfilling[["msFeatureData"]][["chromPeaks"]][peak_idx_current,]
     peak_table <- peakTableSUM(peak_table)
     
     rtrange <-
-      c(mSet[["FeatureGroupTable"]]@listData[["rtmin"]][featureNum] - 10,
-        mSet[["FeatureGroupTable"]]@listData[["rtmax"]][featureNum] + 10)
+      c(mSet@peakfilling[["FeatureGroupTable"]]@listData[["rtmin"]][featureNum] - 10,
+        mSet@peakfilling[["FeatureGroupTable"]]@listData[["rtmax"]][featureNum] + 10)
     
     mzrange <-
-      c(mSet[["FeatureGroupTable"]]@listData[["mzmin"]][featureNum] - 0.2,
-        mSet[["FeatureGroupTable"]]@listData[["mzmax"]][featureNum] + 0.2)
+      c(mSet@peakfilling[["FeatureGroupTable"]]@listData[["mzmin"]][featureNum] - 0.2,
+        mSet@peakfilling[["FeatureGroupTable"]]@listData[["mzmax"]][featureNum] + 0.2)
     
     RawData <- filterMz(filterRt(raw_data, rtrange), mzrange)
     
     title <-
-      paste0(round(mSet[["FeatureGroupTable"]]@listData[["mzmed"]][[featureNum]], 4),
+      paste0(round(mSet@peakfilling[["FeatureGroupTable"]]@listData[["mzmed"]][[featureNum]], 4),
              "mz@",
-             round(mSet[["FeatureGroupTable"]]@listData[["rtmed"]][[featureNum]], 2),
+             round(mSet@peakfilling[["FeatureGroupTable"]]@listData[["rtmed"]][[featureNum]], 2),
              "s")
     
     
@@ -452,10 +454,10 @@ PlotXIC <-
     
     peak_width <- max(res$RT) - min(res$RT);
     
-    if(.on.public.web){
-      load_ggplot2();
-      load_ggrepel();
-    }
+    # if(.on.public.web){
+    #   load_ggplot2();
+    #   load_ggrepel();
+    # }
     
     Cairo::Cairo(
       file = paste0("EIC_", title, "_sample_", dpi, ".", format),
@@ -468,7 +470,7 @@ PlotXIC <-
     )
     
     s_image <-
-      ggplot(res, aes(x = RT, y = Intensity, color = Samples)) + #geom_line() #+
+      ggplot(res, aes_string(x = "RT", y = "Intensity", color = "Samples")) + #geom_line() #+
       stat_smooth(
         geom = 'area',
         method = "loess",
@@ -477,7 +479,7 @@ PlotXIC <-
         size = 0.35,
         formula = "y ~ x",
         alpha = 1 / 4,
-        aes(fill = Samples)
+        aes_string(fill = "Samples")
       ) +
       theme_bw() +
       ylim(0, NA) +
@@ -497,7 +499,7 @@ PlotXIC <-
     
     if (sample_labeled) {
       s_image <-
-        s_image + geom_text_repel(aes(y = Intensity * 0.2, label = Labels),
+        s_image + geom_text_repel(aes_string(y = "Intensity * 0.2", label = "Labels"),
                                   force = 1.5,
                                   show.legend = FALSE)
     }
@@ -543,7 +545,7 @@ PlotXIC <-
     )
     
     g_image <-
-      ggplot(res_data, aes(x = RT, y = Intensity, color = Groups)) + #geom_line() +
+      ggplot(res_data, aes_string(x = "RT", y = "Intensity", color = "Groups")) + #geom_line() +
       stat_smooth(
         geom = 'area',
         method = "loess",
@@ -552,7 +554,7 @@ PlotXIC <-
         size = 0.35,
         formula = "y ~ x",
         alpha = 1 / 4,
-        aes(fill = Groups)
+        aes_string(fill = "Groups")
       ) +
       theme_bw() +
       ylim(0, NA) +
@@ -573,7 +575,7 @@ PlotXIC <-
     
     if (Group_labeled) {
       g_image <-
-        g_image + geom_text_repel(aes(y = Intensity * 0.2, label = Labels),
+        g_image + geom_text_repel(aes_string(y = "Intensity * 0.2", label = "Labels"),
                                   force = 1.5,
                                   show.legend = FALSE)
     }
@@ -596,11 +598,15 @@ PlotXIC <-
 #' @export
 #' @importFrom Cairo Cairo
 PlotSpectraInsensityStistics <-
-  function(mSet,
+  function(mSet = NULL,
            imgName,
            format = "png",
            dpi = 72,
            width = NA) {
+    
+    if(is.null(mSet)){
+      load("mSet.rda");
+    }
     
     sample_idx <- mSet@rawOnDisk@phenoData@data[["sample_group"]]
     
@@ -671,12 +677,14 @@ PlotSpectraInsensityStistics <-
 #' @param width Numeric, to define the width of the figure. Height = width * 0.618. 
 #' @importFrom ggrepel geom_text_repel
 #' @export
+
 PlotSpectraPCA <-
-  function(mSet,
+  function(mSet = NULL,
            imgName,
            format = "png",
            dpi = 72,
            width = NA) {
+    
     Cairo::Cairo(
       file = imgName,
       unit = "in",
@@ -688,7 +696,7 @@ PlotSpectraPCA <-
     )
     
     sample_idx <-
-      mSet@rawOnDisk@phenoData@data[["sample_group"]]
+      mSet@rawOnDisk@phenoData@data[["sample_group"]];
     
     feature_value <-
       .feature_values(
@@ -699,9 +707,9 @@ PlotSpectraPCA <-
         intensity = "into",
         colnames = mSet@rawOnDisk@phenoData@data[["sample_name"]],
         missing = NA
-      )
+      );
     
-    pca_feats <- log2(feature_value)
+    pca_feats <- log2(feature_value);
     
     if (nrow(feature_value) < 2) {
       MessageOutput(
@@ -712,78 +720,79 @@ PlotSpectraPCA <-
         ),
         ecol = "\n",
         progress = 65
-      )
+      );
       
       dev.off()
       return(NULL)
     }
     
-    df0 <- na.omit(pca_feats)
+    df0 <- na.omit(pca_feats);
     
-    df1 <- df0[is.finite(rowSums(df0)),]
-    df <- t(df1)
+    df1 <- df0[is.finite(rowSums(df0)),];
+    df <- t(df1);
     
-    mSet_pca <- prcomp(df, center = TRUE, scale = T)
-    sum.pca <- summary(mSet_pca)
+    mSet_pca <- prcomp(df, center = TRUE, scale = T);
+    sum.pca <- summary(mSet_pca);
     var.pca <-
-      sum.pca$importance[2,] # variance explained by each PCA
+      sum.pca$importance[2,]; # variance explained by each PCA
     
-    xlabel <- paste("PC1", "(", round(100 * var.pca[1], 1), "%)")
-    ylabel <- paste("PC2", "(", round(100 * var.pca[2], 1), "%)")
+    xlabel <- paste("PC1", "(", round(100 * var.pca[1], 1), "%)");
+    ylabel <- paste("PC2", "(", round(100 * var.pca[2], 1), "%)");
     
     # using ggplot2
-    df <- as.data.frame(mSet_pca$x)
-    df$group <- sample_idx
+    df <- as.data.frame(mSet_pca$x);
+    df$group <- sample_idx;
     
-    if(.on.public.web){
-      load_ggplot2();
-      load_ggrepel();
-    }
-    
+    # if(.on.public.web){
+    #   load_ggplot2();
+    #   load_ggrepel();
+    # }
+    # 
     if (nrow(df) < 30) {
       if (length(unique(sample_idx)) > 9) {
         col.fun <-
-          grDevices::colorRampPalette(RColorBrewer::brewer.pal(12, "Set3"))
+          grDevices::colorRampPalette(RColorBrewer::brewer.pal(12, "Set3"));
+
         p <-
-          ggplot2::ggplot(df, aes(
-            x = PC1,
-            y = PC2,
-            color = group,
-            label = row.names(df)
+          ggplot2::ggplot(df, aes_string(
+            x = "PC1",
+            y = "PC2",
+            color = "group",
+            label = "row.names(df)"
           )) +
-          geom_text_repel(force = 1.5) + geom_point(size = 5) + fill = col.fun(length(unique(sample_idx))) + theme(axis.text =
+          geom_text_repel(force = 1.5) + geom_point(size = 5,  fill = col.fun(length(unique(sample_idx)))) + theme(axis.text =
                                                                                                                      element_text(size = 12))
-        
+
       } else{
         p <-
-          ggplot2::ggplot(df, aes(
-            x = PC1,
-            y = PC2,
-            color = group,
-            label = row.names(df)
+          ggplot2::ggplot(df, aes_string(
+            x = "PC1",
+            y = "PC2",
+            color = "group",
+            label = "row.names(df)"
           )) +
           geom_text_repel(force = 1.5) + geom_point(size = 5) + scale_color_brewer(palette =
                                                                                      "Set1") + theme(axis.text = element_text(size = 12))
       }
-      
+
     } else {
       if (length(unique(sample_idx)) > 9) {
         p <-
-          ggplot2::ggplot(df, aes(x = PC1,
-                                  y = PC2,
-                                  color = group)) + geom_point(size = 5)
-        
+          ggplot2::ggplot(df, aes_string(x = "PC1",
+                                  y = "PC2",
+                                  color = "group")) + geom_point(size = 5)
+
       } else{
         p <-
-          ggplot2::ggplot(df, aes(x = PC1,
-                                  y = PC2,
-                                  color = group)) + geom_point(size = 5) + scale_color_brewer(palette = "Set1")
+          ggplot2::ggplot(df, aes_string(x = "PC1",
+                                  y = "PC2",
+                                  color = "group")) + geom_point(size = 5) + scale_color_brewer(palette = "Set1");
       }
     }
-    
+
     p <-
-      p + xlab(xlabel) + ylab(ylabel) + theme_bw() + theme(axis.title = element_text(size =
-                                                                                       12))
+      p + xlab(xlabel) + ylab(ylabel) + theme_bw() + theme(axis.title = element_text(size = 12));
+
     print(p)
     dev.off()
   }
@@ -799,11 +808,15 @@ PlotSpectraPCA <-
 #' @export
 #' @importFrom Cairo Cairo
 PlotSpectraRTadj <-
-  function(mSet,
+  function(mSet = NULL,
            imgName,
            format = "png",
            dpi = 72,
            width = NA) {
+    
+    if(is.null(mSet)){
+      load("mSet.rda")
+    }
     
     sample_idx <- mSet@rawOnDisk@phenoData@data[["sample_group"]];
     
@@ -925,11 +938,15 @@ PlotSpectraRTadj <-
 #' @export
 #' @importFrom Cairo Cairo
 PlotSpectraBPIadj <-
-  function(mSet,
+  function(mSet = NULL,
            imgName,
            format = "png",
            dpi = 72,
            width = NA) {
+    
+    if(is.null(mSet)){
+      load("mSet.rda")
+    }
     
     Cairo::Cairo(
       file = imgName,
@@ -1013,12 +1030,12 @@ PlotSpectraBPIadj <-
 plotMSfeature <- function(FeatureNM,
                           dpi = 72,
                           format = "png") {
-  if(.on.public.web){
-    load_ggplot2();
-    load_ggrepel();
-    load_RColorBrewer();
-  }
-  
+  # if(.on.public.web){
+  #   load_ggplot2();
+  #   load_ggrepel();
+  #   load_RColorBrewer();
+  # }
+  # 
   peakdata <- readRDS("annotated_peaklist.rds");
   peakdata1 <-
     peakdata[, c(-1:-6,-ncol(peakdata),-ncol(peakdata) + 1,-ncol(peakdata) + 2)]
@@ -1048,10 +1065,10 @@ plotMSfeature <- function(FeatureNM,
   )
   
   p1 <-
-    ggplot(data_table, aes(
-      x = Group,
-      y = log2(value + 1),
-      fill = Group
+    ggplot(data_table, aes_string(
+      x = "Group",
+      y = "log2(value + 1)",
+      fill = "Group"
     )) + # geom_violin(trim = T,draw_quantiles = T) +
     stat_boxplot(geom = "errorbar", width = 0.15, aes(color = "black")) +
     geom_boxplot(
@@ -1061,7 +1078,7 @@ plotMSfeature <- function(FeatureNM,
       outlier.fill = "white",
       outlier.color = "white"
     ) +
-    geom_jitter(aes(fill = Group),
+    geom_jitter(aes_string(fill = "Group"),
                 width = 0.2,
                 shape = 21,
                 size = 2.5) +
@@ -1131,6 +1148,9 @@ plotMSfeature <- function(FeatureNM,
 #' @importFrom Cairo Cairo
 plotSingleTIC <- function(filename, imagename) {
   # load_msnbase()
+  
+  raw_data_filt <- NULL;
+  tics <- NULL;
   
   load("raw_data_filt.rda")
   load("tics.rda")
