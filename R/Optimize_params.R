@@ -1293,7 +1293,7 @@ extFUN <- function(z, object, useNoise) {
       fit <- SSgaussStats(ints);
       
       if (class(fit) == "try-error") { # Still error - record error !
-        write.table(paste0(fit[[1]],Sys.time()), file = "error_report.txt",append = T,eol = "\n");
+        #write.table(paste0(fit[[1]],Sys.time()), file = "error_report.txt",append = T,eol = "\n");
         corr <- 0.1;
       } else {
         if (sum(!is.na(ints - fitted(fit))) > 4 && 
