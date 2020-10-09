@@ -205,11 +205,30 @@ PerformParamsOptimization <- function(mSet, param= NULL, method="DoE", ncore=4, 
         param[["prefilter"]]<-round(p2$prefilter,2);
         param[["value_of_prefilter"]]<-round(p2$value_of_prefilter,2);
         
-        if(round(p2$ppm,2) < 1.5){
+        if(round(p2$ppm,2) < 1.5 | round(p2$ppm,2) > 30){
           param[["ppm"]] <- 5.00; # Estimation failure, use the default instead !
         } else {
           param[["ppm"]] <- round(p2$ppm,2);
         }
+        
+        if(round(p2$prefilter,2) < 2){
+          param[["prefilter"]] <- 3; # Estimation failure, use the default instead !
+        } else {
+          param[["prefilter"]] <- round(p2$prefilter,2);
+        }
+        
+        if(round(p2$value_of_prefilter,2) < 10){
+          param[["value_of_prefilter"]] <- 100; # Estimation failure, use the default instead !
+        } else {
+          param[["value_of_prefilter"]] <- round(p2$value_of_prefilter,2);
+        }
+        
+        if(round(p2$noise,2) < 0){
+          param[["noise"]] <- 100; # Estimation failure, use the default instead !
+        } else {
+          param[["noise"]] <- round(p2$noise,2);
+        }
+        
       }
       
       MessageOutput(NULL, NULL, 5.00);
@@ -1475,8 +1494,9 @@ Noise_evaluate <- function (raw_data) {
                                                             peakColIndex], time, intensity, start = NULL, 
                                         end = NULL, old_r2 = NULL)
       if (length(time)/5 < diff(tempPeakWidthEst)) {
-        stop(paste("One peak was over 1/5 of all scans in length.", 
-                   "This is probably an error."))
+        # stop(paste("One peak was over 1/5 of all scans in length.", 
+        #            "This is probably an error."))
+        next()
       }
       if (tempPeakWidthEst[2] > length(time)) {
         tempPeakWidthEst[2] <- length(time)
