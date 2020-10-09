@@ -53,6 +53,8 @@ PerformROIExtraction <-
            plot = T,
            running.controller = NULL) {
     
+    datapath <- normalizePath(datapath);
+    
     if(!.on.public.web){
       #Local R package running
       if (!dir.exists(datapath)) {
@@ -319,10 +321,12 @@ PerformROIExtraction <-
             if(exists("peakParams")){
               if(peakParams[["rmConts"]]){
                 raw_data <- ContaminatsRemoval(raw_data, ms_list);
+                raw_data <- .emptyscan.remove(raw_data, ms_list);
                 #save(raw_data, file = "Contaminats_free_raw_data.rda");
               }
             } else {
               raw_data <- ContaminatsRemoval(raw_data, ms_list);
+              raw_data <- .emptyscan.remove(raw_data, ms_list);
             }
           }
           
