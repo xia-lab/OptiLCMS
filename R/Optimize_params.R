@@ -1475,8 +1475,9 @@ Noise_evaluate <- function (raw_data) {
                                                             peakColIndex], time, intensity, start = NULL, 
                                         end = NULL, old_r2 = NULL)
       if (length(time)/5 < diff(tempPeakWidthEst)) {
-        stop(paste("One peak was over 1/5 of all scans in length.", 
-                   "This is probably an error."))
+        next();
+        # stop(paste("One peak was over 1/5 of all scans in length.", 
+        #            "This is probably an error."))
       }
       if (tempPeakWidthEst[2] > length(time)) {
         tempPeakWidthEst[2] <- length(time)

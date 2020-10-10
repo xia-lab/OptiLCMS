@@ -1113,7 +1113,9 @@ CentroidCheck <- function(filename) {
     }
   )
   
-  return(sum(unlist(res)) > 8)
+  res <- unlist(res[!is.na(res)]);
+  return(sum(res) > 0.8*length(res))
+  
 }
 
 
