@@ -25,7 +25,6 @@
                            "adjustRtime_peakGroup",
                            "mSet.obiwarp",
                            "PerformPeakFiling",
-                           "mSet2xcmsSet",
                            "updateRawSpectraParam",
                            "continuousPtsAboveThreshold",
                            "getLocalNoiseEstimate",

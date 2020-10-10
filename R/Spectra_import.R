@@ -149,6 +149,8 @@ ImportRawMSData <-
            plotSettings,
            running.controller = NULL) {
     
+    foldername <- normalizePath(foldername);
+    
     if (!dir.exists(foldername) & .on.public.web) {
       foldername <- "/home/glassfish/projects/MetaboDemoRawData/upload"
     } else if(!dir.exists(foldername)){
@@ -373,7 +375,7 @@ ImportRawMSData <-
           # just for plotting
         }
         
-        #save(raw_data_filt, file = "raw_data_filt.rda")
+        save(raw_data_filt, file = "raw_data_filt.rda")
         
         if (plot.opts == "all") {
           h <-
