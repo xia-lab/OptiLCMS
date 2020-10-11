@@ -1088,6 +1088,8 @@ PerformPeakGrouping<-function(mSet){
     peaks_0 <- mSet@peakRTcorrection$chromPeaks;
   }
   
+  peaks <- OptiChromPeaks(peaks_0);
+  
   peaks <- cbind(peaks_0[, c("mz", "rt", "sample", "into"), drop = FALSE],
                  index = seq_len(nrow(peaks_0)))
   
@@ -1131,9 +1133,7 @@ PerformPeakGrouping<-function(mSet){
   endIdx <- 0
   
   if (!.optimize_switch){
-    
     print_mes <- paste0("Total of ", length(mass) - 1, " slices detected for processing... ");
-    
   }
   
   resL <- vector("list", (length(mass) - 2))
@@ -2166,11 +2166,12 @@ PerformPeakFiling <- function(mSet,BPPARAM=bpparam()){
   tmp_pks <- mSet@peakRTcorrection$chromPeaks[, c("rtmin", "rtmax", "mzmin", "mzmax")];
   fdef <- mSet@peakgrouping[[ngroup]];
   
-  pkArea <- do.call(rbind,lapply(fdef$peakidx, function(z) {
-    pa <- c(aggFunLow(tmp_pks[z, 1]),
-            aggFunHigh(tmp_pks[z, 2]),
-            aggFunLow(tmp_pks[z, 3]),
-            aggFunHigh(tmp_pks[z, 4]))
+  pkArea <- do.call(rbind,
+                    lapply(fdef$peakidx, function(z) {
+                      pa <- c(aggFunLow(tmp_pks[z, 1]),
+                              aggFunHigh(tmp_pks[z, 2]),
+                              aggFunLow(tmp_pks[z, 3]),
+                              aggFunHigh(tmp_pks[z, 4]))
     ## Check if we have to apply ppm replacement:
     if (ppm != 0) {
       mzmean <- mean(pa[3:4])
@@ -2225,7 +2226,7 @@ PerformPeakFiling <- function(mSet,BPPARAM=bpparam()){
   
   pkGrpVal <-
     .feature_values(pks = pks, fts = mSet@peakgrouping[[ngroup]],
-                    method = "medret", value = "into",
+                    method = "medret", value = "index",
                     intensity = "into", colnames = fNames,
                     missing = NA)
   
@@ -2297,7 +2298,7 @@ PerformPeakFiling <- function(mSet,BPPARAM=bpparam()){
     }
     
     if (!.optimize_switch){
-      MessageOutput(paste(" OK\nStart integrating peak areas from original files..."), "\n", 77)
+      MessageOutput(paste("OK\nStart integrating peak areas from original files..."), "\n", 77)
     } 
     
     cp_colnames <- colnames(mSet@peakRTcorrection[["chromPeaks"]])
@@ -2738,7 +2739,68 @@ adjustRtimeSubset <- function(rtraw, rtadj, subset,
   rtadj
 }
 
-
+OptiChromPeaks <- function(pks, bySample = FALSE,
+                           rt = numeric(), mz = numeric(),
+                           ppm = 0, msLevel = integer(),
+                           type = c("any", "within",
+                                    "apex_within"),
+                           isFilledColumn = FALSE) {
+  type <- match.arg(type)
+  if (isFilledColumn)
+    pks <- cbind(pks, is_filled = as.numeric(chromPeakData(object)$is_filled))
+  if (length(msLevel))
+    pks <- pks[which(chromPeakData(object)$ms_level %in% msLevel), ,
+               drop = FALSE]
+  ## Select peaks within rt range.
+  if (length(rt)) {
+    rt <- range(rt)
+    if (type == "any")
+      keep <- which(pks[, "rtmin"] <= rt[2] & pks[, "rtmax"] >= rt[1])
+    if (type == "within")
+      keep <- which(pks[, "rtmin"] >= rt[1] & pks[, "rtmax"] <= rt[2])
+    if (type == "apex_within")
+      keep <- which(pks[, "rt"] >= rt[1] & pks[, "rt"] <= rt[2])
+    pks <- pks[keep, , drop = FALSE]
+  }
+  ## Select peaks within mz range, considering also ppm
+  if (length(mz) && length(pks)) {
+    mz <- range(mz)
+    ## Increase mz by ppm.
+    if (is.finite(mz[1]))
+      mz[1] <- mz[1] - mz[1] * ppm / 1e6
+    if (is.finite(mz[2]))
+      mz[2] <- mz[2] + mz[2] * ppm / 1e6
+    if (type == "any")
+      keep <- which(pks[, "mzmin"] <= mz[2] & pks[, "mzmax"] >= mz[1])
+    if (type == "within")
+      keep <- which(pks[, "mzmin"] >= mz[1] & pks[, "mzmax"] <= mz[2])
+    if (type == "apex_within")
+      keep <- which(pks[, "mz"] >= mz[1] & pks[, "mz"] <= mz[2])
+    pks <- pks[keep, , drop = FALSE]
+  }
+  if (bySample) {
+    ## Ensure we return something for each sample in case there is a sample
+    ## without detected peaks.
+    res <- vector("list", length(fileNames(object)))
+    names(res) <- as.character(1:length(res))
+    if (nrow(pks)) {
+      tmp <- split.data.frame(pks,
+                              f = pks[, "sample"])
+      res[as.numeric(names(tmp))] <- tmp
+      if (any(lengths(res) == 0)) {
+        emat <- matrix(nrow = 0, ncol = ncol(tmp[[1]]))
+        colnames(emat) <- colnames(tmp[[1]])
+        for (i in which(lengths(res) == 0))
+          res[[i]] <- emat
+      }
+    } else {
+      for(i in 1:length(res))
+        res[[i]] <- pks
+    }
+    res
+  } else
+    pks
+}
 getLocalNoiseEstimate <- function(d, td, ftd, noiserange, Nscantime, threshold, num) {
   
   if (length(d) < Nscantime) {
@@ -3657,8 +3719,12 @@ SSgauss <- selfStart(~ h*exp(-(x-mu)^2/(2*sigma^2)), function(mCall, data, LHS) 
   res[, "sample"] <- sample_idx
   res[, c("mzmin", "mzmax")] <- peakArea[, c("mzmin", "mzmax")]
   ## Load the data
+
   MessageOutput(paste0("Requesting ", nrow(res), " peaks from ",basename(MSnbase::fileNames(object)), " ... "), "",NULL)
 
+  object <- filterRt(
+    object, rt = range(peakArea[, c("rtmin", "rtmax")]) + c(-2, 2))
+  
   spctr <- MSnbase::spectra(object, BPPARAM = SerialParam())
 
   mzs <- lapply(spctr, mz)
