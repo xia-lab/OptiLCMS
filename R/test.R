@@ -69,14 +69,14 @@
 #                               min_peakwidth = 5,max_peakwidth = 20,
 #                               ppm = 15,noise = 0,snthresh = 6,
 #                               prefilter = 3,value_of_prefilter = 100,
-#                               minFraction = 0.85,RT_method = "obiwarp" 
+#                               minFraction = 0.85,RT_method = "obiwarp"
 # );
-# mSet <- ImportRawMSData(mSet, "/home/qiang/Downloads/cdf_example/test_covid/",ncores = 6, plotSettings = SetPlotParam(Plot = F))
+# mSet <- ImportRawMSData(mSet, "/home/glassfish/projects/MetaboDemoRawData/upload/",ncores = 6, plotSettings = SetPlotParam(Plot = F))
 # mSet <- PerformPeakProfiling(mSet,ncore = 10,Params = param_initial, plotSettings = SetPlotParam(Plot = F))
 # annParams <- SetAnnotationParam(polarity = 'negative', mz_abs_add = 0.015)
 # mSet <- PerformPeakAnnotation(mSet, annParams)
 # maPeaks <- FormatPeakList(mSet, annParams, filtIso =F, filtAdducts = FALSE,missPercent = 1)
-# 
+
 # for (i in 1:length(peakIndex_opti)){
 #   
 #   a <- setdiff(peakIndex_opti[[i]],peakIndex_xcms[[i]])

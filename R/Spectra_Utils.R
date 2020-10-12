@@ -1792,7 +1792,8 @@ adjustRtime_obiwarp <- function(mSet, param, msLevel = 1L) {
   res;
   
   adjustedRtime_res <- unname(split(res, fromFile(object)));
-  mSet[["msFeatureData"]][["adjustedRT"]] <- adjustedRtime_res;
+  mSet@peakRTcorrection[["adjustedRT"]] <- adjustedRtime_res;
+  #mSet[["msFeatureData"]][["adjustedRT"]] <- adjustedRtime_res;
   
   return(mSet);
 }

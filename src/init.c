@@ -13,6 +13,7 @@ extern void WhichColMax(void *, void *, void *, void *);
 extern void DescendZero(void *, void *, void *, void *, void *);
 extern void ColMax(void *, void *, void *, void *);
 
+
 /* .Call calls */
 extern SEXP findmzROI(SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP);
 extern SEXP getMZ(SEXP, SEXP, SEXP, SEXP, SEXP, SEXP);
@@ -22,6 +23,7 @@ extern SEXP binYonX_multi(SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, 
 extern SEXP impute_with_linear_interpolation(SEXP, SEXP);
 extern SEXP impute_with_linear_interpolation_base(SEXP, SEXP, SEXP);
 extern SEXP breaks_on_nBins(SEXP, SEXP, SEXP, SEXP);
+extern SEXP R_set_obiwarp(SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP);
 
 static const R_CMethodDef CEntries[] = {
   {"continuousPtsAboveThreshold",          (DL_FUNC) &continuousPtsAboveThreshold,           6},
@@ -44,6 +46,7 @@ static const R_CallMethodDef CallEntries[] = {
     {"impute_with_linear_interpolation",  (DL_FUNC) &impute_with_linear_interpolation,  2},
     {"impute_with_linear_interpolation_base",  (DL_FUNC) &impute_with_linear_interpolation_base,  3},
     {"breaks_on_nBins",  (DL_FUNC) &breaks_on_nBins,  4},
+    {"R_set_obiwarp", (DL_FUNC) &R_set_obiwarp, 18},
     {NULL, NULL, 0}
 };
 

@@ -23,7 +23,7 @@
 
 #define DEBUG (0)
 
-extern "C" SEXP R_set_from_xcms(SEXP valscantime, SEXP scantime, SEXP mzrange, SEXP mz, SEXP intensity,
+extern "C" SEXP R_set_obiwarp(SEXP valscantime, SEXP scantime, SEXP mzrange, SEXP mz, SEXP intensity,
 				SEXP valscantime2, SEXP scantime2, SEXP mzrange2, SEXP mz2, SEXP intensity2,
 				SEXP response, SEXP score,
 				SEXP gap_init, SEXP gap_extend,
