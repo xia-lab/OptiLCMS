@@ -304,37 +304,57 @@ R_set_obiwarp <-
            scantime2,
            curP,
            parms) {
-    # if (.on.public.web) {
-    #   dyn.load(.getDynLoadPath())
-    #   
-    # }
-    
-    rtadj <-
-      .Call(
-        "R_set_from_xcms",
-        valscantime1,
-        scantime1,
-        mzvals,
-        mzs,
-        cntrPr$profMat,
-        valscantime2,
-        scantime2,
-        mzvals,
-        mzs,
-        curP$profMat,
-        parms$response,
-        parms$distFun,
-        parms$gapInit,
-        parms$gapExtend,
-        parms$factorDiag,
-        parms$factorGap,
-        as.numeric(parms$localAlignment),
-        parms$initPenalty
-      )
-    
+
+    if(.on.public.web){
+      rtadj <-
+        .Call(
+          "R_set_from_xcms",
+          valscantime1,
+          scantime1,
+          mzvals,
+          mzs,
+          cntrPr$profMat,
+          valscantime2,
+          scantime2,
+          mzvals,
+          mzs,
+          curP$profMat,
+          parms$response,
+          parms$distFun,
+          parms$gapInit,
+          parms$gapExtend,
+          parms$factorDiag,
+          parms$factorGap,
+          as.numeric(parms$localAlignment),
+          parms$initPenalty
+        )
+    } else {
+      rtadj <-
+        .Call(
+          C_R_set_from_xcms,
+          valscantime1,
+          scantime1,
+          mzvals,
+          mzs,
+          cntrPr$profMat,
+          valscantime2,
+          scantime2,
+          mzvals,
+          mzs,
+          curP$profMat,
+          parms$response,
+          parms$distFun,
+          parms$gapInit,
+          parms$gapExtend,
+          parms$factorDiag,
+          parms$factorGap,
+          as.numeric(parms$localAlignment),
+          parms$initPenalty,
+          PACKAGE = 'OptiLCMS'
+        )
+    }
     
     return (rtadj)
-    
   }
 
 #' getEIC4Peaks
