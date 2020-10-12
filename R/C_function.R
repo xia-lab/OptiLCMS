@@ -308,7 +308,7 @@ R_set_obiwarp <-
     if(.on.public.web){
       rtadj <-
         .Call(
-          "R_set_from_xcms",
+          "R_set_obiwarp",
           valscantime1,
           scantime1,
           mzvals,
@@ -331,7 +331,7 @@ R_set_obiwarp <-
     } else {
       rtadj <-
         .Call(
-          C_R_set_from_xcms,
+          C_R_set_obiwarp,
           valscantime1,
           scantime1,
           mzvals,

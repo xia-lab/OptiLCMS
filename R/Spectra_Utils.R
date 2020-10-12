@@ -1840,11 +1840,6 @@ mSet.obiwarp <- function(mSet, object, param) { ## Do not use the params defined
   
   centerSample <- floor(median(1:nSamples));
   
-
-  if (!.optimize_switch){
-    MessageOutput(paste0("Sample number ", centerSample, " used as center sample.\n"), "", NULL)
-  }
-
   if (.on.public.web & !.optimize_switch){
     
     print_mes <- paste0("Sample number ", centerSample, " used as center sample.\n");    
@@ -1852,9 +1847,7 @@ mSet.obiwarp <- function(mSet, object, param) { ## Do not use the params defined
     #write.table(66.0, file = paste0(fullUserPath, "log_progress.txt"),row.names = F,col.names = F);
     
   } else {
-    
-    message("Sample number ", centerSample, " used as center sample.")
-    
+    MessageOutput(paste0("Sample number ", centerSample, " used as center sample.\n"), "", NULL)
   } 
 
   rtraw <- split(rtime(object), fromFile(object))
