@@ -892,7 +892,7 @@ PlotSpectraRTadj <-
     
     rawRt <- rawRt[subs]
     adjRt <- adjRt[subs]
-    ## Have to "adjust" these:
+    ## Have to "adjust" these for peakgroup only:
     pkGroupAdj <- pkGroup
     if (!is.null(pkGroup)) {
       for (i in 1:ncol(pkGroup)) {

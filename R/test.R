@@ -62,7 +62,7 @@
 
 
 
-
+# 
 # library(OptiLCMS);
 # mSet<-InitDataObjects("spec", "raw", FALSE)
 # param_initial <- SetPeakParam(mzdiff = 0.01,bw = 5,
@@ -71,8 +71,10 @@
 #                               prefilter = 3,value_of_prefilter = 100,
 #                               minFraction = 0.85,RT_method = "obiwarp"
 # );
+# mSet <- PerformROIExtraction("/home/glassfish/projects/MetaboDemoRawData/upload/QC/",rt.idx = 0.9);
+# param_optimized <- PerformParamsOptimization(mSet, ncore = 8,param = param_initial)
 # mSet <- ImportRawMSData(mSet, "/home/glassfish/projects/MetaboDemoRawData/upload/",ncores = 6, plotSettings = SetPlotParam(Plot = F))
-# mSet <- PerformPeakProfiling(mSet,ncore = 10,Params = param_initial, plotSettings = SetPlotParam(Plot = F))
+# mSet <- PerformPeakProfiling(mSet,ncore = 10,Params = param_optimized, plotSettings = SetPlotParam(Plot = F))
 # annParams <- SetAnnotationParam(polarity = 'negative', mz_abs_add = 0.015)
 # mSet <- PerformPeakAnnotation(mSet, annParams)
 # maPeaks <- FormatPeakList(mSet, annParams, filtIso =F, filtAdducts = FALSE,missPercent = 1)
