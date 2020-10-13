@@ -719,32 +719,9 @@ massifquantROIs <- function(mz,
                             segs,
                             scanBack) {
   
-  .optimize_switch <- .GlobalEnv$.optimize_switch;
-  
-  if (.on.public.web & !.optimize_switch) {
     massifquantROIs <-
       .Call(
-        "massifquant",
-        mz,
-        int,
-        scanindex,
-        scantime,
-        as.double(mzrange),
-        as.integer(scanrange),
-        as.integer(length(scantime)),
-        as.double(minIntensity),
-        as.integer(minCentroids),
-        as.double(consecMissedLim),
-        as.double(ppm),
-        as.double(criticalVal),
-        as.integer(segs),
-        as.integer(scanBack)
-      )
-    
-  } else {
-    massifquantROIs <-
-      .Call(
-        "massifquant",
+        C_massifquant,
         mz,
         int,
         scanindex,
@@ -761,9 +738,7 @@ massifquantROIs <- function(mz,
         as.integer(scanBack),
         PACKAGE = 'OptiLCMS'
       )
-    
-  }
-  
+
   return(massifquantROIs)
   
 }

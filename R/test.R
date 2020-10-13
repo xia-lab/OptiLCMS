@@ -82,16 +82,29 @@
 
 # library(OptiLCMS);
 # mSet<-InitDataObjects("spec", "raw", FALSE)
-# param_initial <- SetPeakParam(Peak_method = "matchedFilter",RT_method = "obiwarp");
+# param_initial <- SetPeakParam(Peak_method = "Massifquant",RT_method = "obiwarp");
 # 
 # mSet <- PerformROIExtraction("/home/glassfish/projects/MetaboDemoRawData/upload/QC/",rt.idx = 0.9);
 # param_optimized <- PerformParamsOptimization(mSet, ncore = 8,param = param_initial)
 # 
 # mSet <- ImportRawMSData(mSet, "/home/glassfish/projects/MetaboDemoRawData/upload/",ncores = 6, plotSettings = SetPlotParam(Plot = F))
-# mSet <- PerformPeakProfiling(mSet,ncore = 10,Params = param_initial, plotSettings = SetPlotParam(Plot = F))
+# mSet <- PerformPeakProfiling(mSet,ncore = 2,Params = param_initial, plotSettings = SetPlotParam(Plot = F))
 # annParams <- SetAnnotationParam(polarity = 'negative', mz_abs_add = 0.015)
 # mSet <- PerformPeakAnnotation(mSet, annParams)
 # maPeaks <- FormatPeakList(mSet, annParams, filtIso =F, filtAdducts = FALSE,missPercent = 1)
+# 
+# load("object_mslevel.rda");
+# load("param.rda");
+# x<- object_mslevel[[1]];
+# PeakPicking_Massifquant_slave <- OptiLCMS:::PeakPicking_Massifquant_slave
+# debug(PeakPicking_Massifquant_slave)
+# library(xcms)
+# res <- .Call("massifquant", mz, int, scanindex, scantime,
+#              as.double(mzrange), as.integer(scanrange),
+#              as.integer(length(scantime)), as.double(minIntensity),
+#              as.integer(minCentroids), as.double(consecMissedLim),
+#              as.double(ppm), as.double(criticalVal), as.integer(segs),
+#              as.integer(scanBack), PACKAGE ='xcms')
 
 # importFrom("grDevices", "boxplot.stats", "dev.off", "jpeg")
 # importFrom("graphics", "abline", "boxplot", "contour", "grid",

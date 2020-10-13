@@ -647,7 +647,7 @@ PeakPicking_Massifquant_slave <- function(x, param){
   if (class(x)=="OnDiskMSnExp"){ # for raw data processing
     
     scan.set <- MSnbase::spectra(x, BPPARAM = SerialParam());
-    rt <- MSnbase::rtime(x);
+    rt <- unname(MSnbase::rtime(x));
     
   } else if (class(x) == "list") { # for parameters optimization
     
@@ -694,7 +694,7 @@ PeakPicking_Massifquant_slave <- function(x, param){
   withWave = param$withWave;
   ##### Massifquant specific paramters----|
   
-  write.table("print_mes__________",file="metaboanalyst_spec_proc.txt",append = T,row.names = F,col.names = F, quote = F, eol = "\n");
+  
   #------------Massifquant param ------------------/
   
   if (!is.double(mz))
@@ -705,6 +705,10 @@ PeakPicking_Massifquant_slave <- function(x, param){
   mzCenterFun <- paste("mzCenter",
                        gsub(mzCenterFun, pattern = "mzCenter.",
                             replacement = "", fixed = TRUE), sep=".")
+  if(mzCenterFun == "mzCenter.wMean"){
+    mzCenter.wMean <- weighted.mean;
+  }
+  
   if (!exists(mzCenterFun, mode="function"))
     stop("Error: >", mzCenterFun, "< not defined !")
   
@@ -720,7 +724,7 @@ PeakPicking_Massifquant_slave <- function(x, param){
     write.table(25 + count_current_sample*3/count_total_sample*25, file = "log_progress.txt",row.names = F,col.names = F)
     
   } else {
-    message("\n Detecting  mass traces at ",ppm,"ppm ... ", appendLF = FALSE)
+    message("\nDetecting  mass traces at ",ppm," ppm ... ", appendLF = FALSE)
   }
   
   
@@ -740,7 +744,8 @@ PeakPicking_Massifquant_slave <- function(x, param){
   minCentroids = peakwidth[1];
   segs = unions;
   scanBack = checkBack;
-  scanindex <- as.integer(c(0, valsPerSpect[-length(valsPerSpect)])); ## Get index vector for C calls
+  scanindex <- valueCount2ScanIndex(valsPerSpect)
+  
   #scanindex <- valueCount2ScanIndex(valsPerSpect) 
   ## Call the C function.
   if (!is.integer(scanindex))
@@ -750,12 +755,20 @@ PeakPicking_Massifquant_slave <- function(x, param){
     scantime <- as.double(scantime)
 
     tmp <- capture.output(
-      massifquantROIs <- massifquantROIs(mz, int, scanindex, scantime,
-                          mzrange, scanrange,
-                          scantime, minIntensity,
-                          minCentroids, consecMissedLimit,
-                          ppm, criticalValue, segs,
-                          scanBack))
+      massifquantROIs <- massifquantROIs(
+        mz = mz, 
+        int = int, 
+        scanindex = scanindex, 
+        scantime = scantime,
+        mzrange = mzrange, 
+        scanrange = scanrange,
+        minIntensity = minIntensity,
+        minCentroids = minCentroids, 
+        consecMissedLim = consecMissedLimit,
+        ppm = ppm, 
+        criticalVal = criticalValue, 
+        segs = segs,
+        scanBack = scanBack))
 
   #if (withWave) {
   if (F) {
@@ -774,9 +787,9 @@ PeakPicking_Massifquant_slave <- function(x, param){
     #                                        roiList = massifquantROIs)
   } else {
     ## Get index vector for C calls
-    scanindex <- as.integer(c(0, valsPerSpect[-length(valsPerSpect)]))
+    scanindex <- valueCount2ScanIndex(valsPerSpect);
+    basenames <- c("mz","mzmin","mzmax","rtmin","rtmax","rt", "into");
     
-    basenames <- c("mz","mzmin","mzmax","rtmin","rtmax","rt", "into")
     if (length(massifquantROIs) == 0) {
       warning("\nNo peaks found!")
       nopeaks <- matrix(nrow=0, ncol=length(basenames))
@@ -3122,7 +3135,11 @@ MSW.getRidge <-  function(localMax, iInit=ncol(localMax), step=-1, iFinal=1, min
   attr(ridgeList, 'scales') <- scales
   return(ridgeList)
 }
-
+valueCount2ScanIndex <- function(valCount){
+  ## Convert into 0 based.
+  valCount <- cumsum(valCount)
+  return(as.integer(c(0, valCount[-length(valCount)])))
+}
 descendMinTol <- function(d,startpos,maxDescOutlier) {
   l <- startpos[1]; r <- startpos[2]; outl <- 0; N <- length(d)
   ## left
