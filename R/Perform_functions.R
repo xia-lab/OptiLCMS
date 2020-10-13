@@ -294,7 +294,7 @@ PerformPeakProfiling <-
 
     MessageOutput(
       mes = paste0("Begin to plotting figures..."),
-      ecol = "\n",
+      ecol = "",
       progress = 89
     )
     
@@ -356,6 +356,12 @@ PerformPeakProfiling <-
           plotSettings$format,
           plotSettings$dpi,
           plotSettings$width
+        )
+        
+        MessageOutput(
+          mes = paste0("Done !"),
+          ecol = "\n",
+          progress = 89
         )
       }
       

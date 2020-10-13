@@ -79,15 +79,19 @@
 # mSet <- PerformPeakAnnotation(mSet, annParams)
 # maPeaks <- FormatPeakList(mSet, annParams, filtIso =F, filtAdducts = FALSE,missPercent = 1)
 
-# for (i in 1:length(peakIndex_opti)){
-#   
-#   a <- setdiff(peakIndex_opti[[i]],peakIndex_xcms[[i]])
-#   if(length(a) != 0){
-#     print(paste0(i, ":", a))
-#   }
-#   
-# }
 
+# library(OptiLCMS);
+# mSet<-InitDataObjects("spec", "raw", FALSE)
+# param_initial <- SetPeakParam(Peak_method = "matchedFilter",RT_method = "obiwarp");
+# 
+# mSet <- PerformROIExtraction("/home/glassfish/projects/MetaboDemoRawData/upload/QC/",rt.idx = 0.9);
+# param_optimized <- PerformParamsOptimization(mSet, ncore = 8,param = param_initial)
+# 
+# mSet <- ImportRawMSData(mSet, "/home/glassfish/projects/MetaboDemoRawData/upload/",ncores = 6, plotSettings = SetPlotParam(Plot = F))
+# mSet <- PerformPeakProfiling(mSet,ncore = 10,Params = param_initial, plotSettings = SetPlotParam(Plot = F))
+# annParams <- SetAnnotationParam(polarity = 'negative', mz_abs_add = 0.015)
+# mSet <- PerformPeakAnnotation(mSet, annParams)
+# maPeaks <- FormatPeakList(mSet, annParams, filtIso =F, filtAdducts = FALSE,missPercent = 1)
 
 # importFrom("grDevices", "boxplot.stats", "dev.off", "jpeg")
 # importFrom("graphics", "abline", "boxplot", "contour", "grid",
@@ -97,7 +101,7 @@
 #            "fft", "fitted", "hclust", "kmeans", "lm", "loess", "lsfit",
 #            "na.omit", "nextn", "nls", "prcomp", "predict", "sd",
 #            "smooth.spline", "weighted.mean")
-
+# 
 
 
 

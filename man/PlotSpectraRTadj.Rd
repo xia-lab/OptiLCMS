@@ -4,7 +4,7 @@
 \alias{PlotSpectraRTadj}
 \title{PlotSpectraRTadj}
 \usage{
-PlotSpectraRTadj(mSet, imgName, format = "png", dpi = 72, width = NA)
+PlotSpectraRTadj(mSet = NULL, imgName, format = "png", dpi = 72, width = NA)
 }
 \arguments{
 \item{mSet}{mSet object, usually generated after the peakannotaion finished here.}

@@ -4,7 +4,7 @@
 \alias{PlotSpectraBPIadj}
 \title{PlotSpectraBPIadj}
 \usage{
-PlotSpectraBPIadj(mSet, imgName, format = "png", dpi = 72, width = NA)
+PlotSpectraBPIadj(mSet = NULL, imgName, format = "png", dpi = 72, width = NA)
 }
 \arguments{
 \item{mSet}{mSet object, usually generated after the peakannotaion finished here.}

@@ -4,7 +4,7 @@
 \alias{PlotSpectraPCA}
 \title{PlotSpectraPCA}
 \usage{
-PlotSpectraPCA(mSet, imgName, format = "png", dpi = 72, width = NA)
+PlotSpectraPCA(mSet = NULL, imgName, format = "png", dpi = 72, width = NA)
 }
 \arguments{
 \item{mSet}{mSet object, usually generated after the peakannotaion finished here.}

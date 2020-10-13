@@ -5,7 +5,7 @@
 \title{PlotSpectraInsensityStistics}
 \usage{
 PlotSpectraInsensityStistics(
-  mSet,
+  mSet = NULL,
   imgName,
   format = "png",
   dpi = 72,

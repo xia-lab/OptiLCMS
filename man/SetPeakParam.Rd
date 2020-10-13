@@ -20,6 +20,8 @@ SetPeakParam(
   fwhm,
   steps,
   sigma,
+  peakBinsize,
+  max,
   criticalValue,
   consecMissedLimit,
   unions,
@@ -29,13 +31,13 @@ SetPeakParam(
   minFraction,
   minSamples,
   maxFeatures,
+  mzCenterFun,
+  integrate,
   extra,
   span,
   smooth,
   family,
   fitgauss,
-  mzCenterFun,
-  integrate,
   polarity,
   perc_fwhm,
   mz_abs_iso,
@@ -60,7 +62,7 @@ Default is "loess".}
 \item{mzdiff}{Numeric, specify the minimum m/z difference for signals to be considered as
 different features when retention times are overlapping.}
 
-\item{snthresh}{Numeric, specify the signal to noise threshold.}
+\item{snthresh}{Numeric, specify the signal to noise threshold. Work for both 'centwave' and 'matchedFilter'.}
 
 \item{bw}{Numeric, specify the band width (sd or half width at half maximum) of gaussian
 smoothing kernel to be applied during peak grouping.}
@@ -83,6 +85,8 @@ smoothing kernel to be applied during peak grouping.}
 
 \item{sigma}{numeric specifying the standard deviation (width) of the matched filtration model peak. Only work for 'matchedFilter'.}
 
+\item{max}{numeric, representing the maximum number of peaks that are expected/will be identified per slice. Only work for 'matchedFilter'.}
+
 \item{criticalValue}{criticalValue for massifquant (supported later).}
 
 \item{consecMissedLimit}{consecMissedLimit for massifquant (supported later).}
@@ -102,6 +106,10 @@ need to change.}
 
 \item{maxFeatures}{Numeric, specify the maximum number of features to be identified.}
 
+\item{mzCenterFun}{Character, Name of the function to calculate the m/z center of the chromatographic peak.}
+
+\item{integrate}{Integration method. For integrate = 1 peak limits are found through descent on the mexican hat filtered data, for integrate = 2 the descent is done on the real data. The latter method is more accurate but prone to noise, while the former is more robust, but less exact.}
+
 \item{extra}{Numeric, defining the maximal number of additional peaks for all samples to be assigned to a peak group (i.e. feature) for retention time correction}
 
 \item{span}{Numeric, defining the degree of smoothing (if smooth = "loess"). This parameter is passed to the internal call to loess}
@@ -111,10 +119,6 @@ need to change.}
 \item{family}{Character, defining the method to be used for loess smoothing. Allowed values are "gaussian" and "symmetric"}
 
 \item{fitgauss}{Logical, whether or not a Gaussian should be fitted to each peak. This affects mostly the retention time position of the peak.}
-
-\item{mzCenterFun}{Character, Name of the function to calculate the m/z center of the chromatographic peak.}
-
-\item{integrate}{Integration method. For integrate = 1 peak limits are found through descent on the mexican hat filtered data, for integrate = 2 the descent is done on the real data. The latter method is more accurate but prone to noise, while the former is more robust, but less exact.}
 
 \item{polarity}{PeakAnnotation parameters, (Only effective for website pipeline, for local package, OptiLCMS, please use SetAnnotationParam to define the annotation parameters).}
 
@@ -131,6 +135,8 @@ need to change.}
 \item{mz_abs_add}{PeakAnnotation parameters, (Only effective for website pipeline, for local package, OptiLCMS, please use SetAnnotationParam to define the annotation parameters).}
 
 \item{rmConts}{Logical, specify whether to exclude/remove the potential contaminations (the ones with RT range over 50\% of the whole spetra).}
+
+\item{peakBinSize}{Numeric, specifying the width of the bins/slices in m/z dimension. Only work for 'matchedFilter'.}
 }
 \description{
 This function sets all the parameters used for downstream

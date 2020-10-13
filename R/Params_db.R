@@ -14,7 +14,7 @@
 #' @param ppm Numeric, specify the mass error in ppm.
 #' @param min_peakwidth Numeric, specify the minimum peak width in seconds.Only work for 'centWave'.
 #' @param max_peakwidth Numeric, specify the maximum peak width in seconds.Only work for 'centWave'. 
-#' @param snthresh Numeric, specify the signal to noise threshold.
+#' @param snthresh Numeric, specify the signal to noise threshold. Work for both 'centwave' and 'matchedFilter'.
 #' @param mzdiff Numeric, specify the minimum m/z difference for signals to be considered as 
 #' different features when retention times are overlapping. 
 #' @param bw Numeric, specify the band width (sd or half width at half maximum) of gaussian 
@@ -22,9 +22,11 @@
 #' @param noise Numeric, specify the noise level for peaking picking.Only work for 'centWave'.
 #' @param prefilter Numeric, specify the scan number threshold for prefilter.Only work for 'centWave'.
 #' @param value_of_prefilter Numeric, specify the scan abundance threshold for prefilter. Only work for 'centWave'.
+#' @param peakBinSize Numeric, specifying the width of the bins/slices in m/z dimension. Only work for 'matchedFilter'.
 #' @param fwhm numeric specifying the full width at half maximum of matched filtration gaussian model peak. Only work for 'matchedFilter'.
 #' @param steps numeric defining the number of bins to be merged before filtration. Only work for 'matchedFilter'.
 #' @param sigma numeric specifying the standard deviation (width) of the matched filtration model peak. Only work for 'matchedFilter'.
+#' @param max numeric, representing the maximum number of peaks that are expected/will be identified per slice. Only work for 'matchedFilter'.
 #' @param profStep numeric defining the bin size (in mz dimension) to be used for the profile matrix generation. Only work for 'obiwarp'.
 #' @param minFraction Numeric, specify fraction of samples in each group that contain the feature for it to be grouped.
 #' @param minSamples Numeric, specify minimum number of sample(s) in each group that contain the feature for it to be included.
@@ -59,15 +61,16 @@
 #' @references Smith, C.A. et al. 2006. {Analytical Chemistry}, 78, 779-787
 
 SetPeakParam <- function(platform = "general", Peak_method = "centWave", RT_method = "loess",
-                         mzdiff, snthresh, bw,
-                         ppm, min_peakwidth, max_peakwidth, noise, prefilter, value_of_prefilter,
-                         fwhm, steps, sigma,
-                         criticalValue, consecMissedLimit, unions, checkBack, withWave,
-                         profStep, minFraction, minSamples, maxFeatures,
-                         extra, span, smooth, family, fitgauss,
-                         mzCenterFun, integrate,
-                         polarity, perc_fwhm, mz_abs_iso, max_charge, max_iso, corr_eic_th, mz_abs_add,
-                         rmConts){
+                         mzdiff, snthresh, bw, # used for both "centwave" and "matchedFilter"
+                         ppm, min_peakwidth, max_peakwidth, noise, prefilter, value_of_prefilter, # used for "centwave"
+                         fwhm, steps, sigma, peakBinSize, max, # used for "matchedFilter"
+                         criticalValue, consecMissedLimit, unions, checkBack, withWave, # used for "massifquant"
+                         profStep, # used for "obiwarp"
+                         minFraction, minSamples, maxFeatures, mzCenterFun, integrate,# used for grouping
+                         extra, span, smooth, family, fitgauss, # used for RT correction with peakgroup "loess"
+                         polarity, perc_fwhm, mz_abs_iso, max_charge, max_iso, corr_eic_th, mz_abs_add, #used for annotation
+                         rmConts #used to control remove contamination or not
+                         ){
   
   
   if (.on.public.web & missing(platform) & missing(Peak_method) & file.exists("params.rda")){
@@ -166,7 +169,17 @@ SetPeakParam <- function(platform = "general", Peak_method = "centWave", RT_meth
       } else{
         peakParams$steps <- steps
       };
-
+      if (missing(peakBinSize)){
+        peakParams$peakBinSize <- 0.1;
+      } else{
+        peakParams$peakBinSize <- peakBinSize
+      };
+      if (missing(max)){
+        peakParams$max <- 5;
+      } else{
+        peakParams$max <- max
+      };
+      
       
       if (missing(snthresh)){
         peakParams$snthresh <- 10;
@@ -319,7 +332,16 @@ SetPeakParam <- function(platform = "general", Peak_method = "centWave", RT_meth
       } else{
         peakParams$steps <- steps
       };
-
+      if (missing(peakBinSize)){
+        peakParams$peakBinSize <- 0.1;
+      } else{
+        peakParams$peakBinSize <- peakBinSize
+      };
+      if (missing(max)){
+        peakParams$max <- 5;
+      } else{
+        peakParams$max <- max
+      };
       
       if (missing(snthresh)){
         peakParams$snthresh <- 10;
@@ -473,7 +495,16 @@ SetPeakParam <- function(platform = "general", Peak_method = "centWave", RT_meth
       } else{
         peakParams$steps <- steps
       };
-
+      if (missing(peakBinSize)){
+        peakParams$peakBinSize <- 0.1;
+      } else{
+        peakParams$peakBinSize <- peakBinSize
+      };
+      if (missing(max)){
+        peakParams$max <- 5;
+      } else{
+        peakParams$max <- max
+      };
       
       if (missing(snthresh)){
         peakParams$snthresh <- 10;
@@ -627,7 +658,16 @@ SetPeakParam <- function(platform = "general", Peak_method = "centWave", RT_meth
       } else{
         peakParams$steps <- steps
       };
-
+      if (missing(peakBinSize)){
+        peakParams$peakBinSize <- 0.1;
+      } else{
+        peakParams$peakBinSize <- peakBinSize
+      };
+      if (missing(max)){
+        peakParams$max <- 5;
+      } else{
+        peakParams$max <- max
+      };
       
       if (missing(snthresh)){
         peakParams$snthresh <- 10;
@@ -781,7 +821,16 @@ SetPeakParam <- function(platform = "general", Peak_method = "centWave", RT_meth
       } else{
         peakParams$steps <- steps
       };
-
+      if (missing(peakBinSize)){
+        peakParams$peakBinSize <- 0.1;
+      } else{
+        peakParams$peakBinSize <- peakBinSize
+      };
+      if (missing(max)){
+        peakParams$max <- 5;
+      } else{
+        peakParams$max <- max
+      };
       
       if (missing(snthresh)){
         peakParams$snthresh <- 10;
@@ -935,7 +984,16 @@ SetPeakParam <- function(platform = "general", Peak_method = "centWave", RT_meth
       } else{
         peakParams$steps <- steps
       };
-
+      if (missing(peakBinSize)){
+        peakParams$peakBinSize <- 0.1;
+      } else{
+        peakParams$peakBinSize <- peakBinSize
+      };
+      if (missing(max)){
+        peakParams$max <- 5;
+      } else{
+        peakParams$max <- max
+      };
       
       if (missing(snthresh)){
         peakParams$snthresh <- 10;
@@ -1090,7 +1148,16 @@ SetPeakParam <- function(platform = "general", Peak_method = "centWave", RT_meth
       } else{
         peakParams$steps <- steps
       };
-
+      if (missing(peakBinSize)){
+        peakParams$peakBinSize <- 0.1;
+      } else{
+        peakParams$peakBinSize <- peakBinSize
+      };
+      if (missing(max)){
+        peakParams$max <- 5;
+      } else{
+        peakParams$max <- max
+      };
       
       if (missing(snthresh)){
         peakParams$snthresh <- 10;
@@ -1244,7 +1311,16 @@ SetPeakParam <- function(platform = "general", Peak_method = "centWave", RT_meth
       } else{
         peakParams$steps <- steps
       };
-
+      if (missing(peakBinSize)){
+        peakParams$peakBinSize <- 0.1;
+      } else{
+        peakParams$peakBinSize <- peakBinSize
+      };
+      if (missing(max)){
+        peakParams$max <- 5;
+      } else{
+        peakParams$max <- max
+      };
       
       if (missing(snthresh)){
         peakParams$snthresh <- 10;
@@ -1398,7 +1474,16 @@ SetPeakParam <- function(platform = "general", Peak_method = "centWave", RT_meth
       } else{
         peakParams$steps <- steps
       };
-
+      if (missing(peakBinSize)){
+        peakParams$peakBinSize <- 0.1;
+      } else{
+        peakParams$peakBinSize <- peakBinSize
+      };
+      if (missing(max)){
+        peakParams$max <- 5;
+      } else{
+        peakParams$max <- max
+      };
       
       if (missing(snthresh)){
         peakParams$snthresh <- 10;
@@ -1552,7 +1637,16 @@ SetPeakParam <- function(platform = "general", Peak_method = "centWave", RT_meth
       } else{
         peakParams$steps <- steps
       };
- 
+      if (missing(peakBinSize)){
+        peakParams$peakBinSize <- 0.1;
+      } else{
+        peakParams$peakBinSize <- peakBinSize
+      };
+      if (missing(max)){
+        peakParams$max <- 5;
+      } else{
+        peakParams$max <- max
+      }; 
       
       if (missing(snthresh)){
         peakParams$snthresh <- 10;
@@ -1636,7 +1730,7 @@ SetPeakParam <- function(platform = "general", Peak_method = "centWave", RT_meth
       # other parameters use default
     }
   }
-  ### Platform Selection--OTHERS----
+  ### Platform Selection--OTHERS-General---
   if (platform=="general"){
     if (missing(Peak_method)){
       peakParams$Peak_method <- "centWave"
@@ -1783,7 +1877,16 @@ SetPeakParam <- function(platform = "general", Peak_method = "centWave", RT_meth
       } else{
         peakParams$steps <- steps
       };
-
+      if (missing(peakBinSize)){
+        peakParams$peakBinSize <- 0.1;
+      } else{
+        peakParams$peakBinSize <- peakBinSize
+      };
+      if (missing(max)){
+        peakParams$max <- 5;
+      } else{
+        peakParams$max <- max
+      };
       
       if (missing(snthresh)){
         peakParams$snthresh <- 10;
@@ -1878,6 +1981,7 @@ SetPeakParam <- function(platform = "general", Peak_method = "centWave", RT_meth
   #   peakParams$verbose.columns <- verbose.columns
   # };
   
+  ### Platform Selection--OTHERS-Annotation---
   ### Setup Peak Annotation Parameters
   if("annotation" =="annotation"){ 
     # TO DO: add more annotation in future
@@ -1926,14 +2030,12 @@ SetPeakParam <- function(platform = "general", Peak_method = "centWave", RT_meth
     
   }
   
-  
   # Set potential Contaminats removal (rmConts) or not
   if(missing(rmConts)){
     peakParams$rmConts <- T;
   } else {
     peakParams$rmConts <- as.logical(rmConts);
   }
-  
   
   if (.on.public.web){
     save(peakParams,file="params.rda");

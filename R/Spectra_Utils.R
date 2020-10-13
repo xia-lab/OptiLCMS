@@ -869,10 +869,11 @@ PeakPicking_MatchedFilter_slave <- function(x,param){
   mz = unlist(mzs, use.names = FALSE);
   int = unlist(lapply(scan.set, MSnbase::intensity), use.names = FALSE);
   scantime = rt;
-  mrange <- range(mz[mz > 0])
-  mass <- seq(floor(mrange[1] / param$binSize) * param$binSize,
-              ceiling(mrange[2] / param$binSize) * param$binSize,
-              by = param$binSize)
+  mrange <- range(mz[mz > 0]);
+  binSize <- param$peakBinSize;
+  mass <- seq(floor(mrange[1] / binSize) * binSize,
+              ceiling(mrange[2] / binSize) * binSize,
+              by = binSize)
   impute <- param$impute;
   baseValue <- param$baseValue;
   distance <- param$distance;
@@ -881,7 +882,6 @@ PeakPicking_MatchedFilter_slave <- function(x,param){
   snthresh <-param$snthresh;
   max <- param$max;
   mzdiff <- param$mzdiff;
-  binSize <- param$binSize;
   index <- param$index;
   
   
@@ -2568,9 +2568,10 @@ updateRawSpectraParam <- function (Params){
   } else if (param$Peak_method == "matchedFilter") {
     
     param$fwhm <- as.numeric(Params$fwhm);
-    param$sigma <- as.numeric(Params$sigma)
-    param$steps <- as.numeric(Params$steps)
-    param$snthresh <- as.numeric(Params$snthresh)
+    param$sigma <- as.numeric(Params$sigma);
+    param$steps <- as.numeric(Params$steps);
+    param$snthresh <- as.numeric(Params$snthresh);
+    param$peakBinSize <- as.numeric(Params$peakBinSize);
     
     param$mzdiff <- as.numeric(Params$mzdiff)
     param$bw <- as.numeric(Params$bw)
@@ -2581,7 +2582,7 @@ updateRawSpectraParam <- function (Params){
     param$distance<- numeric(0);
     param$index<- F;
     
-    param$binSize <- 0.1;
+    param$binSize <-0.25; # density Param
     
   } else if (param$Peak_method == "Massifquant") {
     
