@@ -724,7 +724,7 @@ PeakPicking_Massifquant_slave <- function(x, param){
     write.table(25 + count_current_sample*3/count_total_sample*25, file = "log_progress.txt",row.names = F,col.names = F)
     
   } else {
-    message("\nDetecting  mass traces at ",ppm," ppm ... ", appendLF = FALSE)
+    message("Detecting  mass traces at ",ppm," ppm ... ", appendLF = FALSE)
   }
   
   

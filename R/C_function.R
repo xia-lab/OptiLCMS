@@ -718,8 +718,8 @@ massifquantROIs <- function(mz,
                             criticalVal,
                             segs,
                             scanBack) {
-  
-    massifquantROIs <-
+
+  ROIs <-
       .Call(
         C_massifquant,
         mz,
@@ -739,7 +739,7 @@ massifquantROIs <- function(mz,
         PACKAGE = 'OptiLCMS'
       )
 
-  return(massifquantROIs)
+  return(ROIs)
   
 }
 
@@ -752,7 +752,7 @@ getEIC <-
            scanindex,
            mzrange,
            scanrange) {
-    if (!.on.public.web) {
+
       noised <- .Call(
         C_getEIC,
         mz,
@@ -763,18 +763,7 @@ getEIC <-
         as.integer(length(scanindex)),
         PACKAGE = "OptiLCMS"
       )
-    } else {
-      noised <- .Call(
-        "getEIC",
-        mz,
-        int,
-        scanindex,
-        as.double(mzrange),
-        as.integer(scanrange),
-        as.integer(length(scanindex))
-      )
-    }
-    
+
     return(noised)
   }
 

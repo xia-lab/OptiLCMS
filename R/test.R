@@ -80,18 +80,18 @@
 # maPeaks <- FormatPeakList(mSet, annParams, filtIso =F, filtAdducts = FALSE,missPercent = 1)
 
 
-library(OptiLCMS);
-mSet<-InitDataObjects("spec", "raw", FALSE)
-param_initial <- SetPeakParam(Peak_method = "Massifquant",RT_method = "obiwarp");
-
-mSet <- PerformROIExtraction("/home/glassfish/projects/MetaboDemoRawData/upload/QC/",rt.idx = 0.9);
-param_optimized <- PerformParamsOptimization(mSet, ncore = 8,param = param_initial)
-
-mSet <- ImportRawMSData(mSet, "/home/qiang/Downloads/cdf_example/test_covid/",ncores = 6, plotSettings = SetPlotParam(Plot = F))
-mSet <- PerformPeakProfiling(mSet,ncore = 6,Params = param_initial, plotSettings = SetPlotParam(Plot = F))
-annParams <- SetAnnotationParam(polarity = 'negative', mz_abs_add = 0.015)
-mSet <- PerformPeakAnnotation(mSet, annParams)
-maPeaks <- FormatPeakList(mSet, annParams, filtIso =F, filtAdducts = FALSE,missPercent = 1)
+# library(OptiLCMS);
+# mSet<-InitDataObjects("spec", "raw", FALSE)
+# param_initial <- SetPeakParam(Peak_method = "Massifquant",RT_method = "obiwarp");
+# 
+# mSet <- PerformROIExtraction("/home/glassfish/projects/MetaboDemoRawData/upload/QC/",rt.idx = 0.9);
+# param_optimized <- PerformParamsOptimization(mSet, ncore = 8,param = param_initial)
+# 
+# mSet <- ImportRawMSData(mSet, "/home/qiang/Downloads/cdf_example/test_covid/",ncores = 6, plotSettings = SetPlotParam(Plot = F))
+# mSet <- PerformPeakProfiling(mSet,ncore = 6,Params = param_initial, plotSettings = SetPlotParam(Plot = F))
+# annParams <- SetAnnotationParam(polarity = 'negative', mz_abs_add = 0.015)
+# mSet <- PerformPeakAnnotation(mSet, annParams)
+# maPeaks <- FormatPeakList(mSet, annParams, filtIso =F, filtAdducts = FALSE,missPercent = 1)
 
 # load("object_mslevel.rda");
 # load("param.rda");
