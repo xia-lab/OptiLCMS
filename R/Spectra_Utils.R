@@ -82,9 +82,9 @@ PerformPeakPicking<-function(mSet, BPPARAM = bpparam()){
   }
   
   
-  if (param$Peak_method != "matchedFilter" && param$Peak_method != "centWave"){
-    stop("Only 'centWave' and 'MatchedFilter' are suppoted now !")
-  }
+  # if (param$Peak_method != "matchedFilter" && param$Peak_method != "centWave"){
+  #   stop("Only 'centWave' and 'MatchedFilter' are suppoted now !")
+  # }
   
   # Picking Cluster
   
