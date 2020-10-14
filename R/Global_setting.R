@@ -158,10 +158,10 @@ fast.write.csv <- function(dat, file, row.names=TRUE){
         write.csv(dat, file, row.names=row.names);  
       }
     }, error=function(e){
-      print(e);
+      warning(e);
       write.csv(dat, file, row.names=row.names);   
     }, warning=function(w){
-      print(w);
+      warning(w);
       write.csv(dat, file, row.names=row.names); 
     });
 }

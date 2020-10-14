@@ -248,7 +248,7 @@ PeakPicking_centWave_slave <- function(x, param){
         }
       }),
       fixSort = function() {
-        print("m/z sort assumption violated !")
+        warning("m/z sort assumption violated !")
       }
     )
     
@@ -2246,7 +2246,18 @@ PerformPeakFiling <- function(mSet,BPPARAM=bpparam()){
   ## Check if there is anything to fill...
   if (!any(is.na(rowSums(pkGrpVal)))) {
     MessageOutput("\nNo missing peaks present.","\n",76)
-    mSet@peakfilling <-""; # need to save something there
+    # mSet@peakfilling <-""; # need to save something here
+    mSet@peakfilling[["msFeatureData"]][["chromPeaks"]] <- 
+      mSet@peakRTcorrection$chromPeaks;
+    
+    mSet@peakfilling[["msFeatureData"]][["adjustedRT"]] <- 
+      mSet@peakRTcorrection$adjustedRT;
+    
+    mSet@peakfilling[["msFeatureData"]][["chromPeakData"]] <- 
+      mSet@peakpicking[["chromPeakData"]];
+    
+    mSet@peakfilling[["FeatureGroupTable"]] <-
+      mSet@peakgrouping[[length(mSet@peakgrouping)]];
     
     save(mSet, file = "mSet.rda");
     return(mSet)
@@ -4257,20 +4268,7 @@ groupval <- function(mSet, method = c("medret", "maxint"), value = "index", inte
   
   values
 }
-percentOutput <- function(len.old, len.add, len.max, cnt){
-  len <- len.old + len.add;
-  perc <- round((len) / len.max * 100)
-  perc <- perc %/% 10 * 10;
-  if (perc != cnt && perc != 0) { 
-    print(perc,' '); 
-    cnt2 <- perc;
-    eval.parent(substitute(cnt <- cnt2))
-  }
-  if (.Platform$OS.type == "windows"){ 
-    flush.console();
-  }
-  eval.parent(substitute(len.old <- len))
-}
+
 is.wholenumber <- function(x, tol = .Machine$double.eps^0.5)  abs(x - round(x)) < tol
 calcIsotopeMatrix <- function(maxiso=4){
   

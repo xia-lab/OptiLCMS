@@ -1022,7 +1022,7 @@ FastRunningShow_auto <- function(fullUserPath){
 
 #' @noRd
 FastRunningShow_customized <- function(fullUserPath){
-  print(fullUserPath);
+  message(fullUserPath);
   setwd(fullUserPath);    
   
   time_interval1 <- 0.80;
