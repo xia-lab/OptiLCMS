@@ -109,6 +109,10 @@ PerformParamsOptimization <- function(mSet, param= NULL, method="DoE", ncore=4, 
     stop("Wrong mSet object provided !")
   }
   
+  if(!exists(".SwapEnv")){
+    .SwapEnv <- new.env(parent = .GlobalEnv)
+  }
+  
   if(missing(param) | is.null(param)) {
     param <- SetPeakParam();
   }
