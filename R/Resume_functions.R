@@ -2,7 +2,7 @@
 
 #' Initializing running plan
 #' @param type Initialized plan type for a resumable running mode. Can be "raw_opt" for automated optimization option, or "raw_ms" for customized pipeline.
-#' @param WorkingDir this parameter is used to define the working directory (also is where the raw spectra data exists).
+#' @param specDir this parameter is used to introduce the spectral directory (where the raw spectra data exists).
 #' @author Zhiqiang Pang \email{zhiqiang.pang@mail.mcgill.ca} Jeff Xia \email{jeff.xia@mcgill.ca}
 #' Mcgill University
 #' License: GNU GPL (>= 2)
@@ -57,14 +57,22 @@
 #' ## Execute the defined plan
 #' # ExecutePlan(plan)
 
-InitializaPlan <- function(type="spec", WorkingDir=NULL){
+InitializaPlan <- function(type="spec", specDir=NULL){
   
-  if(!is.null(WorkingDir)){
-    setwd(WorkingDir);
-    fullUserPath <- WorkingDir;
+  if(!is.null(specDir)){
+    #setwd(WorkingDir);
+    fullUserPath <- specDir;
   } else {
     fullUserPath <- getwd();
   };
+  
+  if(!exists(".SwapEnv")){
+    .SwapEnv <<- new.env(parent = .GlobalEnv);
+    .SwapEnv$.optimize_switch <- FALSE;
+    .SwapEnv$count_current_sample <- 0;
+    .SwapEnv$count_total_sample <- 120; # maximum number for on.public.web
+    .SwapEnv$envir <- new.env();
+  }
   
   MessageOutput(paste0("Running Status -- Plan Initialized Successfully at: ", Sys.time(), "\nPlease define your running plan ..."), "\n", 0);
   
@@ -84,16 +92,16 @@ InitializaPlan <- function(type="spec", WorkingDir=NULL){
                  recursive = TRUE)
     }
     
-    .running.as.plan <- .GlobalEnv$.running.as.plan <- TRUE;
+    #.running.as.plan <- .SwapEnv$.running.as.plan <- TRUE;
     plan <- new("ResumingePlan");
     .plan_count <- plan@PlanNumber <- 0;
     plan@WorkingDir <- fullUserPath;
     
     saveRDS(plan, file = paste0(plan.path, "/plan.rds"));
-    saveRDS(.running.as.plan, file = paste0(plan.path, "/running.as.plan.rds"));
+    #saveRDS(.running.as.plan, file = paste0(plan.path, "/running.as.plan.rds"));
     saveRDS(.plan_count, file = paste0(plan.path, "/plan_count.rds"));
     #----------------------
-    .optimize_switch <- .GlobalEnv$.optimize_switch <- TRUE;
+    .optimize_switch <- .SwapEnv$.optimize_switch <- TRUE;
     switch.path <- paste0(getwd(), "/temp/plan")
     saveRDS(.optimize_switch,
             file = paste0(switch.path, "/optimize_switch_", .plan_count, ".rds"))
@@ -105,7 +113,7 @@ InitializaPlan <- function(type="spec", WorkingDir=NULL){
                  recursive = T)
     }
     
-    envir <- .GlobalEnv$envir <- new.env()
+    envir <- .SwapEnv$envir <- new.env()
     saveRDS(envir, file = paste0(envir.path, "/envir.rds"))
     #----------------------
     # if (.on.public.web) {
@@ -130,16 +138,16 @@ InitializaPlan <- function(type="spec", WorkingDir=NULL){
     }
     
     #---------------
-    .running.as.plan <- .GlobalEnv$.running.as.plan <- TRUE;
+    #.running.as.plan <- .SwapEnv$.running.as.plan <- TRUE;
     plan <- new("ResumingePlan");
     .plan_count <- plan@PlanNumber <- 0;
     plan@WorkingDir <- fullUserPath;
     
     saveRDS(plan, file = paste0(plan.path, "/plan.rds"));
-    saveRDS(.running.as.plan, file = paste0(plan.path, "/running.as.plan.rds"));
+    #saveRDS(.running.as.plan, file = paste0(plan.path, "/running.as.plan.rds"));
     saveRDS(.plan_count, file = paste0(plan.path, "/plan_count.rds"));
     #----------------------
-    .optimize_switch <- .GlobalEnv$.optimize_switch <- FALSE;
+    .optimize_switch <- .SwapEnv$.optimize_switch <- FALSE;
     switch.path <- paste0(getwd(), "/temp/plan");
     saveRDS(.optimize_switch,
             file = paste0(switch.path, "/optimize_switch_", .plan_count, ".rds"));
@@ -151,7 +159,7 @@ InitializaPlan <- function(type="spec", WorkingDir=NULL){
                  recursive = T)
     }
     
-    envir <- .GlobalEnv$envir <- new.env()
+    envir <- .SwapEnv$envir <- new.env()
     saveRDS(envir, file = paste0(envir.path, "/envir.rds"))
     #----------------------
     # rawFileNames <- paste0(getwd(), "/temp/plan")
@@ -374,7 +382,8 @@ running.plan <- function(plan=NULL,...){
 #' # ExecutePlan(plan)
 
 ExecutePlan <- function(plan=NULL){
-  cat("Current Working Directory: ",getwd(),"\n");
+  
+  MessageOutput(paste0("Current Working Directory: ",getwd(),"\n"));
   if (is.null(plan)){
     stop("No running plan input. Please design you plan first with 'running.plan' function !")
   };
@@ -386,10 +395,10 @@ ExecutePlan <- function(plan=NULL){
   
   if (length(plan@CommandSet) == 1){
     
-    .GlobalEnv$envir$rc <- plan@running.controller;
+    .SwapEnv$envir$rc <- plan@running.controller;
     perform.plan(plan@CommandSet[["command_set_1"]]);
     
-    envir <- .GlobalEnv$envir;
+    envir <- .SwapEnv$envir;
     envir.path <- paste0(getwd(),"/temp/envir");
     saveRDS(envir, file = paste0(envir.path,"/envir.rds"));
     
@@ -418,7 +427,7 @@ ExecutePlan <- function(plan=NULL){
     ## Module 8 - Dectect whether current plan type (raw_ms or raw_pre) is different from the last one (Final Decision switch)
     # plan <- planType_identifier(plan);
     
-    .GlobalEnv$envir$rc <- plan@running.controller
+    .SwapEnv$envir$rc <- plan@running.controller
     # define.plan.controller <- str2lang('rc <- plan$running.controller');
     # eval (define.plan.controller,envir = envir);
     #perform.plan(new_command_set);
@@ -437,7 +446,7 @@ ExecutePlan <- function(plan=NULL){
       stop(paste0("EXCEPTION POINT CODE: ", mSetInfo$message));
     }
     
-    envir <- .GlobalEnv$envir;
+    envir <- .SwapEnv$envir;
     envir.path <- paste0(getwd(),"/temp/envir");
     saveRDS(envir, file = paste0(envir.path,"/envir.rds"));
     
@@ -963,7 +972,15 @@ perform.plan <- function(plan.set){
 #' @noRd
 perform.command <- function(command){
   
-  envir <- .GlobalEnv$envir;
+  if(!exists(".SwapEnv")){
+    .SwapEnv <<- new.env(parent = .GlobalEnv);
+    .SwapEnv$.optimize_switch <- FALSE;
+    .SwapEnv$count_current_sample <- 0;
+    .SwapEnv$count_total_sample <- 120; # maximum number for on.public.web
+    .SwapEnv$envir <- new.env();
+  }
+  
+  envir <- .SwapEnv$envir;
   
   if (as.character(command[[1]])=="<-"){
     
@@ -1030,7 +1047,15 @@ cache.read <- function(function.name, point){
 #' @noRd
 profiling_param_identifier <- function(new_command,last_command){
   
-  envir <- .GlobalEnv$envir
+  if(!exists(".SwapEnv")){
+    .SwapEnv <<- new.env(parent = .GlobalEnv);
+    .SwapEnv$.optimize_switch <- FALSE;
+    .SwapEnv$count_current_sample <- 0;
+    .SwapEnv$count_total_sample <- 120; # maximum number for on.public.web
+    .SwapEnv$envir <- new.env();
+  }
+  
+  envir <- .SwapEnv$envir
   
   new <- eval(new_command,envir = envir);
   last <- eval(last_command,envir = envir);
@@ -1177,9 +1202,9 @@ CommandsVerify <- function(commands){
     }
     
     if(length(commands) > 6){
-      cat("More functions than standard OptiPipeline were detected !\n")
-      cat(paste0("NOTE: Only ",paste(scales::ordinal(FUNCommandArray),collapse = ", "), 
-                     " functions in this plan and their direct defination on the argument will be included !\n"))
+      MessageOutput("More functions than standard OptiPipeline were detected !\n")
+      warning(paste0("NOTE: Only ",paste(scales::ordinal(FUNCommandArray),collapse = ", "), 
+                           " functions in this plan and their direct defination on the argument will be included !\n"))
     }
   }
   
@@ -1246,8 +1271,8 @@ CommandsVerify <- function(commands){
     }
     
     if(length(commands) > 4){
-      cat("More functions than standard OptiPipeline were detected !\n")
-      cat(paste0("NOTE: Only ",paste(scales::ordinal(FUNCommandArray),collapse = ", "), 
+      MessageOutput("More functions than standard OptiPipeline were detected !\n")
+      MessageOutput(paste0("NOTE: Only ",paste(scales::ordinal(FUNCommandArray),collapse = ", "), 
                    " functions in this plan and their direct defination on the argument will be included !\n"))
     }
     
@@ -1294,101 +1319,101 @@ CommandOrganize <- function(command, commands, FUNPos){
   return(command)
 }
 
-#' @noRd
-CreateRawRscript <- function(guestName, planString, planString2, rawfilenms.vec){
-  
-  guestName <<- guestName;
-  planString <<- planString;
-  
-  if(dir.exists("/home/glassfish/payara5/glassfish/domains/")){
-    
-    scr.path <- "/home/glassfish/payara5/glassfish/domains/domain1/applications/MetaboAnalyst/resources/rscripts/metaboanalystr/"
-    users.path <-paste0("/data/glassfish/projects/metaboanalyst//", guestName)
-    
-  } else if(dir.exists("/media/zzggyy/disk/")){
-    
-    users.path <-getwd();
-    scr.path <-"/media/zzggyy/disk/MetaboAnalyst/target/MetaboAnalyst-5-18/resources/rscripts/metaboanalystr/"
-    
-  }else {
-    
-    users.path <-getwd();
-    scr.path <-paste0(strsplit(users.path, "users")[[1]][1], "rscripts/metaboanalystr/")
-    
-  }
-  
-  ## Prepare the script for running
-  str <- paste0('scripts.path <- ','"', scr.path,'"');
-  str <- paste0(str, '\n', 'general_files <- c("general_data_utils.R","general_misc_utils.R","general_lib_utils.R","generic_c_utils.R");')
-  str <- paste0(str, '\n', 'spectra_files <- c("spectra_generic_utils.R","data_trimming.R","parameters_db.R","parameters_optimization.R","preproc_utils.R","spectra_resume.R","spectra_utils.R");')
-  str <- paste0(str, '\n', 'rawfilenms <<-', rawfilenms.vec)
-  str <- paste0(str, '\n', 'err.vec <<-', '""')
-  str <- paste0(str, '\n', '.on.public.web <<- TRUE')
-  str <- paste0(str, '\n', 'file.sources = c(general_files, spectra_files)')
-  str <- paste0(str, '\n', 'for (f in file.sources) {source(paste0(scripts.path, f))}')
-  
-  ## Construct the opt pipeline
-  if(planString2 == "opt"){
-    str <- paste0(str, '\n', 'plan <- InitializaPlan("raw_opt","' , users.path,  '/")')
-    str <- paste0(str, '\n', 'data_folder_QC <- "',users.path , '/upload/QC/"')
-    str <- paste0(str, '\n',  planString)
-    str <- paste0(str, '\n',  "ExecutePlan(plan)")
-  }
-  
-  ## Construct the default pipeline
-  if(planString2 == "default"){
-    str <- paste0(str, '\n', 'plan <- InitializaPlan("raw_ms","' , users.path,  '/")')
-    str <- paste0(str, '\n',  planString)
-    str <- paste0(str, '\n',  "ExecutePlan(plan)")
-  }
-  
-  # sink command for running
-  sink("ExecuteRawSpec.R");
-  cat(str);
-  sink();
-  return(1)
-  
-}
-
-#' @noRd
-CreateRawRscript2 <- function(guestName, meth){
-  
-  guestName <<- guestName;  
-  
-  if(dir.exists("/home/glassfish/payara5/glassfish/domains/")){
-    
-    scr.path <- "/home/glassfish/payara5/glassfish/domains/domain1/applications/MetaboAnalyst/resources/rscripts/metaboanalystr/"
-    users.path <-paste0("/data/glassfish/projects/metaboanalyst/", guestName)
-    
-  } else {
-    
-    users.path <-getwd();
-    scr.path <-paste0(strsplit(users.path, "users")[[1]][1], "rscripts/metaboanalystr/")
-    
-  }
-  
-  str <- paste0('scripts.path <- ','"', scr.path,'"');
-  str <- paste0(str, '\n', 'general_files <- c("general_data_utils.R","general_misc_utils.R","general_lib_utils.R","generic_c_utils.R");')
-  str <- paste0(str, '\n', 'spectra_files <- c("spectra_generic_utils.R","data_trimming.R","parameters_db.R","parameters_optimization.R","preproc_utils.R","spectra_resume.R","spectra_utils.R");')
-  str <- paste0(str, '\n', '.on.public.web <<- TRUE')
-  str <- paste0(str, '\n', 'file.sources = c(general_files, spectra_files)')
-  str <- paste0(str, '\n', 'for (f in file.sources) {source(paste0(scripts.path, f))}')
-  
-  
-  ## Prepare the script for running
-  if(meth == "auto"){
-    str <- paste0(str, '\n', 'FastRunningShow_auto ("',users.path,'")');
-  } else {
-    str <- paste0(str, '\n', 'FastRunningShow_customized ("',users.path,'")');
-  }
-  
-  # sink command for running
-  sink("ExecuteRawSpec.R");
-  cat(str);
-  sink();
-  return(1)
-  
-}
+#' #' @noRd
+#' CreateRawRscript <- function(guestName, planString, planString2, rawfilenms.vec){
+#'   
+#'   guestName <<- guestName;
+#'   planString <<- planString;
+#'   
+#'   if(dir.exists("/home/glassfish/payara5/glassfish/domains/")){
+#'     
+#'     scr.path <- "/home/glassfish/payara5/glassfish/domains/domain1/applications/MetaboAnalyst/resources/rscripts/metaboanalystr/"
+#'     users.path <-paste0("/data/glassfish/projects/metaboanalyst//", guestName)
+#'     
+#'   } else if(dir.exists("/media/zzggyy/disk/")){
+#'     
+#'     users.path <-getwd();
+#'     scr.path <-"/media/zzggyy/disk/MetaboAnalyst/target/MetaboAnalyst-5-18/resources/rscripts/metaboanalystr/"
+#'     
+#'   }else {
+#'     
+#'     users.path <-getwd();
+#'     scr.path <-paste0(strsplit(users.path, "users")[[1]][1], "rscripts/metaboanalystr/")
+#'     
+#'   }
+#'   
+#'   ## Prepare the script for running
+#'   str <- paste0('scripts.path <- ','"', scr.path,'"');
+#'   str <- paste0(str, '\n', 'general_files <- c("general_data_utils.R","general_misc_utils.R","general_lib_utils.R","generic_c_utils.R");')
+#'   str <- paste0(str, '\n', 'spectra_files <- c("spectra_generic_utils.R","data_trimming.R","parameters_db.R","parameters_optimization.R","preproc_utils.R","spectra_resume.R","spectra_utils.R");')
+#'   str <- paste0(str, '\n', 'rawfilenms <<-', rawfilenms.vec)
+#'   str <- paste0(str, '\n', 'err.vec <<-', '""')
+#'   str <- paste0(str, '\n', '.on.public.web <<- TRUE')
+#'   str <- paste0(str, '\n', 'file.sources = c(general_files, spectra_files)')
+#'   str <- paste0(str, '\n', 'for (f in file.sources) {source(paste0(scripts.path, f))}')
+#'   
+#'   ## Construct the opt pipeline
+#'   if(planString2 == "opt"){
+#'     str <- paste0(str, '\n', 'plan <- InitializaPlan("raw_opt","' , users.path,  '/")')
+#'     str <- paste0(str, '\n', 'data_folder_QC <- "',users.path , '/upload/QC/"')
+#'     str <- paste0(str, '\n',  planString)
+#'     str <- paste0(str, '\n',  "ExecutePlan(plan)")
+#'   }
+#'   
+#'   ## Construct the default pipeline
+#'   if(planString2 == "default"){
+#'     str <- paste0(str, '\n', 'plan <- InitializaPlan("raw_ms","' , users.path,  '/")')
+#'     str <- paste0(str, '\n',  planString)
+#'     str <- paste0(str, '\n',  "ExecutePlan(plan)")
+#'   }
+#'   
+#'   # sink command for running
+#'   sink("ExecuteRawSpec.R");
+#'   cat(str);
+#'   sink();
+#'   return(1)
+#'   
+#' }
+#' 
+#' #' @noRd
+#' CreateRawRscript2 <- function(guestName, meth){
+#'   
+#'   guestName <<- guestName;  
+#'   
+#'   if(dir.exists("/home/glassfish/payara5/glassfish/domains/")){
+#'     
+#'     scr.path <- "/home/glassfish/payara5/glassfish/domains/domain1/applications/MetaboAnalyst/resources/rscripts/metaboanalystr/"
+#'     users.path <-paste0("/data/glassfish/projects/metaboanalyst/", guestName)
+#'     
+#'   } else {
+#'     
+#'     users.path <-getwd();
+#'     scr.path <-paste0(strsplit(users.path, "users")[[1]][1], "rscripts/metaboanalystr/")
+#'     
+#'   }
+#'   
+#'   str <- paste0('scripts.path <- ','"', scr.path,'"');
+#'   str <- paste0(str, '\n', 'general_files <- c("general_data_utils.R","general_misc_utils.R","general_lib_utils.R","generic_c_utils.R");')
+#'   str <- paste0(str, '\n', 'spectra_files <- c("spectra_generic_utils.R","data_trimming.R","parameters_db.R","parameters_optimization.R","preproc_utils.R","spectra_resume.R","spectra_utils.R");')
+#'   str <- paste0(str, '\n', '.on.public.web <<- TRUE')
+#'   str <- paste0(str, '\n', 'file.sources = c(general_files, spectra_files)')
+#'   str <- paste0(str, '\n', 'for (f in file.sources) {source(paste0(scripts.path, f))}')
+#'   
+#'   
+#'   ## Prepare the script for running
+#'   if(meth == "auto"){
+#'     str <- paste0(str, '\n', 'FastRunningShow_auto ("',users.path,'")');
+#'   } else {
+#'     str <- paste0(str, '\n', 'FastRunningShow_customized ("',users.path,'")');
+#'   }
+#'   
+#'   # sink command for running
+#'   sink("ExecuteRawSpec.R");
+#'   cat(str);
+#'   sink();
+#'   return(1)
+#'   
+#' }
 
 #' @noRd
 ParamsChanged <- function(lastParamArgus, newParamArgus){

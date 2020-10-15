@@ -52,8 +52,7 @@
 #' @param checkBack checkBack for massifquant (supported later).
 #' @param withWave withWave for massifquant (supported later).
 #' need to change.
-#' @author Zhiqiang Pang \email{zhiqiang.pang@mail.mcgill.ca}, Jasmine Chong \email{jasmine.chong@mail.mcgill.ca},
-#' Mai Yamamoto \email{yamamoto.mai@mail.mcgill.ca}, and Jeff Xia \email{jeff.xia@mcgill.ca}
+#' @author Zhiqiang Pang \email{zhiqiang.pang@mail.mcgill.ca}, Jasmine Chong \email{jasmine.chong@mail.mcgill.ca}, and Jeff Xia \email{jeff.xia@mcgill.ca}
 #' McGill University, Canada
 #' License: GNU GPL (>= 2)
 #' @import utils
@@ -2036,14 +2035,14 @@ SetPeakParam <- function(platform = "general", Peak_method = "centWave", RT_meth
   } else {
     peakParams$rmConts <- as.logical(rmConts);
   }
+
+  #Output a table for display 
+    if(.on.public.web){
+      save(peakParams,file="params.rda");
+      write.table(unlist(peakParams),file="param_default.txt",row.names = T,col.names = F,quote = F);
+      write.table("NOT Finished Yet!",file="param_optimized.txt",row.names = T,col.names = F,quote = F);
+    }
   
-  if (.on.public.web){
-    save(peakParams,file="params.rda");
-  }
-  
-  #Output a table for display
-  write.table(unlist(peakParams),file="param_default.txt",row.names = T,col.names = F,quote = F);
-  write.table("NOT Finished Yet!",file="param_optimized.txt",row.names = T,col.names = F,quote = F);
   #marker_record(paste0("operators","_operators_1"));
   
   #### Other Parameters

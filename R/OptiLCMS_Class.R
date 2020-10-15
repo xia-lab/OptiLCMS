@@ -86,7 +86,7 @@ setClass("mSetRule",
            polarity=NULL,
            rules=data.frame(),
            lib.loc=NULL,
-           new("Versioned", versions=c(ruleSet="0.1.1"))),
+           new("Versioned", versions=c(ruleSet="0.1.0"))),
          validity=function(object) {
            TRUE
          })
@@ -169,7 +169,6 @@ setClass(
   }
 )
 
-
 #' Running Plan Class is designed for fast resuming
 #' @author Zhiqiang Pang
 #' @noRd
@@ -189,10 +188,35 @@ setClass(
     RunningHistory = new("ResumeHistory"),
     PlanNumber = numeric(0),
     WorkingDir = NULL,
-    new("Versioned", versions = c(OptiLCMS = "0.1.1"))
+    new("Versioned", versions = c(OptiLCMS = "0.1.0"))
   ),
   validity = function(object) {
     TRUE
   }
 )
+
+#' Running Plan Class is designed for fast resuming
+#' @author Zhiqiang Pang
+#' @noRd
+#' 
+setClass(
+  "cacheEnvi",
+  representation(
+    cache = "list",
+    envir = "list",
+    plan = "list",
+    records = "list"
+  ),
+  prototype = prototype(
+    cache = vector("list"),
+    envir = vector("list"),
+    plan = vector("list"),
+    records = vector("list"),
+    new("Versioned", versions = c(OptiLCMS = "0.1.0"))
+  ),
+  validity = function(object) {
+    TRUE
+  }
+)
+
 

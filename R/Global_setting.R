@@ -3,9 +3,7 @@
 .on.public.web <- FALSE;
 
 # Setting the global Variable to avoid notes in R CMD Check
-# utils::globalVariables(c("Group", "Groups", "Intensity", 
-#                          "Labels", "PC1", "PC2", "RT", 
-#                          "Samples", "group", "value"))
+utils::globalVariables(c(".SwapEnv"))
 
 # OTHER SETTINGS
 #' @references Gatto L, Gibb S, Rainer J (2020). “MSnbase, efficient and elegant R-based processing and visualisation of raw mass spectrometry data.” bioRxiv.
@@ -41,7 +39,7 @@
                            "trimm",
                            "findEqualGreaterM",
                            "na.flatfill",
-                           "SSgauss",
+                           "GaussModel",
                            "rectUnique",
                            ".narrow_rt_boundaries",
                            ".rawMat",
@@ -100,13 +98,13 @@
                                  "encode",
                                  "attachList",
                                  "checkParams",
-                                 ".optimize_switch"
+                                 "SSgaussStats"
                                  ),
                             .peak_function_list)
 
 #' MessageOutput
 #' @noRd
-MessageOutput <- function(mes, ecol, progress) {
+MessageOutput <- function(mes = NULL, ecol = "\n", progress =NULL) {
   if (!is.null(mes)) {
     if (.on.public.web) {
       # write down message
@@ -124,7 +122,7 @@ MessageOutput <- function(mes, ecol, progress) {
       if(ecol == "\n"){
         message(mes)
       } else {
-        message(mes,appendLF = FALSE)
+        message(mes, appendLF = FALSE)
       }
       
     }

@@ -110,23 +110,32 @@ PerformParamsOptimization <- function(mSet, param= NULL, method="DoE", ncore=4, 
   }
   
   if(!exists(".SwapEnv")){
-    .SwapEnv <- new.env(parent = .GlobalEnv)
+    .SwapEnv <<- new.env(parent = .GlobalEnv);
+    .SwapEnv$.optimize_switch <- FALSE;
+    .SwapEnv$count_current_sample <- 0;
+    .SwapEnv$count_total_sample <- 120; # maximum number for on.public.web
+    .SwapEnv$envir <- new.env();
+  }
+  
+  if(is.null(.SwapEnv$GaussModel)){
+    .SwapEnv$GaussModel <- GaussModel;
   }
   
   if(missing(param) | is.null(param)) {
     param <- SetPeakParam();
   }
-  .optimize_switch <- .GlobalEnv$.optimize_switch <- TRUE;
+  .optimize_switch <- .SwapEnv$.optimize_switch <- TRUE;
   
   #Build Running plan for optimization - Indentify the controller
   if (is.null(running.controller)) {
     c1 <- TRUE;
     .running.as.plan <- FALSE;
   } else {
-    c1 <- running.controller@others_1[["c1"]]
+    c1 <- running.controller@others_1[["c1"]];
+    .running.as.plan <- TRUE;
   }
   
-  MessageOutput("Step 1/6: Start to optimize parameters! \nThis step may take a long time...", "\n", NULL)
+  MessageOutput("\nStep 1/6: Start to optimize parameters! \nThis step may take a long time...", "\n", NULL)
 
   start.time<-Sys.time();
   
@@ -278,11 +287,11 @@ PerformParamsOptimization <- function(mSet, param= NULL, method="DoE", ncore=4, 
       
     }
     
-    .optimize_switch <<-FALSE;
+    .SwapEnv$.optimize_switch <-FALSE;
     
   } else {
     end.time<-Sys.time();
-    message("Time Spent In Total:",round((as.numeric(end.time) - as.numeric(start.time))/60, 1),"mins","\n");
+    message("Time Spent In Total:",round((as.numeric(end.time) - as.numeric(start.time))/60, 1),"mins");
   }
   
   if(.on.public.web) {
@@ -666,8 +675,8 @@ ExperimentsCluster_doe <-function(object, object_mslevel,params,
   tasks <- 1:nrow(design);
   
   if (.Platform$OS.type=="windows"){
-    cat("Your OS is Windows, there might be unexpected errors.\n")
-    cat("If there is some unexpected bugs, please reduce the 'core' as 1.\n")
+    MessageOutput("Your OS is Windows, there might be unexpected errors.\n")
+    MessageOutput("If there is some unexpected bugs, please reduce the 'core' as 1.\n")
   }
   
   if (.on.public.web){
@@ -865,10 +874,10 @@ Statistic_doe <-function(object, object_mslevel, isotopeIdentification,
     mSet_OPT$PPS <- 0;
     
     if (.on.public.web){
-      print_mes <- paste0("Model Parsing Done !");    
+      print_mes <- paste0("Model Parsing Done !\n");    
       write.table(print_mes,file="metaboanalyst_spec_proc.txt",append = T,row.names = F,col.names = F, quote = F, eol = "\n");
     } else {
-      message("Model Parsing Done !")
+      message("Model Parsing Done !\n")
     } 
     
     return(mSet_OPT)
@@ -889,7 +898,7 @@ Statistic_doe <-function(object, object_mslevel, isotopeIdentification,
   mSet_OPT$PPS$GaussianSI <-
     calcGaussianS(mSet, object, useNoise = useNoise)
   
-  cat(paste0("Gaussian peak statistics (%): ", round(mSet_OPT$PPS$GaussianSI,2)*100, " of this round !\n"))
+  MessageOutput(paste0("Gaussian peak ratio (%): ", round(mSet_OPT$PPS$GaussianSI,2)*100, "."))
   
   #save(mSet_OPT, file = paste0("mSet_",Sys.time(),"_780.rda"));
   ## Normalize the CV, RCS, GS, GaussianSI
@@ -902,7 +911,7 @@ Statistic_doe <-function(object, object_mslevel, isotopeIdentification,
   QCoE<-0.2*(normalized.CV)+0.4*(normalized.GS+normalized.RCS);
   mSet_OPT$QS<-as.numeric(mSet_OPT$PPS[5])*QCoE*normalized.GaussianSI^2;
   
-  MessageOutput(paste0("Model Parsing Done !"), "\n", NULL)
+  MessageOutput(paste0("Model Parsing Done !\n"), "\n", NULL)
 
   return(mSet_OPT)
 }
@@ -935,10 +944,10 @@ SlaveCluster_doe <-function(task, Set_parameters, object, object_mslevel,
       task = task,
       BPPARAM = BPPARAM
     )
-  cat(paste("Finished", task,"/",length(Set_parameters),"in this round !\n"))
+  MessageOutput(paste("Finished", task,"/",length(Set_parameters),"in this round !\n"))
   
   if (!class(mSet)=="character"){
-    cat("Peak Feature Analyzing...\n")
+    MessageOutput("Peak Feature Analyzing...\n")
     
     #xset <- mSet[["xcmsSet"]]
     
@@ -961,7 +970,7 @@ SlaveCluster_doe <-function(task, Set_parameters, object, object_mslevel,
       result[8] <- tmp_RCS_GS$GS;
     };
 
-    tmp_GaussianSI <- try(calcGaussianS(mSet,object,
+    tmp_GaussianSI <- try(calcGaussianS(mSet, object,
                                       useNoise = as.numeric(Set_parameters[[task]]$noise)),
                         silent = T);
     
@@ -974,7 +983,7 @@ SlaveCluster_doe <-function(task, Set_parameters, object, object_mslevel,
     names(result)[c(6,7,8,9)]<-c("CV","RCS","GS","GaussianSI")
     
     #result
-    cat("Peak Feature Analyzing Done !\n")
+    MessageOutput("Peak Feature Analyzing Done !\n")
     
   } else{
     result<-c(task,0,0,0,0,0,0,0,0)
@@ -1254,8 +1263,7 @@ calcGaussianS <-function(mSet, object, useNoise, BPPARAM = bpparam()){
 
 SSgaussStats <- function(ints){
 
-  .GlobalEnv$SSgauss <- SSgauss;
-  fit <- try(nls(y ~ SSgauss(x, mu, sigma, h), 
+  fit <- try(nls(y ~ GaussModel(x, mu, sigma, h), 
                  data.frame(x = 1:length(ints), y = ints)), 
              silent = TRUE)
   
@@ -1305,10 +1313,14 @@ extFUN <- function(z, object, useNoise) {
             4) {
           
           cor <- NULL;
+          
+          old <- options();
+          on.exit(options(old));
+          
           options(show.error.messages = FALSE);
           cor <- try(cor.test(ints, fitted(fit), 
                               method = "pearson", use = "complete"));
-          options(show.error.messages = TRUE);
+          
           
           if (!is.null(cor) && cor$p.value <= 0.05) {
             corr <- cor$estimate
@@ -1765,6 +1777,9 @@ plotContours <- function(model, maximum_slice, plot_name = NULL) {
     jpeg(plot_name, width=4*plot_cols, height=2*plot_rows+2, 
          units="in", res=c(200,200))
   } # otherwise plot on device
+  
+  oldpar <- par(no.readonly = TRUE);
+  on.exit(par(oldpar));
   
   op <- par(mfrow = c(plot_rows, plot_cols), oma = c(0,0,0,0))  
   # contour.lm is called
@@ -2797,43 +2812,6 @@ filterPpmError <- function(approvedPeaks, useGap, varExpThresh,
   ppmEst <- max(ppmObs[scoreSub])
   maxX <- ppmEst
   ppmEst <- ppmEst + sd(ppmObs[scoreSub])*3
-  
-  
-  if(returnPpmPlots) {
-    
-    
-    title <- paste(filename, 'ppm distribution:',
-                   signif(observedPeak$start, digits = 4),
-                   "-",
-                   signif(observedPeak$end, digits = 4))
-    
-    output <- file.path(plotDir,paste0(gsub(" ", "_", title), ".pdf"))
-    output <- sub(":", "", output)
-    
-    ## error here...
-    par(mar=c(1,1,1,1))
-    grDevices::pdf(output, width = 8, height = 6)
-    
-    ## adding heuristic here to make ploting easier to see
-    if(length(ppmObs) < 300) {
-      bw <- .1
-    } else {
-      bw <- .5
-    }
-    
-    plot(stats::density(ppmObs,bw = bw),
-         main = title,
-         cex.main = 1.2, cex.lab = 1.3, cex.axis = 1.2) #+
-    abline(v = maxX, lty = 2, col = "red") +
-      abline(v = ppmEst, lty = 3, col = "blue")
-    legend("topright",
-           legend = c(paste("score > 1:", signif(maxX,digits = 3)),
-                      paste("ppm estimate:", signif(ppmEst,digits = 3))),
-           col = c("red","blue"),
-           lty = c(2,3),cex = 1.1)
-    grDevices::dev.off()
-    
-  }
   
   return(ppmEst)
 }

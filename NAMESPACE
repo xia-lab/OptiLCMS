@@ -3,6 +3,7 @@
 export(CentroidCheck)
 export(ExecutePlan)
 export(FormatPeakList)
+export(GaussModel)
 export(ImportRawMSData)
 export(InitDataObjects)
 export(InitializaPlan)

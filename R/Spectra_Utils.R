@@ -31,7 +31,15 @@ PerformPeakPicking<-function(mSet, BPPARAM = bpparam()){
     }
   }
   
-  .optimize_switch <- .GlobalEnv$.optimize_switch;
+  if(!exists(".SwapEnv")){
+    .SwapEnv <<- new.env(parent = .GlobalEnv);
+    .SwapEnv$.optimize_switch <- FALSE;
+    .SwapEnv$count_current_sample <- 0;
+    .SwapEnv$count_total_sample <- 120; # maximum number for on.public.web
+    .SwapEnv$envir <- new.env();
+  }
+  
+  .optimize_switch <- .SwapEnv$.optimize_switch;
   if(is.null(.optimize_switch)){
     .optimize_switch <- FALSE;
   }
@@ -58,7 +66,7 @@ PerformPeakPicking<-function(mSet, BPPARAM = bpparam()){
                            FUN = filterFile,
                            object = object_mslevel)
   
-  param$.optimize_switch <- .GlobalEnv$.optimize_switch;
+  param$.optimize_switch <- .SwapEnv$.optimize_switch;
   
   # Peak picking runnning - centWave mode
   if (param$Peak_method == "centWave")
@@ -268,8 +276,8 @@ PeakPicking_centWave_slave <- function(x, param){
     #write.table(print_mes,file="metaboanalyst_spec_proc.txt",append = T,row.names = F,col.names = F, quote = F, eol = " ");
     print_mes <- paste0(print_mes,print_mes_tmp)
     
-    .GlobalEnv$count_current_sample <- count_current_sample <- .GlobalEnv$count_current_sample +1;
-    count_total_sample <- .GlobalEnv$count_total_sample;
+    .SwapEnv$count_current_sample <- count_current_sample <- .SwapEnv$count_current_sample +1;
+    count_total_sample <- .SwapEnv$count_total_sample;
     #write.table(count_current_sample, file = "log_progress.txt",row.names = F,col.names = F)
     write.table(25 + count_current_sample*3/count_total_sample*25, file = "log_progress.txt",row.names = F,col.names = F)
     
@@ -718,8 +726,8 @@ PeakPicking_Massifquant_slave <- function(x, param){
     #write.table(print_mes,file="metaboanalyst_spec_proc.txt",append = T,row.names = F,col.names = F, quote = F, eol = " ");
     #print_mes <- paste0(print_mes,print_mes_tmp)
     
-    .GlobalEnv$count_current_sample <- count_current_sample <- .GlobalEnv$count_current_sample +1;
-    count_total_sample <- .GlobalEnv$count_total_sample;
+    .SwapEnv$count_current_sample <- count_current_sample <- .SwapEnv$count_current_sample +1;
+    count_total_sample <- .SwapEnv$count_total_sample;
     write.table(count_current_sample, file = "log_progress.txt",row.names = F,col.names = F)
     write.table(25 + count_current_sample*3/count_total_sample*25, file = "log_progress.txt",row.names = F,col.names = F)
     
@@ -825,7 +833,7 @@ PeakPicking_Massifquant_slave <- function(x, param){
     featlist <- p[uindex, , drop = FALSE]
     #message(" ", dim(featlist)[1]," Peaks.");
     
-    .optimize_switch <- .GlobalEnv$.optimize_switch;
+    .optimize_switch <- .SwapEnv$.optimize_switch;
     if(is.null(.optimize_switch)){
       .optimize_switch <- FALSE;
     }
@@ -1064,7 +1072,15 @@ PerformPeakGrouping<-function(mSet){
     }
   }
   
-  .optimize_switch <- .GlobalEnv$.optimize_switch;
+  if(!exists(".SwapEnv")){
+    .SwapEnv <<- new.env(parent = .GlobalEnv);
+    .SwapEnv$.optimize_switch <- FALSE;
+    .SwapEnv$count_current_sample <- 0;
+    .SwapEnv$count_total_sample <- 120; # maximum number for on.public.web
+    .SwapEnv$envir <- new.env();
+  }
+  
+  .optimize_switch <- .SwapEnv$.optimize_switch;
   if(is.null(.optimize_switch)){
     .optimize_switch <- FALSE;
   }
@@ -1196,7 +1212,10 @@ PerformPeakGrouping<-function(mSet){
   n <- length(mSet@peakgrouping) + 1;
   mSet@peakgrouping[[n]] <- FeatureGroupTable;
   
-  save(mSet, file = "mSet.rda");
+  if(.on.public.web){
+    save(mSet, file = "mSet.rda");
+  }
+
   return(mSet)
 }
 
@@ -1278,11 +1297,13 @@ PerformPeakAlignment<-function(mSet){
 PerformRTcorrection <- function(mSet){
   
   ## 5. Adjust Retention Time-------
-  # 
-  # if(.on.public.web){
-  #   dyn.load(.getDynLoadPath());
-  # }
-  # 
+  if(!exists(".SwapEnv")){
+    .SwapEnv <<- new.env(parent = .GlobalEnv);
+    .SwapEnv$.optimize_switch <- FALSE;
+    .SwapEnv$count_current_sample <- 0;
+    .SwapEnv$count_total_sample <- 120; # maximum number for on.public.web
+    .SwapEnv$envir <- new.env();
+  }
 
   if(missing(mSet) & file.exists("mSet.rda")){
     load("mSet.rda")
@@ -1315,7 +1336,7 @@ PerformRTcorrection <- function(mSet){
   
   param <- mSet@params;
   
-  .optimize_switch <- .GlobalEnv$.optimize_switch;
+  .optimize_switch <- .SwapEnv$.optimize_switch;
   if(is.null(.optimize_switch)){
     .optimize_switch <- FALSE;
   }
@@ -1366,7 +1387,9 @@ PerformRTcorrection <- function(mSet){
     )
   }
   
-  save(mSet, file = "mSet.rda");
+  if(.on.public.web){
+    save(mSet, file = "mSet.rda");
+  }
   
   return(mSet);
 }
@@ -1374,6 +1397,13 @@ PerformRTcorrection <- function(mSet){
 adjustRtime_peakGroup <- function(mSet, param, msLevel = 1L) {
   
   # 1). Group Matrix-------
+  if(!exists(".SwapEnv")){
+    .SwapEnv <<- new.env(parent = .GlobalEnv);
+    .SwapEnv$.optimize_switch <- FALSE;
+    .SwapEnv$count_current_sample <- 0;
+    .SwapEnv$count_total_sample <- 120; # maximum number for on.public.web
+    .SwapEnv$envir <- new.env();
+  }
   
   # 1.1). Subset selection
   
@@ -1430,7 +1460,7 @@ adjustRtime_peakGroup <- function(mSet, param, msLevel = 1L) {
                                      extraPeaks = param$extraPeaks
   )
   
-  .optimize_switch <- .GlobalEnv$.optimize_switch;
+  .optimize_switch <- .SwapEnv$.optimize_switch;
   if(is.null(.optimize_switch)){
     .optimize_switch <- FALSE;
   }
@@ -1485,7 +1515,15 @@ adjustRtime_peakGroup <- function(mSet, param, msLevel = 1L) {
 
 adjustRtime_obiwarp <- function(mSet, param, msLevel = 1L) {
   
-  .optimize_switch <- .GlobalEnv$.optimize_switch;
+  if(!exists(".SwapEnv")){
+    .SwapEnv <<- new.env(parent = .GlobalEnv);
+    .SwapEnv$.optimize_switch <- FALSE;
+    .SwapEnv$count_current_sample <- 0;
+    .SwapEnv$count_total_sample <- 120; # maximum number for on.public.web
+    .SwapEnv$envir <- new.env();
+  }
+  
+  .optimize_switch <- .SwapEnv$.optimize_switch;
   if(is.null(.optimize_switch)){
     .optimize_switch <- FALSE;
   }
@@ -1615,7 +1653,15 @@ RT.Adjust_peakGroup <-
            subset = integer(),
            subsetAdjust = c("average", "previous"))  {
    
-    .optimize_switch <- .GlobalEnv$.optimize_switch;
+    if(!exists(".SwapEnv")){
+      .SwapEnv <<- new.env(parent = .GlobalEnv);
+      .SwapEnv$.optimize_switch <- FALSE;
+      .SwapEnv$count_current_sample <- 0;
+      .SwapEnv$count_total_sample <- 120; # maximum number for on.public.web
+      .SwapEnv$envir <- new.env();
+    }
+    
+    .optimize_switch <- .SwapEnv$.optimize_switch;
     if(is.null(.optimize_switch)){
       .optimize_switch <- FALSE;
     }
@@ -1816,7 +1862,14 @@ RT.Adjust_peakGroup <-
 
 mSet.obiwarp <- function(mSet, object, param) { ## Do not use the params defined by user for now!
   
-  .optimize_switch <- .GlobalEnv$.optimize_switch;
+  if(!exists(".SwapEnv")){
+    .SwapEnv <<- new.env(parent = .GlobalEnv);
+    .SwapEnv$.optimize_switch <- FALSE;
+    .SwapEnv$count_current_sample <- 0;
+    .SwapEnv$count_total_sample <- 120; # maximum number for on.public.web
+    .SwapEnv$envir <- new.env();
+  }
+  .optimize_switch <- .SwapEnv$.optimize_switch;
   if(is.null(.optimize_switch)){
     .optimize_switch <- FALSE;
   }
@@ -2125,7 +2178,15 @@ PerformPeakFiling <- function(mSet,BPPARAM=bpparam()){
     }
   }
   
-  .optimize_switch <- .GlobalEnv$.optimize_switch;
+  if(!exists(".SwapEnv")){
+    .SwapEnv <<- new.env(parent = .GlobalEnv);
+    .SwapEnv$.optimize_switch <- FALSE;
+    .SwapEnv$count_current_sample <- 0;
+    .SwapEnv$count_total_sample <- 120; # maximum number for on.public.web
+    .SwapEnv$envir <- new.env();
+  }
+  
+  .optimize_switch <- .SwapEnv$.optimize_switch;
   if(is.null(.optimize_switch)){
     .optimize_switch <- FALSE;
   }
@@ -2259,7 +2320,10 @@ PerformPeakFiling <- function(mSet,BPPARAM=bpparam()){
     mSet@peakfilling[["FeatureGroupTable"]] <-
       mSet@peakgrouping[[length(mSet@peakgrouping)]];
     
-    save(mSet, file = "mSet.rda");
+    if(.on.public.web){
+      save(mSet, file = "mSet.rda");
+    }
+    
     return(mSet)
   }
   
@@ -2439,7 +2503,9 @@ PerformPeakFiling <- function(mSet,BPPARAM=bpparam()){
     warning("Could not integrate any signal for the missing ",
             "peaks! Consider increasing 'expandMz' and 'expandRt'.");
     
-    save(mSet, file = "mSet.rda");
+    if(.on.public.web){
+      save(mSet, file = "mSet.rda");
+    }
     
     return(mSet)
   }
@@ -2480,7 +2546,9 @@ PerformPeakFiling <- function(mSet,BPPARAM=bpparam()){
   
   #mSet$xcmsSet <- mSet2xcmsSet(mSet)
   
-  save(mSet, file = "mSet.rda");
+  if(.on.public.web){
+    save(mSet, file = "mSet.rda");
+  }
   
   return(mSet)
 }
@@ -2555,6 +2623,14 @@ mSet2xcmsSet <- function(mSet) {
 #' Mcgill University
 #' License: GNU GPL (>= 2)
 updateRawSpectraParam <- function (Params){
+  
+  if(!exists(".SwapEnv")){
+    .SwapEnv <<- new.env(parent = .GlobalEnv);
+    .SwapEnv$.optimize_switch <- FALSE;
+    .SwapEnv$count_current_sample <- 0;
+    .SwapEnv$count_total_sample <- 120; # maximum number for on.public.web
+    .SwapEnv$envir <- new.env();
+  }
   
   param <- list();
   
@@ -2663,7 +2739,7 @@ updateRawSpectraParam <- function (Params){
   param$subsetAdjust <- "average";
   
   # Finished !
-  .optimize_switch <- .GlobalEnv$.optimize_switch;
+  .optimize_switch <- .SwapEnv$.optimize_switch;
   if(is.null(.optimize_switch)){
     .optimize_switch <- FALSE;
   }
@@ -2728,10 +2804,7 @@ adjustRtimeSubset <- function(rtraw, rtadj, subset,
     subset <- seq_along(rtraw)
   if (!all(subset %in% seq_along(rtraw)))
     stop("'subset' is out of bounds.")
-  ## if (length(subset) == length(rtraw)) {
-  ##     cat("return rtadj\n")
-  ##     return(rtadj)
-  ## }
+
   no_subset <- seq_len(length(rtraw))[-subset]
   for (i in no_subset) {
     message("Aligning sample number ", i, " against subset ... ",
@@ -3436,9 +3509,9 @@ gauss <- function(x, h, mu, sigma){
 fitGauss <- function(td, d, pgauss = NA) {
   if (length(d) < 3) return(rep(NA,3))
   if (!any(is.na(pgauss))) { mu <- pgauss$mu; sigma <- pgauss$sigma;h <- pgauss$h }
-  fit <- try(nls(d ~ SSgauss(td,mu,sigma,h)), silent = TRUE)
+  fit <- try(nls(d ~ GaussModel(td,mu,sigma,h)), silent = TRUE)
   if (class(fit) == "try-error")
-    fit <- try(nls(d ~ SSgauss(td, mu, sigma, h), algorithm = 'port'),
+    fit <- try(nls(d ~ GaussModel(td, mu, sigma, h), algorithm = 'port'),
                silent = TRUE)
   if (class(fit) == "try-error")  return(rep(NA, 3))
   
@@ -3533,7 +3606,18 @@ na.flatfill <- function(x) {
     x[(realloc[length(realloc)]+1):length(x)] <- x[realloc[length(realloc)]]
   x
 }
-SSgauss <- selfStart(~ h*exp(-(x-mu)^2/(2*sigma^2)), function(mCall, data, LHS) {
+
+#' @title GaussModel
+#' @description GaussModel
+#' @param x a numeric vector of values at which to evaluate the model
+#' @param mu mean  of the distribution function
+#' @param sigma standard deviation of the distribution fuction
+#' @param h height of the distribution function
+#' @references Smith, C.A., Want, E.J., O'Maille, G., Abagyan,R., Siuzdak, G. (2006). 
+#' "XCMS: Processing mass spectrometry data for metabolite profiling using nonlinear 
+#' peak alignment, matching and identification." Analytical Chemistry, 78, 779-787.
+#' @export
+GaussModel <- selfStart(~ h*exp(-(x-mu)^2/(2*sigma^2)), function(mCall, data, LHS) {
   
   xy <- sortedXyData(mCall[["x"]], LHS, data);
   
@@ -4047,6 +4131,18 @@ PeakPicking_prep <- function(object){
 #' License: GNU GPL (>= 2)
 PeakPicking_core <-function(object, object_mslevel, param, msLevel = 1L){
   
+  if(!exists(".SwapEnv")){
+    .SwapEnv <<- new.env(parent = .GlobalEnv);
+    .SwapEnv$.optimize_switch <- FALSE;
+    .SwapEnv$count_current_sample <- 0;
+    .SwapEnv$count_total_sample <- 120; # maximum number for on.public.web
+    .SwapEnv$envir <- new.env();
+  }
+  
+  if(missing(object) | missing(object_mslevel)){
+    stop("Peakpicking error for missing object! CODE: x10001")
+  }
+  
   ## Restrict to MS 1 data for now.
   if (length(msLevel) > 1)
     stop("Currently only peak detection in a single MS level is ",
@@ -4068,7 +4164,7 @@ PeakPicking_core <-function(object, object_mslevel, param, msLevel = 1L){
     
   }
   
-  .optimize_switch <- .GlobalEnv$.optimize_switch;
+  .optimize_switch <- .SwapEnv$.optimize_switch;
   if(is.null(.optimize_switch)){
     .optimize_switch <- FALSE;
   }
@@ -4810,9 +4906,7 @@ calcCiS<- function(mSet, EIC=EIC, corval=0.75, pval=0.05, psg_list=NULL ){
     }
     
     #Suppress warnings
-    options(warn = -1);
-    res <- Hmisc::rcorr(EIC[, pi], type="pearson")
-    options(warn = 0);
+    res <- suppressWarnings(Hmisc::rcorr(EIC[, pi], type="pearson"));
     
     #Set lower triangle to NA
     res$r[lower.tri(res$r,diag = TRUE)] <- NA;

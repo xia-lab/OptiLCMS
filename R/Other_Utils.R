@@ -1,6 +1,10 @@
 # Special script for .on.web.public == TRUE
 
 GeneratePeakList <- function(userPath) {
+  
+  oldwd <- getwd();
+  on.exit(setwd(oldwd));
+  
   setwd(userPath)
   
   ## Claculate the mean internsity of all groups
@@ -214,35 +218,15 @@ peakTableSUM <- function(peak_table) {
   }
 }
 
-SetWorkingDir <- function(mSet = NULL, WorkingDir){
-  
-  if(is.null(mSet)){
-    if(file.exists("mSet.rda")){
-      load("mSet.rda");
-    } else {
-      mSet <- new("mSet");
-    }
-  }
-  
-  mSet@WorkingDir <- WorkingDir;
-  
-  save(mSet, file = "mSet.rda");
-  
-  if(.on.public.web){
-    # do nothing
-  } else {
-    return(mSet)
-  }
-  
-}
-
 #' @param folderPath guest folder
 #'
 #' @title Cache Update
 #' @author Zhiqiang Pang
 #' @noRd
 CachePathCorrection <- function(folderPath){
-  
+  if(!.on.public.web){
+    stop("Prohibited running this function at local!")
+  }
   cacheFiles <- list.files(paste0(folderPath,"/temp"),all.files = T, full.names = T, recursive = T);
   
   newfilepath <- list.files("/home/glassfish/projects/MetaboDemoRawData/upload",all.files = T, recursive = T,full.names = T)
@@ -295,6 +279,9 @@ CachePathCorrection <- function(folderPath){
 
 #' @noRd
 FastRunningShow_auto <- function(fullUserPath){
+  
+  oldwd <- getwd();
+  on.exit(setwd(oldwd));
   
   setwd(fullUserPath);  
   
@@ -1022,7 +1009,10 @@ FastRunningShow_auto <- function(fullUserPath){
 
 #' @noRd
 FastRunningShow_customized <- function(fullUserPath){
-  message(fullUserPath);
+  
+  oldwd <- getwd();
+  on.exit(setwd(oldwd));
+  
   setwd(fullUserPath);    
   
   time_interval1 <- 0.80;

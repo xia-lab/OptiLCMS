@@ -227,7 +227,7 @@ PerformROIExtraction <-
                                 recursive = T,
                                 full.names = T)
       }
-      cat(paste0(dda_file1,collapse = "\n"),"\n")
+      MessageOutput(paste0(dda_file1,collapse = "\n"),"\n")
       
       pd <-
         data.frame(
@@ -435,7 +435,9 @@ PerformROIExtraction <-
     mSet <- new("mSet");
     mSet@rawInMemory <- trimed_MSnExp;
     
-    save(mSet, file = "mSet.rda");
+    if(.on.public.web){
+      save(mSet, file = "mSet.rda");
+    }
     
     return(mSet)
   }

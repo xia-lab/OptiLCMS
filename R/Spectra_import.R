@@ -22,7 +22,7 @@
 InitDataObjects <- function(data.type, anal.type, paired=FALSE){
   
   if(anal.type == "raw" & data.type == "spec") {
-    cat("OptiLCMS R objects initialized ...\n");
+    MessageOutput("OptiLCMS R objects initialized ...\n");
     return(new("mSet"))
   }
   
@@ -184,7 +184,14 @@ ImportRawMSData <-
         running.controller@data_import[["c2"]] # used to control plotting option
     }
     
-    .GlobalEnv$.optimize_switch <- FALSE;
+    if(!exists(".SwapEnv")){
+      .SwapEnv <<- new.env(parent = .GlobalEnv);
+      .SwapEnv$.optimize_switch <- FALSE;
+      .SwapEnv$count_current_sample <- 0;
+      .SwapEnv$count_total_sample <- 120; # maximum number for on.public.web
+      .SwapEnv$envir <- new.env();
+    }
+    .SwapEnv$.optimize_switch <- FALSE;
     
     start.time <- Sys.time()
     # msg.vec <<- vector(mode = "character")
@@ -193,7 +200,7 @@ ImportRawMSData <-
     # the "upload" folder should contain two subfolders (groups, i.e. Healthy vs. Disease)
     # each subfolder must contain samples (.mzML/.CDF/.mzXML files)
     
-    MessageOutput(mes = "Step 2/6: Start to import the spectrum! \nThis step will take a short time...",
+    MessageOutput(mes = "\nStep 2/6: Start to import the spectrum! \nThis step will take a short time...",
                   ecol = "\n",
                   progress = 21.0)
     
@@ -233,8 +240,8 @@ ImportRawMSData <-
       )
     }
     
-    .GlobalEnv$count_total_sample <- length(files);
-    .GlobalEnv$count_current_sample <- 0;
+    .SwapEnv$count_total_sample <- length(files);
+    .SwapEnv$count_current_sample <- 0;
     toRemove = vector();
     
     # Update first
@@ -307,7 +314,7 @@ ImportRawMSData <-
         ncores -> num_cores
       }
       
-      cat(paste0("The number of CPU cores to be used is set to ", num_cores, ".","\n"))
+      MessageOutput(paste0("The number of CPU cores to be used is set to ", num_cores, "."))
       
       if (.Platform$OS.type == "unix") {
         BiocParallel::register(BiocParallel::bpstart(BiocParallel::MulticoreParam(num_cores)))
@@ -318,7 +325,7 @@ ImportRawMSData <-
       
     } else {
       num_cores <- 2
-      cat(paste0("The number of CPU cores to be used is set to ", num_cores, ".","\n"))
+      MessageOutput(paste0("The number of CPU cores to be used is set to ", num_cores, "."))
       BiocParallel::register(BiocParallel::bpstart(BiocParallel::MulticoreParam(num_cores)))
     }
     
@@ -353,7 +360,7 @@ ImportRawMSData <-
         
         if (plot.opts == "default") {
           #subset raw_data to first 50 samples
-          cat("To reduce memory usage BPIS and TICS plots will be created using only 10 samples per group.\n")
+          MessageOutput("To reduce memory usage BPIS and TICS plots will be created using only 10 samples per group.")
           
           grp_nms <- names(table(pd$sample_group))
           files <- NA
@@ -375,20 +382,18 @@ ImportRawMSData <-
           # just for plotting
         }
         
-        save(raw_data_filt, file = "raw_data_filt.rda")
-        
         if (plot.opts == "all") {
           h <-
             readline(prompt = "Using all samples to create BPIS and TICS plots may cause severe memory issues! Press [0] to continue, or [1] to cancel: ")
           h <- as.integer(h)
           
           if (h == 1) {
-            cat("ImportRawMSData function aborted!\n")
+            MessageOutput("ImportRawMSData function aborted!\n")
             return(0)
           }
         }
         
-        cat("Plotting BPIS and TICS.\n")
+        MessageOutput("Plotting BPIS and TICS.")
         # Plotting functions to see entire chromatogram
         bpis <- chromatogram(raw_data_filt, aggregationFun = "max")
         tics <- chromatogram(raw_data_filt, aggregationFun = "sum")
@@ -422,17 +427,22 @@ ImportRawMSData <-
                 sep = "")
         
         #save(bpis, file = "bpis.rda"); # Don't need bpis for now.
-        save(tics, file = "tics.rda")
+        if(.on.public.web){
+          save(raw_data_filt, file = "raw_data_filt.rda");
+          save(tics, file = "tics.rda");
+        }
         
-        Cairo::Cairo(
-          file = bpis_name,
-          unit = "in",
-          dpi = plotSettings$dpi,
-          width = 8,
-          height = 6,
-          type = plotSettings$format,
-          bg = "white"
-        )
+        if (.on.public.web) {
+          Cairo::Cairo(
+            file = bpis_name,
+            unit = "in",
+            dpi = plotSettings$dpi,
+            width = 8,
+            height = 6,
+            type = plotSettings$format,
+            bg = "white"
+          )
+        }
         
         plot(bpis, col = group_colors[raw_data_filt$sample_group])
         legend(
@@ -442,17 +452,19 @@ ImportRawMSData <-
           col = group_colors
         )
         
-        dev.off()
-        
-        Cairo::Cairo(
-          file = tics_name,
-          unit = "in",
-          dpi = plotSettings$dpi,
-          width = 8,
-          height = 6,
-          type = plotSettings$format,
-          bg = "white"
-        )
+        if (.on.public.web) {
+          dev.off()
+          
+          Cairo::Cairo(
+            file = tics_name,
+            unit = "in",
+            dpi = plotSettings$dpi,
+            width = 8,
+            height = 6,
+            type = plotSettings$format,
+            bg = "white"
+          )
+        }
         
         plot(tics, col = group_colors[raw_data_filt$sample_group])
         legend(
@@ -462,7 +474,10 @@ ImportRawMSData <-
           col = group_colors
         )
         
-        dev.off()
+        if (.on.public.web) {
+          dev.off()
+        }
+        
       }
       if (plan_switch) {
         marker_record("data_import_c2")
@@ -495,6 +510,7 @@ read.MSdata <- function(files,
                         smoothed. = NA, 
                         cache. = 1L,
                         mode = c("inMemory", "onDisk")) {
+  
   mode <- match.arg(mode)
   ## o normalize the file path, i.e. replace relative path with absolute
   ##   path. That fixes possible problems on Windows with SNOW parallel
@@ -559,7 +575,7 @@ read.InMemMSd.data <- function(files,
   count.idx <- 0;
   
   for (f in files) {
-    cat(paste("Reading MS from",basename(f),"...\n"))
+    MessageOutput(paste("Reading MS from",basename(f),"..."))
     
     filen <- match(f, files)
     filenums <- c(filenums, filen)
@@ -640,8 +656,8 @@ read.InMemMSd.data <- function(files,
     } else { ## .msLevel != 1
       if (length(spidx) == 0)
         stop("No MS(n>1) spectra in file", f)
-      cat(paste("Reading ", length(spidx), " MS", msLevel.,
-                  " spectra from file ", basename(f),"\n"))
+      MessageOutput(paste("Reading ", length(spidx), " MS", msLevel.,
+                          " spectra from file ", basename(f),"\n"))
       
       scanNums <- fullhd[fullhd$msLevel == msLevel., "precursorScanNum"]
       if (length(scanNums) != length(spidx))
@@ -704,7 +720,7 @@ read.InMemMSd.data <- function(files,
       write.table(1.0 + count.idx/length(files)*3, file = "log_progress.txt", row.names = F,col.names = F);
     }
     
-    cat(paste0("Reading from ", basename(f), " finished successfully !\n"));
+    MessageOutput(paste0("Reading from ", basename(f), " finished successfully !"));
     
   }
   
@@ -1066,7 +1082,10 @@ UpdateRawfiles <- function(mSet, filesIncluded = NULL){
   
   mSet@rawfiles <- filesIncluded;
   
-  save(mSet, file = "mSet.rda");
+  if(.on.public.web){
+    save(mSet, file = "mSet.rda");
+  }
+  
   return(mSet);
 }
 

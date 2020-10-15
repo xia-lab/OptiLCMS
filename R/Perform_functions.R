@@ -76,7 +76,7 @@ PerformPeakProfiling <-
       .running.as.plan <- TRUE;
     }
     
-    .optimize_switch <- .GlobalEnv$.optimize_switch <- FALSE;
+    .optimize_switch <- .SwapEnv$.optimize_switch <- FALSE;
     
     if(.on.public.web){
       ### Update parameters' style
@@ -131,7 +131,7 @@ PerformPeakProfiling <-
     #   ---------===========----- I. Peak picking -----===========------------
     
     if (c1) {
-      MessageOutput(mes = "Step 3/6: Started peak picking! This step will take some time...",
+      MessageOutput(mes = "\nStep 3/6: Started peak picking! This step will take some time...",
                     ecol = "\n",
                     progress = NULL);
       
@@ -155,7 +155,7 @@ PerformPeakProfiling <-
       marker_record("peak_profiling_c1")
     }
     
-    .GlobalEnv$envir$mSet <- mSet;
+    .SwapEnv$envir$mSet <- mSet;
     
     if (.on.public.web) {
       if (class(mSet)[1] == "simpleError") {
@@ -183,7 +183,7 @@ PerformPeakProfiling <-
     #   --------===========----- II. Peak alignment -----===========------------
     if (c2) {
       MessageOutput(
-        mes = paste("Step 4/6: Started peak alignment! This step is running..."),
+        mes = paste("\nStep 4/6: Started peak alignment! This step is running..."),
         ecol = "\n",
         progress = 50.1
       )
@@ -225,7 +225,7 @@ PerformPeakProfiling <-
       }
     }
     
-    .GlobalEnv$envir$mSet <- mSet;
+    .SwapEnv$envir$mSet <- mSet;
     
     MessageOutput(
       mes = paste0("Step 4/6: Peak alignment finished ! (", Sys.time(), ")"),
@@ -237,7 +237,7 @@ PerformPeakProfiling <-
     if (c3) {
       MessageOutput(
         mes = paste(
-          "Step 5/6: Started peak filling! This step may take some time..."
+          "\nStep 5/6: Started peak filling! This step may take some time..."
         ),
         ecol = "\n",
         progress = NULL
@@ -289,8 +289,10 @@ PerformPeakProfiling <-
       progress = 88
     )
 
-    save(mSet, file = "mSet.rda")
-    .GlobalEnv$envir$mSet <- mSet;
+    if(.on.public.web){
+      save(mSet, file = "mSet.rda");
+    }
+    .SwapEnv$envir$mSet <- mSet;
 
     MessageOutput(
       mes = paste0("Begin to plotting figures..."),
@@ -528,7 +530,7 @@ PerformPeakAnnotation <-
            running.controller = NULL) {
     
     MessageOutput(
-      mes = paste0("Step 6/6: Starting Peak Annotation..."),
+      mes = paste0("\nStep 6/6: Starting Peak Annotation..."),
       ecol = "\n",
       progress = 91
     )
@@ -559,7 +561,7 @@ PerformPeakAnnotation <-
     # }
     
     if (ncore > 1) {
-      cat("Only single core mode is supported now. Parallel will be supported later !\n")
+      MessageOutput("Only single core mode is supported now. Parallel will be supported later !\n")
       ncore <- 1
     }
 
@@ -788,7 +790,7 @@ PerformPeakAnnotation <-
               
             } else{
               idx <- maxo[iint, 1]
-              cat(
+              MessageOutput(
                 "Warning: Feature ",
                 idx,
                 " looks odd for at least one peak. Please check afterwards.\n"
@@ -845,7 +847,7 @@ PerformPeakAnnotation <-
               
             } else{
               idx <- maxo[iint, 1]
-              cat(
+              MessageOutput(
                 "Warning: Feature ",
                 idx,
                 " looks odd for at least one peak. Please check afterwards.\n"
@@ -942,7 +944,7 @@ PerformPeakAnnotation <-
       
       #Check if object have been preprocessed with groupFWHM
       if (npspectra < 1) {
-        cat("xsAnnotate contains no pseudospectra. Regroup all peaks into one!\n")
+        MessageOutput("xsAnnotate contains no pseudospectra. Regroup all peaks into one!\n")
         npspectra <- 1
         
         mSet@peakAnnotation$AnnotateObject$pspectra[[1]] <-
@@ -1366,7 +1368,7 @@ PerformPeakAnnotation <-
           Sys.time(),
           ") \nGoing to the final step..."
         ),
-        ecol = "\n",
+        ecol = "",
         progress = 99
       )
       
@@ -1382,7 +1384,10 @@ PerformPeakAnnotation <-
       marker_record("peak_annotation_c1");
     }
     
-    save(mSet, file = "mSet.rda");
+    if(.on.public.web){
+      save(mSet, file = "mSet.rda");
+    }
+    MessageOutput("Done!")
     
     return(mSet)
   }
@@ -1662,15 +1667,17 @@ FormatPeakList <-
     );
     
     MessageOutput(
-      mes = paste0("Everything has been finished Successfully ! (",
+      mes = paste0("\nEverything has been finished Successfully ! (",
                    Sys.time(),
-                   ")"),
+                   ")\n"),
       ecol = "\n",
       progress = 100
     );
     
     mSet@dataSet <- ma_feats_miss;
-    save(mSet, file = "mSet.rda");
+    if(.on.public.web){
+      save(mSet, file = "mSet.rda");
+    }
     
     return(ma_feats_miss)
   }

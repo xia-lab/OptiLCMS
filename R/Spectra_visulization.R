@@ -36,7 +36,7 @@ PerformDataInspect <-
           datapath <- paste0("upload/", list.files("upload", recursive = T)[1])
           datapath <- paste0(fullUserPath, datapath)
         } else {
-          cat("Local Inspectation !\n")
+          MessageOutput("Local Inspectation !\n")
         }
       } else {
         files <-
@@ -74,7 +74,7 @@ PerformDataInspect <-
         !grepl(pattern = c("*.mzML"), basename(datapath)) &
         !grepl(pattern = c("*.CDF"), basename(datapath)) &
         !grepl(pattern = c("*.cdf"), basename(datapath))) {
-      cat(paste("First file in ", datapath, " will be inspected !\n"))
+      MessageOutput(paste("First file in ", datapath, " will be inspected !\n"))
       mzf <- list.files(datapath, recursive = F, full.names = T)[1]
     } else {
       mzf <- datapath
@@ -97,7 +97,7 @@ PerformDataInspect <-
         hd$retentionTime[ms1] < max(hd$retentionTime)
       
       rt.extension <- F
-      cat(paste(
+      MessageOutput(paste(
         "RT range is:",
         min(hd$retentionTime),
         "and",
@@ -114,7 +114,7 @@ PerformDataInspect <-
         rt.range[2] <- rt.range[2] + 1
         rt.range[1] <- rt.range[1] - 1
       }
-      cat(paste("RT range is:", rt.range[1], "and", rt.range[2], "seconds !\n"))
+      MessageOutput(paste("RT range is:", rt.range[1], "and", rt.range[2], "seconds !\n"))
       
       rtsel <-
         hd$retentionTime[ms1] > rt.range[1] &
@@ -134,7 +134,7 @@ PerformDataInspect <-
       max.mz <- max(hd$highMZ)
       
       if (min.mz == 0 & max.mz == 0 | min.mz == max.mz) {
-        cat(
+        MessageOutput(
           "mz.range information is missing in your data file. mz between 100 and 1200 will be shown here !\n"
         )
         min.mz <- 100
@@ -142,14 +142,14 @@ PerformDataInspect <-
         
       } else if (is.infinite(min.mz) |
                  is.infinite(max.mz) | min.mz == -1 | max.mz == -1) {
-        cat(
+        MessageOutput(
           "mz.range information is missing in your data file. mz between 50 and 2000 will be shown here !\n"
         )
         min.mz <- 50
         max.mz <- 2000
       }
       
-      cat(paste("MZ range is:", min.mz, "and", max.mz, "Thomson !\n"))
+      MessageOutput(paste("MZ range is:", min.mz, "and", max.mz, "Thomson !\n"))
       
       res.mz <- (max.mz - min.mz) / res
       M <- MSmap(ms,
@@ -170,7 +170,7 @@ PerformDataInspect <-
         mz.range[1] <- mz.range[1] - 0.01
       }
       
-      cat(paste("MZ range is:", mz.range[1], "and", mz.range[2], "Thomson !\n"))
+      MessageOutput(paste("MZ range is:", mz.range[1], "and", mz.range[2], "Thomson !\n"))
       
       res.mz <- (mz.range[2] - mz.range[1]) / res
       M <- MSmap(ms,
@@ -228,6 +228,9 @@ PerformDataInspect <-
       bg = "white"
     )
     
+    oldpar <- par(no.readonly = TRUE);
+    on.exit(par(oldpar));
+    
     par(mfrow = c(1, 2))
     
     if (dimension == "3D") {
@@ -274,6 +277,7 @@ SetPlotParam <-
 #' PlotXIC/EIC
 #' @description This functionn creates an extracted ion chromatogram (EIC) for a specific
 #' m/z and retention time. This is used for quality-control of raw m/s data.
+#' @param mSet mSet Object. Should contain the spectra processing result.
 #' @param featureNum Numeric, Feature number in the feature table.
 #' @param sample_labeled Logical, whether to lable the sample name.
 #' @param Group_labeled Logical, whether to lable the group name.
@@ -285,7 +289,8 @@ SetPlotParam <-
 #' @importFrom Cairo Cairo
 #' @export
 PlotXIC <-
-  function(featureNum,
+  function(mSet = NULL,
+           featureNum,
            sample_labeled,
            Group_labeled,
            format,
@@ -311,15 +316,15 @@ PlotXIC <-
     if (missing(height)) {
       height <- width * 1.05
     }
-    mSet <- NULL;
+    
     # Load data results
-    load("mSet.rda")
-    
-    # if(.on.public.web){
-    #   load_MSnbase()
-    # }
-    
-    raw_data <- mSet@rawOnDisk
+    if(.on.public.web){
+      load("mSet.rda")
+    } else if(is.null(mSet)) {
+      stop("mSet is missing!")
+    }
+
+    raw_data <- mSet@rawOnDisk;
     raw_data@featureData$retentionTime <-
       unlist(mSet@peakRTcorrection$adjustedRT);
     
@@ -454,20 +459,17 @@ PlotXIC <-
     
     peak_width <- max(res$RT) - min(res$RT);
     
-    # if(.on.public.web){
-    #   load_ggplot2();
-    #   load_ggrepel();
-    # }
-    
-    Cairo::Cairo(
-      file = paste0("EIC_", title, "_sample_", dpi, ".", format),
-      unit = "in",
-      dpi = dpi,
-      width = width,
-      height = height,
-      type = format,
-      bg = "white"
-    )
+    if (.on.public.web) {
+      Cairo::Cairo(
+        file = paste0("EIC_", title, "_sample_", dpi, ".", format),
+        unit = "in",
+        dpi = dpi,
+        width = width,
+        height = height,
+        type = format,
+        bg = "white"
+      )
+    }
     
     s_image <-
       ggplot(res, aes_string(x = "RT", y = "Intensity", color = "Samples")) + #geom_line() #+
@@ -504,8 +506,11 @@ PlotXIC <-
                                   show.legend = FALSE)
     }
     
-    print(s_image)
-    dev.off()
+    print(s_image);
+    
+    if (.on.public.web) {
+      dev.off()
+    }
     ## PLotting sample EIC finished -
     
     ## PLotting group EIC begin --
@@ -534,15 +539,17 @@ PlotXIC <-
     rownames(res_data) <- NULL
     peak_width <- max(res_data$RT) - min(res_data$RT)
     
-    Cairo::Cairo(
-      file = paste0("EIC_", title, "_group_", dpi, ".", format),
-      unit = "in",
-      dpi = dpi,
-      width = width,
-      height = height,
-      type = format,
-      bg = "white"
-    )
+    if (.on.public.web) {
+      Cairo::Cairo(
+        file = paste0("EIC_", title, "_group_", dpi, ".", format),
+        unit = "in",
+        dpi = dpi,
+        width = width,
+        height = height,
+        type = format,
+        bg = "white"
+      )
+    }
     
     g_image <-
       ggplot(res_data, aes_string(x = "RT", y = "Intensity", color = "Groups")) + #geom_line() +
@@ -580,9 +587,11 @@ PlotXIC <-
                                   show.legend = FALSE)
     }
     
-    print(g_image)
-    dev.off()
+    print(g_image);
     
+    if (.on.public.web) {
+      dev.off()
+    }
     ## PLotting group EIC finished --
     return(title)
   }
@@ -604,25 +613,29 @@ PlotSpectraInsensityStistics <-
            dpi = 72,
            width = NA) {
     
-    if(is.null(mSet)){
+    if(is.null(mSet) & .on.public.web){
       load("mSet.rda");
+    } else {
+      stop("mSet is missing!")
     }
     
-    sample_idx <- mSet@rawOnDisk@phenoData@data[["sample_group"]]
+    sample_idx <- mSet@rawOnDisk@phenoData@data[["sample_group"]];
     
     sample_num <-
-      mSet@rawOnDisk@phenoData@data[["sample_name"]]
+      mSet@rawOnDisk@phenoData@data[["sample_name"]];
     
-    Cairo::Cairo(
-      file = imgName,
-      unit = "in",
-      dpi = dpi,
-      width = width,
-      height = length(sample_num) * 0.65,
-      type = format,
-      bg = "white"
-    )
-    
+    if (.on.public.web) {
+      Cairo::Cairo(
+        file = imgName,
+        unit = "in",
+        dpi = dpi,
+        width = width,
+        height = length(sample_num) * 0.65,
+        type = format,
+        bg = "white"
+      )
+    }
+
     if (length(unique(sample_idx)) > 9) {
       col.fun <-
         grDevices::colorRampPalette(RColorBrewer::brewer.pal(12, "Set3"))
@@ -647,6 +660,9 @@ PlotSpectraInsensityStistics <-
         }
       )
     
+    oldpar <- par(no.readonly = TRUE);
+    on.exit(par(oldpar));
+    
     op <- par(mar = c(3.5, 10, 4, 1.5), xaxt = "s")
     
     boxplot(
@@ -664,7 +680,9 @@ PlotSpectraInsensityStistics <-
     #title(ylab=expression(log[2]~intensity), line=7.5, cex.lab=1.2)
     grid(nx = NA, ny = NULL)
     
-    dev.off()
+    if (.on.public.web) {
+      dev.off()
+    }
   }
 
 
@@ -685,15 +703,17 @@ PlotSpectraPCA <-
            dpi = 72,
            width = NA) {
     
-    Cairo::Cairo(
-      file = imgName,
-      unit = "in",
-      dpi = dpi,
-      width = width,
-      height = width * 0.80,
-      type = format,
-      bg = "white"
-    )
+    if (.on.public.web) {
+      Cairo::Cairo(
+        file = imgName,
+        unit = "in",
+        dpi = dpi,
+        width = width,
+        height = width * 0.80,
+        type = format,
+        bg = "white"
+      )
+    }
     
     sample_idx <-
       mSet@rawOnDisk@phenoData@data[["sample_group"]];
@@ -722,7 +742,10 @@ PlotSpectraPCA <-
         progress = 65
       );
       
-      dev.off()
+      if (.on.public.web) {
+        dev.off()
+      }
+      
       return(NULL)
     }
     
@@ -794,7 +817,10 @@ PlotSpectraPCA <-
       p + xlab(xlabel) + ylab(ylabel) + theme_bw() + theme(axis.title = element_text(size = 12));
 
     print(p)
-    dev.off()
+    
+    if (.on.public.web) {
+      dev.off()
+    }
   }
 
 
@@ -814,21 +840,25 @@ PlotSpectraRTadj <-
            dpi = 72,
            width = NA) {
     
-    if(is.null(mSet)){
+    if(is.null(mSet) & .on.public.web){
       load("mSet.rda")
+    } else {
+      stop("mSet is missing!")
     }
     
     sample_idx <- mSet@rawOnDisk@phenoData@data[["sample_group"]];
     
-    Cairo::Cairo(
-      file = imgName,
-      unit = "in",
-      dpi = dpi,
-      width = width,
-      height = width * 0.75,
-      type = format,
-      bg = "white"
-    )
+    if (.on.public.web) {
+      Cairo::Cairo(
+        file = imgName,
+        unit = "in",
+        dpi = dpi,
+        width = width,
+        height = width * 0.75,
+        type = format,
+        bg = "white"
+      )
+    }
     
     if (length(unique(sample_idx)) > 9) {
       col.fun <-
@@ -925,7 +955,9 @@ PlotSpectraRTadj <-
       col = group_colors
     )
     
-    dev.off()
+    if (.on.public.web) {
+      dev.off()
+    }
   }
 
 #' PlotSpectraBPIadj
@@ -944,19 +976,23 @@ PlotSpectraBPIadj <-
            dpi = 72,
            width = NA) {
     
-    if(is.null(mSet)){
+    if(is.null(mSet) & .on.public.web){
       load("mSet.rda")
+    } else {
+      stop("mSet is missing!")
     }
     
-    Cairo::Cairo(
-      file = imgName,
-      unit = "in",
-      dpi = dpi,
-      width = width,
-      height = width * 0.618,
-      type = format,
-      bg = "white"
-    )
+    if (.on.public.web) {
+      Cairo::Cairo(
+        file = imgName,
+        unit = "in",
+        dpi = dpi,
+        width = width,
+        height = width * 0.618,
+        type = format,
+        bg = "white"
+      )
+    }
     
     sample_idx <-
       mSet@rawOnDisk@phenoData@data[["sample_group"]]
@@ -1017,7 +1053,9 @@ PlotSpectraBPIadj <-
       col = group_colors2
     )
     
-    dev.off()
+    if (.on.public.web) {
+      dev.off()
+    }
   }
 
 #' plotMSfeature
@@ -1054,16 +1092,18 @@ plotMSfeature <- function(FeatureNM,
   rownames(data_table) <- NULL
   title = paste0(round(peakdata[FeatureNM, 1], 4), "mz@", round(peakdata[FeatureNM, 4], 2), "s")
   
-  Cairo::Cairo(
-    file = paste0(title, ".png"),
-    unit = "in",
-    dpi = dpi,
-    width = 6,
-    height = 6.18,
-    type = format,
-    bg = "white"
-  )
-  
+  if (.on.public.web) {
+    Cairo::Cairo(
+      file = paste0(title, ".png"),
+      unit = "in",
+      dpi = dpi,
+      width = 6,
+      height = 6.18,
+      type = format,
+      bg = "white"
+    )
+  }
+    
   p1 <-
     ggplot(data_table, aes_string(
       x = "Group",
@@ -1133,41 +1173,48 @@ plotMSfeature <- function(FeatureNM,
     ylab(expression(log[2] ~ intensity)) + xlab("Groups") + ggtitle(title)
   
   print(p1)
-  dev.off()
   
-  return(paste0(title, ".png"))
+  if (.on.public.web) {
+    dev.off()
+    return(paste0(title, ".png"))
+  }
 }
 
 
 
 #' plotSingleTIC
 #'
+#' @param mSet mSet Object, should be processed by ImportMSData.
 #' @param filename Character, to give the filename for the TIC plotting.
 #' @param imagename Character, to give the filename of the TIC plotted.
 #' @export
 #' @importFrom Cairo Cairo
-plotSingleTIC <- function(filename, imagename) {
+plotSingleTIC <- function(mSet = NULL, filename, imagename) {
   # load_msnbase()
   
-  raw_data_filt <- NULL;
-  tics <- NULL;
+  if (.on.public.web) {
+    raw_data_filt <- NULL;
+    tics <- NULL
+    load("raw_data_filt.rda")
+    load("tics.rda")
+    
+    file_order <-
+      which(filename == raw_data_filt@phenoData@data[["sample_name"]])
+    
+    Cairo::Cairo(
+      file = paste0(imagename, ".png"),
+      unit = "in",
+      dpi = 72,
+      width = 7,
+      height = 5,
+      type = "png",
+      bg = "white"
+    )
+  }
   
-  load("raw_data_filt.rda")
-  load("tics.rda")
+  plot(tics[[file_order]], col = "#0080FF", main = filename);
   
-  file_order <-
-    which(filename == raw_data_filt@phenoData@data[["sample_name"]])
-  
-  Cairo::Cairo(
-    file = paste0(imagename, ".png"),
-    unit = "in",
-    dpi = 72,
-    width = 7,
-    height = 5,
-    type = "png",
-    bg = "white"
-  )
-  
-  plot(tics[[file_order]], col = "#0080FF", main = filename)
-  dev.off()
+  if (.on.public.web) {
+    dev.off()
+  }
 }
