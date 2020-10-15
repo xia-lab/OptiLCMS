@@ -147,8 +147,7 @@ The database will be under an real-time update based on the progress in this fie
 Smith, C.A. et al. 2006. {Analytical Chemistry}, 78, 779-787
 }
 \author{
-Zhiqiang Pang \email{zhiqiang.pang@mail.mcgill.ca}, Jasmine Chong \email{jasmine.chong@mail.mcgill.ca},
-Mai Yamamoto \email{yamamoto.mai@mail.mcgill.ca}, and Jeff Xia \email{jeff.xia@mcgill.ca}
+Zhiqiang Pang \email{zhiqiang.pang@mail.mcgill.ca}, Jasmine Chong \email{jasmine.chong@mail.mcgill.ca}, and Jeff Xia \email{jeff.xia@mcgill.ca}
 McGill University, Canada
 License: GNU GPL (>= 2)
 }

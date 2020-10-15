@@ -18,3 +18,8 @@ GaussModel(x, mu, sigma, h)
 \description{
 GaussModel
 }
+\references{
+Smith, C.A., Want, E.J., O'Maille, G., Abagyan,R., Siuzdak, G. (2006).
+"XCMS: Processing mass spectrometry data for metabolite profiling using nonlinear
+peak alignment, matching and identification." Analytical Chemistry, 78, 779-787.
+}

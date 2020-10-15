@@ -4,9 +4,11 @@
 \alias{plotSingleTIC}
 \title{plotSingleTIC}
 \usage{
-plotSingleTIC(filename, imagename)
+plotSingleTIC(mSet = NULL, filename, imagename)
 }
 \arguments{
+\item{mSet}{mSet Object, should be processed by ImportMSData.}
+
 \item{filename}{Character, to give the filename for the TIC plotting.}
 
 \item{imagename}{Character, to give the filename of the TIC plotted.}

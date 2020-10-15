@@ -4,9 +4,20 @@
 \alias{PlotXIC}
 \title{PlotXIC/EIC}
 \usage{
-PlotXIC(featureNum, sample_labeled, Group_labeled, format, dpi, width, height)
+PlotXIC(
+  mSet = NULL,
+  featureNum,
+  sample_labeled,
+  Group_labeled,
+  format,
+  dpi,
+  width,
+  height
+)
 }
 \arguments{
+\item{mSet}{mSet Object. Should contain the spectra processing result.}
+
 \item{featureNum}{Numeric, Feature number in the feature table.}
 
 \item{sample_labeled}{Logical, whether to lable the sample name.}
