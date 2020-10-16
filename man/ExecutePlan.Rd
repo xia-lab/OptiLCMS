@@ -13,54 +13,79 @@ ExecutePlan(plan = NULL)
 ExecutePlan
 }
 \examples{
-## load googledrive package to download example data
-# library("googledrive");
+## Download the raw spectra data
+tempZip <- tempfile(fileext = ".zip");
+download.file("https://www.dropbox.com/s/kabienyoadmzdpm/SpectraData.zip", 
+              destfile = tempZip, method = "wget");
+dataDir <- paste0(tempdir(),"/SpectraData");
+out <- unzip(tempZip, exdir = dataDir);
 
-# Set data folder
-# data_folder_Sample <- "~/Data_IBD";
-# temp <- tempfile(fileext = ".zip");
+## Load OptiLCMS
+library(OptiLCMS);
 
-# Please authorize the package to download the data from web
-# dl <- drive_download(as_id("1CjEPed1WZrwd5T3Ovuic1KVF-Uz13NjO"), path = temp, overwrite = TRUE);
-# out <- unzip(temp, exdir = data_folder_Sample);
-# out;
-#### Running as resumable procedure: seamless pipeline
-## Initialize running plan
-# plan <- InitializaPlan("raw_opt","~/Data_IBD/")
-## define/set running plan
-# plan <- running.plan(plan,
-#                      data_folder_QC <- "~/Data_IBD/QC",
-#                      mSet <- PerformROIExtraction(datapath = data_folder_QC, 
-#                                                   rt.idx = 0.95, plot = F, 
-#                                                   rmConts = F, 
-#                                                   running.controller = rc),
-#                      param_initial <- SetPeakParam(),
-#                      best_parameters <- PerformParamsOptimization(mSet = mSet, 
-#                                                   param_initial, ncore = 2, 
-#                                                   running.controller = rc),
-#                      data_folder_Sample <- '',
-#                      param <- best_parameters,
-#                      plotSettings1 <- SetPlotParam(Plot=T),
-#                      plotSettings2 <- SetPlotParam(Plot=T),
-#                      mSet <- ImportRawMSData(mSet = mSet, 
-#                                              foldername = data_folder_Sample, 
-#                                              plotSettings = plotSettings1, 
-#                                              running.controller = rc),
-#                      mSet <- PerformPeakProfiling(mSet = mSet, 
-#                                              Params = param, 
-#                                              plotSettings = plotSettings2, 
-#                                              running.controller = rc),
-#                      annParams <- SetAnnotationParam(polarity = 'negative', 
-#                                              mz_abs_add = 0.025),
-#                      mSet <- PerformPeakAnnotation(mSet = mSet, 
-#                                              annotaParam = annParams, 
-#                                              ncore =1, 
-#                                              running.controller = rc),
-#                      maPeaks <- FormatPeakList(mSet = mSet, annParams, filtIso =F, 
-#                                              filtAdducts = FALSE, 
-#                                              missPercent = 1));
-## Execute the defined plan
-# ExecutePlan(plan)
+## Initialize your plan
+plan <- InitializaPlan("raw_opt")
+
+## Define your plan
+plan <- running.plan(plan,
+                     data_folder_QC <- paste0(dataDir,"/QC"),
+                     mSet <- PerformROIExtraction(datapath = data_folder_QC, rt.idx = 0.5, 
+                                                  plot = F, rmConts = F, 
+                                                  running.controller = rc),
+                     param_initial <- SetPeakParam(),
+                     best_parameters <- PerformParamsOptimization(mSet = mSet, param_initial, 
+                                                                  ncore = 1, 
+                                                                  running.controller = rc),
+                     param <- best_parameters,
+                     plotSettings1 <- SetPlotParam(Plot=T),
+                     plotSettings2 <- SetPlotParam(Plot=T),
+                     mSet <- ImportRawMSData(mSet = mSet, foldername = dataDir, 
+                                             plotSettings = plotSettings1, 
+                                             running.controller = rc),
+                     mSet <- PerformPeakProfiling(mSet = mSet, Params = param, 
+                                                  plotSettings = plotSettings2, 
+                                                  running.controller = rc),
+                     annParams <- SetAnnotationParam(polarity = 'negative', 
+                                                     mz_abs_add = 0.025),
+                     mSet <- PerformPeakAnnotation(mSet = mSet, 
+                                                   annotaParam = annParams, ncore =1, 
+                                                   running.controller = rc),
+                     mSet <- FormatPeakList(mSet = mSet, annParams, 
+                                            filtIso =F, filtAdducts = FALSE, 
+                                            missPercent = 1));                    
+## Run it!
+result <- ExecutePlan(plan);
+
+## Re-define your plan with a change on mz_abs_add from 0.025 to 0.035
+plan <- running.plan(plan,
+                     data_folder_QC <- paste0(dataDir,"/QC"),
+                     mSet <- PerformROIExtraction(datapath = data_folder_QC, rt.idx = 0.5, 
+                                                  plot = F, rmConts = F, 
+                                                  running.controller = rc),
+                     param_initial <- SetPeakParam(),
+                     best_parameters <- PerformParamsOptimization(mSet = mSet, param_initial, 
+                                                                  ncore = 1, 
+                                                                  running.controller = rc),
+                     param <- best_parameters,
+                     plotSettings1 <- SetPlotParam(Plot=T),
+                     plotSettings2 <- SetPlotParam(Plot=T),
+                     mSet <- ImportRawMSData(mSet = mSet, foldername = dataDir, 
+                                             plotSettings = plotSettings1, 
+                                             running.controller = rc),
+                     mSet <- PerformPeakProfiling(mSet = mSet, Params = param, 
+                                                  plotSettings = plotSettings2, 
+                                                  running.controller = rc),
+                     annParams <- SetAnnotationParam(polarity = 'negative', 
+                                                     mz_abs_add = 0.035),
+                     mSet <- PerformPeakAnnotation(mSet = mSet, 
+                                                   annotaParam = annParams, ncore =1, 
+                                                   running.controller = rc),
+                     mSet <- FormatPeakList(mSet = mSet, annParams, 
+                                            filtIso =F, filtAdducts = FALSE, 
+                                            missPercent = 1)); 
+                                                               
+## Re-run it! Most steps will be resumed from cache and save your time!
+result <- ExecutePlan(plan);
 }
 \author{
 Zhiqiang Pang \email{zhiqiang.pang@mail.mcgill.ca} Jeff Xia \email{jeff.xia@mcgill.ca}

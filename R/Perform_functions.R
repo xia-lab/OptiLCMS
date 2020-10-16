@@ -1357,11 +1357,9 @@ PerformPeakAnnotation <-
       if(is.null(fullUserPath) | length(fullUserPath) == 0){
         fullUserPath <- getwd();
       }
-      saveRDS(camera_output,
-              paste0(fullUserPath, "/annotated_peaklist.rds"))
-      fast.write.csv(camera_output,
-                 paste0(fullUserPath, "/annotated_peaklist.csv"))
       
+      mSet@peakAnnotation$camera_output <- camera_output;
+     
       MessageOutput(
         mes = paste0(
           "Step 6/6: Successfully performed peak annotation! (",
@@ -1444,7 +1442,6 @@ PerformPeakAnnotation <-
 #' # maPeaks <- FormatPeakList(mSet = mSet, annParams, filtIso =F, 
 #' #                           filtAdducts = FALSE,missPercent = 1);
 
-
 FormatPeakList <-
   function(mSet,
            annParams,
@@ -1457,11 +1454,12 @@ FormatPeakList <-
       fullUserPath <- getwd();
     }
     
-    if(file.exists("annotated_peaklist.rds")){
-      camera_output <- readRDS("annotated_peaklist.rds");
-    } else {
-      stop(paste0("File \"annotated_peaklist.rds\" doesn't exit in ", fullUserPath, ", please update the working directory !"))
+    camera_output <- mSet@peakAnnotation$camera_output;
+    
+    if(is.null(camera_output)){
+      stop("No annotation results found! Please 'PerformPeakAnnotation' first !")
     }
+    
     
     if(length(mSet@rawOnDisk) == 0){
       if(.on.public.web){
@@ -1580,17 +1578,15 @@ FormatPeakList <-
       ma_feats[which(rowMeans(is.na(ma_feats[, (ma_feats[1, ] == as.character(unique(group_info[1])))]))
                      | rowMeans(is.na(ma_feats[, (ma_feats[1, ] == as.character(unique(group_info[2])))])) < missPercent),];
     
-    fast.write.csv(ma_feats_miss,
-               paste0(fullUserPath, "/metaboanalyst_input.csv"),
-               row.names = FALSE);
+    mSet@dataSet <- ma_feats_miss;
     
     # provide index for CAMERA output
     Pklist_inx <- row.names(ma_feats_miss);
     ma_feats_miss_inx <- cbind(ma_feats_miss, Pklist_inx);
-    
-    fast.write.csv(ma_feats_miss_inx,
-               paste0(fullUserPath, "/filtered_peaklist.csv"),
-               row.names = FALSE);
+    # 
+    # fast.write.csv(ma_feats_miss_inx,
+    #            paste0(fullUserPath, "/filtered_peaklist.csv"),
+    #            row.names = FALSE);
     
     # generate peak summary results
     peaksum <-
@@ -1657,15 +1653,9 @@ FormatPeakList <-
     datam[, 4] <- mz_range;
     datam[, 5] <- peak_number;
     datam[, 6] <- missing_perc;
-    
-    write.table(
-      datam,
-      file = "peak_result_summary.txt",
-      row.names = F,
-      col.names = F,
-      quote = F
-    );
-    
+
+    mSet@peakAnnotation$peak_result_summary <- datam;
+
     MessageOutput(
       mes = paste0("\nEverything has been finished Successfully ! (",
                    Sys.time(),
@@ -1679,6 +1669,53 @@ FormatPeakList <-
       save(mSet, file = "mSet.rda");
     }
     
-    return(ma_feats_miss)
+    return(mSet)
   }
+
+
+Export.Annotation <- function(mSet = NULL, path = getwd()){
+  
+  camera_output <- mSet@peakAnnotation$camera_output;
+  
+  if(is.null(camera_output)){
+    stop("No annotation results found! Please 'PerformPeakAnnotation' first !")
+  }
+  
+  saveRDS(camera_output,
+          paste0(path, "/annotated_peaklist.rds"))
+  fast.write.csv(camera_output,
+                 paste0(path, "/annotated_peaklist.csv"))
+}
+
+Export.PeakTable <- function(mSet = NULL, path = getwd()){
+  
+  mSet@dataSet -> ma_feats_miss;
+  
+  if(is.null(ma_feats_miss)){
+    stop("No PeakTable found! Please 'FormatPeakList' first !")
+  }
+  
+  fast.write.csv(ma_feats_miss,
+                 paste0(path, "/metaboanalyst_input.csv"),
+                 row.names = FALSE);
+}
+
+Export.PeakSummary <- function(mSet = NULL, path = getwd()){
+  
+  mSet@peakAnnotation$peak_result_summary -> datam;
+  
+  if(is.null(datam)){
+    stop("No PeakSummary found! Please 'FormatPeakList' first !")
+  }
+  
+  write.table(
+    datam,
+    file = paste0(path, "/peak_result_summary.txt"),
+    row.names = F,
+    col.names = F,
+    quote = F
+  );
+}
+
+
 

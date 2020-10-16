@@ -105,7 +105,9 @@ PerformPeakPicking<-function(mSet, BPPARAM = bpparam()){
       n_pks <- 0
     if (n_pks == 0) {
       pks[[i]] <- NULL
-      warning("No peaks found in sample number ", i, ".")
+      if(!.SwapEnv$.optimize_switch){
+        warning("No peaks found in sample number ", i, ".")
+      }
     } else {
       pks[[i]] <- cbind(resList[[i]], sample = rep.int(i, n_pks))
     }
@@ -596,7 +598,9 @@ PeakPicking_centWave_slave <- function(x, param){
   #save.image(file = paste0(length(roiList),"_",Sys.time(),".RData"));
   
   if (length(peaklist) == 0) {
-    warning("No peaks found!")
+    if(!.SwapEnv$.optimize_switch){
+      warning("No peaks found!")
+    }
     
     if (param$verboseColumns) {
       nopeaks <- matrix(nrow = 0, ncol = length(basenames) +
@@ -799,7 +803,9 @@ PeakPicking_Massifquant_slave <- function(x, param){
     basenames <- c("mz","mzmin","mzmax","rtmin","rtmax","rt", "into");
     
     if (length(massifquantROIs) == 0) {
-      warning("\nNo peaks found!")
+      if(!.SwapEnv$.optimize_switch){
+        warning("\nNo peaks found!")
+      }
       nopeaks <- matrix(nrow=0, ncol=length(basenames))
       colnames(nopeaks) <- basenames
       return(nopeaks)
@@ -1751,12 +1757,16 @@ RT.Adjust_peakGroup <-
       mingroups <- min(colSums(!is.na(rt)))
       if (mingroups < 4) {
         smooth <- "linear"
+        if(!.SwapEnv$.optimize_switch){
         warning("Too few peak groups for 'loess', reverting to linear",
                 " method")
+        }
       } else if (mingroups * span < 4) {
         span <- 4 / mingroups
+        if(!.SwapEnv$.optimize_switch){
         warning("Span too small for 'loess' and the available number of ",
                 "peak groups, resetting to ", round(span, 2))
+        }
       }
     }
     
@@ -1825,13 +1835,13 @@ RT.Adjust_peakGroup <-
           stop("Not enough peak groups even for linear smoothing available! Please decrease \"bw\" util to 1.")
         }
         ## Use lm instead?
-        fit <- lsfit(pts$rt, pts$rtdev)
-        rtdevsmo[[i]] <- rtime[[i_all]] * fit$coef[2] + fit$coef[1]
-        ptsrange <- range(pts$rt)
-        minidx <- rtime[[i_all]] < ptsrange[1]
-        maxidx <- rtime[[i_all]] > ptsrange[2]
-        rtdevsmo[[i]][minidx] <- rtdevsmo[[i]][head(which(!minidx), n = 1)]
-        rtdevsmo[[i]][maxidx] <- rtdevsmo[[i]][tail(which(!maxidx), n = 1)]
+        fit <- suppressWarnings(lsfit(pts$rt, pts$rtdev));
+        rtdevsmo[[i]] <- rtime[[i_all]] * fit$coef[2] + fit$coef[1];
+        ptsrange <- range(pts$rt);
+        minidx <- rtime[[i_all]] < ptsrange[1];
+        maxidx <- rtime[[i_all]] > ptsrange[2];
+        rtdevsmo[[i]][minidx] <- rtdevsmo[[i]][head(which(!minidx), n = 1)];
+        rtdevsmo[[i]][maxidx] <- rtdevsmo[[i]][tail(which(!maxidx), n = 1)];
       }
       ## Finally applying the correction
       rtime_adj[[i_all]] <- rtime[[i_all]] - rtdevsmo[[i]]
@@ -1841,21 +1851,21 @@ RT.Adjust_peakGroup <-
     rtime_adj <- adjustRtimeSubset(rtime, rtime_adj, subset = subset,
                                    method = subsetAdjust)
     
-    if (warn.overcorrect) {
+    if (warn.overcorrect & !.SwapEnv$.optimize_switch) {
       warning("Fitted retention time deviation curves exceed points by more",
               " than 2x. This is dangerous and the algorithm is probably ",
               "overcorrecting your data. Consider increasing the span ",
               "parameter or switching to the linear smoothing method.")
     }
     
-    if (warn.tweak.rt) {
+    if (warn.tweak.rt & !.SwapEnv$.optimize_switch) {
       warning(call. = FALSE, "Adjusted retention times had to be ",
-              "re-adjusted for some files to ensure them being in the same",
-              " order than the raw retention times. A call to ",
-              "'dropAdjustedRtime' might thus fail to restore retention ",
-              "times of chromatographic peaks to their original values. ",
-              "Eventually consider to increase the value of the 'span' ",
-              "parameter.")
+                "re-adjusted for some files to ensure them being in the same",
+                " order than the raw retention times. A call to ",
+                "'dropAdjustedRtime' might thus fail to restore retention ",
+                "times of chromatographic peaks to their original values. ",
+                "Eventually consider to increase the value of the 'span' ",
+                "parameter.")
     }
     rtime_adj
   }
@@ -4183,7 +4193,9 @@ PeakPicking_core <-function(object, object_mslevel, param, msLevel = 1L){
       n_pks <- 0
     if (n_pks == 0) {
       pks[[i]] <- NULL
-      warning("No peaks found in sample number ", i, ".")
+      if(!.SwapEnv$.optimize_switch){
+        warning("No peaks found in sample number ", i, ".")
+      }
     } else {
       pks[[i]] <- cbind(resList[[i]], sample = rep.int(i, n_pks))
     }

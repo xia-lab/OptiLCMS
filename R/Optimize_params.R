@@ -1285,9 +1285,9 @@ extFUN <- function(z, object, useNoise) {
     mzRange <- z[i, c("mzmin", "mzmax")] + c(-0.001, 0.001);
     rtRange <- z[i, c("rtmin", "rtmax")];
     
-    ints <- try(MSnbase::intensity(MSnbase::filterMz(MSnbase::filterRt(currentSample,
+    ints <- try(suppressWarnings(MSnbase::intensity(MSnbase::filterMz(MSnbase::filterRt(currentSample,
                                                                        rtRange),
-                                                     mzRange)), silent = TRUE)
+                                                     mzRange))), silent = TRUE)
     
     if(class(ints) == "try-error"){
       return(corr);
@@ -1475,7 +1475,7 @@ Noise_evaluate <- function (raw_data) {
     
     if (nrow(peakGroups) < 10) {
       npeaks <- nrow(peakGroups)
-      warning("You are strongly advised to use wider rt.idx or more samples or other trimming strategy !")
+      #warning("You are strongly advised to use wider rt.idx or more samples or other trimming strategy !")
     }
     peakGroups <- peakGroups[order(peakGroups$length, decreasing = TRUE), 
                              ]

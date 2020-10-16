@@ -4,9 +4,11 @@
 \alias{plotMSfeature}
 \title{plotMSfeature}
 \usage{
-plotMSfeature(FeatureNM, dpi = 72, format = "png")
+plotMSfeature(mSet, FeatureNM, dpi = 72, format = "png")
 }
 \arguments{
+\item{mSet}{mSet Object, should be processed aby 'PerformPeakProfiling'.}
+
 \item{FeatureNM}{Numeric, feature number in the feature table.}
 
 \item{dpi}{Numeric, to define the dpi of the figures. Default is 72.}

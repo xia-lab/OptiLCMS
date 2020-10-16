@@ -2,69 +2,18 @@
 
 #' Initializing running plan
 #' @param type Initialized plan type for a resumable running mode. Can be "raw_opt" for automated optimization option, or "raw_ms" for customized pipeline.
-#' @param specDir this parameter is used to introduce the spectral directory (where the raw spectra data exists).
 #' @author Zhiqiang Pang \email{zhiqiang.pang@mail.mcgill.ca} Jeff Xia \email{jeff.xia@mcgill.ca}
 #' Mcgill University
 #' License: GNU GPL (>= 2)
 #' @export
+#' @seealso \code{\link{ExecutePlan}} for the this resumable running pipeline.
 #' @examples 
-#' ## load googledrive package to download example data
-#' # library("googledrive");
-#'
-#' # Set data folder
-#' # data_folder_Sample <- "~/Data_IBD";
-#' # temp <- tempfile(fileext = ".zip");
-#'
-#' # Please authorize the package to download the data from web
-#' # dl <- drive_download(as_id("1CjEPed1WZrwd5T3Ovuic1KVF-Uz13NjO"), path = temp, overwrite = TRUE);
-#' # out <- unzip(temp, exdir = data_folder_Sample);
-#' # out;
-# 
-#' #### Running as resumable procedure: seamless pipeline
-#' ## Initialize running plan
-#' # plan <- InitializaPlan("raw_opt","~/Data_IBD/")
-#' ## define/set running plan
-#' # plan <- running.plan(plan,
-#' #                      data_folder_QC <- "~/Data_IBD/QC",
-#' #                      mSet <- PerformROIExtraction(datapath = data_folder_QC, 
-#' #                                                   rt.idx = 0.95, plot = F, 
-#' #                                                   rmConts = F, 
-#' #                                                   running.controller = rc),
-#' #                      param_initial <- SetPeakParam(),
-#' #                      best_parameters <- PerformParamsOptimization(mSet = mSet, 
-#' #                                                   param_initial, ncore = 2, 
-#' #                                                   running.controller = rc),
-#' #                      data_folder_Sample <- '',
-#' #                      param <- best_parameters,
-#' #                      plotSettings1 <- SetPlotParam(Plot=T),
-#' #                      plotSettings2 <- SetPlotParam(Plot=T),
-#' #                      mSet <- ImportRawMSData(mSet = mSet, 
-#' #                                              foldername = data_folder_Sample, 
-#' #                                              plotSettings = plotSettings1, 
-#' #                                              running.controller = rc),
-#' #                      mSet <- PerformPeakProfiling(mSet = mSet, 
-#' #                                              Params = param, 
-#' #                                              plotSettings = plotSettings2, 
-#' #                                              running.controller = rc),
-#' #                      annParams <- SetAnnotationParam(polarity = 'negative', 
-#' #                                              mz_abs_add = 0.025),
-#' #                      mSet <- PerformPeakAnnotation(mSet = mSet, 
-#' #                                              annotaParam = annParams, 
-#' #                                              ncore =1, 
-#' #                                              running.controller = rc),
-#' #                      maPeaks <- FormatPeakList(mSet = mSet, annParams, filtIso =F, 
-#' #                                              filtAdducts = FALSE, missPercent = 1));
-#' ## Execute the defined plan
-#' # ExecutePlan(plan)
+#' library(OptiLCMS);
+#' plan <- InitializaPlan("raw_opt")
 
-InitializaPlan <- function(type="spec", specDir=NULL){
+InitializaPlan <- function(type="raw_ms"){
   
-  if(!is.null(specDir)){
-    #setwd(WorkingDir);
-    fullUserPath <- specDir;
-  } else {
-    fullUserPath <- getwd();
-  };
+  tmp_cache_path <- tempdir();
   
   if(!exists(".SwapEnv")){
     .SwapEnv <<- new.env(parent = .GlobalEnv);
@@ -72,57 +21,52 @@ InitializaPlan <- function(type="spec", specDir=NULL){
     .SwapEnv$count_current_sample <- 0;
     .SwapEnv$count_total_sample <- 120; # maximum number for on.public.web
     .SwapEnv$envir <- new.env();
+    .SwapEnv$PlanWorkingDir <- paste0(tmp_cache_path, "/specTemp/");
   }
   
   MessageOutput(paste0("Running Status -- Plan Initialized Successfully at: ", Sys.time(), "\nPlease define your running plan ..."), "\n", 0);
   
-  temp.path <- paste0(getwd(), "/temp/");
+  temp.path <- paste0(tmp_cache_path, "/specTemp/");
   
   if(dir.exists(temp.path)){
     unlink(temp.path, recursive = TRUE, force = TRUE);
   }
   
+  .SwapEnv$PlanWorkingDir <- temp.path;
   #=============== raw_opt
   if (type == "raw_opt") {
     
-    plan.path <- paste0(getwd(), "/temp/plan");
+    plan.path <- paste0(temp.path, "/plan");
     
     if (!dir.exists(plan.path)) {
-      dir.create(paste0(getwd(), "/temp/plan"),
+      dir.create(paste0(temp.path, "/plan"),
                  recursive = TRUE)
     }
     
     #.running.as.plan <- .SwapEnv$.running.as.plan <- TRUE;
     plan <- new("ResumingePlan");
     .plan_count <- plan@PlanNumber <- 0;
-    plan@WorkingDir <- fullUserPath;
+    plan@WorkingDir <- temp.path;
     
     saveRDS(plan, file = paste0(plan.path, "/plan.rds"));
     #saveRDS(.running.as.plan, file = paste0(plan.path, "/running.as.plan.rds"));
     saveRDS(.plan_count, file = paste0(plan.path, "/plan_count.rds"));
     #----------------------
     .optimize_switch <- .SwapEnv$.optimize_switch <- TRUE;
-    switch.path <- paste0(getwd(), "/temp/plan")
+    switch.path <- paste0(temp.path, "/plan");
     saveRDS(.optimize_switch,
             file = paste0(switch.path, "/optimize_switch_", .plan_count, ".rds"))
     
     #----------------------
-    envir.path <- paste0(getwd(), "/temp/envir")
+    envir.path <- paste0(temp.path, "/envir")
     if (!dir.exists(envir.path)) {
-      dir.create(paste0(getwd(), "/temp/envir"),
+      dir.create(paste0(temp.path, "/envir"),
                  recursive = T)
     }
     
     envir <- .SwapEnv$envir <- new.env()
     saveRDS(envir, file = paste0(envir.path, "/envir.rds"))
     #----------------------
-    # if (.on.public.web) {
-    #   rawFileNames <- paste0(getwd(), "/temp/plan")
-    #   saveRDS(rawfilenms,
-    #           file = paste0(rawFileNames, "/rawfilenms_", .plan_count, ".rds"))
-    # }
-    #----------------------
-    
     if (exists(".plan_count") & .plan_count > 0) {
       return(plan)
     }
@@ -130,10 +74,10 @@ InitializaPlan <- function(type="spec", specDir=NULL){
   
   #================== raw_ms
   if (type == "raw_ms") {
-    plan.path <- paste0(getwd(), "/temp/plan")
+    plan.path <- paste0(temp.path, "/plan")
     
     if (!dir.exists(plan.path)) {
-      dir.create(paste0(getwd(), "/temp/plan"),
+      dir.create(paste0(temp.path, "/plan"),
                  recursive = T)
     }
     
@@ -141,36 +85,26 @@ InitializaPlan <- function(type="spec", specDir=NULL){
     #.running.as.plan <- .SwapEnv$.running.as.plan <- TRUE;
     plan <- new("ResumingePlan");
     .plan_count <- plan@PlanNumber <- 0;
-    plan@WorkingDir <- fullUserPath;
+    plan@WorkingDir <- temp.path;
     
     saveRDS(plan, file = paste0(plan.path, "/plan.rds"));
     #saveRDS(.running.as.plan, file = paste0(plan.path, "/running.as.plan.rds"));
     saveRDS(.plan_count, file = paste0(plan.path, "/plan_count.rds"));
     #----------------------
     .optimize_switch <- .SwapEnv$.optimize_switch <- FALSE;
-    switch.path <- paste0(getwd(), "/temp/plan");
+    switch.path <- paste0(temp.path, "/plan");
     saveRDS(.optimize_switch,
             file = paste0(switch.path, "/optimize_switch_", .plan_count, ".rds"));
     
     #----------------------
-    envir.path <- paste0(getwd(), "/temp/envir")
+    envir.path <- paste0(temp.path, "/envir")
     if (!dir.exists(envir.path)) {
-      dir.create(paste0(getwd(), "/temp/envir"),
+      dir.create(paste0(temp.path, "/envir"),
                  recursive = T)
     }
     
     envir <- .SwapEnv$envir <- new.env()
     saveRDS(envir, file = paste0(envir.path, "/envir.rds"))
-    #----------------------
-    # rawFileNames <- paste0(getwd(), "/temp/plan")
-    # 
-    # if (.on.public.web) {
-    #   saveRDS(rawfilenms,
-    #           file = paste0(rawFileNames, "/rawfilenms_", .plan_count, ".rds"))
-    # } else {
-    #   # do nothing for local
-    # }
-    # 
     #----------------------
     if (exists(".plan_count") & .plan_count > 0) {
       return(plan)
@@ -178,18 +112,17 @@ InitializaPlan <- function(type="spec", specDir=NULL){
   }
   
   ## Recording cache file information
-  record.info <- matrix(nrow = 30, ncol = 2)
-  record.path <- paste0(getwd(), "/temp/records")
+  record.info <- matrix(nrow = 30, ncol = 2);
+  record.path <- paste0(temp.path, "/records");
   
   if (!dir.exists(record.path)) {
-    dir.create(paste0(getwd(), "/temp/records"),
+    dir.create(paste0(temp.path, "/records"),
                recursive = T)
   }
   
   saveRDS(record.info, file = paste0(record.path, "/records.rds"))
   
   return(plan)
-  #return(.set.mSet(plan))
 }
 
 #' running.plan
@@ -199,90 +132,36 @@ InitializaPlan <- function(type="spec", specDir=NULL){
 #' Mcgill University
 #' License: GNU GPL (>= 2)
 #' @export
+#' @seealso \code{\link{ExecutePlan}} for the this resumable running pipeline.
 #' @examples 
-#' ## load googledrive package to download example data
-#' # library("googledrive");
-#'
-#' # Set data folder
-#' # data_folder_Sample <- "~/Data_IBD";
-#' # temp <- tempfile(fileext = ".zip");
-#'
-#' # Please authorize the package to download the data from web
-#' # dl <- drive_download(as_id("1CjEPed1WZrwd5T3Ovuic1KVF-Uz13NjO"), path = temp, overwrite = TRUE);
-#' # out <- unzip(temp, exdir = data_folder_Sample);
-#' # out;
-# 
-#' #### Running as resumable procedure: seamless pipeline
-#' ## Initialize running plan
-#' # plan <- InitializaPlan("raw_opt","~/Data_IBD/")
-#' ## define/set running plan
-#' # plan <- running.plan(plan,
-#' #                      data_folder_QC <- "~/Data_IBD/QC",
-#' #                      mSet <- PerformROIExtraction(datapath = data_folder_QC, 
-#' #                                                   rt.idx = 0.95, plot = F, 
-#' #                                                   rmConts = F, 
-#' #                                                   running.controller = rc),
-#' #                      param_initial <- SetPeakParam(),
-#' #                      best_parameters <- PerformParamsOptimization(mSet = mSet, 
-#' #                                                   param_initial, ncore = 2, 
-#' #                                                   running.controller = rc),
-#' #                      data_folder_Sample <- '',
-#' #                      param <- best_parameters,
-#' #                      plotSettings1 <- SetPlotParam(Plot=T),
-#' #                      plotSettings2 <- SetPlotParam(Plot=T),
-#' #                      mSet <- ImportRawMSData(mSet = mSet, 
-#' #                                              foldername = data_folder_Sample, 
-#' #                                              plotSettings = plotSettings1, 
-#' #                                              running.controller = rc),
-#' #                      mSet <- PerformPeakProfiling(mSet = mSet, 
-#' #                                              Params = param, 
-#' #                                              plotSettings = plotSettings2, 
-#' #                                              running.controller = rc),
-#' #                      annParams <- SetAnnotationParam(polarity = 'negative', 
-#' #                                              mz_abs_add = 0.025),
-#' #                      mSet <- PerformPeakAnnotation(mSet = mSet, 
-#' #                                              annotaParam = annParams, 
-#' #                                              ncore =1, 
-#' #                                              running.controller = rc),
-#' #                      maPeaks <- FormatPeakList(mSet = mSet, annParams, filtIso =F, 
-#' #                                              filtAdducts = FALSE, missPercent = 1));
-#' ## Execute the defined plan
-#' # ExecutePlan(plan)
-#' 
-#' #' # revise running plan, for example, revise mz_abs_add as 0.030
-#' # plan <- running.plan(plan,
-#' #                      data_folder_QC <- "~/Data_IBD/QC",
-#' #                      mSet <- PerformROIExtraction(datapath = data_folder_QC, 
-#' #                                                   rt.idx = 0.95, plot = F, 
-#' #                                                   rmConts = F, 
-#' #                                                   running.controller = rc),
-#' #                      param_initial <- SetPeakParam(),
-#' #                      best_parameters <- PerformParamsOptimization(mSet = mSet, 
-#' #                                                   param_initial, ncore = 2, 
-#' #                                                   running.controller = rc),
-#' #                      data_folder_Sample <- '',
-#' #                      param <- best_parameters,
-#' #                      plotSettings1 <- SetPlotParam(Plot=T),
-#' #                      plotSettings2 <- SetPlotParam(Plot=T),
-#' #                      mSet <- ImportRawMSData(mSet = mSet, 
-#' #                                              foldername = data_folder_Sample, 
-#' #                                              plotSettings = plotSettings1, 
-#' #                                              running.controller = rc),
-#' #                      mSet <- PerformPeakProfiling(mSet = mSet, 
-#' #                                              Params = param, 
-#' #                                              plotSettings = plotSettings2, 
-#' #                                              running.controller = rc),
-#' #                      annParams <- SetAnnotationParam(polarity = 'negative', 
-#' #                                              mz_abs_add = 0.030),
-#' #                      mSet <- PerformPeakAnnotation(mSet = mSet, 
-#' #                                              annotaParam = annParams, 
-#' #                                              ncore =1, 
-#' #                                              running.controller = rc),
-#' #                      maPeaks <- FormatPeakList(mSet = mSet, annParams, filtIso =F, 
-#' #                                              filtAdducts = FALSE, 
-#' #                                              missPercent = 1));
-#' ## Re-execute the defined plan, unnecessary steps will be skipped
-#' # ExecutePlan(plan)
+#' library(OptiLCMS);
+#' plan <- InitializaPlan("raw_opt")
+#' plan <- running.plan(plan,
+#'                      data_folder_QC <- paste0(dataDir,"/QC"),
+#'                      mSet <- PerformROIExtraction(datapath = data_folder_QC, rt.idx = 0.5, 
+#'                                                   plot = F, rmConts = F, 
+#'                                                   running.controller = rc),
+#'                      param_initial <- SetPeakParam(),
+#'                      best_parameters <- PerformParamsOptimization(mSet = mSet, param_initial, 
+#'                                                                   ncore = 1, 
+#'                                                                   running.controller = rc),
+#'                      param <- best_parameters,
+#'                      plotSettings1 <- SetPlotParam(Plot=T),
+#'                      plotSettings2 <- SetPlotParam(Plot=T),
+#'                      mSet <- ImportRawMSData(mSet = mSet, foldername = dataDir, 
+#'                                              plotSettings = plotSettings1, 
+#'                                              running.controller = rc),
+#'                      mSet <- PerformPeakProfiling(mSet = mSet, Params = param, 
+#'                                                   plotSettings = plotSettings2, 
+#'                                                   running.controller = rc),
+#'                      annParams <- SetAnnotationParam(polarity = 'negative', 
+#'                                                      mz_abs_add = 0.025),
+#'                      mSet <- PerformPeakAnnotation(mSet = mSet, 
+#'                                                    annotaParam = annParams, ncore =1, 
+#'                                                    running.controller = rc),
+#'                      mSet <- FormatPeakList(mSet = mSet, annParams, 
+#'                                             filtIso =F, filtAdducts = FALSE, 
+#'                                             missPercent = 1));
 
 running.plan <- function(plan=NULL,...){
   
@@ -304,7 +183,7 @@ running.plan <- function(plan=NULL,...){
   
   plan@CommandSet[[paste0("command_set_",.plan_count)]] <- CommandsVerified;
   
-  plan.path <- paste0(getwd(), "/temp/plan");
+  plan.path <- paste0(plan@WorkingDir, "/plan");
   saveRDS(plan, file = paste0(plan.path, "/plan.rds"));
   saveRDS(.plan_count, file = paste0(plan.path, "/plan_count.rds"));
   
@@ -331,59 +210,87 @@ running.plan <- function(plan=NULL,...){
 #' License: GNU GPL (>= 2)
 #' @export
 #' @examples 
-#' ## load googledrive package to download example data
-#' # library("googledrive");
-#'
-#' # Set data folder
-#' # data_folder_Sample <- "~/Data_IBD";
-#' # temp <- tempfile(fileext = ".zip");
-#'
-#' # Please authorize the package to download the data from web
-#' # dl <- drive_download(as_id("1CjEPed1WZrwd5T3Ovuic1KVF-Uz13NjO"), path = temp, overwrite = TRUE);
-#' # out <- unzip(temp, exdir = data_folder_Sample);
-#' # out;
-# 
-#' #### Running as resumable procedure: seamless pipeline
-#' ## Initialize running plan
-#' # plan <- InitializaPlan("raw_opt","~/Data_IBD/")
-#' ## define/set running plan
-#' # plan <- running.plan(plan,
-#' #                      data_folder_QC <- "~/Data_IBD/QC",
-#' #                      mSet <- PerformROIExtraction(datapath = data_folder_QC, 
-#' #                                                   rt.idx = 0.95, plot = F, 
-#' #                                                   rmConts = F, 
-#' #                                                   running.controller = rc),
-#' #                      param_initial <- SetPeakParam(),
-#' #                      best_parameters <- PerformParamsOptimization(mSet = mSet, 
-#' #                                                   param_initial, ncore = 2, 
-#' #                                                   running.controller = rc),
-#' #                      data_folder_Sample <- '',
-#' #                      param <- best_parameters,
-#' #                      plotSettings1 <- SetPlotParam(Plot=T),
-#' #                      plotSettings2 <- SetPlotParam(Plot=T),
-#' #                      mSet <- ImportRawMSData(mSet = mSet, 
-#' #                                              foldername = data_folder_Sample, 
-#' #                                              plotSettings = plotSettings1, 
-#' #                                              running.controller = rc),
-#' #                      mSet <- PerformPeakProfiling(mSet = mSet, 
-#' #                                              Params = param, 
-#' #                                              plotSettings = plotSettings2, 
-#' #                                              running.controller = rc),
-#' #                      annParams <- SetAnnotationParam(polarity = 'negative', 
-#' #                                              mz_abs_add = 0.025),
-#' #                      mSet <- PerformPeakAnnotation(mSet = mSet, 
-#' #                                              annotaParam = annParams, 
-#' #                                              ncore =1, 
-#' #                                              running.controller = rc),
-#' #                      maPeaks <- FormatPeakList(mSet = mSet, annParams, filtIso =F, 
-#' #                                              filtAdducts = FALSE, 
-#' #                                              missPercent = 1));
-#' ## Execute the defined plan
-#' # ExecutePlan(plan)
+#' ## Download the raw spectra data
+#' tempZip <- tempfile(fileext = ".zip");
+#' download.file("https://www.dropbox.com/s/kabienyoadmzdpm/SpectraData.zip", 
+#'               destfile = tempZip, method = "wget");
+#' dataDir <- paste0(tempdir(),"/SpectraData");
+#' out <- unzip(tempZip, exdir = dataDir);
+#' 
+#' ## Load OptiLCMS
+#' library(OptiLCMS);
+#' 
+#' ## Initialize your plan
+#' plan <- InitializaPlan("raw_opt")
+#' 
+#' ## Define your plan
+#' plan <- running.plan(plan,
+#'                      data_folder_QC <- paste0(dataDir,"/QC"),
+#'                      mSet <- PerformROIExtraction(datapath = data_folder_QC, rt.idx = 0.5, 
+#'                                                   plot = F, rmConts = F, 
+#'                                                   running.controller = rc),
+#'                      param_initial <- SetPeakParam(),
+#'                      best_parameters <- PerformParamsOptimization(mSet = mSet, param_initial, 
+#'                                                                   ncore = 1, 
+#'                                                                   running.controller = rc),
+#'                      param <- best_parameters,
+#'                      plotSettings1 <- SetPlotParam(Plot=T),
+#'                      plotSettings2 <- SetPlotParam(Plot=T),
+#'                      mSet <- ImportRawMSData(mSet = mSet, foldername = dataDir, 
+#'                                              plotSettings = plotSettings1, 
+#'                                              running.controller = rc),
+#'                      mSet <- PerformPeakProfiling(mSet = mSet, Params = param, 
+#'                                                   plotSettings = plotSettings2, 
+#'                                                   running.controller = rc),
+#'                      annParams <- SetAnnotationParam(polarity = 'negative', 
+#'                                                      mz_abs_add = 0.025),
+#'                      mSet <- PerformPeakAnnotation(mSet = mSet, 
+#'                                                    annotaParam = annParams, ncore =1, 
+#'                                                    running.controller = rc),
+#'                      mSet <- FormatPeakList(mSet = mSet, annParams, 
+#'                                             filtIso =F, filtAdducts = FALSE, 
+#'                                             missPercent = 1));                    
+#' ## Run it!
+#' result <- ExecutePlan(plan);
+#' 
+#' ## Re-define your plan with a change on mz_abs_add from 0.025 to 0.035
+#' plan <- running.plan(plan,
+#'                      data_folder_QC <- paste0(dataDir,"/QC"),
+#'                      mSet <- PerformROIExtraction(datapath = data_folder_QC, rt.idx = 0.5, 
+#'                                                   plot = F, rmConts = F, 
+#'                                                   running.controller = rc),
+#'                      param_initial <- SetPeakParam(),
+#'                      best_parameters <- PerformParamsOptimization(mSet = mSet, param_initial, 
+#'                                                                   ncore = 1, 
+#'                                                                   running.controller = rc),
+#'                      param <- best_parameters,
+#'                      plotSettings1 <- SetPlotParam(Plot=T),
+#'                      plotSettings2 <- SetPlotParam(Plot=T),
+#'                      mSet <- ImportRawMSData(mSet = mSet, foldername = dataDir, 
+#'                                              plotSettings = plotSettings1, 
+#'                                              running.controller = rc),
+#'                      mSet <- PerformPeakProfiling(mSet = mSet, Params = param, 
+#'                                                   plotSettings = plotSettings2, 
+#'                                                   running.controller = rc),
+#'                      annParams <- SetAnnotationParam(polarity = 'negative', 
+#'                                                      mz_abs_add = 0.035),
+#'                      mSet <- PerformPeakAnnotation(mSet = mSet, 
+#'                                                    annotaParam = annParams, ncore =1, 
+#'                                                    running.controller = rc),
+#'                      mSet <- FormatPeakList(mSet = mSet, annParams, 
+#'                                             filtIso =F, filtAdducts = FALSE, 
+#'                                             missPercent = 1)); 
+#'                                                                
+#' ## Re-run it! Most steps will be resumed from cache and save your time!
+#' result <- ExecutePlan(plan);
+#
 
 ExecutePlan <- function(plan=NULL){
   
-  MessageOutput(paste0("Current Working Directory: ",getwd(),"\n"));
+  MessageOutput("This plan is being excuted !\n");
+  MessageOutput(paste0("Working Directory: ",getwd()));
+  MessageOutput(paste0("Cache Directory: ",plan@WorkingDir,"\n"));
+  
   if (is.null(plan)){
     stop("No running plan input. Please design you plan first with 'running.plan' function !")
   };
@@ -399,7 +306,7 @@ ExecutePlan <- function(plan=NULL){
     perform.plan(plan@CommandSet[["command_set_1"]]);
     
     envir <- .SwapEnv$envir;
-    envir.path <- paste0(getwd(),"/temp/envir");
+    envir.path <- paste0(plan@WorkingDir,"/envir");
     saveRDS(envir, file = paste0(envir.path,"/envir.rds"));
     
   } else if (length(plan@CommandSet) > 1) {
@@ -441,26 +348,30 @@ ExecutePlan <- function(plan=NULL){
     mSetInfo <- tryCatch(perform.plan(new_command_set), error = function(e){e});
     
     if (class(mSetInfo)[1]=="simpleError"){
-      print_mes <- paste0("<font color=\"red\">","\nERROR:",mSetInfo$message,"</font>");
-      write.table(print_mes,file="metaboanalyst_spec_proc.txt",append = T,row.names = F,col.names = F, quote = F, eol = "\n");
-      stop(paste0("EXCEPTION POINT CODE: ", mSetInfo$message));
+      if(.on.public.web){
+        print_mes <- paste0("<font color=\"red\">","\nERROR:",mSetInfo$message,"</font>");
+        write.table(print_mes,file="metaboanalyst_spec_proc.txt",append = T,row.names = F,col.names = F, quote = F, eol = "\n");
+      } else {
+        stop(paste0("EXCEPTION POINT CODE: ", mSetInfo$message));
+      }
     }
     
     envir <- .SwapEnv$envir;
-    envir.path <- paste0(getwd(),"/temp/envir");
+    envir.path <- paste0(plan@WorkingDir,"/envir");
     saveRDS(envir, file = paste0(envir.path,"/envir.rds"));
     
   } else {
     stop("Wrong plan has been prepared !");
   }
   
+  return(envir)
 }
 
 #' @noRd
 recording_identifier <- function(plan) {
   
   .plan_count <- plan@PlanNumber;
-  record.path <- paste0(getwd(),"/temp/records");
+  record.path <- paste0(plan@WorkingDir,"/records");
   
   if(file.exists(paste0(record.path,"/records_marker_",.plan_count-1,".rds"))){
     record.marker_last <- readRDS(paste0(record.path,"/records_marker_",.plan_count-1,".rds"));
@@ -515,6 +426,17 @@ recording_identifier <- function(plan) {
 #' @noRd
 recordMarker_resetter <- function(.plan_count){
   
+  tmp_cache_path <- tempdir();
+  
+  if(!exists(".SwapEnv")){
+    .SwapEnv <<- new.env(parent = .GlobalEnv);
+    .SwapEnv$.optimize_switch <- FALSE;
+    .SwapEnv$count_current_sample <- 0;
+    .SwapEnv$count_total_sample <- 120; # maximum number for on.public.web
+    .SwapEnv$envir <- new.env();
+    .SwapEnv$PlanWorkingDir <- paste0(tmp_cache_path, "/specTemp/");
+  }
+  
   ## Recording initial markers about being ran or not
   record.marker <- matrix(nrow = 28,ncol = 2);
   record.marker[,1] <- c("ROI_extract_1","ROI_extract_2","ROI_extract_3","ROI_extract_4",
@@ -525,19 +447,27 @@ recordMarker_resetter <- function(.plan_count){
                          "operators_1","operators_2","operators_3","operators_4",
                          "operators_5","operators_6","operators_7","operators_8");
   record.marker[,2] <- rep(FALSE, 28);
-  record.path <- paste0(getwd(),"/temp/records");
-  
+  record.path <- paste0(.SwapEnv$PlanWorkingDir,"/records");
   saveRDS(record.marker,file = paste0(record.path,"/records_marker_",.plan_count,".rds"));
-  
 }
 
 #' @noRd
 marker_record <- function(functionNM){
   
-  record.path <- paste0(getwd(),"/temp/records");
-  plan.path <- paste0(getwd(),"/temp/plan/");
+  tmp_cache_path <- tempdir();
   
-  .plan_count <- readRDS(paste0(plan.path,"plan_count.rds"))
+  if(!exists(".SwapEnv")){
+    .SwapEnv <<- new.env(parent = .GlobalEnv);
+    .SwapEnv$.optimize_switch <- FALSE;
+    .SwapEnv$count_current_sample <- 0;
+    .SwapEnv$count_total_sample <- 120; # maximum number for on.public.web
+    .SwapEnv$envir <- new.env();
+    .SwapEnv$PlanWorkingDir <- paste0(tmp_cache_path, "/specTemp/");
+  }
+  
+  record.path <- paste0(.SwapEnv$PlanWorkingDir,"/records");
+  plan.path <- paste0(.SwapEnv$PlanWorkingDir,"/plan/");
+  .plan_count <- readRDS(paste0(plan.path,"plan_count.rds"));
   
   if (!file.exists(paste0(record.path,"/records_marker_",.plan_count,".rds"))){
     record.marker <- matrix(nrow = 28,ncol = 2);
@@ -858,7 +788,7 @@ controller.modifier <- function(new_command_set, last_command_set, plan){
   if(.on.public.web){
     peakParams <- NULL;
     # load params.rda and envir.rds and do a comparison
-    envir.path <- paste0(getwd(),"/temp/envir");
+    envir.path <- paste0(plan@WorkingDir,"/envir");
     envir_tmp <- readRDS(paste0(envir.path,"/envir.rds"));
     last_param <- envir_tmp[["param"]];
     load("params.rda");
@@ -986,13 +916,13 @@ perform.command <- function(command){
     
     eval(command,envir = envir);
     
-    envir.path <- paste0(getwd(),"/temp/envir");
+    envir.path <- paste0(.SwapEnv$PlanWorkingDir,"/envir");
     saveRDS(envir, file = paste0(envir.path,"/envir.rds"));
   } else {
     
     eval(command,envir = envir);
     
-    envir.path <- paste0(getwd(),"/temp/envir");
+    envir.path <- paste0(.SwapEnv$PlanWorkingDir,"/envir");
     saveRDS(envir, file = paste0(envir.path,"/envir.rds"));
   }
   
@@ -1001,14 +931,25 @@ perform.command <- function(command){
 #' @noRd
 cache.save <- function(obj, funpartnm){
   
-  tmp_path <- paste0(getwd(),"/temp/cache");
+  tmp_cache_path <- tempdir();
+  
+  if(!exists(".SwapEnv")){
+    .SwapEnv <<- new.env(parent = .GlobalEnv);
+    .SwapEnv$.optimize_switch <- FALSE;
+    .SwapEnv$count_current_sample <- 0;
+    .SwapEnv$count_total_sample <- 120; # maximum number for on.public.web
+    .SwapEnv$envir <- new.env();
+    .SwapEnv$PlanWorkingDir <- paste0(tmp_cache_path, "/specTemp/");
+  }
+  
+  tmp_path <- paste0(.SwapEnv$PlanWorkingDir,"/cache");
   if (!dir.exists(tmp_path)){dir.create(tmp_path,recursive = T)};
   temp <- tempfile(tmpdir=tmp_path,fileext = ".rds");
   saveRDS(obj,file = temp);
   
-  tmp_path_r <- paste0(getwd(),"/temp/records");
+  tmp_path_r <- paste0(.SwapEnv$PlanWorkingDir,"/records");
   if (!dir.exists(tmp_path_r)){dir.create(tmp_path,recursive = T)};
-  if (!file.exists(paste0(getwd(),"/temp/records/file_record.rds"))){
+  if (!file.exists(paste0(.SwapEnv$PlanWorkingDir,"/records/file_record.rds"))){
     
   };
   temp_file_name <- basename(temp)
@@ -1034,14 +975,24 @@ info.save <- function(funpartnm, tmp_path_r, temp_file_name){
 #' @noRd
 cache.read <- function(function.name, point){
   
-  info.matrix <- readRDS(paste0(getwd(),"/temp/records/records.rds"));
+  tmp_cache_path <- tempdir();
+  
+  if(!exists(".SwapEnv")){
+    .SwapEnv <<- new.env(parent = .GlobalEnv);
+    .SwapEnv$.optimize_switch <- FALSE;
+    .SwapEnv$count_current_sample <- 0;
+    .SwapEnv$count_total_sample <- 120; # maximum number for on.public.web
+    .SwapEnv$envir <- new.env();
+    .SwapEnv$PlanWorkingDir <- paste0(tmp_cache_path, "/specTemp/");
+  }
+  
+  info.matrix <- readRDS(paste0(.SwapEnv$PlanWorkingDir,"/records/records.rds"));
   temp_point <- paste0(function.name,"_",point);
   temp_file <- info.matrix[match(temp_point,info.matrix[,1]),2];
   
-  obj <- readRDS(paste0(getwd(),"/temp/cache/",temp_file));
+  obj <- readRDS(paste0(.SwapEnv$PlanWorkingDir,"/cache/",temp_file));
   
   return(obj)
-  
 }
 
 #' @noRd

@@ -70,3 +70,5 @@ importFrom("stats", "approx", "approxfun", "as.formula", "convolve",
            "fft", "fitted", "hclust", "kmeans", "lm", "loess", "lsfit",
            "na.omit", "nextn", "nls", "prcomp", "predict", "sd",
            "smooth.spline", "weighted.mean")
+
+

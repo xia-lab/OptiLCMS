@@ -615,7 +615,7 @@ PlotSpectraInsensityStistics <-
     
     if(is.null(mSet) & .on.public.web){
       load("mSet.rda");
-    } else {
+    } else if(is.null(mSet)) {
       stop("mSet is missing!")
     }
     
@@ -842,7 +842,7 @@ PlotSpectraRTadj <-
     
     if(is.null(mSet) & .on.public.web){
       load("mSet.rda")
-    } else {
+    } else if(is.null(mSet)) {
       stop("mSet is missing!")
     }
     
@@ -978,7 +978,7 @@ PlotSpectraBPIadj <-
     
     if(is.null(mSet) & .on.public.web){
       load("mSet.rda")
-    } else {
+    } else if(is.null(mSet)) {
       stop("mSet is missing!")
     }
     
@@ -1059,13 +1059,14 @@ PlotSpectraBPIadj <-
   }
 
 #' plotMSfeature
+#' @param mSet mSet Object, should be processed aby 'PerformPeakProfiling'.
 #' @param FeatureNM Numeric, feature number in the feature table.
 #' @param dpi Numeric, to define the dpi of the figures. Default is 72.
 #' @param format Character, to give the format of BPI figures ploted. Can be "jpeg", "png", "pdf", "svg",
 #'  "tiff" or "ps". Default is "png".
 #' @export
 #' @importFrom Cairo Cairo
-plotMSfeature <- function(FeatureNM,
+plotMSfeature <- function(mSet, FeatureNM,
                           dpi = 72,
                           format = "png") {
   # if(.on.public.web){
