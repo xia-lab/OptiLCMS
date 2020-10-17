@@ -283,7 +283,6 @@ running.plan <- function(plan=NULL,...){
 #'                                                                
 #' ## Re-run it! Most steps will be resumed from cache and save your time!
 #' result <- ExecutePlan(plan);
-#
 
 ExecutePlan <- function(plan=NULL){
   

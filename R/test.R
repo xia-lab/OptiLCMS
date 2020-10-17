@@ -70,6 +70,53 @@
 # result <- ExecutePlan(plan);
 # #
 
+#' ## Download the raw spectra example data
+#' tempZip <- tempfile(fileext = ".zip");
+#' download.file("https://www.dropbox.com/s/kabienyoadmzdpm/SpectraData.zip",
+#'               destfile = tempZip, method = "wget");
+#' dataDir <- paste0(tempdir(),"/SpectraData");
+#' out <- unzip(tempZip, exdir = dataDir);
+#' 
+#' ## Load OptiLCMS
+#' library(OptiLCMS);
+#' 
+#' ## Initialize your plan
+#' mSet <- ImSet<-InitDataObjects("spec", "raw", FALSE);
+#' 
+#' ## Import raw data
+#' mSet <- ImportRawMSData(mSet = mSet, foldername = dataDir,
+#'                         plotSettings = SetPlotParam(Plot=T));
+#' 
+#' ## Perform raw spectra profiling
+#' mSet <- PerformPeakProfiling(mSet = mSet, Params = SetPeakParam(),
+#'                              plotSettings = SetPlotParam(Plot=T), 
+#'                              ncore = 1);
+#' 
+#' ## Set annotation parameters and run
+#' annParams <- SetAnnotationParam(polarity = 'negative',
+#'                                 mz_abs_add = 0.025);
+#' mSet <- PerformPeakAnnotation(mSet = mSet,
+#'                               annotaParam = annParams, 
+#'                               ncore =1);
+#' ## Format the PeakList
+#' mSet <- FormatPeakList(mSet = mSet, 
+#'                        annParams,
+#'                        filtIso =F, 
+#'                        filtAdducts = FALSE,
+#'                        missPercent = 1)
+#' 
+#' ## Export the annotation result
+#' Export.Annotation(mSet);
+#' 
+#' ## Export the Peak Table
+#' Export.PeakTable(mSet);
+#' 
+#' ## Export the Peak summary
+#' Export.PeakSummary(mSet)
+
+
+
+
 # importFrom("grDevices", "boxplot.stats", "dev.off", "jpeg")
 # importFrom("graphics", "abline", "boxplot", "contour", "grid",
 #            "legend", "par", "points")
