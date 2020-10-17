@@ -299,6 +299,7 @@ PerformPeakProfiling <-
       ecol = "",
       progress = 89
     )
+    register(bpstop());
     
     #  ---------------====------IV. Plotting Results --------========-----------
     if (c4) {

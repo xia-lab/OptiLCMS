@@ -43,7 +43,6 @@ InitDataObjects <- function(data.type, anal.type, paired=FALSE){
 #' the raw MS spectra to be processed.
 #' @param mode Character, the data input mode. Default is "onDisk" to avoid memory crash. "inMemory" will
 #' absorb data into the memory.
-#' @param ncores Numeric, a value used to defined the parallel cores.
 #' @param plotSettings List, plotting parameters produced by SetPlotParam Function. "plot.opts" can be added through this
 #' function for samples numbers for plotting. Defalut is "default", "all" will apply all samples for plotting and may cause
 #' memory crash, especially for large sample dataset.
@@ -145,7 +144,6 @@ ImportRawMSData <-
   function(mSet = NULL,
            foldername,
            mode = "onDisk",
-           ncores = 4,
            plotSettings,
            running.controller = NULL) {
     
@@ -305,30 +303,7 @@ ImportRawMSData <-
       sample_group = sclass,
       stringsAsFactors = FALSE
     )
-    
-    if (!.on.public.web) {
-      cores <- parallel::detectCores()
-      if (missing(ncores)) {
-        num_cores <- ceiling(cores * 2 / 3)
-      } else{
-        ncores -> num_cores
-      }
-      
-      MessageOutput(paste0("The number of CPU cores to be used is set to ", num_cores, "."))
-      
-      if (.Platform$OS.type == "unix") {
-        BiocParallel::register(BiocParallel::bpstart(BiocParallel::MulticoreParam(num_cores)))
-      } else {
-        # for windows
-        BiocParallel::register(BiocParallel::bpstart(BiocParallel::SnowParam(num_cores)))
-      }
-      
-    } else {
-      num_cores <- 2
-      MessageOutput(paste0("The number of CPU cores to be used is set to ", num_cores, "."))
-      BiocParallel::register(BiocParallel::bpstart(BiocParallel::MulticoreParam(num_cores)))
-    }
-    
+
     if (c1) {
       raw_data <-
         suppressMessages(read.MSdata(

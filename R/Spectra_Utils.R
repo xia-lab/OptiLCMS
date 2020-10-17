@@ -126,7 +126,10 @@ PerformPeakPicking<-function(mSet, BPPARAM = bpparam()){
                                               row.names = rownames(pks))
   
   ## mSet Generation
-  mSet@peakpicking <- newFd
+  mSet@peakpicking <- newFd;
+  
+  # Stop parallel
+  register(bpstop());
   
   return(mSet)
 }
@@ -4470,7 +4473,7 @@ findIsotopesPspec <- function(isomatrix, mz, ipeak, int, params){
       hits.iso[!hit,] <- t(apply(hits.iso[!hit,,drop=FALSE],1, function(x) {
         if(!all(is.na(x))){
           ini <- which(x > iso)
-          if(!is.infinite(ini) && length(ini) > 0){
+          if(all(!is.infinite(ini)) && length(ini) > 0){
             x[min(ini):ncol(hits.iso)] <- NA  
           }
         }

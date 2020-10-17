@@ -71,4 +71,3 @@ importFrom("stats", "approx", "approxfun", "as.formula", "convolve",
            "na.omit", "nextn", "nls", "prcomp", "predict", "sd",
            "smooth.spline", "weighted.mean")
 
-

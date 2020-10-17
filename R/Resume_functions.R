@@ -240,7 +240,7 @@ running.plan <- function(plan=NULL,...){
 #'                                              plotSettings = plotSettings1, 
 #'                                              running.controller = rc),
 #'                      mSet <- PerformPeakProfiling(mSet = mSet, Params = param, 
-#'                                                   plotSettings = plotSettings2, 
+#'                                                   plotSettings = plotSettings2, ncore = 1,
 #'                                                   running.controller = rc),
 #'                      annParams <- SetAnnotationParam(polarity = 'negative', 
 #'                                                      mz_abs_add = 0.025),
