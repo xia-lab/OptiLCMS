@@ -206,10 +206,10 @@ PerformParamsOptimization <- function(mSet, param= NULL, method="DoE", ncore=4, 
       
       if(class(p2)[1]=="simpleError"){
         
-        param[["ppm"]]<-5;
+        param[["ppm"]]<-15;
         param[["noise"]]<-100;
         param[["prefilter"]]<-3;
-        param[["value_of_prefilter"]]<-1000;
+        param[["value_of_prefilter"]]<-10;
         
       } else {
         
@@ -218,8 +218,8 @@ PerformParamsOptimization <- function(mSet, param= NULL, method="DoE", ncore=4, 
         param[["prefilter"]]<-round(p2$prefilter,2);
         param[["value_of_prefilter"]]<-round(p2$value_of_prefilter,2);
         
-        if(round(p2$ppm,2) < 1.5 | round(p2$ppm,2) > 30){
-          param[["ppm"]] <- 5.00; # Estimation failure, use the default instead !
+        if(round(p2$ppm,2) < 1.5 | round(p2$ppm,2) > 100){
+          param[["ppm"]] <- 15.00; # Estimation failure, use the default instead !
         } else {
           param[["ppm"]] <- round(p2$ppm,2);
         }
@@ -231,7 +231,7 @@ PerformParamsOptimization <- function(mSet, param= NULL, method="DoE", ncore=4, 
         }
         
         if(round(p2$value_of_prefilter,2) < 10){
-          param[["value_of_prefilter"]] <- 100; # Estimation failure, use the default instead !
+          param[["value_of_prefilter"]] <- 10; # Estimation failure, use the default instead !
         } else {
           param[["value_of_prefilter"]] <- round(p2$value_of_prefilter,2);
         }

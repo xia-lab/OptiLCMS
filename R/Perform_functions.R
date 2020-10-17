@@ -76,6 +76,14 @@ PerformPeakProfiling <-
       .running.as.plan <- TRUE;
     }
     
+    if(!exists(".SwapEnv")){
+      .SwapEnv <<- new.env(parent = .GlobalEnv);
+      .SwapEnv$.optimize_switch <- FALSE;
+      .SwapEnv$count_current_sample <- 0;
+      .SwapEnv$count_total_sample <- 120; # maximum number for on.public.web
+      .SwapEnv$envir <- new.env();
+    }
+    
     .optimize_switch <- .SwapEnv$.optimize_switch <- FALSE;
     
     if(.on.public.web){
