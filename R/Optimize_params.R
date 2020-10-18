@@ -17,87 +17,17 @@
 #' Mcgill University
 #' License: GNU GPL (>= 2)
 #' @examples 
-#' ## load googledrive package to download example data
-#' # library("googledrive");
 #'
-#' ## Set data folder
-#' # data_folder_Sample <- "~/Data_IBD";
-#' # data_folder_QC <- "~/Data_IBD/QC";
-#' # temp <- tempfile(fileext = ".zip");
 #'
-#' ## Please authorize the package to download the data from web
-#' # dl <- drive_download(as_id("1CjEPed1WZrwd5T3Ovuic1KVF-Uz13NjO"), path = temp, overwrite = TRUE);
-#' # out <- unzip(temp, exdir = data_folder_Sample);
-#' # out;
-# 
-#' #### Running as regular procedure: step by step
-#' ## Extract ROI for parameters' optimization
-#' # mSet <- PerformROIExtraction(datapath = data_folder_QC, rt.idx = 0.95, plot = F, rmConts = F);
-#' ## Perform the optimization
-#' # best_parameters <- PerformParamsOptimization(mSet = mSet, SetPeakParam(), ncore = 4);
-#' ## Perform data import of all samples
-#' # mSet <- ImportRawMSData(mSet = mSet, foldername = data_folder_Sample, 
-#' #                         plotSettings = SetPlotParam(Plot=T));
-#' ## Perform peak profiling
-#' # mSet <- PerformPeakProfiling(mSet = mSet, Params = param, plotSettings = SetPlotParam(Plot=T));
-#' ## Set annotation parameters
-#' # annParams <- SetAnnotationParam(polarity = 'negative', mz_abs_add = 0.025);
-#' ## Perform peak annotation
-#' # mSet <- PerformPeakAnnotation(mSet = mSet, annotaParam = annParams, ncore =1);
-#' ## Format the peak table
-#' # maPeaks <- FormatPeakList(mSet = mSet, annParams, filtIso =F, 
-#' #                           filtAdducts = FALSE, missPercent = 1);
-#' 
-#' #### Running as resumable procedure: seamless pipeline
-#' ## load googledrive package to download example data
-#' # library("googledrive");
 #'
-#' # Set data folder
-#' # data_folder_Sample <- "~/Data_IBD";
-#' # temp <- tempfile(fileext = ".zip");
 #'
-#' # Please authorize the package to download the data from web
-#' # dl <- drive_download(as_id("1CjEPed1WZrwd5T3Ovuic1KVF-Uz13NjO"), path = temp, overwrite = TRUE);
-#' # out <- unzip(temp, exdir = data_folder_Sample);
-#' # out;
-# 
-#' #### Running as resumable procedure: seamless pipeline
-#' ## Initialize running plan
-#' # plan <- InitializaPlan("raw_opt","~/Data_IBD/")
-#' ## define/set running plan
-#' # plan <- running.plan(plan,
-#' #                      data_folder_QC <- "~/Data_IBD/QC",
-#' #                      mSet <- PerformROIExtraction(datapath = data_folder_QC, 
-#' #                                                   rt.idx = 0.95, plot = F, 
-#' #                                                   rmConts = F, 
-#' #                                                   running.controller = rc),
-#' #                      param_initial <- SetPeakParam(),
-#' #                      best_parameters <- PerformParamsOptimization(mSet = mSet, 
-#' #                                                   param_initial, ncore = 2, 
-#' #                                                   running.controller = rc),
-#' #                      data_folder_Sample <- '',
-#' #                      param <- best_parameters,
-#' #                      plotSettings1 <- SetPlotParam(Plot=T),
-#' #                      plotSettings2 <- SetPlotParam(Plot=T),
-#' #                      mSet <- ImportRawMSData(mSet = mSet, 
-#' #                                              foldername = data_folder_Sample, 
-#' #                                              plotSettings = plotSettings1, 
-#' #                                              running.controller = rc),
-#' #                      mSet <- PerformPeakProfiling(mSet = mSet, 
-#' #                                              Params = param, 
-#' #                                              plotSettings = plotSettings2, 
-#' #                                              running.controller = rc),
-#' #                      annParams <- SetAnnotationParam(polarity = 'negative', 
-#' #                                              mz_abs_add = 0.025),
-#' #                      mSet <- PerformPeakAnnotation(mSet = mSet, 
-#' #                                              annotaParam = annParams, 
-#' #                                              ncore =1, 
-#' #                                              running.controller = rc),
-#' #                      maPeaks <- FormatPeakList(mSet = mSet, annParams, filtIso =F, 
-#' #                                              filtAdducts = FALSE, 
-#' #                                              missPercent = 1));
-#' ## Execute the defined plan
-#' # ExecutePlan(plan)
+#'
+#'
+#'
+#'
+#'
+#'
+#'
 
 PerformParamsOptimization <- function(mSet, param= NULL, method="DoE", ncore=4, running.controller=NULL){
   
@@ -499,11 +429,9 @@ optimizxcms.doe.peakpicking <- function(object = NULL, params = params,
     params <- mSet_OPT$params
     
     if(!resultIncreased_doe(history)) {
-      
-      if (!.on.public.web){
-        message("No Increase Stopping !")
-      }      
-      
+
+      MessageOutput("No Increase Stopping !")
+
       maxima <- 0
       max_index <- 1
       for(i in 1:length(history)) {
@@ -864,6 +792,17 @@ Statistic_doe <-function(object, object_mslevel, isotopeIdentification,
   if(!is.list(xcms_parameters))
     xcms_parameters <- as.list(xcms_parameters)
   
+  # deal with the too narrow peak width issue
+  pkmin <- xcms_parameters$min_peakwidth;
+  pkmax <- xcms_parameters$max_peakwidth;
+  
+  if(abs(pkmax - pkmin) < 5 & pkmin > 5){
+    xcms_parameters$max_peakwidth <- pkmax + 2.5;
+    xcms_parameters$min_peakwidth <- pkmin - 2.5;
+  } else if (abs(pkmax - pkmin) < 5 & pkmin < 5) {
+    xcms_parameters$max_peakwidth <- pkmax + 5;
+  }
+  
   # Detect the peak features with the predicted best parameters
   mSet <- suppressMessages(calculateSet_doe(object = object, object_mslevel=object_mslevel, 
                                             Set_parameters = xcms_parameters,
@@ -898,7 +837,7 @@ Statistic_doe <-function(object, object_mslevel, isotopeIdentification,
   mSet_OPT$PPS$GaussianSI <-
     calcGaussianS(mSet, object, useNoise = useNoise)
   
-  MessageOutput(paste0("Gaussian peak ratio (%): ", round(mSet_OPT$PPS$GaussianSI,2)*100, "."))
+  MessageOutput(paste0("Gaussian peak ratio (%): ", round(mSet_OPT$PPS$GaussianSI,3)*100, "."))
   
   #save(mSet_OPT, file = paste0("mSet_",Sys.time(),"_780.rda"));
   ## Normalize the CV, RCS, GS, GaussianSI
@@ -944,10 +883,10 @@ SlaveCluster_doe <-function(task, Set_parameters, object, object_mslevel,
       task = task,
       BPPARAM = BPPARAM
     )
-  MessageOutput(paste("Finished", task,"/",length(Set_parameters),"in this round !\n"))
+  MessageOutput(paste("Finished", task,"/",length(Set_parameters),"in this round !"))
   
   if (!class(mSet)=="character"){
-    MessageOutput("Peak Feature Analyzing...\n")
+    MessageOutput("Peak Feature Analyzing...")
     
     #xset <- mSet[["xcmsSet"]]
     
@@ -969,7 +908,7 @@ SlaveCluster_doe <-function(task, Set_parameters, object, object_mslevel,
       result[7] <- tmp_RCS_GS$RCS;
       result[8] <- tmp_RCS_GS$GS;
     };
-
+    
     tmp_GaussianSI <- try(calcGaussianS(mSet, object,
                                       useNoise = as.numeric(Set_parameters[[task]]$noise)),
                         silent = T);
@@ -1649,14 +1588,18 @@ getClusterType <- function() {
   }
   return("PSOCK")
 }
+
 peaks_IPO <- function(mSet) {
-  
   peaks_act <-mSet@peakfilling$msFeatureData$chromPeaks;
+  if(is.null(peaks_act)){
+    peaks_act <-mSet@peakRTcorrection[["chromPeaks"]];
+  }
   if (!("sample" %in% colnames(peaks_act))) {
     colnames(peaks_act)[colnames(peaks_act) == ""] <- "sample"
   }
   peaks_act
 }
+
 calcMaximumCarbon <- function(masses) {  
   
   carbon = 12.0

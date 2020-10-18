@@ -2513,8 +2513,10 @@ PerformPeakFiling <- function(mSet,BPPARAM=bpparam()){
   res <- res[!is.na(res[, "into"]), , drop = FALSE]
   
   if (nrow(res) == 0) {
-    warning("Could not integrate any signal for the missing ",
-            "peaks! Consider increasing 'expandMz' and 'expandRt'.");
+    if(!.optimize_switch){
+      warning("Could not integrate any signal for the missing ",
+              "peaks! Consider increasing 'expandMz' and 'expandRt'.");
+    }
     
     if(.on.public.web){
       save(mSet, file = "mSet.rda");

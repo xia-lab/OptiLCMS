@@ -10,7 +10,7 @@ PerformDataTrimming<- function(datapath, mode="ssm", write=F, mz, mzdiff, rt, rt
 #' @description This function performs the raw data trimming. This function will output 
 #' an trimmed MSnExp file to memory or hardisk according to the choice of users must 
 #' provide the data path for 'datapath', and optionally provide other corresponding parameters.
-#' @param datapath Character, the path of the raw MS data files' folder/path (.mzXML, .CDF and .mzML) 
+#' @param datapath Character, the path of the raw MS data files' or folder's path (.mzXML, .CDF and .mzML) 
 #' for parameters training.
 #' @param mode Character, mode for data trimming to select the chraracteristic peaks. 
 #' Default is 'ssm'. Users could select random trimed according to mz value (mz_random) or 
@@ -57,23 +57,19 @@ PerformROIExtraction <-
     
     if(!.on.public.web){
       #Local R package running
-      if (!dir.exists(datapath)) {
-        stop("The directory you specify does not exist ! Please check datapath !");
-      } else {
-        datapath <- tools::file_path_as_absolute(datapath);
-      }
+      files <- Path2Files(path = datapath);
+      files <- unlist(sapply(files, tools::file_path_as_absolute));
       
     } else {
       # code for web version
       if (!dir.exists(datapath)) {
         datapath <- "upload/";
       }
-      
       if (!dir.exists(datapath)) {
         datapath <- "/home/glassfish/projects/MetaboDemoRawData/upload/QC/";
       }
-      
-      datapath <- tools::file_path_as_absolute(datapath);
+      files <- Path2Files(path = datapath);
+      files <- unlist(sapply(files, tools::file_path_as_absolute));
     }
 
     MessageOutput(
@@ -111,7 +107,7 @@ PerformROIExtraction <-
       
       if (.on.public.web) {
         #TODO: need to configure with the online pipeline
-        dda_file <- list.files(datapath, recursive = T, full.names = TRUE);
+        dda_file <- files;
         rawfilenms <- mSet@rawfiles;
         
         if (basename(datapath) == "QC") {
@@ -223,9 +219,7 @@ PerformROIExtraction <-
         
       } else {
         
-        dda_file1 <- list.files(datapath,
-                                recursive = T,
-                                full.names = T)
+        dda_file1 <- files
       }
       MessageOutput(paste0(dda_file1,collapse = "\n"),"\n")
       

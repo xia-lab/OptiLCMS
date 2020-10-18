@@ -1,3 +1,18 @@
+# cdfs <- dir(system.file("mzData", package = "mtbls2"), full.names = TRUE,
+#             recursive = TRUE)[c(1, 4, 7, 10, 11, 16)]
+# ## Create a phenodata data.frame
+# pd <- data.frame(sample_name = sub(basename(cdfs), pattern = ".mzData",
+#                                    replacement = "", fixed = TRUE),
+#                  sample_group = c(rep("KO", 3), rep("WT", 3)),
+#                  stringsAsFactors = FALSE)
+# library(OptiLCMS)
+# mSet <- ImportRawMSData(path = cdfs, metadata = pd)
+# mSet <- PerformROIExtraction(datapath = cdfs[c(1:2)],rt.idx = 0.1,rmConts = F);
+# undebug(PerformParamsOptimization);
+# debug(PerformPeakProfiling)
+# #getwd()
+# best_params <- PerformParamsOptimization(mSet, param = SetPeakParam(),ncore = 1)
+# mSet <- PerformPeakProfiling(mSet, Params = best_params, ncore = 1, plotSettings = SetPlotParam(Plot = T))
 
 # 
 # library(OptiLCMS);

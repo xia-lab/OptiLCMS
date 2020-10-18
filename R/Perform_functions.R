@@ -165,6 +165,10 @@ PerformPeakProfiling <-
                     ecol = "\n",
                     progress = NULL);
       
+      if(length(mSet@rawOnDisk) == 0){
+        stop("No MS found! Please ImportRawMSData first!")
+      }
+      
       mSet <-
         tryCatch(
           PerformPeakPicking(mSet),

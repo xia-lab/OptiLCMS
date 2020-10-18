@@ -25,7 +25,7 @@ Depends: R (>= 4.0.0), methods, Biobase, BiocParallel (>= 1.8.0), stats, utils
 Imports: mzR (>= 2.19.5), lattice, RColorBrewer, plyr, 
          RBGL, S4Vectors, ggplot2, graph, progress, rsm, Cairo, Hmisc, entropy, cluster, data.table,
          scales, ggrepel, MSnbase
-Suggests: knitr (>= 1.1.0), ncdf4, MALDIquant, SummarizedExperiment, RANN, IRanges, robustbase, MassSpecWavelet
+Suggests: knitr (>= 1.1.0), ncdf4, MALDIquant, SummarizedExperiment, MassSpecWavelet, mtbls2
 Enhances: XML, parallel
 BugReports: https://github.com/xia-lab/OptiLCMS/issues/new
 URL: https://github.com/xia-lab/OptiLCMS

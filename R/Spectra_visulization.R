@@ -652,6 +652,7 @@ PlotSpectraInsensityStistics <-
     
     names(ints) <- as.character(sample_num)
     
+    sample_idx <- as.factor(sample_idx)
     group_colors <-
       sapply(
         seq(length(levels(sample_idx))),
@@ -664,6 +665,20 @@ PlotSpectraInsensityStistics <-
     on.exit(par(oldpar));
     
     op <- par(mar = c(3.5, 10, 4, 1.5), xaxt = "s")
+    
+    sampleNMs <- names(ints);
+    len_nms <- nchar(sampleNMs);
+    if(any(len_nms > 15)){
+      names(ints) <- 
+      unname(unlist(sapply(sampleNMs, function(x){
+        LEN_x <- nchar(x);
+        if(LEN_x > 15){
+          substring(x, LEN_x-14,LEN_x)
+        } else {
+          x
+        }
+        })))
+    }
     
     boxplot(
       ints,
@@ -996,6 +1011,7 @@ PlotSpectraBPIadj <-
     
     sample_idx <-
       mSet@rawOnDisk@phenoData@data[["sample_group"]]
+    sample_idx <- as.factor(sample_idx);
     
     if (length(unique(sample_idx)) > 9) {
       col.fun <-
