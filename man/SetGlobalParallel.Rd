@@ -13,7 +13,8 @@ SetGlobalParallel(ncore = 1)
 SetGlobalParallel used to set the global core numbers
 }
 \examples{
-SetGlobalParallel(1)
+SetGlobalParallel(1);
+register(bpstop());
 }
 \author{
 Zhiqiang Pang \email{zhiqiang.pang@mail.mcgill.ca}, Jasmine Chong \email{jasmine.chong@mail.mcgill.ca},

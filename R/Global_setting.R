@@ -170,7 +170,8 @@ fast.write.csv <- function(dat, file, row.names=TRUE){
 #' @export
 #' @import BiocParallel
 #' @examples
-#' SetGlobalParallel(1)
+#' SetGlobalParallel(1);
+#' register(bpstop());
 #' @author Zhiqiang Pang \email{zhiqiang.pang@mail.mcgill.ca}, Jasmine Chong \email{jasmine.chong@mail.mcgill.ca},
 #' and Jeff Xia \email{jeff.xia@mcgill.ca}
 #' McGill University, Canada
