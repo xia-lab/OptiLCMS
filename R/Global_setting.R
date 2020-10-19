@@ -164,9 +164,24 @@ fast.write.csv <- function(dat, file, row.names=TRUE){
     });
 }
 
-#' @noRd
-# load_msnbase <- function(){
-#   library("MSnbase");
-# }
+#' SetGlobalParallel
+#' @description SetGlobalParallel used to set the global core numbers
+#' @param ncore Numeric, used to set the global core numbers, default is 1
+#' @export
+#' @import BiocParallel
+#' @examples
+#' SetGlobalParallel(1)
+#' @author Zhiqiang Pang \email{zhiqiang.pang@mail.mcgill.ca}, Jasmine Chong \email{jasmine.chong@mail.mcgill.ca},
+#' and Jeff Xia \email{jeff.xia@mcgill.ca}
+#' McGill University, Canada
+#' License: GNU GPL (>= 2)
 
+SetGlobalParallel <- function(ncore = 1){
+  
+  if (.Platform$OS.type == "unix") {
+    register(bpstart(MulticoreParam(ceiling(ncore))))
+  } else if (.Platform$OS.type == "windows") {
+    register(bpstart(SnowParam(ceiling(ncore))))
+  }
+}
 

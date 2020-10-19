@@ -11,8 +11,13 @@ plotSingleTIC(mSet = NULL, filename, imagename)
 
 \item{filename}{Character, to give the filename for the TIC plotting.}
 
-\item{imagename}{Character, to give the filename of the TIC plotted.}
+\item{imagename}{Character, to give the filename of the TIC plotted. (only works for web version)}
 }
 \description{
-plotSingleTIC
+plotSingleTIC is used to plot the TIC of a certain spectra
+}
+\examples{
+library(OptiLCMS)
+data(mSet);
+plotSingleTIC(mSet, "MSpos-Ex2-Col0-48h-Ag-2_1-A,3_01_9829.mzData")
 }

@@ -39,6 +39,11 @@ PerformDataTrimming<- function(datapath, mode="ssm", write=F, mz, mzdiff, rt, rt
 #' @author Zhiqiang Pang \email{zhiqiang.pang@mail.mcgill.ca} Jeff Xia \email{jeff.xia@mcgill.ca}
 #' Mcgill University
 #' License: GNU GPL (>= 2)
+#' library(OptiLCMS)
+#' @examples
+#' DataFiles <- dir(system.file("mzData", package = "mtbls2"), full.names = TRUE, recursive = TRUE)
+#' mSet <- PerformROIExtraction(datapath = DataFiles`[1]`,rt.idx = 0.025,rmConts = F);
+
 
 PerformROIExtraction <-
   function(datapath,
@@ -405,9 +410,9 @@ PerformROIExtraction <-
         
         ch.xdata <- chromatogram(trimed_MSnExp)
         group.col <-
-          paste0(brewer.pal(length(
+          paste0(suppressWarnings(brewer.pal(length(
             trimed_MSnExp@processingData@files
-          ), "Blues"))
+          ), "Blues")));
         plot(ch.xdata, col = group.col[1:length(trimed_MSnExp@processingData@files)])
       }
       

@@ -143,6 +143,9 @@ This function sets all the parameters used for downstream
 pre-processing of user's raw MS data based on specific LC-MS platform or parameters optimization.
 The database will be under an real-time update based on the progress in this field.
 }
+\examples{
+params <- SetPeakParam(platform=="UPLC-Q/E")
+}
 \references{
 Smith, C.A. et al. 2006. {Analytical Chemistry}, 78, 779-787
 }

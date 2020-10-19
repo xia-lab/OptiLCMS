@@ -11,11 +11,16 @@ plotMSfeature(mSet, FeatureNM, dpi = 72, format = "png")
 
 \item{FeatureNM}{Numeric, feature number in the feature table.}
 
-\item{dpi}{Numeric, to define the dpi of the figures. Default is 72.}
+\item{dpi}{Numeric, to define the dpi of the figures. Default is 72. (only works for web version)}
 
 \item{format}{Character, to give the format of BPI figures ploted. Can be "jpeg", "png", "pdf", "svg",
-"tiff" or "ps". Default is "png".}
+"tiff" or "ps". Default is "png". (only works for web version)}
 }
 \description{
-plotMSfeature
+plotMSfeature is used to plot the feature intensity of different groups
+}
+\examples{
+library(OptiLCMS)
+data(mSet);
+plotMSfeature (mSet, 1); # Here is only one group
 }

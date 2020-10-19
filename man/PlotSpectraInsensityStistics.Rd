@@ -27,3 +27,8 @@ PlotSpectraInsensityStistics(
 \description{
 PlotSpectraInsensityStistics
 }
+\examples{
+library(OptiLCMS)
+data(mSet);
+PlotSpectraInsensityStistics(mSet);
+}

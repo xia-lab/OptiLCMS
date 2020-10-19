@@ -12,37 +12,53 @@ running.plan(plan = NULL, ...)
 \item{...}{Multiple Processing commands can be input here.}
 }
 \description{
-running.plan
+define a plan for resumalbe running
 }
 \examples{
+##' Download the raw spectra data
+DataFiles <- dir(system.file("mzData", package = "mtbls2"), full.names = TRUE,
+            recursive = TRUE)[c(10:12, 14:16)]
+##' Create a phenodata data.frame
+pd <- data.frame(sample_name = sub(basename(DataFiles), pattern = ".mzData", 
+                                   replacement = "", fixed = TRUE),
+                 sample_group = c(rep("col0", 3), rep("cyp79", 3)),
+                 stringsAsFactors = FALSE)
+
+##' Load OptiLCMS
 library(OptiLCMS);
+
+##' Initialize your plan
 plan <- InitializaPlan("raw_opt")
+
+##' Define your plan
 plan <- running.plan(plan,
-                     data_folder_QC <- paste0(dataDir,"/QC"),
-                     mSet <- PerformROIExtraction(datapath = data_folder_QC, rt.idx = 0.5, 
-                                                  plot = F, rmConts = F, 
+                     mSet <- PerformROIExtraction(datapath = DataFiles[c(1:2)], rt.idx = 0.025,
+                                                  plot = F, rmConts = F,
                                                   running.controller = rc),
                      param_initial <- SetPeakParam(),
-                     best_parameters <- PerformParamsOptimization(mSet = mSet, param_initial, 
-                                                                  ncore = 1, 
+                     best_parameters <- PerformParamsOptimization(mSet = mSet, param_initial,
+                                                                  ncore = 1,
                                                                   running.controller = rc),
                      param <- best_parameters,
                      plotSettings1 <- SetPlotParam(Plot=T),
                      plotSettings2 <- SetPlotParam(Plot=T),
-                     mSet <- ImportRawMSData(mSet = mSet, foldername = dataDir, 
-                                             plotSettings = plotSettings1, 
+                     mSet <- ImportRawMSData(mSet = mSet, path = DataFiles, 
+                                             metadata = pd,
+                                             plotSettings = plotSettings1,
                                              running.controller = rc),
-                     mSet <- PerformPeakProfiling(mSet = mSet, Params = param, 
-                                                  plotSettings = plotSettings2, 
+                     mSet <- PerformPeakProfiling(mSet = mSet, Params = param,
+                                                  plotSettings = plotSettings2, ncore = 1,
                                                   running.controller = rc),
-                     annParams <- SetAnnotationParam(polarity = 'negative', 
+                     annParams <- SetAnnotationParam(polarity = 'negative',
                                                      mz_abs_add = 0.025),
-                     mSet <- PerformPeakAnnotation(mSet = mSet, 
-                                                   annotaParam = annParams, ncore =1, 
+                     mSet <- PerformPeakAnnotation(mSet = mSet,
+                                                   annotaParam = annParams, ncore =1,
                                                    running.controller = rc),
-                     mSet <- FormatPeakList(mSet = mSet, annParams, 
-                                            filtIso =F, filtAdducts = FALSE, 
+                     mSet <- FormatPeakList(mSet = mSet, annParams,
+                                            filtIso =FALSE, filtAdducts = FALSE,
                                             missPercent = 1));
+##' Run it!
+# result <- ExecutePlan(plan);
 }
 \seealso{
 \code{\link{ExecutePlan}} for the this resumable running pipeline.

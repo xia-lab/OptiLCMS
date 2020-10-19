@@ -7,10 +7,11 @@
 InitializaPlan(type = "raw_ms")
 }
 \arguments{
-\item{type}{Initialized plan type for a resumable running mode. Can be "raw_opt" for automated optimization option, or "raw_ms" for customized pipeline.}
+\item{type}{Character, Initialized plan type for a resumable running mode. Can be "raw_opt" for
+automated optimization option, or "raw_ms" for customized pipeline.}
 }
 \description{
-Initializing running plan
+Initialize a running plan
 }
 \examples{
 library(OptiLCMS);

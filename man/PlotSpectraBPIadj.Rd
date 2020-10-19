@@ -21,3 +21,8 @@ PlotSpectraBPIadj(mSet = NULL, imgName, format = "png", dpi = 72, width = NA)
 \description{
 PlotSpectraBPIadj
 }
+\examples{
+library(OptiLCMS)
+data(mSet);
+PlotSpectraBPIadj(mSet);
+}

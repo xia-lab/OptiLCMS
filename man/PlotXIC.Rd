@@ -37,3 +37,8 @@ PlotXIC(
 This functionn creates an extracted ion chromatogram (EIC) for a specific
 m/z and retention time. This is used for quality-control of raw m/s data.
 }
+\examples{
+library(OptiLCMS)
+data(mSet);
+PlotXIC(mSet, 1, T, T);
+}

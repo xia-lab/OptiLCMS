@@ -58,6 +58,8 @@
 #' @import utils
 #' @export
 #' @references Smith, C.A. et al. 2006. {Analytical Chemistry}, 78, 779-787
+#' @examples
+#' params <- SetPeakParam(platform=="UPLC-Q/E")
 
 SetPeakParam <- function(platform = "general", Peak_method = "centWave", RT_method = "loess",
                          mzdiff, snthresh, bw, # used for both "centwave" and "matchedFilter"

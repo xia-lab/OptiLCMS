@@ -17,17 +17,19 @@
 #' Mcgill University
 #' License: GNU GPL (>= 2)
 #' @examples 
-#'
-#'
-#'
-#'
-#'
-#'
-#'
-#'
-#'
-#'
-#'
+#' library(OptiLCMS)
+#' 
+#' DataFiles <- dir(system.file("mzData", package = "mtbls2"), full.names = TRUE,
+#'                  recursive = TRUE)[c(10:12, 14:16)]
+#' ##' Create a phenodata data.frame
+#' pd <- data.frame(sample_name = sub(basename(DataFiles), pattern = ".mzData",
+#'                                    replacement = "", fixed = TRUE),
+#'                  sample_group = c(rep("col0", 3), rep("cyp79", 3)),
+#'                  stringsAsFactors = FALSE)
+#' 
+#' # mSet <- PerformROIExtraction(datapath = DataFiles[c(1:2)],rt.idx = 0.025,rmConts = F);
+#' 
+#' # best_params <- PerformParamsOptimization(mSet, param = SetPeakParam(),ncore = 1);
 
 PerformParamsOptimization <- function(mSet, param= NULL, method="DoE", ncore=4, running.controller=NULL){
   
@@ -435,6 +437,7 @@ optimizxcms.doe.peakpicking <- function(object = NULL, params = params,
       maxima <- 0
       max_index <- 1
       for(i in 1:length(history)) {
+        ## TODO: need to think more on this discrimination criteria: based on max setting or max QS?
         if(history[[i]]$max_settings[1] > maxima) {
           maxima <- history[[i]]$max_settings[1]
           max_index <- i
@@ -450,6 +453,17 @@ optimizxcms.doe.peakpicking <- function(object = NULL, params = params,
       
       if(!is.list(xcms_parameters))
         xcms_parameters <- as.list(xcms_parameters)
+      
+      # deal with the too narrow peak width issue
+      pkmin <- xcms_parameters$min_peakwidth;
+      pkmax <- xcms_parameters$max_peakwidth;
+      
+      if(abs(pkmax - pkmin) < 5 & pkmin > 5){
+        xcms_parameters$max_peakwidth <- pkmax + 2.5;
+        xcms_parameters$min_peakwidth <- pkmin - 2.5;
+      } else if (abs(pkmax - pkmin) < 5 & pkmin < 5) {
+        xcms_parameters$max_peakwidth <- pkmax + 5;
+      }
       
       best_settings <- list()
       best_settings$parameters <- xcms_parameters
@@ -1165,6 +1179,11 @@ calcGaussianS <-function(mSet, object, useNoise, BPPARAM = bpparam()){
   
   object <- mSet@rawInMemory;
   
+  ## Protect the environment from overwrite
+  newAssayEnvir <- new.env();
+  copyEnv(mSet@rawInMemory@assayData, newAssayEnvir);
+  object@assayData <- newAssayEnvir;
+  
   ## Adjusted RT application
   scan_names <- sort(names(object@assayData));
   adjRTs <- unname(unlist(mSet@peakfilling[["msFeatureData"]][["adjustedRT"]]))
@@ -1194,6 +1213,11 @@ calcGaussianS <-function(mSet, object, useNoise, BPPARAM = bpparam()){
                   useNoise = useNoise)
     res <- unlist(res)
   }
+  
+  rm(object);
+  rm(newAssayEnvir);
+  gc();
+  
   return(mean(sapply(res, FUN = function(x) {
     x
   })))
@@ -1307,9 +1331,9 @@ resultIncreased_doe <- function(history) {
 #' @description This functions handles the evaluation on the data noise (noise and prefilter parameters) 
 #' and the identification on the molecule weights deviation evaluation.
 #' @param raw_data MSnExp object, the (trimmed) data in memory produced by 'PerformDataTrimming'.
-#' @export
 #' @import MSnbase
 #' @import progress
+#' @noRd
 #' @references McLean C (2020). Autotuner: Automated parameter selection for untargeted metabolomics data processing
 #' @author Zhiqiang Pang \email{zhiqiang.pang@mail.mcgill.ca} Jeff Xia \email{jeff.xia@mcgill.ca}
 #' Mcgill University
@@ -1542,7 +1566,7 @@ Noise_evaluate <- function (raw_data) {
       
       if(class(SNest) == "try-error"){(next)()}
       
-      SNest <- min(SNest)
+      SNest <- suppressWarnings(min(SNest));
       if (is.infinite(SNest)) {
         SNest <- 25
       }

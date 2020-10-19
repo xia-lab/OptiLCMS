@@ -18,6 +18,11 @@ GaussModel(x, mu, sigma, h)
 \description{
 GaussModel
 }
+\examples{
+ints<- c(c(1:5,5:1))
+nls(y ~ GaussModel(x, mu, sigma, h), 
+                   + data.frame(x = 1:length(ints), y = ints))
+}
 \references{
 Smith, C.A., Want, E.J., O'Maille, G., Abagyan,R., Siuzdak, G. (2006).
 "XCMS: Processing mass spectrometry data for metabolite profiling using nonlinear

@@ -62,7 +62,18 @@ InitDataObjects <- function(data.type, anal.type, paired=FALSE){
 #' @importFrom Cairo Cairo
 #' @examples 
 #' ## load googledrive package to download example data
-#' # library("googledrive");
+#' ##' Load OptiLCMS package
+#' library(OptiLCMS)
+#' ##' Get raw spectra files
+#' DataFiles <- dir(system.file("mzData", package = "mtbls2"), full.names = TRUE,
+#'                  recursive = TRUE)[c(10:12, 14:16)]
+#' ##' Create a phenodata data.frame
+#' pd <- data.frame(sample_name = sub(basename(DataFiles), pattern = ".mzData",
+#'                                    replacement = "", fixed = TRUE),
+#'                  sample_group = c(rep("col0", 3), rep("cyp79", 3)),
+#'                  stringsAsFactors = FALSE)
+#' ##' Import raw spectra
+#' mSet <- ImportRawMSData(path = DataFiles, metadata = pd);
 
 ImportRawMSData <-
   function(mSet = NULL,
@@ -987,18 +998,9 @@ UpdateRawfiles <- function(mSet, filesIncluded = NULL){
 #' @importFrom stats quantile
 #' @export
 #' @examples  
-#' ## load googledrive package to download example data
-#' # library("googledrive");
-#' # data_folder_Sample <- "Raw_data_example"
-#' # temp <- tempfile(fileext = ".zip");
-#' ## Please authorize the package to download the data from web
-#' # dl <- drive_download(as_id("1CjEPed1WZrwd5T3Ovuic1KVF-Uz13NjO"), path = temp, overwrite = TRUE);
-#' # out <- unzip(temp, exdir = data_folder_Sample);
-#' # out;
-#' # library(OptiLCMS);
-#' # mSet<-InitDataObjects("spec", "raw", FALSE);
-#' ## input CD_SM-77FXR.mzML to check. TRUE means has been centroided well.
-#' # res <- CentroidCheck("Raw_data_example/CD/CD_SM-77FXR.mzML")
+#' DataFiles <- dir(system.file("mzData", package = "mtbls2"), full.names = TRUE,
+#'                  recursive = TRUE)[c(10:12, 14:16)]
+#' sapply(DataFiles, CentroidCheck)
 
 CentroidCheck <- function(filename) {
   # fileh <- MSnbase:::.openMSfile(filename)
@@ -1028,8 +1030,6 @@ CentroidCheck <- function(filename) {
   return(sum(res) > 0.8*length(res))
   
 }
-
-
 
 Path2Files <- function(path){
   Pathname <- normalizePath(path);
@@ -1109,8 +1109,6 @@ Path2Files <- function(path){
   files <- files[Centroididx];
   return(files)
 }
-
-
 
 #' @references Gatto L, Gibb S, Rainer J (2020). “MSnbase, efficient and elegant R-based processing and visualisation of raw mass spectrometry data.” bioRxiv.
 .testReadMSDataInput <- function(e) {

@@ -29,7 +29,7 @@
 # mSet <- PerformPeakProfiling(mSet,ncore = 10,Params = param_optimized, plotSettings = SetPlotParam(Plot = F))
 # annParams <- SetAnnotationParam(polarity = 'negative', mz_abs_add = 0.015)
 # mSet <- PerformPeakAnnotation(mSet, annParams)
-# maPeaks <- FormatPeakList(mSet, annParams, filtIso =F, filtAdducts = FALSE,missPercent = 1)
+# maPeaks <- FormatPeakList(mSet, annParams, filtIso = FALSE, filtAdducts = FALSE,missPercent = 1)
 
 
 # library(OptiLCMS);
@@ -141,8 +141,8 @@
 #            "na.omit", "nextn", "nls", "prcomp", "predict", "sd",
 #            "smooth.spline", "weighted.mean")
 # 
-
-
+# 
+# 
 
 
 

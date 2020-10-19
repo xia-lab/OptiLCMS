@@ -19,7 +19,7 @@ PerformROIExtraction(
 )
 }
 \arguments{
-\item{datapath}{Character, the path of the raw MS data files' folder/path (.mzXML, .CDF and .mzML)
+\item{datapath}{Character, the path of the raw MS data files' or folder's path (.mzXML, .CDF and .mzML)
 for parameters training.}
 
 \item{mode}{Character, mode for data trimming to select the chraracteristic peaks.
@@ -55,8 +55,13 @@ This function performs the raw data trimming. This function will output
 an trimmed MSnExp file to memory or hardisk according to the choice of users must
 provide the data path for 'datapath', and optionally provide other corresponding parameters.
 }
+\examples{
+DataFiles <- dir(system.file("mzData", package = "mtbls2"), full.names = TRUE, recursive = TRUE)
+mSet <- PerformROIExtraction(datapath = DataFiles`[1]`,rt.idx = 0.025,rmConts = F);
+}
 \author{
 Zhiqiang Pang \email{zhiqiang.pang@mail.mcgill.ca} Jeff Xia \email{jeff.xia@mcgill.ca}
 Mcgill University
 License: GNU GPL (>= 2)
+library(OptiLCMS)
 }

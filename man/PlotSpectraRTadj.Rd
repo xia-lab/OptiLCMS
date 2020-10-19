@@ -21,3 +21,8 @@ PlotSpectraRTadj(mSet = NULL, imgName, format = "png", dpi = 72, width = NA)
 \description{
 PlotSpectraRTadj
 }
+\examples{
+library(OptiLCMS)
+data(mSet);
+PlotSpectraRTadj(mSet);
+}

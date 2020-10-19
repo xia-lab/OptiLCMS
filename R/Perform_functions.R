@@ -19,58 +19,50 @@
 #' @import BiocParallel
 #' @import ggplot2
 #' @examples 
-#' ## Download the raw spectra example data
-#' tempZip <- tempfile(fileext = ".zip");
-#' download.file("https://www.dropbox.com/s/kabienyoadmzdpm/SpectraData.zip",
-#'               destfile = tempZip, method = "wget");
-#' dataDir <- paste0(tempdir(),"/SpectraData");
-#' out <- unzip(tempZip, exdir = dataDir);
+#' ##' Load OptiLCMS package
+#' library(OptiLCMS)
+#' ##' Get raw spectra files
+#' DataFiles <- dir(system.file("mzData", package = "mtbls2"), full.names = TRUE,
+#'                  recursive = TRUE)[c(10:12, 14:16)]
+#' ##' Create a phenodata data.frame
+#' pd <- data.frame(sample_name = sub(basename(DataFiles), pattern = ".mzData",
+#'                                    replacement = "", fixed = TRUE),
+#'                  sample_group = c(rep("col0", 3), rep("cyp79", 3)),
+#'                  stringsAsFactors = FALSE)
+#' ##' Import raw spectra
+#' mSet <- ImportRawMSData(path = DataFiles, metadata = pd);
 #' 
-#' ## Load OptiLCMS
-#' library(OptiLCMS);
+#' ##' Perform spectra profiling
+#' mSet <- PerformPeakProfiling(mSet, Params = SetPeakParam(ppm = 15, 
+#'                                                          bw = 5, mzdiff = 0.001, max_peakwidth = 18, 
+#'                                                          min_peakwidth = 5), ncore = 1, 
+#'                              plotSettings = SetPlotParam(Plot = T))
 #' 
-#' ## Initialize your plan
-#' mSet <- ImSet<-InitDataObjects("spec", "raw", FALSE);
+#' ##' Set peak annotation parameters
+#' annParams <- SetAnnotationParam(polarity = 'positive',
+#'                                 mz_abs_add = 0.035);
 #' 
-#' ## Perform Parameters Optimization
-#' mSet <- PerformROIExtraction(datapath = paste0(dataDir,"/QC"), 
-#'                              rt.idx = 0.5,
-#'                              plot = F, rmConts = F);
-#' param_initial <- SetPeakParam();
-#' best_parameters <- PerformParamsOptimization(mSet = mSet, 
-#'                                              param_initial,
-#'                                              ncore = 1);
-#' 
-#' ## Import raw data
-#' mSet <- ImportRawMSData(mSet = mSet, foldername = dataDir,
-#'                         plotSettings = SetPlotParam(Plot=T));
-#' 
-#' ## Perform raw spectra profiling
-#' mSet <- PerformPeakProfiling(mSet = mSet, Params = best_parameters,
-#'                              plotSettings = SetPlotParam(Plot=T), 
-#'                              ncore = 1);
-#' 
-#' ## Set annotation parameters and run
-#' annParams <- SetAnnotationParam(polarity = 'negative',
-#'                                 mz_abs_add = 0.025);
+#' ##' Perform peak annotation
 #' mSet <- PerformPeakAnnotation(mSet = mSet,
-#'                               annotaParam = annParams, 
-#'                               ncore =1);
-#' ## Format the PeakList
-#' mSet <- FormatPeakList(mSet = mSet, 
+#'                               annotaParam = annParams,
+#'                               ncore =1)
+#' 
+#' ##' Format the PeakList
+#' mSet <- FormatPeakList(mSet = mSet,
 #'                        annParams,
-#'                        filtIso =F, 
+#'                        filtIso =FALSE,
 #'                        filtAdducts = FALSE,
 #'                        missPercent = 1)
 #' 
-#' ## Export the annotation result
+#' ##' Export the annotation result
 #' Export.Annotation(mSet);
 #' 
-#' ## Export the Peak Table
+#' ##' Export the Peak Table
 #' Export.PeakTable(mSet);
 #' 
-#' ## Export the Peak summary
+#' ##' Export the Peak summary
 #' Export.PeakSummary(mSet)
+
 
 PerformPeakProfiling <-
   function(mSet,
@@ -85,6 +77,13 @@ PerformPeakProfiling <-
     if (is.null(running.controller)) {
       c1 <- c2 <- c3 <- c4 <- TRUE;
       .running.as.plan <- FALSE;
+      
+      ## Clean the existing results
+      mSet@peakpicking <- mSet@peakgrouping <- 
+        mSet@peakRTcorrection <- mSet@peakfilling <- 
+        mSet@peakAnnotation <- 
+        list();
+      
     } else {
       c1 <-
         running.controller@peak_profiling[["c1"]] # used to control peak picking
@@ -126,8 +125,7 @@ PerformPeakProfiling <-
               but optimization with PerformParamsOptimization is strongly recommanded !");
       mSet@params <- updateRawSpectraParam (SetPeakParam());
     }
-    
-    
+
     ### Setting the different parallel method for linux or windows
     MessageOutput(mes = NULL,
                   ecol = NULL,
@@ -435,37 +433,18 @@ PerformPeakProfiling <-
 #' McGill University, Canada
 #' License: GNU GPL (>= 2)
 #' @export
+#' @seealso \code{\link{ExecutePlan}} and \code{\link{PerformPeakProfiling}} for the whole pipeline.
 #' @examples 
-#' ## load googledrive package to download example data
-#' # library("googledrive");
-#'
-#' ## Set data folder
-#' # data_folder_Sample <- "~/Data_IBD";
-#' # data_folder_QC <- "~/Data_IBD/QC";
-#' # temp <- tempfile(fileext = ".zip");
-#'
-#' ## Please authorize the package to download the data from web
-#' # dl <- drive_download(as_id("1CjEPed1WZrwd5T3Ovuic1KVF-Uz13NjO"), path = temp, overwrite = TRUE);
-#' # out <- unzip(temp, exdir = data_folder_Sample);
-#' # out;
-# 
-#' #### Running as regular procedure: step by step
-#' ## Extract ROI for parameters' optimization
-#' # mSet <- PerformROIExtraction(datapath = data_folder_QC, rt.idx = 0.95, plot = F, rmConts = F);
-#' ## Perform the optimization
-#' # best_parameters <- PerformParamsOptimization(mSet = mSet, SetPeakParam(), ncore = 4);
-#' ## Perform data import of all samples
-#' # mSet <- ImportRawMSData(mSet = mSet, foldername = data_folder_Sample, 
-#' #                         plotSettings = SetPlotParam(Plot=T));
-#' ## Perform peak profiling
-#' # mSet <- PerformPeakProfiling(mSet = mSet, Params = param, plotSettings = SetPlotParam(Plot=T));
-#' ## Set annotation parameters
-#' # annParams <- SetAnnotationParam(polarity = 'negative', mz_abs_add = 0.025);
-#' ## Perform peak annotation
-#' # mSet <- PerformPeakAnnotation(mSet = mSet, annotaParam = annParams, ncore =1);
-#' ## Format the peak table
-#' # maPeaks <- FormatPeakList(mSet = mSet, annParams, filtIso =F, 
-#' #                           filtAdducts = FALSE,missPercent = 1);
+#' ##' Load OptiLCMS package
+#' library(OptiLCMS)
+#' 
+#' ##' Set peak annotation parameters
+#' annParams <- SetAnnotationParam(polarity = 'positive',
+#'                                 mz_abs_add = 0.035);
+#' 
+#' ##' Please check the example of PerformPeakProfiling 
+#' ##' and ExcutePlan for the whole running pipeline.
+
 
 SetAnnotationParam <-
   function(polarity = "positive",
@@ -526,6 +505,17 @@ SetAnnotationParam <-
 #' liquid chromatography/mass spectrometry data sets." Analytical Chemistry, 84, 283-289.
 #' http://pubs.acs.org/doi/abs/10.1021/ac202450g.
 #' @examples 
+#' data(mSet);
+#' newPath <- dir(system.file("mzData", package = "mtbls2"),
+#'                full.names = TRUE, recursive = TRUE)[c(10, 11, 12)]
+#' mSet <- updateRawSpectraPath(mSet, newPath);
+#' annParams <- SetAnnotationParam(polarity = 'positive',
+#'                                 mz_abs_add = 0.035);
+#' 
+#' ## Perform peak annotation with newly deinfed annParams
+#' # mSet <- PerformPeakAnnotation(mSet = mSet,
+#' #                               annotaParam = annParams,
+#' #                               ncore =1)
 
 PerformPeakAnnotation <-
   function(mSet,
@@ -1349,7 +1339,7 @@ PerformPeakAnnotation <-
       end <- length - 3
       camnames <- colnames(camera_output)
       groupNum <-
-        nlevels(pData(mSet@rawOnDisk)[["sample_group"]])
+        length(unique(pData(mSet@rawOnDisk)[["sample_group"]]));
       start <- groupNum + 8
       camnames[start:end] <- sample_names_ed
       colnames(camera_output) <- camnames
@@ -1414,36 +1404,23 @@ PerformPeakAnnotation <-
 #' License: GNU GPL (>= 2)
 #' @export
 #' @examples 
-#' ## load googledrive package to download example data
-#' # library("googledrive");
-#'
-#' ## Set data folder
-#' # data_folder_Sample <- "~/Data_IBD";
-#' # data_folder_QC <- "~/Data_IBD/QC";
-#' # temp <- tempfile(fileext = ".zip");
-#'
-#' ## Please authorize the package to download the data from web
-#' # dl <- drive_download(as_id("1CjEPed1WZrwd5T3Ovuic1KVF-Uz13NjO"), path = temp, overwrite = TRUE);
-#' # out <- unzip(temp, exdir = data_folder_Sample);
-#' # out;
-# 
-#' #### Running as regular procedure: step by step
-#' ## Extract ROI for parameters' optimization
-#' # mSet <- PerformROIExtraction(datapath = data_folder_QC, rt.idx = 0.95, plot = F, rmConts = F);
-#' ## Perform the optimization
-#' # best_parameters <- PerformParamsOptimization(mSet = mSet, SetPeakParam(), ncore = 4);
-#' ## Perform data import of all samples
-#' # mSet <- ImportRawMSData(mSet = mSet, foldername = data_folder_Sample, 
-#' #                         plotSettings = SetPlotParam(Plot=T));
-#' ## Perform peak profiling
-#' # mSet <- PerformPeakProfiling(mSet = mSet, Params = param, plotSettings = SetPlotParam(Plot=T));
-#' ## Set annotation parameters
-#' # annParams <- SetAnnotationParam(polarity = 'negative', mz_abs_add = 0.025);
-#' ## Perform peak annotation
-#' # mSet <- PerformPeakAnnotation(mSet = mSet, annotaParam = annParams, ncore =1);
-#' ## Format the peak table
-#' # maPeaks <- FormatPeakList(mSet = mSet, annParams, filtIso =F, 
-#' #                           filtAdducts = FALSE,missPercent = 1);
+#' data(mSet);
+#' newPath <- dir(system.file("mzData", package = "mtbls2"),
+#'                full.names = TRUE, recursive = TRUE)[c(10, 11, 12)]
+#' mSet <- updateRawSpectraPath(mSet, newPath);
+#' annParams <- SetAnnotationParam(polarity = 'positive',
+#'                                 mz_abs_add = 0.035);
+#' 
+#' ## Perform peak annotation with newly deinfed annParams
+#' # mSet <- PerformPeakAnnotation(mSet = mSet,
+#' #                               annotaParam = annParams,
+#' #                               ncore =1)
+#' ## Format the PeakList
+#' mSet <- FormatPeakList(mSet = mSet,
+#'                        annParams,
+#'                        filtIso =FALSE,
+#'                        filtAdducts = FALSE,
+#'                        missPercent = 1)
 
 FormatPeakList <-
   function(mSet,
@@ -1680,13 +1657,11 @@ FormatPeakList <-
 #' @description Export.Annotation is used to export the result of annotation
 #' @param mSet mSet object, processed by FormatPeakList.
 #' @param path character, used to specify the path for result rds and csv file. Default is the working directory.
-#'
-#' @return
 #' @export
 #' @author Zhiqiang Pang \email{zhiqiang.pang@mail.mcgill.ca}, Jeff Xia \email{jeff.xia@mcgill.ca}
 #' @examples
 #' data(mSet)
-#' Export.Annotation(mSet)
+#' Export.Annotation(mSet, path = tempdir())
 Export.Annotation <- function(mSet = NULL, path = getwd()){
   
   camera_output <- mSet@peakAnnotation$camera_output;
@@ -1704,14 +1679,12 @@ Export.Annotation <- function(mSet = NULL, path = getwd()){
 #' Export.PeakTable
 #' @description Export.PeakTable is used to export the table of peak
 #' @param mSet mSet object, processed by FormatPeakList.
-#' @param path character, used to specify the path for result rds and csv file. Default is the working directory.
-#'
-#' @return
+#' @param path character, used to specify the path for result rds and csv file. Default is the working directory.#'
 #' @export
 #' @author Zhiqiang Pang \email{zhiqiang.pang@mail.mcgill.ca}, Jeff Xia \email{jeff.xia@mcgill.ca}
 #' @examples
 #' data(mSet)
-#' Export.PeakTable(mSet)
+#' Export.PeakTable(mSet, path = tempdir())
 Export.PeakTable <- function(mSet = NULL, path = getwd()){
   
   mSet@dataSet -> ma_feats_miss;
@@ -1728,14 +1701,12 @@ Export.PeakTable <- function(mSet = NULL, path = getwd()){
 #' Export.PeakSummary
 #' @description Export.PeakSummary is used to export the result of peak' summary
 #' @param mSet mSet object, processed by FormatPeakList.
-#' @param path character, used to specify the path for result rds and csv file. Default is the working directory.
-#'
-#' @return
+#' @param path character, used to specify the path for result rds and csv file. Default is the working directory.#'
 #' @export
 #' @author Zhiqiang Pang \email{zhiqiang.pang@mail.mcgill.ca}, Jeff Xia \email{jeff.xia@mcgill.ca}
 #' @examples
-#' data(mSet)
-#' Export.PeakSummary(mSet)
+#' data(mSet);
+#' Export.PeakSummary(mSet, path = tempdir())
 Export.PeakSummary <- function(mSet = NULL, path = getwd()){
   
   mSet@peakAnnotation$peak_result_summary -> datam;

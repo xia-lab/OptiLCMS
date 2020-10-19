@@ -1457,3 +1457,6 @@ FastRunningShow_customized <- function(fullUserPath){
   write.table(100.0, file = "log_progress.txt",row.names = F,col.names = F);
   Sys.sleep(time_interval1);
 }
+
+
+

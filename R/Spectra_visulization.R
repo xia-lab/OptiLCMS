@@ -17,6 +17,13 @@
 #' @author Zhiqiang Pang \email{zhiqiang.pang@mail.mcgill.ca} Jeff Xia \email{jeff.xia@mcgill.ca}
 #' Mcgill University
 #' License: GNU GPL (>= 2)
+#' @examples 
+#' library(OptiLCMS)
+#' ## Get raw spectra files
+#' DataFiles <- dir(system.file("mzData", package = "mtbls2"), full.names = TRUE,
+#'                  recursive = TRUE)[c(10:12, 14:16)]
+#' PerformDataInspect(DataFiles[1])
+
 PerformDataInspect <-
   function(datapath = NULL,
            rt.range = c(0,0),
@@ -71,7 +78,11 @@ PerformDataInspect <-
     }
     
     if (!grepl(pattern = c("*.mzXML"), basename(datapath)) &
+        !grepl(pattern = c("*.mzxml"), basename(datapath)) &
+        !grepl(pattern = c("*.mzData"), basename(datapath)) &
+        !grepl(pattern = c("*.mzdata"), basename(datapath)) &
         !grepl(pattern = c("*.mzML"), basename(datapath)) &
+        !grepl(pattern = c("*.mzml"), basename(datapath)) &
         !grepl(pattern = c("*.CDF"), basename(datapath)) &
         !grepl(pattern = c("*.cdf"), basename(datapath))) {
       MessageOutput(paste("First file in ", datapath, " will be inspected !\n"))
@@ -216,17 +227,17 @@ PerformDataInspect <-
         dimension,
         ".png"
       )
-    
-    
-    Cairo::Cairo(
-      file = filename,
-      unit = "in",
-      dpi = 72,
-      width = 7,
-      height = 7,
-      type = "png",
-      bg = "white"
-    )
+    if(.on.public.web){
+      Cairo::Cairo(
+        file = filename,
+        unit = "in",
+        dpi = 72,
+        width = 7,
+        height = 7,
+        type = "png",
+        bg = "white"
+      )
+    }
     
     oldpar <- par(no.readonly = TRUE);
     on.exit(par(oldpar));
@@ -239,7 +250,9 @@ PerformDataInspect <-
       print(plot(M, aspect = 1, allTicks = FALSE))
     }
     
-    dev.off()
+    if(.on.public.web){
+      dev.off()
+    }
     
     return(filename)
   }
@@ -257,6 +270,9 @@ PerformDataInspect <-
 #' McGill University, Canada
 #' License: GNU GPL (>= 2)
 #' @export
+#' @examples
+#' SetPlotParam(Plot = T, dpi = 144, width = 12)
+
 SetPlotParam <-
   function(Plot = F,
            labels = TRUE,
@@ -287,7 +303,13 @@ SetPlotParam <-
 #' @param width Numeric, to define the width of the figure.
 #' @param height Numeric, to define the height of the figure.
 #' @importFrom Cairo Cairo
+#' @importFrom ggrepel geom_text_repel
 #' @export
+#' @examples 
+#' library(OptiLCMS)
+#' data(mSet);
+#' PlotXIC(mSet, 1, T, T);
+
 PlotXIC <-
   function(mSet = NULL,
            featureNum,
@@ -330,7 +352,7 @@ PlotXIC <-
     
     # Get groups information
     groupsInfo <- raw_data@phenoData@data[["sample_group"]]
-    group_levels <- levels(groupsInfo)
+    group_levels <- levels(as.factor(groupsInfo))
     
     groupsInfo <-
       sapply(
@@ -606,6 +628,11 @@ PlotXIC <-
 #' @param width Numeric, to define the width of the figure. Height = width * 0.618. 
 #' @export
 #' @importFrom Cairo Cairo
+#' @examples 
+#' library(OptiLCMS)
+#' data(mSet);
+#' PlotSpectraInsensityStistics(mSet);
+
 PlotSpectraInsensityStistics <-
   function(mSet = NULL,
            imgName,
@@ -710,6 +737,10 @@ PlotSpectraInsensityStistics <-
 #' @param width Numeric, to define the width of the figure. Height = width * 0.618. 
 #' @importFrom ggrepel geom_text_repel
 #' @export
+#' @examples 
+#' library(OptiLCMS)
+#' data(mSet);
+#' PlotSpectraPCA(mSet);
 
 PlotSpectraPCA <-
   function(mSet = NULL,
@@ -848,6 +879,11 @@ PlotSpectraPCA <-
 #' @param width Numeric, to define the width of the figure. Height = width * 0.618. 
 #' @export
 #' @importFrom Cairo Cairo
+#' @examples 
+#' library(OptiLCMS)
+#' data(mSet);
+#' PlotSpectraRTadj(mSet);
+
 PlotSpectraRTadj <-
   function(mSet = NULL,
            imgName,
@@ -975,6 +1011,7 @@ PlotSpectraRTadj <-
     }
   }
 
+
 #' PlotSpectraBPIadj
 #' @param mSet mSet object, usually generated after the peakannotaion finished here.
 #' @param imgName Character, to give the name of BPI figures ploted.
@@ -984,6 +1021,11 @@ PlotSpectraRTadj <-
 #' @param width Numeric, to define the width of the figure. Height = width * 0.618. 
 #' @export
 #' @importFrom Cairo Cairo
+#' @examples 
+#' library(OptiLCMS)
+#' data(mSet);
+#' PlotSpectraBPIadj(mSet);
+
 PlotSpectraBPIadj <-
   function(mSet = NULL,
            imgName,
@@ -1075,13 +1117,19 @@ PlotSpectraBPIadj <-
   }
 
 #' plotMSfeature
+#' @description plotMSfeature is used to plot the feature intensity of different groups
 #' @param mSet mSet Object, should be processed aby 'PerformPeakProfiling'.
 #' @param FeatureNM Numeric, feature number in the feature table.
-#' @param dpi Numeric, to define the dpi of the figures. Default is 72.
+#' @param dpi Numeric, to define the dpi of the figures. Default is 72. (only works for web version)
 #' @param format Character, to give the format of BPI figures ploted. Can be "jpeg", "png", "pdf", "svg",
-#'  "tiff" or "ps". Default is "png".
+#'  "tiff" or "ps". Default is "png". (only works for web version)
 #' @export
 #' @importFrom Cairo Cairo
+#' @examples 
+#' library(OptiLCMS)
+#' data(mSet);
+#' plotMSfeature (mSet, 1); # Here is only one group
+
 plotMSfeature <- function(mSet, FeatureNM,
                           dpi = 72,
                           format = "png") {
@@ -1091,13 +1139,13 @@ plotMSfeature <- function(mSet, FeatureNM,
   #   load_RColorBrewer();
   # }
   # 
-  peakdata <- readRDS("annotated_peaklist.rds");
+  peakdata <- mSet@peakAnnotation$camera_output;
   peakdata1 <-
     peakdata[, c(-1:-6,-ncol(peakdata),-ncol(peakdata) + 1,-ncol(peakdata) + 2)]
   
   peakdata1[is.na(peakdata1)] <- 0
   
-  group_info <- read.csv("metaboanalyst_input.csv")[c(1),-1]
+  group_info <- mSet@dataSet[c(1),-1]
   
   data_table <-
     as.data.frame(t(rbind(
@@ -1200,24 +1248,28 @@ plotMSfeature <- function(mSet, FeatureNM,
 
 
 #' plotSingleTIC
-#'
+#' @description plotSingleTIC is used to plot the TIC of a certain spectra
 #' @param mSet mSet Object, should be processed by ImportMSData.
 #' @param filename Character, to give the filename for the TIC plotting.
-#' @param imagename Character, to give the filename of the TIC plotted.
+#' @param imagename Character, to give the filename of the TIC plotted. (only works for web version)
 #' @export
 #' @importFrom Cairo Cairo
+#' @examples
+#' library(OptiLCMS)
+#' data(mSet);
+#' plotSingleTIC(mSet, "MSpos-Ex2-Col0-48h-Ag-2_1-A,3_01_9829.mzData")
+
 plotSingleTIC <- function(mSet = NULL, filename, imagename) {
-  # load_msnbase()
+  
+  raw_data_filt <-
+    filterFile(mSet@rawOnDisk, file = na.omit(filename));
+  
+  tics <- chromatogram(raw_data_filt, aggregationFun = "sum");
+  
+  file_order <-
+    which(filename == basename(raw_data_filt@processingData@files))
   
   if (.on.public.web) {
-    raw_data_filt <- NULL;
-    tics <- NULL
-    load("raw_data_filt.rda")
-    load("tics.rda")
-    
-    file_order <-
-      which(filename == raw_data_filt@phenoData@data[["sample_name"]])
-    
     Cairo::Cairo(
       file = paste0(imagename, ".png"),
       unit = "in",
@@ -1235,3 +1287,4 @@ plotSingleTIC <- function(mSet = NULL, filename, imagename) {
     dev.off()
   }
 }
+

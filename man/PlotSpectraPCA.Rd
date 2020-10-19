@@ -21,3 +21,8 @@ PlotSpectraPCA(mSet = NULL, imgName, format = "png", dpi = 72, width = NA)
 \description{
 PlotSpectraPCA
 }
+\examples{
+library(OptiLCMS)
+data(mSet);
+PlotSpectraPCA(mSet);
+}

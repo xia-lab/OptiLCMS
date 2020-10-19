@@ -22,35 +22,17 @@ This function performs peak annotation on
 the xset object created using the PerformPeakPicking function.
 }
 \examples{
-## load googledrive package to download example data
-# library("googledrive");
+data(mSet);
+newPath <- dir(system.file("mzData", package = "mtbls2"),
+               full.names = TRUE, recursive = TRUE)[c(10, 11, 12)]
+mSet <- updateRawSpectraPath(mSet, newPath);
+annParams <- SetAnnotationParam(polarity = 'positive',
+                                mz_abs_add = 0.035);
 
-## Set data folder
-# data_folder_Sample <- "~/Data_IBD";
-# data_folder_QC <- "~/Data_IBD/QC";
-# temp <- tempfile(fileext = ".zip");
-
-## Please authorize the package to download the data from web
-# dl <- drive_download(as_id("1CjEPed1WZrwd5T3Ovuic1KVF-Uz13NjO"), path = temp, overwrite = TRUE);
-# out <- unzip(temp, exdir = data_folder_Sample);
-# out;
-#### Running as regular procedure: step by step
-## Extract ROI for parameters' optimization
-# mSet <- PerformROIExtraction(datapath = data_folder_QC, rt.idx = 0.95, plot = F, rmConts = F);
-## Perform the optimization
-# best_parameters <- PerformParamsOptimization(mSet = mSet, SetPeakParam(), ncore = 4);
-## Perform data import of all samples
-# mSet <- ImportRawMSData(mSet = mSet, foldername = data_folder_Sample, 
-#                         plotSettings = SetPlotParam(Plot=T));
-## Perform peak profiling
-# mSet <- PerformPeakProfiling(mSet = mSet, Params = param, plotSettings = SetPlotParam(Plot=T));
-## Set annotation parameters
-# annParams <- SetAnnotationParam(polarity = 'negative', mz_abs_add = 0.025);
-## Perform peak annotation
-# mSet <- PerformPeakAnnotation(mSet = mSet, annotaParam = annParams, ncore =1);
-## Format the peak table
-# maPeaks <- FormatPeakList(mSet = mSet, annParams, filtIso =F, 
-#                           filtAdducts = FALSE,missPercent = 1);
+## Perform peak annotation with newly deinfed annParams
+# mSet <- PerformPeakAnnotation(mSet = mSet,
+#                               annotaParam = annParams,
+#                               ncore =1)
 }
 \references{
 Kuhl C, Tautenhahn R, Boettcher C, Larson TR, Neumann S (2012).
@@ -60,7 +42,7 @@ http://pubs.acs.org/doi/abs/10.1021/ac202450g.
 }
 \author{
 Zhiqiang Pang \email{zhiqiang.pang@mail.mcgill.ca}, Jasmine Chong \email{jasmine.chong@mail.mcgill.ca},
-Mai Yamamoto \email{yamamoto.mai@mail.mcgill.ca}, and Jeff Xia \email{jeff.xia@mcgill.ca}
+and Jeff Xia \email{jeff.xia@mcgill.ca}
 McGill University, Canada
 License: GNU GPL (>= 2)
 }

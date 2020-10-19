@@ -14,18 +14,9 @@ Verify the data is centroid or not
 }
 \examples{
  
-## load googledrive package to download example data
-# library("googledrive");
-# data_folder_Sample <- "Raw_data_example"
-# temp <- tempfile(fileext = ".zip");
-## Please authorize the package to download the data from web
-# dl <- drive_download(as_id("1CjEPed1WZrwd5T3Ovuic1KVF-Uz13NjO"), path = temp, overwrite = TRUE);
-# out <- unzip(temp, exdir = data_folder_Sample);
-# out;
-# library(OptiLCMS);
-# mSet<-InitDataObjects("spec", "raw", FALSE);
-## input CD_SM-77FXR.mzML to check. TRUE means has been centroided well.
-# res <- CentroidCheck("Raw_data_example/CD/CD_SM-77FXR.mzML")
+DataFiles <- dir(system.file("mzData", package = "mtbls2"), full.names = TRUE,
+                 recursive = TRUE)[c(10:12, 14:16)]
+sapply(DataFiles, CentroidCheck)
 }
 \author{
 Zhiqiang Pang \email{zhiqiang.pang@mail.mcgill.ca} and Jeff Xia \email{jeff.xia@mcgill.ca}

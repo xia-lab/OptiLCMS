@@ -40,39 +40,21 @@ The default is set to 0.001.}
 This function sets the parameters for peak annotation.
 }
 \examples{
-## load googledrive package to download example data
-# library("googledrive");
+##' Load OptiLCMS package
+library(OptiLCMS)
 
-## Set data folder
-# data_folder_Sample <- "~/Data_IBD";
-# data_folder_QC <- "~/Data_IBD/QC";
-# temp <- tempfile(fileext = ".zip");
+##' Set peak annotation parameters
+annParams <- SetAnnotationParam(polarity = 'positive',
+                                mz_abs_add = 0.035);
 
-## Please authorize the package to download the data from web
-# dl <- drive_download(as_id("1CjEPed1WZrwd5T3Ovuic1KVF-Uz13NjO"), path = temp, overwrite = TRUE);
-# out <- unzip(temp, exdir = data_folder_Sample);
-# out;
-#### Running as regular procedure: step by step
-## Extract ROI for parameters' optimization
-# mSet <- PerformROIExtraction(datapath = data_folder_QC, rt.idx = 0.95, plot = F, rmConts = F);
-## Perform the optimization
-# best_parameters <- PerformParamsOptimization(mSet = mSet, SetPeakParam(), ncore = 4);
-## Perform data import of all samples
-# mSet <- ImportRawMSData(mSet = mSet, foldername = data_folder_Sample, 
-#                         plotSettings = SetPlotParam(Plot=T));
-## Perform peak profiling
-# mSet <- PerformPeakProfiling(mSet = mSet, Params = param, plotSettings = SetPlotParam(Plot=T));
-## Set annotation parameters
-# annParams <- SetAnnotationParam(polarity = 'negative', mz_abs_add = 0.025);
-## Perform peak annotation
-# mSet <- PerformPeakAnnotation(mSet = mSet, annotaParam = annParams, ncore =1);
-## Format the peak table
-# maPeaks <- FormatPeakList(mSet = mSet, annParams, filtIso =F, 
-#                           filtAdducts = FALSE,missPercent = 1);
+##' Please check the example of PerformPeakProfiling 
+##' and ExcutePlan for the whole running pipeline.
+}
+\seealso{
+\code{\link{ExecutePlan}} and \code{\link{PerformPeakProfiling}} for the whole pipeline.
 }
 \author{
-Jasmine Chong \email{jasmine.chong@mail.mcgill.ca},
-Mai Yamamoto \email{yamamoto.mai@mail.mcgill.ca}, and Jeff Xia \email{jeff.xia@mcgill.ca}
+Jasmine Chong \email{jasmine.chong@mail.mcgill.ca}, and Jeff Xia \email{jeff.xia@mcgill.ca}
 McGill University, Canada
 License: GNU GPL (>= 2)
 }

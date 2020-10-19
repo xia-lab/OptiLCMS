@@ -35,39 +35,53 @@ This function performs feature extraction of user's raw MS data using
 the rawData object created using the ImportRawMSData function.
 }
 \examples{
-## load googledrive package to download example data
-# library("googledrive");
+##' Load OptiLCMS package
+library(OptiLCMS)
+##' Get raw spectra files
+DataFiles <- dir(system.file("mzData", package = "mtbls2"), full.names = TRUE,
+                 recursive = TRUE)[c(10:12, 14:16)]
+##' Create a phenodata data.frame
+pd <- data.frame(sample_name = sub(basename(DataFiles), pattern = ".mzData",
+                                   replacement = "", fixed = TRUE),
+                 sample_group = c(rep("col0", 3), rep("cyp79", 3)),
+                 stringsAsFactors = FALSE)
+##' Import raw spectra
+mSet <- ImportRawMSData(path = DataFiles, metadata = pd);
 
-## Set data folder
-# data_folder_Sample <- "~/Data_IBD";
-# data_folder_QC <- "~/Data_IBD/QC";
-# temp <- tempfile(fileext = ".zip");
+##' Perform spectra profiling
+mSet <- PerformPeakProfiling(mSet, Params = SetPeakParam(ppm = 15, 
+                                                         bw = 5, mzdiff = 0.001, max_peakwidth = 18, 
+                                                         min_peakwidth = 5), ncore = 1, 
+                             plotSettings = SetPlotParam(Plot = T))
 
-## Please authorize the package to download the data from web
-# dl <- drive_download(as_id("1CjEPed1WZrwd5T3Ovuic1KVF-Uz13NjO"), path = temp, overwrite = TRUE);
-# out <- unzip(temp, exdir = data_folder_Sample);
-# out;
-#### Running as regular procedure: step by step
-## Extract ROI for parameters' optimization
-# mSet <- PerformROIExtraction(datapath = data_folder_QC, rt.idx = 0.95, plot = F, rmConts = F);
-## Perform the optimization
-# best_parameters <- PerformParamsOptimization(mSet = mSet, SetPeakParam(), ncore = 4);
-## Perform data import of all samples
-# mSet <- ImportRawMSData(mSet = mSet, foldername = data_folder_Sample, 
-#                         plotSettings = SetPlotParam(Plot=T));
-## Perform peak profiling
-# mSet <- PerformPeakProfiling(mSet = mSet, Params = param, plotSettings = SetPlotParam(Plot=T));
-## Set annotation parameters
-# annParams <- SetAnnotationParam(polarity = 'negative', mz_abs_add = 0.025);
-## Perform peak annotation
-# mSet <- PerformPeakAnnotation(mSet = mSet, annotaParam = annParams, ncore =1);
-## Format the peak table
-# maPeaks <- FormatPeakList(mSet = mSet, annParams, filtIso =F, 
-#                           filtAdducts = FALSE,missPercent = 1);
+##' Set peak annotation parameters
+annParams <- SetAnnotationParam(polarity = 'positive',
+                                mz_abs_add = 0.035);
+
+##' Perform peak annotation
+mSet <- PerformPeakAnnotation(mSet = mSet,
+                              annotaParam = annParams,
+                              ncore =1)
+
+##' Format the PeakList
+mSet <- FormatPeakList(mSet = mSet,
+                       annParams,
+                       filtIso =FALSE,
+                       filtAdducts = FALSE,
+                       missPercent = 1)
+
+##' Export the annotation result
+Export.Annotation(mSet);
+
+##' Export the Peak Table
+Export.PeakTable(mSet);
+
+##' Export the Peak summary
+Export.PeakSummary(mSet)
 }
 \author{
 Zhiqiang Pang \email{zhiqiang.pang@mail.mcgill.ca}, Jasmine Chong \email{jasmine.chong@mail.mcgill.ca},
-Mai Yamamoto \email{yamamoto.mai@mail.mcgill.ca}, and Jeff Xia \email{jeff.xia@mcgill.ca}
+and Jeff Xia \email{jeff.xia@mcgill.ca}
 McGill University, Canada
 License: GNU GPL (>= 2)
 }
