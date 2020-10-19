@@ -4,7 +4,14 @@
 \alias{SetPlotParam}
 \title{Set generic Plotting Parameters}
 \usage{
-SetPlotParam(Plot = F, labels = TRUE, format = "png", dpi = 72, width = 9, ...)
+SetPlotParam(
+  Plot = FALSE,
+  labels = TRUE,
+  format = "png",
+  dpi = 72,
+  width = 9,
+  ...
+)
 }
 \arguments{
 \item{Plot}{Logical, if true, the function will plot internal figures for different functions.}

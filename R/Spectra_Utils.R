@@ -161,9 +161,6 @@ PeakPicking_centWave_slave <- function(x, param){
    
   }
  
-  # if(.on.public.web){
-  #   dyn.load(.getDynLoadPath());
-  # }
   # load necessary C code for data processing
   # for raw data processing
   if (class(x)=="OnDiskMSnExp"){ 
@@ -284,23 +281,19 @@ PeakPicking_centWave_slave <- function(x, param){
   if (.on.public.web & !.optimize_switch){
     
     print_mes_tmp <- paste0("Detecting peaks in ", length(roiList)," regions of interest ...");    
-    #write.table(print_mes,file="metaboanalyst_spec_proc.txt",append = T,row.names = F,col.names = F, quote = F, eol = " ");
+    #write.table(print_mes,file="metaboanalyst_spec_proc.txt",append = TRUE,row.names = FALSE,col.names = FALSE, quote = FALSE, eol = " ");
     print_mes <- paste0(print_mes,print_mes_tmp)
     
     .SwapEnv$count_current_sample <- count_current_sample <- .SwapEnv$count_current_sample +1;
     count_total_sample <- .SwapEnv$count_total_sample;
-    #write.table(count_current_sample, file = "log_progress.txt",row.names = F,col.names = F)
-    write.table(25 + count_current_sample*3/count_total_sample*25, file = "log_progress.txt",row.names = F,col.names = F)
+    #write.table(count_current_sample, file = "log_progress.txt",row.names = FALSE,col.names = FALSE)
+    write.table(25 + count_current_sample*3/count_total_sample*25, file = "log_progress.txt",row.names = FALSE,col.names = FALSE)
     
   } else {
     message("Detecting chromatographic peaks in ", length(roiList),
             " regions of interest ...", appendLF = FALSE)
     
   }
-  
-  # if(.optimize_switch){
-  #   write.table("WK_0000000000000000", file = "tmp_progress.txt",row.names = F,quote = F,col.names = F,append = T,eol ="\n")
-  # }
   
   roiScales = NULL;
  
@@ -317,10 +310,6 @@ PeakPicking_centWave_slave <- function(x, param){
             min(scanrange[2], scrange[2] + max(noiserange)))
     
     eic <- getEIC (mz, int, scanindex, mzrange, sr)
-    
-    # if(.optimize_switch){
-    #   write.table(paste0("WK_1_",f,"_",Sys.time()), file = "tmp_progress.txt",row.names = F,quote = F,col.names = F,append = T,eol ="\n")
-    # }
     
     ## eic <- rawEIC(object,mzrange=mzrange,scanrange=sr)
     d <- eic$intensity;
@@ -345,10 +334,6 @@ PeakPicking_centWave_slave <- function(x, param){
       next
     }
     
-    # if(.optimize_switch){
-    #   write.table(paste0("WK_2_",f,"_",Sys.time()), file = "tmp_progress.txt",row.names = F,quote = F,col.names = F,append = T,eol ="\n")
-    # }
-    
     ## scrange + scRangeTol, used for gauss fitting and continuous
     ## data above 1st baseline detection
     ftd <- max(td[1], scrange[1] - scRangeTol) : min(td[length(td)],
@@ -369,10 +354,6 @@ PeakPicking_centWave_slave <- function(x, param){
     ## 90% trimmed mean as first baseline guess
     gz <- which(noised > 0);
     
-    # if(.optimize_switch){
-    #   write.table(paste0("WK_3_",f,"_",Sys.time()), file = "tmp_progress.txt",row.names = F,quote = F,col.names = F,append = T,eol ="\n")
-    # }
-    # 
     if (length(gz) < 3*minPeakWidth){
       noise <- mean(noised)
     } else {
@@ -394,7 +375,7 @@ PeakPicking_centWave_slave <- function(x, param){
                                     num = minPtsAboveBaseLine)
     # 
     # if(.optimize_switch){
-    #   write.table(paste0("WK_4_",f,"_",Sys.time()), file = "tmp_progress.txt",row.names = F,quote = F,col.names = F,append = T,eol ="\n")
+    #   write.table(paste0("WK_4_",f,"_",Sys.time()), file = "tmp_progress.txt",row.names = FALSE,quote = FALSE,col.names = FALSE,append = TRUE,eol ="\n")
     # }
     ## Final baseline & Noise estimate
     baseline <- max(1, min(lnoise[1], noise))
@@ -406,7 +387,7 @@ PeakPicking_centWave_slave <- function(x, param){
     wCoefs <- MSW.cwt(d, scales = scales, wavelet = 'mexh');
     
     # if(.optimize_switch){
-    #   write.table(paste0("WK_5_",f,"_",Sys.time()), file = "tmp_progress.txt",row.names = F,quote = F,col.names = F,append = T,eol ="\n")
+    #   write.table(paste0("WK_5_",f,"_",Sys.time()), file = "tmp_progress.txt",row.names = FALSE,quote = FALSE,col.names = FALSE,append = TRUE,eol ="\n")
     # }
     
     if (!(!is.null(dim(wCoefs)) && any(wCoefs- baseline >= sdthr)))
@@ -520,9 +501,6 @@ PeakPicking_centWave_slave <- function(x, param){
       }  ##for
     } ## if
     
-    # if(.optimize_switch){
-    #   write.table(paste0("WK_6_",f,"_",Sys.time()), file = "tmp_progress.txt",row.names = F,quote = F,col.names = F,append = T,eol ="\n")
-    # }
     ##  postprocessing
     if (!is.null(peaks)) {
       colnames(peaks) <- c(basenames, verbosenames)
@@ -639,7 +617,7 @@ PeakPicking_centWave_slave <- function(x, param){
     
     print_mes_tmp <- paste0(" OK: ", nrow(pr), " found.");    
     print_mes <- paste0(print_mes,print_mes_tmp)
-    write.table(print_mes,file="metaboanalyst_spec_proc.txt",append = T,row.names = F,col.names = F, quote = F, eol = "\n");
+    write.table(print_mes,file="metaboanalyst_spec_proc.txt",append = TRUE,row.names = FALSE,col.names = FALSE, quote = FALSE, eol = "\n");
     
   } else {
     message(" OK: ", nrow(pr), " found.")
@@ -736,13 +714,13 @@ PeakPicking_Massifquant_slave <- function(x, param){
   if(.on.public.web){
     
     print_mes_tmp <- paste0("Detecting mass traces at ", ppm, "ppm ... ");    
-    #write.table(print_mes,file="metaboanalyst_spec_proc.txt",append = T,row.names = F,col.names = F, quote = F, eol = " ");
+    #write.table(print_mes,file="metaboanalyst_spec_proc.txt",append = TRUE,row.names = FALSE,col.names = FALSE, quote = FALSE, eol = " ");
     #print_mes <- paste0(print_mes,print_mes_tmp)
     
     .SwapEnv$count_current_sample <- count_current_sample <- .SwapEnv$count_current_sample +1;
     count_total_sample <- .SwapEnv$count_total_sample;
-    write.table(count_current_sample, file = "log_progress.txt",row.names = F,col.names = F)
-    write.table(25 + count_current_sample*3/count_total_sample*25, file = "log_progress.txt",row.names = F,col.names = F)
+    write.table(count_current_sample, file = "log_progress.txt",row.names = FALSE,col.names = FALSE)
+    write.table(25 + count_current_sample*3/count_total_sample*25, file = "log_progress.txt",row.names = FALSE,col.names = FALSE)
     
   } else {
     message("Detecting  mass traces at ",ppm," ppm ... ", appendLF = FALSE)
@@ -857,7 +835,7 @@ PeakPicking_Massifquant_slave <- function(x, param){
       
       print_mes_tmp2 <- paste0(" OK: ", dim(featlist)[1], " Peaks found.");
       print_mes <- paste0(print_mes_tmp,print_mes_tmp2);
-      write.table(print_mes,file="metaboanalyst_spec_proc.txt",append = T,row.names = F,col.names = F, quote = F, eol = "\n");
+      write.table(print_mes,file="metaboanalyst_spec_proc.txt",append = TRUE,row.names = FALSE,col.names = FALSE, quote = FALSE, eol = "\n");
       
     } else {
       
@@ -1756,7 +1734,7 @@ RT.Adjust_peakGroup <-
     if (.on.public.web & !.optimize_switch){
       
       print_mes <- paste("Performing retention time correction using ", nrow(rt)," peak groups.");    
-      write.table(print_mes,file="metaboanalyst_spec_proc.txt",append = T,row.names = F,col.names = F, quote = F, eol = "\n");
+      write.table(print_mes,file="metaboanalyst_spec_proc.txt",append = TRUE,row.names = FALSE,col.names = FALSE, quote = FALSE, eol = "\n");
       
     } else {
       
@@ -1938,8 +1916,8 @@ mSet.obiwarp <- function(mSet, object, param) { ## Do not use the params defined
   if (.on.public.web & !.optimize_switch){
     
     print_mes <- paste0("Sample number ", centerSample, " used as center sample.\n");    
-    write.table(print_mes,file="metaboanalyst_spec_proc.txt",append = T,row.names = F,col.names = F, quote = F, eol = "");
-    #write.table(66.0, file = paste0(fullUserPath, "log_progress.txt"),row.names = F,col.names = F);
+    write.table(print_mes,file="metaboanalyst_spec_proc.txt",append = TRUE,row.names = FALSE,col.names = FALSE, quote = FALSE, eol = "");
+    #write.table(66.0, file = paste0(fullUserPath, "log_progress.txt"),row.names = FALSE,col.names = FALSE);
     
   } else {
     MessageOutput(paste0("Sample number ", centerSample, " used as center sample.\n"), "", NULL)
@@ -1995,8 +1973,8 @@ mSet.obiwarp <- function(mSet, object, param) { ## Do not use the params defined
       if (.on.public.web & !.optimize_switch){
         
         print_mes <- paste0("Found gaps in scan times of the center sample: cut ", "scantime-vector at ", scantime1[mst1]," seconds.");    
-        write.table(print_mes,file="metaboanalyst_spec_proc.txt",append = T,row.names = F,col.names = F, quote = F, eol = "");
-        #write.table(66.0, file = paste0(fullUserPath, "log_progress.txt"),row.names = F,col.names = F);
+        write.table(print_mes,file="metaboanalyst_spec_proc.txt",append = TRUE,row.names = FALSE,col.names = FALSE, quote = FALSE, eol = "");
+        #write.table(66.0, file = paste0(fullUserPath, "log_progress.txt"),row.names = FALSE,col.names = FALSE);
         
       } else {
         
@@ -2019,8 +1997,8 @@ mSet.obiwarp <- function(mSet, object, param) { ## Do not use the params defined
       if (.on.public.web & !.optimize_switch){
         
         print_mes <- paste0("Found gaps in scan time of file ", basename(fileNames(z)), ": cut scantime-vector at ", scantime2[mst2]," seconds.");    
-        write.table(print_mes,file="metaboanalyst_spec_proc.txt",append = T,row.names = F,col.names = F, quote = F, eol = "");
-        #write.table(66.0, file = paste0(fullUserPath, "log_progress.txt"),row.names = F,col.names = F);
+        write.table(print_mes,file="metaboanalyst_spec_proc.txt",append = TRUE,row.names = FALSE,col.names = FALSE, quote = FALSE, eol = "");
+        #write.table(66.0, file = paste0(fullUserPath, "log_progress.txt"),row.names = FALSE,col.names = FALSE);
         
       } else {
         
@@ -2125,8 +2103,8 @@ mSet.obiwarp <- function(mSet, object, param) { ## Do not use the params defined
 
     if (.on.public.web & !.optimize_switch){
       
-      write.table(print_mes,file="metaboanalyst_spec_proc.txt",append = T,row.names = F,col.names = F, quote = F, eol = "");
-      #write.table(66.0, file = paste0(fullUserPath, "log_progress.txt"),row.names = F,col.names = F);
+      write.table(print_mes,file="metaboanalyst_spec_proc.txt",append = TRUE,row.names = FALSE,col.names = FALSE, quote = FALSE, eol = "");
+      #write.table(66.0, file = paste0(fullUserPath, "log_progress.txt"),row.names = FALSE,col.names = FALSE);
       
     }
     
@@ -2137,8 +2115,8 @@ mSet.obiwarp <- function(mSet, object, param) { ## Do not use the params defined
 
     if (.on.public.web & !.optimize_switch){
       
-      write.table(print_mes,file="metaboanalyst_spec_proc.txt",append = T,row.names = F,col.names = F, quote = F, eol = "");
-      #write.table(66.0, file = paste0(fullUserPath, "log_progress.txt"),row.names = F,col.names = F);
+      write.table(print_mes,file="metaboanalyst_spec_proc.txt",append = TRUE,row.names = FALSE,col.names = FALSE, quote = FALSE, eol = "");
+      #write.table(66.0, file = paste0(fullUserPath, "log_progress.txt"),row.names = FALSE,col.names = FALSE);
       
     }
  
@@ -2163,8 +2141,8 @@ mSet.obiwarp <- function(mSet, object, param) { ## Do not use the params defined
                     NULL)
 
       print_mes <- paste0("Aligning ", basename(fileNames(z)), " against ", basename(fileNames(cntr)), " ... OK\n");    
-      write.table(print_mes,file="metaboanalyst_spec_proc.txt",append = T,row.names = F,col.names = F, quote = F, eol = "");
-      #write.table(66.0, file = paste0(fullUserPath, "log_progress.txt"),row.names = F,col.names = F);
+      write.table(print_mes,file="metaboanalyst_spec_proc.txt",append = TRUE,row.names = FALSE,col.names = FALSE, quote = FALSE, eol = "");
+      #write.table(66.0, file = paste0(fullUserPath, "log_progress.txt"),row.names = FALSE,col.names = FALSE);
 
     }
     
@@ -3939,17 +3917,7 @@ GaussModel <- selfStart(~ h*exp(-(x-mu)^2/(2*sigma^2)), function(mCall, data, LH
   }
   
   MessageOutput(paste("got ", sum(!is.na(res[, "into"])), "."), "\n", NULL)
-  #if (.on.public.web){
-  #  
-  #  print_mes <- paste(print_mes_tmp, "got ", sum(!is.na(res[, "into"])), ".");
-  #  write.table(print_mes,file="metaboanalyst_spec_proc.txt",append = T,row.names = F,col.names = F, quote = F, eol = "\n");
-  #  
-  #} else {
-  #  
-  #  message("got ", sum(!is.na(res[, "into"])), ".")
-  #  
-  #}
-  
+
   return(res)
 }
 
@@ -4148,7 +4116,7 @@ PeakPicking_prep <- function(object){
   if (.on.public.web){
     
     print_mes <- "Data Spliting Finished ! \nPeak Preparing Begin...";    
-    write.table(print_mes,file="metaboanalyst_spec_proc.txt",append = T,row.names = F,col.names = F, quote = F, eol = "\n");
+    write.table(print_mes,file="metaboanalyst_spec_proc.txt",append = TRUE,row.names = FALSE,col.names = FALSE, quote = FALSE, eol = "\n");
     
   } else {
     message("Data Spliting Finished !")
@@ -4180,7 +4148,7 @@ PeakPicking_prep <- function(object){
   if (.on.public.web){
     
     print_mes <- "Peak Preparing Done !";    
-    write.table(print_mes,file="metaboanalyst_spec_proc.txt",append = T,row.names = F,col.names = F, quote = F, eol = "\n");
+    write.table(print_mes,file="metaboanalyst_spec_proc.txt",append = TRUE,row.names = FALSE,col.names = FALSE, quote = FALSE, eol = "\n");
     
   } else {
     message("Peak Preparing Done !")
@@ -4227,7 +4195,7 @@ PeakPicking_core <-function(object, object_mslevel, param, msLevel = 1L){
     resList <- try(BiocParallel::bplapply(object_mslevel,
                         FUN = PeakPicking_centWave_slave,
                         param = param,
-                        BPPARAM = SerialParam()),silent = T)
+                        BPPARAM = SerialParam()),silent = TRUE)
 
   } else {
     
@@ -4948,7 +4916,7 @@ calcCiS<- function(mSet, EIC=EIC, corval=0.75, pval=0.05, psg_list=NULL ){
   }
   lp <- -1;
   #Iterate over all PS-spectra
-  pb <- progress_bar$new(format = "Generating [:bar] :percent Time left: :eta", total = length(pspectra_list), clear = T, width= 75)
+  pb <- progress_bar$new(format = "Generating [:bar] :percent Time left: :eta", total = length(pspectra_list), clear = TRUE, width= 75)
   
   for(j in 1:length(pspectra_list)){
     i  <- pspectra_list[j];
@@ -5026,7 +4994,7 @@ calcPC.hcs <- function(mSet, ajc=NULL,psg_list=NULL) {
   #peak counter
   npeaks <- 0;
   lp <- -1;
-  pb <- progress_bar$new(format = "Calculating [:bar] :percent Time left: :eta", total = length(pspectra_list), clear = T, width= 75)
+  pb <- progress_bar$new(format = "Calculating [:bar] :percent Time left: :eta", total = length(pspectra_list), clear = TRUE, width= 75)
   
   for(j in 1:length(pspectra_list)){
     i  <- pspectra_list[j];#index of pseudospectrum
@@ -5353,7 +5321,7 @@ findAdducts <- function(mSet, ppm=5, mzabs=0.015, multiplier=3, polarity=NULL, r
       parent <- FALSE;
     }
     along = pspectra_list;
-    pb <- progress_bar$new(format = "Calculating [:bar] :percent Time left: :eta", total = length(along), clear = T, width= 75)
+    pb <- progress_bar$new(format = "Calculating [:bar] :percent Time left: :eta", total = length(along), clear = TRUE, width= 75)
     
     for(j in seq(along)){
       i <- pspectra_list[j];
@@ -6304,7 +6272,7 @@ checkIsotopes <- function(hypothese, isotopes, ipeak){
 }
 checkHypothese <- function(hypothese){
   if(is.null(nrow(hypothese))){
-    hypothese <- matrix(hypothese, byrow=F, ncol=8)
+    hypothese <- matrix(hypothese, byrow=FALSE, ncol=8)
   } 
   colnames(hypothese) <- c("massID", "ruleID", "nmol", "charge", "mass", "score", "massgrp", "check")
   for(i in unique(hypothese[,"massgrp"])){
@@ -6324,7 +6292,7 @@ checkIps <- function(hypothese){
   }
   hypothese <- hypothese[which(hypothese[, "check"]==TRUE), ];
   if(is.null(nrow(hypothese))) {
-    hypothese <- matrix(hypothese, byrow=F, ncol=9)
+    hypothese <- matrix(hypothese, byrow=FALSE, ncol=9)
   }
   if(nrow(hypothese) < 1){
     colnames(hypothese)<-c("massID", "ruleID", "nmol", "charge", "mass", "oidscore", "ips","massgrp", "check")

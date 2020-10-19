@@ -42,20 +42,20 @@ PerformDataTrimming<- function(datapath, mode="ssm", write=FALSE, mz, mzdiff, rt
 #' library(OptiLCMS)
 #' @examples
 #' DataFiles <- dir(system.file("mzData", package = "mtbls2"), full.names = TRUE, recursive = TRUE)
-#' mSet <- PerformROIExtraction(datapath = DataFiles[1],rt.idx = 0.025,rmConts = F);
+#' mSet <- PerformROIExtraction(datapath = DataFiles[1],rt.idx = 0.025,rmConts = FALSE);
 
 
 PerformROIExtraction <-
   function(datapath,
            mode = "ssm",
-           write = F,
+           write = FALSE,
            mz,
            mzdiff,
            rt,
            rtdiff,
            rt.idx = 1/15,
            rmConts = TRUE,
-           plot = T,
+           plot = TRUE,
            running.controller = NULL) {
     
     datapath <- normalizePath(datapath);
@@ -133,8 +133,8 @@ PerformROIExtraction <-
             # List all samples uploaded
             all_sample_list <-
               list.files(paste0(datapath, "/../"),
-                         recursive = T,
-                         full.names = T)
+                         recursive = TRUE,
+                         full.names = TRUE)
             
             # choose the included files
             included_samples <-
@@ -149,7 +149,7 @@ PerformROIExtraction <-
               )
             
             largest_file <-
-              basename(names(sort(file_sizes, decreasing = T)[c(1:2)]))
+              basename(names(sort(file_sizes, decreasing = TRUE)[c(1:2)]))
             
             sample_index <-
               as.numeric(sapply(
@@ -167,8 +167,8 @@ PerformROIExtraction <-
             # List all samples uploaded
             all_sample_list <-
               list.files(paste0(datapath, "/../"),
-                         recursive = T,
-                         full.names = T)
+                         recursive = TRUE,
+                         full.names = TRUE)
             
             # choose the largest files
             included_samples <-
@@ -182,7 +182,7 @@ PerformROIExtraction <-
                     file.size(x)
                   }
                 ),
-                decreasing = T
+                decreasing = TRUE
               )[c(1:3)])
           }
           
@@ -218,7 +218,7 @@ PerformROIExtraction <-
               )
             
             dda_file1 <-
-              names(sort(file_sizes, decreasing = T)[c(1:3)])
+              names(sort(file_sizes, decreasing = TRUE)[c(1:3)])
           }
         }
         
@@ -305,7 +305,7 @@ PerformROIExtraction <-
         if(.on.public.web){
           rmConts <- FALSE;
           peakParams <- NULL;
-          tmp_mes <- try(suppressWarnings(load("params.rda")),silent = T);
+          tmp_mes <- try(suppressWarnings(load("params.rda")),silent = TRUE);
         } else {
           tmp_mes <- 0;
         }
@@ -345,11 +345,11 @@ PerformROIExtraction <-
         }
         
         if (mode == "mz_random") {
-          try(trimed_MSnExp <- mz.trim_random(raw_data, ms_list), silent = T);
+          try(trimed_MSnExp <- mz.trim_random(raw_data, ms_list), silent = TRUE);
         }
         
         if (mode == "rt_random") {
-          try(trimed_MSnExp <- rt.trim_random(raw_data, ms_list), silent = T)
+          try(trimed_MSnExp <- rt.trim_random(raw_data, ms_list), silent = TRUE)
         }
         
         if (mode == "mz_specific") {
@@ -381,7 +381,7 @@ PerformROIExtraction <-
     MessageOutput(NULL, NULL, 4);
 
     if (c3) {
-      if (write == T) {
+      if (write == TRUE) {
         MessageOutput("Data Writing...",ecol = "\n",NULL);
         writenames <-
           paste0(datapath,
@@ -401,7 +401,7 @@ PerformROIExtraction <-
     }
     
     if (c4) {
-      if (plot == T) {
+      if (plot == TRUE) {
         MessageOutput("Chromatogram Plotting Begin...",ecol = "\n",NULL);
         
         # if (.on.public.web) {
@@ -488,10 +488,10 @@ ssm_trim <- function(raw_data, ms_list, rt.idx){
   
   if (length(spectra_mz)>1000000){
     set.seed(222);
-    rannum<- sort(sample(length(spectra_mz),ceiling(length(spectra_mz)/50)),decreasing = F)
+    rannum<- sort(sample(length(spectra_mz),ceiling(length(spectra_mz)/50)),decreasing = FALSE)
   } else if (length(spectra_mz)>100000){
     set.seed(222)
-    rannum<-sort(sample(length(spectra_mz),ceiling(length(spectra_mz)/5)),decreasing = F)
+    rannum<-sort(sample(length(spectra_mz),ceiling(length(spectra_mz)/5)),decreasing = FALSE)
   } else {
     rannum<-seq(length(spectra_mz))
   }
@@ -557,7 +557,7 @@ ssm_trim <- function(raw_data, ms_list, rt.idx){
   # Remove the peaks out of the bins
   MessageOutput("Identifying ROIs in m/z dimensions...", "\n", NULL);
 
-  pb <- progress_bar$new(format = "ROIs Identification in MZ Dimension [:bar] :percent Time left: :eta", total = length(ms_list), clear = T, width= 80)
+  pb <- progress_bar$new(format = "ROIs Identification in MZ Dimension [:bar] :percent Time left: :eta", total = length(ms_list), clear = TRUE, width= 80)
   
   for (i in 1:length(ms_list)){
     pb$tick();
@@ -599,7 +599,7 @@ ssm_trim <- function(raw_data, ms_list, rt.idx){
   
   MessageOutput("Identifying ROIs in RT dimensions...", "\n", NULL);
  
-  pb <- progress_bar$new(format = "ROIs Identification in RT Dimension [:bar] :percent Time left: :eta", total = length(ms_list), clear = T, width= 80)
+  pb <- progress_bar$new(format = "ROIs Identification in RT Dimension [:bar] :percent Time left: :eta", total = length(ms_list), clear = TRUE, width= 80)
   ncount<-numeric();
   
   for (w in 1:length(ms_list)){
@@ -640,7 +640,7 @@ mz.trim_random <- function(raw_data, ms_list){
   set.seed(1233);
   mzdata_points <- sample(unique(mzdata_points),size = 100)
   
-  pb <- progress_bar$new(format = "Data Trimming [:bar] :percent Time left: :eta", total = length(raw_data@assayData), clear = T, width= 60)
+  pb <- progress_bar$new(format = "Data Trimming [:bar] :percent Time left: :eta", total = length(raw_data@assayData), clear = TRUE, width= 60)
   
   for (i in 1:length(raw_data@assayData)){
     pb$tick();
@@ -681,7 +681,7 @@ rt.trim_random <- function(raw_data, ms_list){
   rt_width_aver<-(rt_end-rt_begin)/200
   xn_list<-list()
   
-  pb <- progress_bar$new(format = "Data Trimming [:bar] :percent Time left: :eta", total = 200, clear = T, width= 60)
+  pb <- progress_bar$new(format = "Data Trimming [:bar] :percent Time left: :eta", total = 200, clear = TRUE, width= 60)
   
   for (w in 1:200){
     pb$tick();
@@ -754,7 +754,7 @@ mz.trim_specific<-function(raw_data, ms_list, mz, mzdiff=100){
   mz.pos<-mz[which(mz>0)];
   
   if (!identical(mz.pos,numeric(0))){
-    pb <- progress_bar$new(format = "Data Trimming_keeping [:bar] :percent Time left: :eta", total = length(ms_list), clear = T, width= 60)
+    pb <- progress_bar$new(format = "Data Trimming_keeping [:bar] :percent Time left: :eta", total = length(ms_list), clear = TRUE, width= 60)
     
     for (w in 1:length(ms_list)){
       pb$tick();
@@ -776,7 +776,7 @@ mz.trim_specific<-function(raw_data, ms_list, mz, mzdiff=100){
   
   if (!identical(mz.neg,numeric(0))){
     
-    pb <- progress_bar$new(format = "Data Trimming_removing [:bar] :percent Time left: :eta", total = length(ms_list), clear = T, width= 60)
+    pb <- progress_bar$new(format = "Data Trimming_removing [:bar] :percent Time left: :eta", total = length(ms_list), clear = TRUE, width= 60)
     
     for (w in 1:length(ms_list)){
       pb$tick();
@@ -829,7 +829,7 @@ rt.trim_specific<-function(raw_data,ms_list,rt,rtdiff=10){
   }
   
   if (rt[1] > 0){
-    pb <- progress_bar$new(format = "Data Trimming [:bar] :percent Time left: :eta", total = length(ms_list), clear = T, width= 60)
+    pb <- progress_bar$new(format = "Data Trimming [:bar] :percent Time left: :eta", total = length(ms_list), clear = TRUE, width= 60)
     
     ncount<-numeric();
     for (w in 1:length(ms_list)){
@@ -850,7 +850,7 @@ rt.trim_specific<-function(raw_data,ms_list,rt,rtdiff=10){
     }
   } else {
     
-    pb <- progress_bar$new(format = "Data Trimming [:bar] :percent Time left: :eta", total = length(ms_list), clear = T, width= 60)
+    pb <- progress_bar$new(format = "Data Trimming [:bar] :percent Time left: :eta", total = length(ms_list), clear = TRUE, width= 60)
     
     ncount<-numeric();
     for (w in 1:length(ms_list)){
@@ -974,7 +974,7 @@ ContaminatsRemoval <- function(raw_data, ms_list){
   
   scan_names <- sort(names(raw_data@assayData));
   fre_stats <- plyr::count(round(unname(unlist(ms_list)), 2))
-  topScan_stats <- fre_stats[order(fre_stats$freq, decreasing = T),][c(1:300),] # get top 300 most frequent mz value
+  topScan_stats <- fre_stats[order(fre_stats$freq, decreasing = TRUE),][c(1:300),] # get top 300 most frequent mz value
   scan_totalLength <- length(raw_data@assayData)
   top_mzs <- topScan_stats$x
   topScan_stats[,4] <- topScan_stats[,3] <- 0;

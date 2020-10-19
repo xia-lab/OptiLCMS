@@ -112,9 +112,9 @@ PerformPeakProfiling <-
       write.table(
         unlist(Params),
         file = "param_optimized.txt",
-        row.names = T,
-        col.names = F,
-        quote = F
+        row.names = TRUE,
+        col.names = FALSE,
+        quote = FALSE
       )
     }
 
@@ -352,7 +352,7 @@ PerformPeakProfiling <-
         plotSettings$name_adj_BPI = "Adjusted_BPI"
       }
       
-      if (plotSettings$Plot == T) {
+      if (plotSettings$Plot == TRUE) {
         ### 1. Peak Intensity plotting -----
         PlotSpectraInsensityStistics(
           mSet,
@@ -1001,7 +1001,7 @@ PerformPeakAnnotation <-
         progress_bar$new(
           format = "Isotope [:bar] :percent Time left: :eta",
           total = length(along),
-          clear = T,
+          clear = TRUE,
           width = 75
         );
       
@@ -1025,7 +1025,7 @@ PerformPeakAnnotation <-
       #clean isotopes
       if (is.null(nrow(isomatrix))) {
         isomatrix = matrix(isomatrix,
-                           byrow = F,
+                           byrow = FALSE,
                            ncol = length(isomatrix))
       }
       
@@ -1718,9 +1718,9 @@ Export.PeakSummary <- function(mSet = NULL, path = getwd()){
   write.table(
     datam,
     file = paste0(path, "/peak_result_summary.txt"),
-    row.names = F,
-    col.names = F,
-    quote = F
+    row.names = FALSE,
+    col.names = FALSE,
+    quote = FALSE
   );
 }
 

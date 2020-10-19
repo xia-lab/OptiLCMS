@@ -41,7 +41,7 @@ pd <- data.frame(sample_name = sub(basename(DataFiles), pattern = ".mzData",
                  sample_group = c(rep("col0", 3), rep("cyp79", 3)),
                  stringsAsFactors = FALSE)
 
-# mSet <- PerformROIExtraction(datapath = DataFiles[c(1:2)],rt.idx = 0.025,rmConts = F);
+# mSet <- PerformROIExtraction(datapath = DataFiles[c(1:2)],rt.idx = 0.025,rmConts = FALSE);
 
 # best_params <- PerformParamsOptimization(mSet, param = SetPeakParam(),ncore = 1);
 }

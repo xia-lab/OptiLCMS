@@ -7,14 +7,14 @@
 PerformROIExtraction(
   datapath,
   mode = "ssm",
-  write = F,
+  write = FALSE,
   mz,
   mzdiff,
   rt,
   rtdiff,
   rt.idx = 1/15,
   rmConts = TRUE,
-  plot = T,
+  plot = TRUE,
   running.controller = NULL
 )
 }
@@ -57,7 +57,7 @@ provide the data path for 'datapath', and optionally provide other corresponding
 }
 \examples{
 DataFiles <- dir(system.file("mzData", package = "mtbls2"), full.names = TRUE, recursive = TRUE)
-mSet <- PerformROIExtraction(datapath = DataFiles[1],rt.idx = 0.025,rmConts = F);
+mSet <- PerformROIExtraction(datapath = DataFiles[1],rt.idx = 0.025,rmConts = FALSE);
 }
 \author{
 Zhiqiang Pang \email{zhiqiang.pang@mail.mcgill.ca} Jeff Xia \email{jeff.xia@mcgill.ca}

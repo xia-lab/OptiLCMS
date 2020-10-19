@@ -111,10 +111,10 @@ MessageOutput <- function(mes = NULL, ecol = "\n", progress =NULL) {
       write.table(
         mes,
         file = "metaboanalyst_spec_proc.txt",
-        append = T,
-        row.names = F,
-        col.names = F,
-        quote = F,
+        append = TRUE,
+        row.names = FALSE,
+        col.names = FALSE,
+        quote = FALSE,
         eol = ecol
       )
     } else {
@@ -135,8 +135,8 @@ MessageOutput <- function(mes = NULL, ecol = "\n", progress =NULL) {
     write.table(
       progress,
       file = "log_progress.txt",
-      row.names = F,
-      col.names = F
+      row.names = FALSE,
+      col.names = FALSE
     )
   }
   

@@ -61,7 +61,7 @@ InitializaPlan <- function(type = "raw_ms"){
     envir.path <- paste0(temp.path, "/envir")
     if (!dir.exists(envir.path)) {
       dir.create(paste0(temp.path, "/envir"),
-                 recursive = T)
+                 recursive = TRUE)
     }
     
     envir <- .SwapEnv$envir <- new.env()
@@ -78,7 +78,7 @@ InitializaPlan <- function(type = "raw_ms"){
     
     if (!dir.exists(plan.path)) {
       dir.create(paste0(temp.path, "/plan"),
-                 recursive = T)
+                 recursive = TRUE)
     }
     
     #---------------
@@ -100,7 +100,7 @@ InitializaPlan <- function(type = "raw_ms"){
     envir.path <- paste0(temp.path, "/envir")
     if (!dir.exists(envir.path)) {
       dir.create(paste0(temp.path, "/envir"),
-                 recursive = T)
+                 recursive = TRUE)
     }
     
     envir <- .SwapEnv$envir <- new.env()
@@ -117,7 +117,7 @@ InitializaPlan <- function(type = "raw_ms"){
   
   if (!dir.exists(record.path)) {
     dir.create(paste0(temp.path, "/records"),
-               recursive = T)
+               recursive = TRUE)
   }
   
   saveRDS(record.info, file = paste0(record.path, "/records.rds"))
@@ -370,7 +370,7 @@ ExecutePlan <- function(plan=NULL){
     if (class(mSetInfo)[1]=="simpleError"){
       if(.on.public.web){
         print_mes <- paste0("<font color=\"red\">","\nERROR:",mSetInfo$message,"</font>");
-        write.table(print_mes,file="metaboanalyst_spec_proc.txt",append = T,row.names = F,col.names = F, quote = F, eol = "\n");
+        write.table(print_mes,file="metaboanalyst_spec_proc.txt",append = TRUE,row.names = FALSE,col.names = FALSE, quote = FALSE, eol = "\n");
       } else {
         stop(paste0("EXCEPTION POINT CODE: ", mSetInfo$message));
       }
@@ -963,12 +963,12 @@ cache.save <- function(obj, funpartnm){
   }
   
   tmp_path <- paste0(.SwapEnv$PlanWorkingDir,"/cache");
-  if (!dir.exists(tmp_path)){dir.create(tmp_path,recursive = T)};
+  if (!dir.exists(tmp_path)){dir.create(tmp_path,recursive = TRUE)};
   temp <- tempfile(tmpdir=tmp_path,fileext = ".rds");
   saveRDS(obj,file = temp);
   
   tmp_path_r <- paste0(.SwapEnv$PlanWorkingDir,"/records");
-  if (!dir.exists(tmp_path_r)){dir.create(tmp_path,recursive = T)};
+  if (!dir.exists(tmp_path_r)){dir.create(tmp_path,recursive = TRUE)};
   if (!file.exists(paste0(.SwapEnv$PlanWorkingDir,"/records/file_record.rds"))){
     
   };

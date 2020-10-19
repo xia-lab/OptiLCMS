@@ -27,7 +27,7 @@
 #'                  sample_group = c(rep("col0", 3), rep("cyp79", 3)),
 #'                  stringsAsFactors = FALSE)
 #' 
-#' # mSet <- PerformROIExtraction(datapath = DataFiles[c(1:2)],rt.idx = 0.025,rmConts = F);
+#' # mSet <- PerformROIExtraction(datapath = DataFiles[c(1:2)],rt.idx = 0.025,rmConts = FALSE);
 #' 
 #' # best_params <- PerformParamsOptimization(mSet, param = SetPeakParam(),ncore = 1);
 
@@ -307,7 +307,7 @@ optimize.xcms.doe <- function(raw_data, param, ncore = 8){
   #### Start to Optimize !
   result <- optimizxcms.doe.peakpicking(object = raw_data, params = Parameters, 
                                         BPPARAM = bpparam(),
-                                        nSlaves = ncore, subdir = NULL, plot = F);
+                                        nSlaves = ncore, subdir = NULL, plot = FALSE);
   
   optimizedxcmsObject <- result$best_settings$xset;
   
@@ -338,7 +338,7 @@ optimize.xcms.doe <- function(raw_data, param, ncore = 8){
 #' License: GNU GPL (>= 2)
 
 optimizxcms.doe.peakpicking <- function(object = NULL, params = params, 
-                                        BPPARAM = bpparam(), nSlaves = 4, plot = F,...) {
+                                        BPPARAM = bpparam(), nSlaves = 4, plot = FALSE,...) {
   
   isotopeIdentification = c("IPO");
   centWave <- is.null(params$fwhm)  ;
@@ -419,7 +419,7 @@ optimizxcms.doe.peakpicking <- function(object = NULL, params = params,
         isotopeIdentification = isotopeIdentification,
         BPPARAM = BPPARAM,
         subdir = NULL,
-        plot = F,
+        plot = FALSE,
         mSet_OPT = mSet_OPT,
         iterator = iterator,
         index.set = index.set,
@@ -692,7 +692,7 @@ ExperimentsCluster_doe <-function(object, object_mslevel,params,
     if (.on.public.web){
       
       print_mes <- paste0("Finished: ");    
-      write.table(print_mes,file="metaboanalyst_spec_proc.txt",append = TRUE ,row.names = F,col.names = F, quote = F, eol = "");
+      write.table(print_mes,file="metaboanalyst_spec_proc.txt",append = TRUE ,row.names = FALSE,col.names = FALSE, quote = FALSE, eol = "");
       
     }
     
@@ -704,9 +704,9 @@ ExperimentsCluster_doe <-function(object, object_mslevel,params,
         totalcount <- formals(count_tmp[["initialize"]])[["total"]];
         currentcount <- environment(count_tmp[["tick"]])[["private"]][["current"]];
         
-        write.table((w/nstep*(iterator/4)*3.5+(iterator-1)*3.5+5), file = "log_progress.txt", row.names = F,col.names = F);
+        write.table((w/nstep*(iterator/4)*3.5+(iterator-1)*3.5+5), file = "log_progress.txt", row.names = FALSE,col.names = FALSE);
         print_mes <- paste(round(w/nstep, digits=2)*100, "%");    
-        write.table(print_mes,file="metaboanalyst_spec_proc.txt",append = TRUE,row.names = F,col.names = F, quote = F, eol = " | ");
+        write.table(print_mes,file="metaboanalyst_spec_proc.txt",append = TRUE,row.names = FALSE,col.names = FALSE, quote = FALSE, eol = " | ");
         
       } else {
         pb$tick();
@@ -779,7 +779,7 @@ ExperimentsCluster_doe <-function(object, object_mslevel,params,
 #' License: GNU GPL (>= 2)
 
 Statistic_doe <-function(object, object_mslevel, isotopeIdentification, 
-                         BPPARAM = bpparam(), mSet_OPT, subdir = NULL ,plot = F,iterator, 
+                         BPPARAM = bpparam(), mSet_OPT, subdir = NULL ,plot = FALSE,iterator, 
                          index.set,useNoise) {
   
 
@@ -828,7 +828,7 @@ Statistic_doe <-function(object, object_mslevel, isotopeIdentification,
     
     if (.on.public.web){
       print_mes <- paste0("Model Parsing Done !\n");    
-      write.table(print_mes,file="metaboanalyst_spec_proc.txt",append = TRUE, row.names = F,col.names = F, quote = F, eol = "\n");
+      write.table(print_mes,file="metaboanalyst_spec_proc.txt",append = TRUE, row.names = FALSE,col.names = FALSE, quote = FALSE, eol = "\n");
     } else {
       message("Model Parsing Done !\n")
     } 
@@ -1257,7 +1257,7 @@ extFUN <- function(z, object, useNoise) {
       fit <- SSgaussStats(ints);
       
       if (class(fit) == "try-error") { # Still error - record error !
-        #write.table(paste0(fit[[1]],Sys.time()), file = "error_report.txt",append = T,eol = "\n");
+        #write.table(paste0(fit[[1]],Sys.time()), file = "error_report.txt",append = TRUE,eol = "\n");
         corr <- 0.1;
       } else {
         if (sum(!is.na(ints - fitted(fit))) > 4 && 
@@ -1540,7 +1540,7 @@ Noise_evaluate <- function (raw_data) {
       if(is.null(approvedPeaks)){(next)()}
       overlappingScans <- sum(approvedPeaks$multipleInScan)
       ppmEst <- try(filterPpmError(approvedPeaks, useGap = TRUE, 
-                                   varExpThresh, returnPpmPlots = F, plotDir = NULL, observedPeak), silent = TRUE);
+                                   varExpThresh, returnPpmPlots = FALSE, plotDir = NULL, observedPeak), silent = TRUE);
       if(class(ppmEst) == "try-error" | is.na(ppmEst)){(next)()}
       ppmObs <- approvedPeaks$meanPPM
       ppmObs <- strsplit(split = ";", x = as.character(ppmObs))

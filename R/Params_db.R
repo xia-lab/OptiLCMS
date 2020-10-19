@@ -78,13 +78,13 @@ SetPeakParam <- function(platform = "general", Peak_method = "centWave", RT_meth
     #marker_record(paste0("operators","_operators_1"));
     
     print_mes <- "Step 1/6: Internalize parameters! \nThis step will be finished soon...";    
-    write.table(print_mes,file="metaboanalyst_spec_proc.txt",append = T,row.names = F,col.names = F, quote = F, eol = "\n");
+    write.table(print_mes,file="metaboanalyst_spec_proc.txt",append = TRUE,row.names = FALSE,col.names = FALSE, quote = FALSE, eol = "\n");
     
     load("params.rda");
     
     print_mes <- "Step 1/6: Parameters Internalized Successfully! \nGoing to the next step...";    
-    write.table(print_mes,file="metaboanalyst_spec_proc.txt",append = T,row.names = F,col.names = F, quote = F, eol = "\n");
-    write.table(unlist(peakParams),file="param_default.txt",row.names = T,col.names = F,quote = F);
+    write.table(print_mes,file="metaboanalyst_spec_proc.txt",append = TRUE,row.names = FALSE,col.names = FALSE, quote = FALSE, eol = "\n");
+    write.table(unlist(peakParams),file="param_default.txt",row.names = TRUE,col.names = FALSE,quote = FALSE);
     
     return(peakParams);
   }
@@ -2041,8 +2041,8 @@ SetPeakParam <- function(platform = "general", Peak_method = "centWave", RT_meth
   #Output a table for display 
     if(.on.public.web){
       save(peakParams,file="params.rda");
-      write.table(unlist(peakParams),file="param_default.txt",row.names = T,col.names = F,quote = F);
-      write.table("NOT Finished Yet!",file="param_optimized.txt",row.names = T,col.names = F,quote = F);
+      write.table(unlist(peakParams),file="param_default.txt",row.names = TRUE,col.names = FALSE,quote = FALSE);
+      write.table("NOT Finished Yet!",file="param_optimized.txt",row.names = TRUE,col.names = FALSE,quote = FALSE);
     }
   
   #marker_record(paste0("operators","_operators_1"));

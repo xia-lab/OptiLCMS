@@ -40,7 +40,7 @@ PerformDataInspect <-
           datapath <- "upload/QC"
           datapath <- paste0(fullUserPath, datapath)
         } else if (.on.public.web) {
-          datapath <- paste0("upload/", list.files("upload", recursive = T)[1])
+          datapath <- paste0("upload/", list.files("upload", recursive = TRUE)[1])
           datapath <- paste0(fullUserPath, datapath)
         } else {
           MessageOutput("Local Inspectation !\n")
@@ -48,8 +48,8 @@ PerformDataInspect <-
       } else {
         files <-
           list.files(paste0(getwd(), "/upload/"),
-                     full.names = T,
-                     recursive = T)
+                     full.names = TRUE,
+                     recursive = TRUE)
         
         
         if (isEmpty(files)) {
@@ -57,8 +57,8 @@ PerformDataInspect <-
           files <-
             list.files(
               "/home/glassfish/projects/MetaboDemoRawData/upload/",
-              full.names = T,
-              recursive = T
+              full.names = TRUE,
+              recursive = TRUE
             )
           datapath =  files[datapath == basename(files)]
           
@@ -86,7 +86,7 @@ PerformDataInspect <-
         !grepl(pattern = c("*.CDF"), basename(datapath)) &
         !grepl(pattern = c("*.cdf"), basename(datapath))) {
       MessageOutput(paste("First file in ", datapath, " will be inspected !\n"))
-      mzf <- list.files(datapath, recursive = F, full.names = T)[1]
+      mzf <- list.files(datapath, recursive = FALSE, full.names = TRUE)[1]
     } else {
       mzf <- datapath
     }
@@ -274,7 +274,7 @@ PerformDataInspect <-
 #' SetPlotParam(Plot = TRUE, dpi = 144, width = 12)
 
 SetPlotParam <-
-  function(Plot = F,
+  function(Plot = FALSE,
            labels = TRUE,
            format = "png",
            dpi = 72,
@@ -498,7 +498,7 @@ PlotXIC <-
       stat_smooth(
         geom = 'area',
         method = "loess",
-        se = F,
+        se = FALSE,
         span = 0.4,
         size = 0.35,
         formula = "y ~ x",
@@ -578,7 +578,7 @@ PlotXIC <-
       stat_smooth(
         geom = 'area',
         method = "loess",
-        se = F,
+        se = FALSE,
         span = 0.4,
         size = 0.35,
         formula = "y ~ x",
@@ -800,7 +800,7 @@ PlotSpectraPCA <-
     df1 <- df0[is.finite(rowSums(df0)),];
     df <- t(df1);
     
-    mSet_pca <- prcomp(df, center = TRUE, scale = T);
+    mSet_pca <- prcomp(df, center = TRUE, scale = TRUE);
     sum.pca <- summary(mSet_pca);
     var.pca <-
       sum.pca$importance[2,]; # variance explained by each PCA
@@ -1174,7 +1174,7 @@ plotMSfeature <- function(mSet, FeatureNM,
       x = "Group",
       y = "log2(value + 1)",
       fill = "Group"
-    )) + # geom_violin(trim = T,draw_quantiles = T) +
+    )) + # geom_violin(trim = TRUE,draw_quantiles = TRUE) +
     stat_boxplot(geom = "errorbar", width = 0.15, aes(color = "black")) +
     geom_boxplot(
       size = 0.35,

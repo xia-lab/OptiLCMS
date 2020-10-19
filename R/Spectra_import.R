@@ -500,11 +500,11 @@ read.InMemMSd.data <- function(files,
       
       if (.on.public.web){   
         print_mes <- paste0("Importing ",basename(f),":");    
-        write.table(print_mes,file="metaboanalyst_spec_proc.txt",append = T,row.names = F,col.names = F, quote = F, eol = " ");
+        write.table(print_mes,file="metaboanalyst_spec_proc.txt",append = TRUE,row.names = FALSE,col.names = FALSE, quote = FALSE, eol = " ");
       }
       else {
         pb <- progress_bar$new(format = "Reading [:bar] :percent Time left: :eta", 
-                               total = length(spidx), clear = T, width= 75)
+                               total = length(spidx), clear = TRUE, width= 75)
       }
       
       k_count <- 0;
@@ -517,7 +517,7 @@ read.InMemMSd.data <- function(files,
         if (.on.public.web){  
           if (round(i/length(spidx),digits = 4)*100 - k_count > -0.2){
             print_mes <- paste0(k_count,"% | ");    
-            write.table(print_mes,file="metaboanalyst_spec_proc.txt",append = T,row.names = F,col.names = F, quote = F, eol = " ");
+            write.table(print_mes,file="metaboanalyst_spec_proc.txt",append = TRUE,row.names = FALSE,col.names = FALSE, quote = FALSE, eol = " ");
             k_count <- k_count +20;
           }
           
@@ -565,7 +565,7 @@ read.InMemMSd.data <- function(files,
         stop("Number of spectra and precursor scan number do not match!")
       
       pb <- progress_bar$new(format = "Reading [:bar] :percent Time left: :eta", 
-                             total = length(spidx), clear = T, width= 75)
+                             total = length(spidx), clear = TRUE, width= 75)
       
       for (i in 1:length(spidx)) {
         
@@ -615,10 +615,10 @@ read.InMemMSd.data <- function(files,
     
     if (.on.public.web){ 
       print_mes <- paste0("Done!");    
-      write.table(print_mes,file="metaboanalyst_spec_proc.txt",append = T,row.names = F,col.names = F, quote = F, eol = "\n");
+      write.table(print_mes,file="metaboanalyst_spec_proc.txt",append = TRUE,row.names = FALSE,col.names = FALSE, quote = FALSE, eol = "\n");
       
       count.idx <- count.idx + 1;  
-      write.table(1.0 + count.idx/length(files)*3, file = "log_progress.txt", row.names = F,col.names = F);
+      write.table(1.0 + count.idx/length(files)*3, file = "log_progress.txt", row.names = FALSE,col.names = FALSE);
     }
     
     MessageOutput(paste0("Reading from ", basename(f), " finished successfully !"));
@@ -726,7 +726,7 @@ read.OnDiskMS.data <- function(files,
   featureDataList <- list()
   ## o for each file, extract header info and put that into featureData
   ##pb <- progress_bar$new(format = "Reading [:bar] :percent Time left: :eta", 
-  #                       total = length(spidx), clear = T, width= 75);
+  #                       total = length(spidx), clear = TRUE, width= 75);
   
   count_mark <- 0;
   
@@ -735,7 +735,7 @@ read.OnDiskMS.data <- function(files,
     if (.on.public.web){
       
       print_mes <- paste(basename(f),"import done!");    
-      write.table(print_mes,file="metaboanalyst_spec_proc.txt",append = T,row.names = F,col.names = F, quote = F, eol = "\n");
+      write.table(print_mes,file="metaboanalyst_spec_proc.txt",append = TRUE,row.names = FALSE,col.names = FALSE, quote = FALSE, eol = "\n");
       
     } else {
       #pb$tick();
@@ -868,7 +868,7 @@ read.OnDiskMS.data <- function(files,
   }
   
   if (.on.public.web){
-    write.table("Raw file initialized Successfully!",file="metaboanalyst_spec_proc.txt",append = T,row.names = F,col.names = F, quote = F, eol = "\n");
+    write.table("Raw file initialized Successfully!",file="metaboanalyst_spec_proc.txt",append = TRUE,row.names = FALSE,col.names = FALSE, quote = FALSE, eol = "\n");
   }
   
   return(res)
@@ -1080,7 +1080,7 @@ Path2Files <- function(path){
       dir(
         pathnames,
         pattern = ".mzML|.mzml|.cdf|.mzXML|.mzxml|.mzData|.CDF",
-        recursive = T,
+        recursive = TRUE,
         full.names = TRUE
       );
     
