@@ -42,7 +42,7 @@ PerformDataTrimming<- function(datapath, mode="ssm", write=F, mz, mzdiff, rt, rt
 #' library(OptiLCMS)
 #' @examples
 #' DataFiles <- dir(system.file("mzData", package = "mtbls2"), full.names = TRUE, recursive = TRUE)
-#' mSet <- PerformROIExtraction(datapath = DataFiles`[1]`,rt.idx = 0.025,rmConts = F);
+#' mSet <- PerformROIExtraction(datapath = DataFiles[1],rt.idx = 0.025,rmConts = F);
 
 
 PerformROIExtraction <-

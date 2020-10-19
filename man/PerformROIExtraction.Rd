@@ -57,7 +57,7 @@ provide the data path for 'datapath', and optionally provide other corresponding
 }
 \examples{
 DataFiles <- dir(system.file("mzData", package = "mtbls2"), full.names = TRUE, recursive = TRUE)
-mSet <- PerformROIExtraction(datapath = DataFiles`[1]`,rt.idx = 0.025,rmConts = F);
+mSet <- PerformROIExtraction(datapath = DataFiles[1],rt.idx = 0.025,rmConts = F);
 }
 \author{
 Zhiqiang Pang \email{zhiqiang.pang@mail.mcgill.ca} Jeff Xia \email{jeff.xia@mcgill.ca}
