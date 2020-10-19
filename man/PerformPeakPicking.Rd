@@ -14,6 +14,13 @@ PerformPeakPicking(mSet, BPPARAM = bpparam())
 \description{
 PerformPeakPicking
 }
+\examples{
+data(mSet);
+newPath <- dir(system.file("mzData", package = "mtbls2"),
+               full.names = TRUE, recursive = TRUE)[c(10, 11, 12)]
+mSet <- updateRawSpectraPath(mSet, newPath);
+mSet <- PerformPeakPicking(mSet);
+}
 \references{
 Smith, C.A. et al. 2006. {Analytical Chemistry}, 78, 779-787
 }

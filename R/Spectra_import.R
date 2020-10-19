@@ -11,11 +11,11 @@
 #'@author Jeff Xia \email{jeff.xia@mcgill.ca}
 #'McGill University, Canada
 #'License: GNU GPL (>= 2)
-#'@export
-#'@import methods
-#'@import BiocParallel
-#'@importFrom  Cairo CairoFonts
-#'@examples 
+#' @export
+#' @import methods
+#' @import BiocParallel
+#' @importFrom  Cairo CairoFonts
+#' @examples 
 #' library(OptiLCMS);
 #' mSet<-InitDataObjects("spec", "raw", FALSE)
 

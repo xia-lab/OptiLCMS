@@ -13,7 +13,7 @@ PerformPeakAlignment(mSet)
 PerformPeakAlignment
 }
 \examples{
-#' data(mSet);
+data(mSet);
 newPath <- dir(system.file("mzData", package = "mtbls2"),
                full.names = TRUE, recursive = TRUE)[c(10, 11, 12)]
 mSet <- updateRawSpectraPath(mSet, newPath);

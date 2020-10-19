@@ -17,7 +17,7 @@
 #' License: GNU GPL (>= 2)
 #' @export
 #' @references Smith, C.A. et al. 2006. {Analytical Chemistry}, 78, 779-787
-#' @exampleS
+#' @examples
 #' data(mSet);
 #' newPath <- dir(system.file("mzData", package = "mtbls2"),
 #'                full.names = TRUE, recursive = TRUE)[c(10, 11, 12)]
@@ -1295,7 +1295,7 @@ Densitygrouping_slave <- function(x, bw, densFrom, densTo, densN, sampleGroups,
 #' @export
 #' @references Smith, C.A. et al. 2006. {Analytical Chemistry}, 78, 779-787
 #' @examples 
-#' #' data(mSet);
+#' data(mSet);
 #' newPath <- dir(system.file("mzData", package = "mtbls2"),
 #'                full.names = TRUE, recursive = TRUE)[c(10, 11, 12)]
 #' mSet <- updateRawSpectraPath(mSet, newPath);
@@ -2190,7 +2190,7 @@ mSet.obiwarp <- function(mSet, object, param) { ## Do not use the params defined
 #' @export
 #' @references Smith, C.A. et al. 2006. {Analytical Chemistry}, 78, 779-787
 #' @examples 
-#' #' data(mSet);
+#' data(mSet);
 #' newPath <- dir(system.file("mzData", package = "mtbls2"),
 #'                full.names = TRUE, recursive = TRUE)[c(10, 11, 12)]
 #' mSet <- updateRawSpectraPath(mSet, newPath);
