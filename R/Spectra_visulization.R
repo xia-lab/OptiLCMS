@@ -308,7 +308,7 @@ SetPlotParam <-
 #' @examples 
 #' library(OptiLCMS)
 #' data(mSet);
-#' PlotXIC(mSet, 1, T, T);
+#' PlotXIC(mSet, 1, TRUE, TRUE);
 
 PlotXIC <-
   function(mSet = NULL,
