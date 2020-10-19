@@ -10,7 +10,7 @@ GeneratePeakList <- function(userPath) {
   ## Claculate the mean internsity of all groups
   sample_data <-
     read.csv("metaboanalyst_input.csv",
-             header = T,
+             header = TRUE,
              stringsAsFactors = F)
   
   groups <- as.character(as.matrix(sample_data[1, ]))[-1]
@@ -24,7 +24,7 @@ GeneratePeakList <- function(userPath) {
         sample_data,
         1,
         FUN = function(x) {
-          mean(as.numeric(x), na.rm = T)
+          mean(as.numeric(x), na.rm = TRUE)
         }
       )
     
@@ -35,14 +35,14 @@ GeneratePeakList <- function(userPath) {
     for (i in 1:length(unique(groups))) {
       columnnum <- unique(groups)[i] == groups
       sample_data0  <-
-        subset.data.frame(sample_data, subset = T, select = columnnum)
+        subset.data.frame(sample_data, subset = TRUE, select = columnnum)
       
       sample_data0  <-
         round(apply(
           sample_data0,
           1,
           FUN = function(x) {
-            mean(as.numeric(x), na.rm = T)
+            mean(as.numeric(x), na.rm = TRUE)
           }
         ), 2)
       
@@ -97,7 +97,7 @@ featureSUM <- function(MS_group, frtr) {
     sapply(
       MS_group,
       FUN = function(x) {
-        sum(x@intensity, na.rm = T)
+        sum(x@intensity, na.rm = TRUE)
       }
     )
   
@@ -227,9 +227,9 @@ CachePathCorrection <- function(folderPath){
   if(!.on.public.web){
     stop("Prohibited running this function at local!")
   }
-  cacheFiles <- list.files(paste0(folderPath,"/temp"),all.files = T, full.names = T, recursive = T);
+  cacheFiles <- list.files(paste0(folderPath,"/temp"),all.files = TRUE, full.names = TRUE, recursive = TRUE);
   
-  newfilepath <- list.files("/home/glassfish/projects/MetaboDemoRawData/upload",all.files = T, recursive = T,full.names = T)
+  newfilepath <- list.files("/home/glassfish/projects/MetaboDemoRawData/upload",all.files = TRUE, recursive = TRUE,full.names = TRUE)
   
   for (i in cacheFiles){
     tmp_rds <- readRDS(i);

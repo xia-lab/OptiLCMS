@@ -687,12 +687,12 @@ ExperimentsCluster_doe <-function(object, object_mslevel,params,
     }
     
     # Setting progress bar and start the running loop
-    pb <- progress_bar$new(format = "DoE Running [:bar] :percent Time left: :eta", total = nstep, clear = T, width= 75)
+    pb <- progress_bar$new(format = "DoE Running [:bar] :percent Time left: :eta", total = nstep, clear = TRUE, width= 75)
     
     if (.on.public.web){
       
       print_mes <- paste0("Finished: ");    
-      write.table(print_mes,file="metaboanalyst_spec_proc.txt",append = T,row.names = F,col.names = F, quote = F, eol = "");
+      write.table(print_mes,file="metaboanalyst_spec_proc.txt",append = TRUE ,row.names = F,col.names = F, quote = F, eol = "");
       
     }
     
@@ -706,7 +706,7 @@ ExperimentsCluster_doe <-function(object, object_mslevel,params,
         
         write.table((w/nstep*(iterator/4)*3.5+(iterator-1)*3.5+5), file = "log_progress.txt", row.names = F,col.names = F);
         print_mes <- paste(round(w/nstep, digits=2)*100, "%");    
-        write.table(print_mes,file="metaboanalyst_spec_proc.txt",append = T,row.names = F,col.names = F, quote = F, eol = " | ");
+        write.table(print_mes,file="metaboanalyst_spec_proc.txt",append = TRUE,row.names = F,col.names = F, quote = F, eol = " | ");
         
       } else {
         pb$tick();
@@ -828,7 +828,7 @@ Statistic_doe <-function(object, object_mslevel, isotopeIdentification,
     
     if (.on.public.web){
       print_mes <- paste0("Model Parsing Done !\n");    
-      write.table(print_mes,file="metaboanalyst_spec_proc.txt",append = T,row.names = F,col.names = F, quote = F, eol = "\n");
+      write.table(print_mes,file="metaboanalyst_spec_proc.txt",append = TRUE, row.names = F,col.names = F, quote = F, eol = "\n");
     } else {
       message("Model Parsing Done !\n")
     } 
@@ -886,9 +886,7 @@ Statistic_doe <-function(object, object_mslevel, isotopeIdentification,
 SlaveCluster_doe <-function(task, Set_parameters, object, object_mslevel, 
                             isotopeIdentification, BPPARAM = bpparam()) {
   
-  # if(.optimize_switch){
-  #   write.table(paste0("WK_XXXXXXXXXXXXXXXXXXXXXXXXXX_",Sys.time()), file = "tmp_progress.txt",row.names = F,quote = F,col.names = F,append = T,eol ="\n")
-  # }
+
   mSet <-
     calculateSet_doe(
       object = object,
@@ -907,14 +905,14 @@ SlaveCluster_doe <-function(task, Set_parameters, object, object_mslevel,
     result <- calcPPS2(mSet, isotopeIdentification)
     result[1] <- task   
     
-    tmp_cv<- try(suppressMessages(calcCV(mSet)),silent = T);
+    tmp_cv<- try(suppressMessages(calcCV(mSet)),silent = TRUE);
     if (class(tmp_cv)=="try-error"){
       result[6]<-0;
     } else {
       result[6] <- tmp_cv;
     }
     
-    tmp_RCS_GS <- try(suppressMessages(calcRCS_GSValues(mSet)),silent = T);
+    tmp_RCS_GS <- try(suppressMessages(calcRCS_GSValues(mSet)),silent = TRUE);
     
     if (class(tmp_RCS_GS)=="try-error"){
       result[8] <- result[7] <- 0;
@@ -925,7 +923,7 @@ SlaveCluster_doe <-function(task, Set_parameters, object, object_mslevel,
     
     tmp_GaussianSI <- try(calcGaussianS(mSet, object,
                                       useNoise = as.numeric(Set_parameters[[task]]$noise)),
-                        silent = T);
+                        silent = TRUE);
     
     if (class(tmp_GaussianSI)=="try-error"){
       result[9]<-0;
@@ -966,9 +964,7 @@ calculateSet_doe <- function(object, object_mslevel, Set_parameters, task = 1,
   } else { # deal with the optimization case, usaully 44 (33 each set)
     param <- updateRawSpectraParam(Set_parameters[[task]])
   }
-  # if(.optimize_switch){
-  #   write.table(paste0("WK_zzzzzzzzzzzzzzzzzzz_",Sys.time()), file = "tmp_progress.txt",row.names = F,quote = F,col.names = F,append = T,eol ="\n")
-  # }
+
   mSet <- calculatePPKs(object, object_mslevel, param, BPPARAM = bpparam())
   
   mSet <- calculateGPRT(mSet, param)
@@ -993,19 +989,12 @@ calculatePPKs<-function(object, object_mslevel,param,
                         BPPARAM = bpparam(),msLevel = 1){
   
   if (param$Peak_method == "centWave" | param$Peak_method == "matchedFilter") {
-    # centWave & matchedFilter
-    # if(.optimize_switch){
-    #   write.table(paste0("WK_jjjjjjjjjjjjjjjjjjjjjjjjj_",Sys.time()), file = "tmp_progress.txt",row.names = F,quote = F,col.names = F,append = T,eol ="\n")
-    # }
+
     mSet <- try(PeakPicking_core(object, object_mslevel,
                                  param = param,
                                  msLevel = 1),
-                silent = T)
-    # mSet <- PeakPicking_core(object, 
-    #                          object_mslevel, 
-    #                          param = param, 
-    #                          BPPARAM = BPPARAM,
-    #                          msLevel = 1)
+                silent = TRUE)
+
     
   } else {
     
@@ -1032,10 +1021,10 @@ calculateGPRT<-function (mSet,param){
     mSetTmp@rawInMemory <- mSet$inMemoryData;
   }
 
-  mSetTmp <- try(PerformPeakAlignment(mSetTmp),silent = T);
+  mSetTmp <- try(PerformPeakAlignment(mSetTmp),silent = TRUE);
   
   gc();
-  mSetTmp <- try(PerformPeakFiling (mSetTmp),silent = T);
+  mSetTmp <- try(PerformPeakFiling (mSetTmp),silent = TRUE);
   gc();
   if (class(mSetTmp)=="try-error") {
     mSet<-"Xset_NA";
@@ -1133,15 +1122,15 @@ calcCV<-function(mSet){
   
   table.data<-creatPeakTable(mSet);
   
-  table.data$abundance.mean <- apply(table.data[, 9:(8 + ncount)],1, FUN = mean, na.rm = T);
-  table.data$abundance.sd <- apply(table.data[, 9:(8 + ncount)],1, FUN = sd, na.rm = T);
+  table.data$abundance.mean <- apply(table.data[, 9:(8 + ncount)],1, FUN = mean, na.rm = TRUE);
+  table.data$abundance.sd <- apply(table.data[, 9:(8 + ncount)],1, FUN = sd, na.rm = TRUE);
   table.data$abundance.cv <- (table.data$abundance.sd * 100)/table.data$abundance.mean;
   
-  cv.min<-min(table.data$abundance.cv, na.rm = T);
-  cv.0.25<-as.numeric(quantile(table.data$abundance.cv, probs = 0.25, na.rm = T));
-  cv.med<-median(table.data$abundance.cv, na.rm = T);
-  cv.0.75<-as.numeric(quantile(table.data$abundance.cv, probs = 0.75, na.rm = T));
-  cv.max<-max(table.data$abundance.cv, na.rm = T);
+  cv.min<-min(table.data$abundance.cv, na.rm = TRUE);
+  cv.0.25<-as.numeric(quantile(table.data$abundance.cv, probs = 0.25, na.rm = TRUE));
+  cv.med<-median(table.data$abundance.cv, na.rm = TRUE);
+  cv.0.75<-as.numeric(quantile(table.data$abundance.cv, probs = 0.75, na.rm = TRUE));
+  cv.max<-max(table.data$abundance.cv, na.rm = TRUE);
   cv.score<-1/(0.75*cv.med+0.25*(cv.max-cv.med))
   
   return(cv.score)
@@ -1500,7 +1489,7 @@ Noise_evaluate <- function (raw_data) {
     }
   }
   pb <- progress_bar$new(format = "Evaluating [:bar] :percent Time left: :eta", 
-                         total = length(unique(peak_table$Sample)), clear = T, 
+                         total = length(unique(peak_table$Sample)), clear = TRUE, 
                          width = 75)
   totalEstimates <- list()
   for (j in unique(peak_table$Sample)) {
@@ -1550,8 +1539,8 @@ Noise_evaluate <- function (raw_data) {
       approvedPeaks <- findTruePeaks(truePeaks, sortedAllEIC);
       if(is.null(approvedPeaks)){(next)()}
       overlappingScans <- sum(approvedPeaks$multipleInScan)
-      ppmEst <- try(filterPpmError(approvedPeaks, useGap = T, 
-                                   varExpThresh, returnPpmPlots = F, plotDir = NULL, observedPeak), silent = T);
+      ppmEst <- try(filterPpmError(approvedPeaks, useGap = TRUE, 
+                                   varExpThresh, returnPpmPlots = F, plotDir = NULL, observedPeak), silent = TRUE);
       if(class(ppmEst) == "try-error" | is.na(ppmEst)){(next)()}
       ppmObs <- approvedPeaks$meanPPM
       ppmObs <- strsplit(split = ";", x = as.character(ppmObs))
@@ -1562,7 +1551,7 @@ Noise_evaluate <- function (raw_data) {
       approvScorePeaks <- approvedPeaks[!noisyBin, ]
       
       SNest <- try(estimateSNThresh(no_match, sortedAllEIC, 
-                                    approvScorePeaks), silent = T);
+                                    approvScorePeaks), silent = TRUE);
       
       if(class(SNest) == "try-error"){(next)()}
       

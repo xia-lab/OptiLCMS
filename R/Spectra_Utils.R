@@ -4844,7 +4844,7 @@ fastMatch <- function(x,y,tol=0.001, symmetric=FALSE) {
                                               abs(x[a]  -y[fm[[a]][b]-1]),
                                               abs(x[a]  -y[fm[[a]][b]+1]),
                                               abs(x[a-1]-y[fm[[a]][b]]),
-                                              abs(x[a+1]-y[fm[[a]][b]]), na.rm=T)
+                                              abs(x[a+1]-y[fm[[a]][b]]), na.rm=TRUE)
           )) {
             tmp<-c(tmp, fm[[a]][b])
           }

@@ -1,5 +1,5 @@
-PerformDataTrimming<- function(datapath, mode="ssm", write=F, mz, mzdiff, rt, rtdiff, 
-                                 rt.idx=1/15, rmConts = TRUE, plot=T,running.controller=NULL){
+PerformDataTrimming<- function(datapath, mode="ssm", write=FALSE, mz, mzdiff, rt, rtdiff, 
+                                 rt.idx=1/15, rmConts = TRUE, plot=TRUE,running.controller=NULL){
   
   PerformROIExtraction(datapath, mode=mode, write, mz, mzdiff, rt, rtdiff, 
                        rt.idx, rmConts = rmConts, plot,running.controller);
