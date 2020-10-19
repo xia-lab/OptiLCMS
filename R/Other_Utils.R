@@ -1458,5 +1458,15 @@ FastRunningShow_customized <- function(fullUserPath){
   Sys.sleep(time_interval1);
 }
 
-
+# importFrom("grDevices", "boxplot.stats", "dev.off", "jpeg")
+# importFrom("graphics", "abline", "boxplot", "contour", "grid",
+#            "legend", "par", "points")
+# importFrom("stats", "approx", "approxfun", "as.formula", "convolve",
+#            "cor", "cor.test", "cutree", "deriv3", "dist", "dnorm",
+#            "fft", "fitted", "hclust", "kmeans", "lm", "loess", "lsfit",
+#            "na.omit", "nextn", "nls", "prcomp", "predict", "sd",
+#            "smooth.spline", "weighted.mean")
+# 
+# 
+# 
 

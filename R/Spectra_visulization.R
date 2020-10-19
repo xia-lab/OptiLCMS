@@ -271,7 +271,7 @@ PerformDataInspect <-
 #' License: GNU GPL (>= 2)
 #' @export
 #' @examples
-#' SetPlotParam(Plot = T, dpi = 144, width = 12)
+#' SetPlotParam(Plot = TRUE, dpi = 144, width = 12)
 
 SetPlotParam <-
   function(Plot = F,

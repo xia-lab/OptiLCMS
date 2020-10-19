@@ -2196,8 +2196,9 @@ mSet.obiwarp <- function(mSet, object, param) { ## Do not use the params defined
 #' mSet <- updateRawSpectraPath(mSet, newPath);
 #' SetGlobalParallel(1);
 #' mSet <- PerformPeakFiling(mSet);
+#' register(bpstop());
 
-PerformPeakFiling <- function(mSet,BPPARAM=bpparam()){
+PerformPeakFiling <- function(mSet, BPPARAM=bpparam()){
   
   if(missing(mSet) & file.exists("mSet.rda")){
     load("mSet.rda")
@@ -2429,6 +2430,8 @@ PerformPeakFiling <- function(mSet,BPPARAM=bpparam()){
                     BPPARAM = BPPARAM, 
                     SIMPLIFY = FALSE)
     
+    register(bpstop());
+    
   } else {
 
     mzCenterFun = "weighted.mean";
@@ -2577,12 +2580,11 @@ PerformPeakFiling <- function(mSet,BPPARAM=bpparam()){
   
   mSet@peakfilling$msFeatureData <- newFd;
   mSet@peakfilling$FeatureGroupTable <- fdef;
-  
-  #mSet$xcmsSet <- mSet2xcmsSet(mSet)
-  
+
   if(.on.public.web){
     save(mSet, file = "mSet.rda");
   }
+  
   register(bpstop());
   
   return(mSet)

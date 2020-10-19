@@ -36,7 +36,7 @@
 #' mSet <- PerformPeakProfiling(mSet, Params = SetPeakParam(ppm = 15, 
 #'                                                          bw = 5, mzdiff = 0.001, max_peakwidth = 18, 
 #'                                                          min_peakwidth = 5), ncore = 1, 
-#'                              plotSettings = SetPlotParam(Plot = T))
+#'                              plotSettings = SetPlotParam(Plot = TRUE))
 #' 
 #' ##' Set peak annotation parameters
 #' annParams <- SetAnnotationParam(polarity = 'positive',

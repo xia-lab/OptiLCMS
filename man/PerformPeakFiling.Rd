@@ -21,6 +21,7 @@ newPath <- dir(system.file("mzData", package = "mtbls2"),
 mSet <- updateRawSpectraPath(mSet, newPath);
 SetGlobalParallel(1);
 mSet <- PerformPeakFiling(mSet);
+register(bpstop());
 }
 \references{
 Smith, C.A. et al. 2006. {Analytical Chemistry}, 78, 779-787

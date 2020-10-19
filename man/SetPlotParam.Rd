@@ -23,7 +23,7 @@ SetPlotParam(Plot = F, labels = TRUE, format = "png", dpi = 72, width = 9, ...)
 This function sets the generic Plotting Parameters for different functions
 }
 \examples{
-SetPlotParam(Plot = T, dpi = 144, width = 12)
+SetPlotParam(Plot = TRUE, dpi = 144, width = 12)
 }
 \author{
 Zhiqiang Pang \email{zhiqiang.pang@mail.mcgill.ca}, and Jeff Xia \email{jeff.xia@mcgill.ca}
