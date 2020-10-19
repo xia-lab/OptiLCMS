@@ -40,5 +40,8 @@ m/z and retention time. This is used for quality-control of raw m/s data.
 \examples{
 library(OptiLCMS)
 data(mSet);
+newPath <- dir(system.file("mzData", package = "mtbls2"),
+               full.names = TRUE, recursive = TRUE)[c(10, 11, 12)]
+mSet <- updateRawSpectraPath(mSet, newPath);
 PlotXIC(mSet, 1, TRUE, TRUE);
 }

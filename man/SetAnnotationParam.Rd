@@ -54,7 +54,8 @@ annParams <- SetAnnotationParam(polarity = 'positive',
 \code{\link{ExecutePlan}} and \code{\link{PerformPeakProfiling}} for the whole pipeline.
 }
 \author{
-Jasmine Chong \email{jasmine.chong@mail.mcgill.ca}, and Jeff Xia \email{jeff.xia@mcgill.ca}
+Zhiqiang Pang \email{zhiqiang.pang@mail.mcgill.ca}, Jasmine Chong \email{jasmine.chong@mail.mcgill.ca},
+and Jeff Xia \email{jeff.xia@mcgill.ca}
 McGill University, Canada
 License: GNU GPL (>= 2)
 }

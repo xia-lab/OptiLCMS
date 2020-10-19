@@ -16,7 +16,12 @@ Export.PeakSummary is used to export the result of peak' summary
 }
 \examples{
 data(mSet);
-Export.PeakSummary(mSet, path = tempdir())
+Export.PeakSummary(mSet, path = tempdir());
+# delete the exported files from the tempdir with unlink
+unlink(paste0(tempdir(),"/peak_result_summary.txt"), recursive = TRUE, force = TRUE)
+}
+\seealso{
+\code{\link{ExecutePlan}} and \code{\link{PerformPeakProfiling}} for the whole pipeline.
 }
 \author{
 Zhiqiang Pang \email{zhiqiang.pang@mail.mcgill.ca}, Jeff Xia \email{jeff.xia@mcgill.ca}

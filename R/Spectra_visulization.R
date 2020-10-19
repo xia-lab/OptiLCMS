@@ -1,4 +1,4 @@
-#' Data inspectation
+#' @title PerformDataInspect
 #' @description This functions provide a path for users to visually inspect their raw data before the data
 #' trimming so as to remove the dirty or significantly uneluted peaks.
 #' @param datapath Character, the path of the raw MS data files (.mzXML, .CDF and .mzML)
@@ -258,7 +258,7 @@ PerformDataInspect <-
   }
 
 
-#' Set generic Plotting Parameters
+#' @title SetPlotParam
 #' @description This function sets the generic Plotting Parameters for different functions
 #' @param Plot Logical, if true, the function will plot internal figures for different functions.
 #' @param labels Logical, if true, the labels in the plot will be added.
@@ -290,7 +290,7 @@ SetPlotParam <-
     ))
   }
 
-#' PlotXIC/EIC
+#' @title PlotXIC/EIC
 #' @description This functionn creates an extracted ion chromatogram (EIC) for a specific
 #' m/z and retention time. This is used for quality-control of raw m/s data.
 #' @param mSet mSet Object. Should contain the spectra processing result.
@@ -308,6 +308,9 @@ SetPlotParam <-
 #' @examples 
 #' library(OptiLCMS)
 #' data(mSet);
+#' newPath <- dir(system.file("mzData", package = "mtbls2"),
+#'                full.names = TRUE, recursive = TRUE)[c(10, 11, 12)]
+#' mSet <- updateRawSpectraPath(mSet, newPath);
 #' PlotXIC(mSet, 1, TRUE, TRUE);
 
 PlotXIC <-
@@ -619,7 +622,8 @@ PlotXIC <-
   }
 
 
-#' PlotSpectraInsensityStistics
+#' @title PlotSpectraInsensityStistics
+#' @description This function is used to do the statistics on the spectra intensity
 #' @param mSet mSet object, usually generated after the peakannotaion finished here.
 #' @param imgName Character, to give the name of BPI figures ploted.
 #' @param format Character, to give the format of BPI figures ploted. Can be "jpeg", "png", "pdf", "svg",
@@ -631,6 +635,9 @@ PlotXIC <-
 #' @examples 
 #' library(OptiLCMS)
 #' data(mSet);
+#' newPath <- dir(system.file("mzData", package = "mtbls2"),
+#'                full.names = TRUE, recursive = TRUE)[c(10, 11, 12)]
+#' mSet <- updateRawSpectraPath(mSet, newPath);
 #' PlotSpectraInsensityStistics(mSet);
 
 PlotSpectraInsensityStistics <-
@@ -728,7 +735,8 @@ PlotSpectraInsensityStistics <-
   }
 
 
-#' PlotSpectraPCA
+#' @title PlotSpectraPCA
+#' @description This function is used to plot the PCA of all spectra
 #' @param mSet mSet object, usually generated after the peakannotaion finished here.
 #' @param imgName Character, to give the name of BPI figures ploted.
 #' @param format Character, to give the format of BPI figures ploted. Can be "jpeg", "png", "pdf", "svg",
@@ -740,6 +748,9 @@ PlotSpectraInsensityStistics <-
 #' @examples 
 #' library(OptiLCMS)
 #' data(mSet);
+#' newPath <- dir(system.file("mzData", package = "mtbls2"),
+#'                full.names = TRUE, recursive = TRUE)[c(10, 11, 12)]
+#' mSet <- updateRawSpectraPath(mSet, newPath);
 #' PlotSpectraPCA(mSet);
 
 PlotSpectraPCA <-
@@ -870,7 +881,8 @@ PlotSpectraPCA <-
   }
 
 
-#' PlotSpectraRTadj
+#' @title PlotSpectraRTadj
+#' @description This function is used to plot the adjustment of retention time of all spectra
 #' @param mSet mSet object, usually generated after the peakannotaion finished here.
 #' @param imgName Character, to give the name of BPI figures ploted.
 #' @param format Character, to give the format of BPI figures ploted. Can be "jpeg", "png", "pdf", "svg",
@@ -882,6 +894,9 @@ PlotSpectraPCA <-
 #' @examples 
 #' library(OptiLCMS)
 #' data(mSet);
+#' newPath <- dir(system.file("mzData", package = "mtbls2"),
+#'                full.names = TRUE, recursive = TRUE)[c(10, 11, 12)]
+#' mSet <- updateRawSpectraPath(mSet, newPath);
 #' PlotSpectraRTadj(mSet);
 
 PlotSpectraRTadj <-
@@ -1012,7 +1027,8 @@ PlotSpectraRTadj <-
   }
 
 
-#' PlotSpectraBPIadj
+#' @title PlotSpectraBPIadj
+#' @description This function is used to plot the adjust BPI (Base Peak Ion)
 #' @param mSet mSet object, usually generated after the peakannotaion finished here.
 #' @param imgName Character, to give the name of BPI figures ploted.
 #' @param format Character, to give the format of BPI figures ploted. Can be "jpeg", "png", "pdf", "svg",
@@ -1024,6 +1040,9 @@ PlotSpectraRTadj <-
 #' @examples 
 #' library(OptiLCMS)
 #' data(mSet);
+#' newPath <- dir(system.file("mzData", package = "mtbls2"),
+#'                full.names = TRUE, recursive = TRUE)[c(10, 11, 12)]
+#' mSet <- updateRawSpectraPath(mSet, newPath);
 #' PlotSpectraBPIadj(mSet);
 
 PlotSpectraBPIadj <-
@@ -1116,7 +1135,7 @@ PlotSpectraBPIadj <-
     }
   }
 
-#' plotMSfeature
+#' @title plotMSfeature
 #' @description plotMSfeature is used to plot the feature intensity of different groups
 #' @param mSet mSet Object, should be processed aby 'PerformPeakProfiling'.
 #' @param FeatureNM Numeric, feature number in the feature table.
@@ -1128,6 +1147,9 @@ PlotSpectraBPIadj <-
 #' @examples 
 #' library(OptiLCMS)
 #' data(mSet);
+#' newPath <- dir(system.file("mzData", package = "mtbls2"),
+#'                full.names = TRUE, recursive = TRUE)[c(10, 11, 12)]
+#' mSet <- updateRawSpectraPath(mSet, newPath);
 #' plotMSfeature (mSet, 1); # Here is only one group
 
 plotMSfeature <- function(mSet, FeatureNM,
@@ -1208,28 +1230,28 @@ plotMSfeature <- function(mSet, FeatureNM,
     theme(
       legend.position = "none",
       axis.text.x = element_text(
-        family = "Arial",
+        #family = "Arial",
         size = 12,
         angle = 45,
         hjust = 1
       ),
       axis.text.y = element_text(
-        family = "Arial",
+        #family = "Arial",
         size = 12,
         face = "plain"
       ),
       axis.title.y = element_text(
-        family = "Arial",
+        #family = "Arial",
         size = 16,
         face = "plain"
       ),
       axis.title.x = element_text(
-        family = "Arial",
+        #family = "Arial",
         size = 16,
         face = "plain"
       ),
       plot.title = element_text(
-        family = "Arial",
+        #family = "Arial",
         size = 16,
         face = "bold",
         hjust = 0.5
@@ -1247,7 +1269,7 @@ plotMSfeature <- function(mSet, FeatureNM,
 
 
 
-#' plotSingleTIC
+#' @title plotSingleTIC
 #' @description plotSingleTIC is used to plot the TIC of a certain spectra
 #' @param mSet mSet Object, should be processed by ImportMSData.
 #' @param filename Character, to give the filename for the TIC plotting.
@@ -1257,6 +1279,9 @@ plotMSfeature <- function(mSet, FeatureNM,
 #' @examples
 #' library(OptiLCMS)
 #' data(mSet);
+#' newPath <- dir(system.file("mzData", package = "mtbls2"),
+#'                full.names = TRUE, recursive = TRUE)[c(10, 11, 12)]
+#' mSet <- updateRawSpectraPath(mSet, newPath);
 #' plotSingleTIC(mSet, "MSpos-Ex2-Col0-48h-Ag-2_1-A,3_01_9829.mzData")
 
 plotSingleTIC <- function(mSet = NULL, filename, imagename) {

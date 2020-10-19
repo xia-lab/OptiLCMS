@@ -15,8 +15,13 @@ Export.PeakTable(mSet = NULL, path = getwd())
 Export.PeakTable is used to export the table of peak
 }
 \examples{
-data(mSet)
-Export.PeakTable(mSet, path = tempdir())
+data(mSet);
+Export.PeakTable(mSet, path = tempdir());
+# delete the exported files from the tempdir with unlink
+unlink(paste0(tempdir(),"/metaboanalyst_input.csv"), recursive = TRUE, force = TRUE)
+}
+\seealso{
+\code{\link{ExecutePlan}} and \code{\link{PerformPeakProfiling}} for the whole pipeline.
 }
 \author{
 Zhiqiang Pang \email{zhiqiang.pang@mail.mcgill.ca}, Jeff Xia \email{jeff.xia@mcgill.ca}

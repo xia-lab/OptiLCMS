@@ -33,9 +33,12 @@
 #' mSet <- ImportRawMSData(path = DataFiles, metadata = pd);
 #' 
 #' ##' Perform spectra profiling
-#' mSet <- PerformPeakProfiling(mSet, Params = SetPeakParam(ppm = 15, 
-#'                                                          bw = 5, mzdiff = 0.001, max_peakwidth = 18, 
-#'                                                          min_peakwidth = 5), ncore = 1, 
+#' mSet <- PerformPeakProfiling(mSet, Params = SetPeakParam(ppm = 5, 
+#'                                                          bw = 10, 
+#'                                                          mzdiff = 0.001, 
+#'                                                          max_peakwidth = 15, 
+#'                                                          min_peakwidth = 10), 
+#'                                                          ncore = 1, 
 #'                              plotSettings = SetPlotParam(Plot = TRUE))
 #' 
 #' ##' Set peak annotation parameters
@@ -55,13 +58,13 @@
 #'                        missPercent = 1)
 #' 
 #' ##' Export the annotation result
-#' Export.Annotation(mSet);
+#' Export.Annotation(mSet, path = tempdir());
 #' 
 #' ##' Export the Peak Table
-#' Export.PeakTable(mSet);
+#' Export.PeakTable(mSet, path = tempdir());
 #' 
 #' ##' Export the Peak summary
-#' Export.PeakSummary(mSet)
+#' Export.PeakSummary(mSet, path = tempdir())
 
 
 PerformPeakProfiling <-
@@ -429,7 +432,8 @@ PerformPeakProfiling <-
 #' Default is set to 0.85.
 #' @param mz_abs_add Numeric, set the allowed variance for the search (for adduct annotation).
 #' The default is set to 0.001.
-#' @author Jasmine Chong \email{jasmine.chong@mail.mcgill.ca}, and Jeff Xia \email{jeff.xia@mcgill.ca}
+#' @author Zhiqiang Pang \email{zhiqiang.pang@mail.mcgill.ca}, Jasmine Chong \email{jasmine.chong@mail.mcgill.ca},
+#' and Jeff Xia \email{jeff.xia@mcgill.ca}
 #' McGill University, Canada
 #' License: GNU GPL (>= 2)
 #' @export
@@ -444,7 +448,6 @@ PerformPeakProfiling <-
 #' 
 #' ##' Please check the example of PerformPeakProfiling 
 #' ##' and ExcutePlan for the whole running pipeline.
-
 
 SetAnnotationParam <-
   function(polarity = "positive",
@@ -516,7 +519,8 @@ SetAnnotationParam <-
 #' # mSet <- PerformPeakAnnotation(mSet = mSet,
 #' #                               annotaParam = annParams,
 #' #                               ncore =1)
-
+#' @seealso \code{\link{ExecutePlan}} and \code{\link{PerformPeakProfiling}} for the whole pipeline.
+#' 
 PerformPeakAnnotation <-
   function(mSet,
            annotaParam,
@@ -1399,6 +1403,7 @@ PerformPeakAnnotation <-
 #' missing in X\% of samples. For instance, 0.5 specifies to remove features
 #' that are missing from 50\% of all samples per group. Method is only valid
 #' when there are two groups.
+#' @seealso \code{\link{ExecutePlan}} and \code{\link{PerformPeakProfiling}} for the whole pipeline.
 #' @author Jasmine Chong \email{jasmine.chong@mail.mcgill.ca}, and Jeff Xia \email{jeff.xia@mcgill.ca}
 #' McGill University, Canada
 #' License: GNU GPL (>= 2)
@@ -1658,10 +1663,15 @@ FormatPeakList <-
 #' @param mSet mSet object, processed by FormatPeakList.
 #' @param path character, used to specify the path for result rds and csv file. Default is the working directory.
 #' @export
+#' @seealso \code{\link{ExecutePlan}} and \code{\link{PerformPeakProfiling}} for the whole pipeline.
 #' @author Zhiqiang Pang \email{zhiqiang.pang@mail.mcgill.ca}, Jeff Xia \email{jeff.xia@mcgill.ca}
 #' @examples
 #' data(mSet)
 #' Export.Annotation(mSet, path = tempdir())
+#' # delete the exported files from the tempdir with unlink
+#' unlink(paste0(tempdir(),"/annotated_peaklist.csv"), recursive = TRUE, force = TRUE);
+#' unlink(paste0(tempdir(),"/annotated_peaklist.rds"), recursive = TRUE, force = TRUE)
+
 Export.Annotation <- function(mSet = NULL, path = getwd()){
   
   camera_output <- mSet@peakAnnotation$camera_output;
@@ -1681,10 +1691,14 @@ Export.Annotation <- function(mSet = NULL, path = getwd()){
 #' @param mSet mSet object, processed by FormatPeakList.
 #' @param path character, used to specify the path for result rds and csv file. Default is the working directory.#'
 #' @export
+#' @seealso \code{\link{ExecutePlan}} and \code{\link{PerformPeakProfiling}} for the whole pipeline.
 #' @author Zhiqiang Pang \email{zhiqiang.pang@mail.mcgill.ca}, Jeff Xia \email{jeff.xia@mcgill.ca}
 #' @examples
-#' data(mSet)
-#' Export.PeakTable(mSet, path = tempdir())
+#' data(mSet);
+#' Export.PeakTable(mSet, path = tempdir());
+#' # delete the exported files from the tempdir with unlink
+#' unlink(paste0(tempdir(),"/metaboanalyst_input.csv"), recursive = TRUE, force = TRUE)
+
 Export.PeakTable <- function(mSet = NULL, path = getwd()){
   
   mSet@dataSet -> ma_feats_miss;
@@ -1703,10 +1717,14 @@ Export.PeakTable <- function(mSet = NULL, path = getwd()){
 #' @param mSet mSet object, processed by FormatPeakList.
 #' @param path character, used to specify the path for result rds and csv file. Default is the working directory.#'
 #' @export
+#' @seealso \code{\link{ExecutePlan}} and \code{\link{PerformPeakProfiling}} for the whole pipeline.
 #' @author Zhiqiang Pang \email{zhiqiang.pang@mail.mcgill.ca}, Jeff Xia \email{jeff.xia@mcgill.ca}
 #' @examples
 #' data(mSet);
-#' Export.PeakSummary(mSet, path = tempdir())
+#' Export.PeakSummary(mSet, path = tempdir());
+#' # delete the exported files from the tempdir with unlink
+#' unlink(paste0(tempdir(),"/peak_result_summary.txt"), recursive = TRUE, force = TRUE)
+
 Export.PeakSummary <- function(mSet = NULL, path = getwd()){
   
   mSet@peakAnnotation$peak_result_summary -> datam;

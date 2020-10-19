@@ -2,7 +2,7 @@
 % Please edit documentation in R/Spectra_visulization.R
 \name{PerformDataInspect}
 \alias{PerformDataInspect}
-\title{Data inspectation}
+\title{PerformDataInspect}
 \usage{
 PerformDataInspect(
   datapath = NULL,

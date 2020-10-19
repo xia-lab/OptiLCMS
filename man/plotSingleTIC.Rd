@@ -19,5 +19,8 @@ plotSingleTIC is used to plot the TIC of a certain spectra
 \examples{
 library(OptiLCMS)
 data(mSet);
+newPath <- dir(system.file("mzData", package = "mtbls2"),
+               full.names = TRUE, recursive = TRUE)[c(10, 11, 12)]
+mSet <- updateRawSpectraPath(mSet, newPath);
 plotSingleTIC(mSet, "MSpos-Ex2-Col0-48h-Ag-2_1-A,3_01_9829.mzData")
 }

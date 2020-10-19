@@ -56,7 +56,7 @@ plan <- running.plan(plan,
                                             filtIso =FALSE, filtAdducts = FALSE,
                                             missPercent = 1));
 ##' Run it!
-result <- ExecutePlan(plan);
+# result <- ExecutePlan(plan);
 
 ##' Re-define your plan with a change on mz_abs_add from 0.025 to 0.035
 plan <- running.plan(plan,
@@ -88,7 +88,7 @@ plan <- running.plan(plan,
                                             missPercent = 1));
 
 ##' Re-run it! Most steps will be resumed from cache and save your time!
-result <- ExecutePlan(plan);
+# result <- ExecutePlan(plan);
 }
 \author{
 Zhiqiang Pang \email{zhiqiang.pang@mail.mcgill.ca} Jeff Xia \email{jeff.xia@mcgill.ca}

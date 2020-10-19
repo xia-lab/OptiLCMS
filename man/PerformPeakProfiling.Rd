@@ -49,9 +49,12 @@ pd <- data.frame(sample_name = sub(basename(DataFiles), pattern = ".mzData",
 mSet <- ImportRawMSData(path = DataFiles, metadata = pd);
 
 ##' Perform spectra profiling
-mSet <- PerformPeakProfiling(mSet, Params = SetPeakParam(ppm = 15, 
-                                                         bw = 5, mzdiff = 0.001, max_peakwidth = 18, 
-                                                         min_peakwidth = 5), ncore = 1, 
+mSet <- PerformPeakProfiling(mSet, Params = SetPeakParam(ppm = 5, 
+                                                         bw = 10, 
+                                                         mzdiff = 0.001, 
+                                                         max_peakwidth = 15, 
+                                                         min_peakwidth = 10), 
+                                                         ncore = 1, 
                              plotSettings = SetPlotParam(Plot = TRUE))
 
 ##' Set peak annotation parameters
@@ -71,13 +74,13 @@ mSet <- FormatPeakList(mSet = mSet,
                        missPercent = 1)
 
 ##' Export the annotation result
-Export.Annotation(mSet);
+Export.Annotation(mSet, path = tempdir());
 
 ##' Export the Peak Table
-Export.PeakTable(mSet);
+Export.PeakTable(mSet, path = tempdir());
 
 ##' Export the Peak summary
-Export.PeakSummary(mSet)
+Export.PeakSummary(mSet, path = tempdir())
 }
 \author{
 Zhiqiang Pang \email{zhiqiang.pang@mail.mcgill.ca}, Jasmine Chong \email{jasmine.chong@mail.mcgill.ca},

@@ -17,6 +17,12 @@ Export.Annotation is used to export the result of annotation
 \examples{
 data(mSet)
 Export.Annotation(mSet, path = tempdir())
+# delete the exported files from the tempdir with unlink
+unlink(paste0(tempdir(),"/annotated_peaklist.csv"), recursive = TRUE, force = TRUE);
+unlink(paste0(tempdir(),"/annotated_peaklist.rds"), recursive = TRUE, force = TRUE)
+}
+\seealso{
+\code{\link{ExecutePlan}} and \code{\link{PerformPeakProfiling}} for the whole pipeline.
 }
 \author{
 Zhiqiang Pang \email{zhiqiang.pang@mail.mcgill.ca}, Jeff Xia \email{jeff.xia@mcgill.ca}

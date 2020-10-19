@@ -2,7 +2,7 @@
 % Please edit documentation in R/Spectra_visulization.R
 \name{SetPlotParam}
 \alias{SetPlotParam}
-\title{Set generic Plotting Parameters}
+\title{SetPlotParam}
 \usage{
 SetPlotParam(
   Plot = FALSE,

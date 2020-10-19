@@ -25,10 +25,13 @@ PlotSpectraInsensityStistics(
 \item{width}{Numeric, to define the width of the figure. Height = width * 0.618.}
 }
 \description{
-PlotSpectraInsensityStistics
+This function is used to do the statistics on the spectra intensity
 }
 \examples{
 library(OptiLCMS)
 data(mSet);
+newPath <- dir(system.file("mzData", package = "mtbls2"),
+               full.names = TRUE, recursive = TRUE)[c(10, 11, 12)]
+mSet <- updateRawSpectraPath(mSet, newPath);
 PlotSpectraInsensityStistics(mSet);
 }

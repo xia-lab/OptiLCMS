@@ -40,6 +40,9 @@ Kuhl C, Tautenhahn R, Boettcher C, Larson TR, Neumann S (2012).
 liquid chromatography/mass spectrometry data sets." Analytical Chemistry, 84, 283-289.
 http://pubs.acs.org/doi/abs/10.1021/ac202450g.
 }
+\seealso{
+\code{\link{ExecutePlan}} and \code{\link{PerformPeakProfiling}} for the whole pipeline.
+}
 \author{
 Zhiqiang Pang \email{zhiqiang.pang@mail.mcgill.ca}, Jasmine Chong \email{jasmine.chong@mail.mcgill.ca},
 and Jeff Xia \email{jeff.xia@mcgill.ca}

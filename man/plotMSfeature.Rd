@@ -22,5 +22,8 @@ plotMSfeature is used to plot the feature intensity of different groups
 \examples{
 library(OptiLCMS)
 data(mSet);
+newPath <- dir(system.file("mzData", package = "mtbls2"),
+               full.names = TRUE, recursive = TRUE)[c(10, 11, 12)]
+mSet <- updateRawSpectraPath(mSet, newPath);
 plotMSfeature (mSet, 1); # Here is only one group
 }
