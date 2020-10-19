@@ -2,7 +2,7 @@
 % Please edit documentation in R/Spectra_import.R
 \name{CentroidCheck}
 \alias{CentroidCheck}
-\title{Verify the data is centroid or not}
+\title{CentroidCheck}
 \usage{
 CentroidCheck(filename)
 }

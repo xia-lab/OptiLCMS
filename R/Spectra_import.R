@@ -1,4 +1,4 @@
-#'Constructs a dataSet object for storing data 
+#'@title InitDataObjects
 #'@description This functions handles the construction of a mSetObj object for storing data for further processing and analysis.
 #'It is necessary to utilize this function to specify to MetaboAnalystR the type of data and the type of analysis you will perform. 
 #'@usage InitDataObjects(data.type, anal.type, paired=FALSE)
@@ -28,7 +28,7 @@ InitDataObjects <- function(data.type, anal.type, paired=FALSE){
   
 }
 
-#' Import raw MS data
+#' @title Import raw MS data
 #' @description This function handles the reading in of
 #' raw MS data (.mzML, .CDF and .mzXML). Users must set
 #' their working directory to the folder containing their raw
@@ -874,7 +874,7 @@ read.OnDiskMS.data <- function(files,
   return(res)
 }
 
-#' UpdateRawfiles
+#' @title UpdateRawfiles
 #' @description Update the Raw spectra included for Processing. All wrong format and uncentroided files will be filtered. 
 #' NOTE: this function is only effective before data import stage.
 #' @param mSet mSet objects generated with \"mSet<-InitDataObjects(\"spec\", \"raw\", FALSE)\";
@@ -990,7 +990,8 @@ UpdateRawfiles <- function(mSet, filesIncluded = NULL){
   return(mSet);
 }
 
-#' Verify the data is centroid or not
+#' @title CentroidCheck
+#' @description Verify the data is centroid or not
 #' @param filename single file name, should contain the absolute path
 #' @author Zhiqiang Pang \email{zhiqiang.pang@mail.mcgill.ca} and Jeff Xia \email{jeff.xia@mcgill.ca}
 #' McGill University, Canada

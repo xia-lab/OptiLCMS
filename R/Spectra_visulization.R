@@ -291,7 +291,7 @@ SetPlotParam <-
   }
 
 #' @title PlotXIC/EIC
-#' @description This functionn creates an extracted ion chromatogram (EIC) for a specific
+#' @description This functionn creates an extracted ion chromatogram (XIC/EIC) for a specific
 #' m/z and retention time. This is used for quality-control of raw m/s data.
 #' @param mSet mSet Object. Should contain the spectra processing result.
 #' @param featureNum Numeric, Feature number in the feature table.

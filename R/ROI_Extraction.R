@@ -1,12 +1,4 @@
-PerformDataTrimming<- function(datapath, mode="ssm", write=FALSE, mz, mzdiff, rt, rtdiff, 
-                                 rt.idx=1/15, rmConts = TRUE, plot=TRUE,running.controller=NULL){
-  
-  PerformROIExtraction(datapath, mode=mode, write, mz, mzdiff, rt, rtdiff, 
-                       rt.idx, rmConts = rmConts, plot,running.controller);
-  
-}
-
-#' Perform ROI Extraction from raw MS data
+#' @title Perform ROI Extraction from raw MS data (PerformDataTrimming)
 #' @description This function performs the raw data trimming. This function will output 
 #' an trimmed MSnExp file to memory or hardisk according to the choice of users must 
 #' provide the data path for 'datapath', and optionally provide other corresponding parameters.
@@ -36,6 +28,54 @@ PerformDataTrimming<- function(datapath, mode="ssm", write=FALSE, mz, mzdiff, rt
 #' @import Biobase
 #' @import RColorBrewer
 #' @import tools
+#' @seealso \code{\link{PerformROIExtraction}} for the new version of this function.
+#' @author Zhiqiang Pang \email{zhiqiang.pang@mail.mcgill.ca} Jeff Xia \email{jeff.xia@mcgill.ca}
+#' Mcgill University
+#' License: GNU GPL (>= 2)
+#' library(OptiLCMS)
+#' @examples
+#' DataFiles <- dir(system.file("mzData", package = "mtbls2"), full.names = TRUE, recursive = TRUE)
+#' # mSet <- PerformDataTrimming(datapath = DataFiles[1],rt.idx = 0.025, rmConts = FALSE);
+
+PerformDataTrimming<- function(datapath, mode="ssm", write=FALSE, mz, mzdiff, rt, rtdiff, 
+                                 rt.idx=1/15, rmConts = TRUE, plot=TRUE, running.controller=NULL){
+  
+  PerformROIExtraction(datapath, mode=mode, write, mz, mzdiff, rt, rtdiff, 
+                       rt.idx, rmConts = rmConts, plot,running.controller);
+  
+}
+
+#' @title Perform ROI Extraction from raw MS data
+#' @description This function performs the raw data trimming. This function will output 
+#' an trimmed MSnExp file to memory or hardisk according to the choice of users must 
+#' provide the data path for 'datapath', and optionally provide other corresponding parameters.
+#' @param datapath Character, the path of the raw MS data files' or folder's path (.mzXML, .CDF and .mzML) 
+#' for parameters training.
+#' @param mode Character, mode for data trimming to select the chraracteristic peaks. 
+#' Default is 'ssm'. Users could select random trimed according to mz value (mz_random) or 
+#' RT value (rt_random). Besides, specific peaks at certain mz (mz_specific) or 
+#' RT (rt_specific) could also be extracted. 'none' will not trim the data.
+#' @param mz Numeric, mz value(s) for specific selection. Positive values means including (the values 
+#' indicted) and negative value means excluding/removing.
+#' @param mzdiff Numeric, the deviation (ppm) of mz value(s).
+#' @param rt Numeric, rt value for specific selection. Positive values means including 
+#' and negative value means excluding.
+#' @param rtdiff Numeric, the deviation (seconds) of rt value(s).
+#' @param rt.idx Numeric, the relative rt (retention time) range, from 0 to 1. 1 means all retention time
+#' will be retained, while 0 means none. Default is 1/15. If default rt.idx produce too few peaks, 
+#' please consider increasing this value.
+#' @param write Logical, if true, will write the trimmed data to the directory 'trimmed' folder 
+#' in the datapath. The data in memory will be kept.
+#' @param plot Logical, if TRUE, will plot the chromatogram of the trimmed data.
+#' @param rmConts LOgical, whether to exclude/remove the potential contamination for parameters optimization. Default is TRUE.
+#' @param running.controller The resuming pipeline running controller. Optional. Don't need to define by hand.
+#' @export
+#' @import MSnbase
+#' @import progress
+#' @import Biobase
+#' @import RColorBrewer
+#' @import tools
+#' @seealso \code{\link{PerformDataTrimming}} for the old version of this function.
 #' @author Zhiqiang Pang \email{zhiqiang.pang@mail.mcgill.ca} Jeff Xia \email{jeff.xia@mcgill.ca}
 #' Mcgill University
 #' License: GNU GPL (>= 2)
@@ -440,7 +480,7 @@ PerformROIExtraction <-
     return(mSet)
   }
 
-#' Standards Simulation Method
+#' @title Standards Simulation Method
 #' @description Whole mass spectra will be divided as 4 bins according to the mz range. Trimming 
 #' the raw with slide window method in every bins and retained the windows with highest scan intensity
 #' and remove other scan signal in mz dimension. Then the data will be trimed again in the RT dimension
@@ -619,7 +659,7 @@ ssm_trim <- function(raw_data, ms_list, rt.idx){
   return(raw_data)
 }
 
-#' Data trimming Method Based on Random MS
+#' @title Data trimming Method Based on Random MS
 #' @description Trim raw data scan signal randomly in the mz dimension.
 #' @param raw_data MSnExp object, the raw data that has been read in memory.
 #' @param ms_list List, the names list of all scans.
@@ -660,7 +700,7 @@ mz.trim_random <- function(raw_data, ms_list){
   return(raw_data)
 }
 
-#' Data trimming Method Based on Random RT
+#' @title Data trimming Method Based on Random RT
 #' @description Trim raw data scan signal randomly in the RT dimension.
 #' @param raw_data MSnExp object, the raw data that has been read in memory.
 #' @param ms_list List, the names list of all scans.
@@ -721,7 +761,7 @@ rt.trim_random <- function(raw_data, ms_list){
   return(raw_data)
 }
 
-#' Data trimming Method Based on Specific MS
+#' @title Data trimming Method Based on Specific MS
 #' @description Trim data based on specific mz values. Positive values will be specially retained, 
 #' while the negative values will be removed.
 #' @param raw_data MSnExp object, the raw data that has been read in memory.
@@ -800,7 +840,7 @@ mz.trim_specific<-function(raw_data, ms_list, mz, mzdiff=100){
   return(raw_data)
 }
 
-#' Data trimming Method Based on Specific RT
+#' @title Data trimming Method Based on Specific RT
 #' @description Trim data based on specific RT values. Positive values will be specially retained, 
 #' while the negative values will be removed.
 #' @param raw_data MSnExp object, the raw data that has been read in memory.
@@ -871,7 +911,7 @@ rt.trim_specific<-function(raw_data,ms_list,rt,rtdiff=10){
   return(raw_data)
 }
 
-#' Function for 'Empty scan' removal
+#' @title Function for 'Empty scan' removal
 #' @description Function for 'Empty scan' removal (internal use only)
 #' @noRd
 #' @author Zhiqiang Pang \email{zhiqiang.pang@mail.mcgill.ca}
@@ -920,7 +960,7 @@ rt.trim_specific<-function(raw_data,ms_list,rt,rtdiff=10){
   return(raw_data)
 }
 
-#' Function MS Generation
+#' @title Function MS Generation
 #' @description Output the MS data. This function will generate .mzML MS data in the working dirctory.
 #' @param raw_data MS data in R environment with "MSnExp" class.
 #' @noRd
@@ -939,7 +979,7 @@ PerformMSDataOutput<-function(raw_data){
   message("Data Writing Finished !")
 }
 
-#' Function for 3D ms plotting
+#' @title Function for 3D ms plotting
 #' @description Function for 3D ms plotting (internal use only)
 #' @importFrom lattice cloud
 #' @author Zhiqiang Pang \email{zhiqiang.pang@mail.mcgill.ca}

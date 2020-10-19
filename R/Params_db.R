@@ -1,7 +1,8 @@
 # Parameter Function
-#' Set parameters for peak profiling and parameters optimization
+#' @title Set parameters for peak profiling and parameters optimization
 #' @description This function sets all the parameters used for downstream
-#' pre-processing of user's raw MS data based on specific LC-MS platform or parameters optimization.
+#' pre-processing of user's raw MS data based on specific Liquid chromatography–mass spectrometry (LC-MS)
+#' platform or parameters optimization.
 #' The database will be under an real-time update based on the progress in this field.
 #'
 #' @param platform Character, specify the LC-MS platform used in pratice, including "UPLC-Q/E",

@@ -2,7 +2,7 @@
 % Please edit documentation in R/Spectra_import.R
 \name{InitDataObjects}
 \alias{InitDataObjects}
-\title{Constructs a dataSet object for storing data}
+\title{InitDataObjects}
 \usage{
 InitDataObjects(data.type, anal.type, paired=FALSE)
 }

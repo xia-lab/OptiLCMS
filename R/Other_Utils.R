@@ -72,8 +72,8 @@ GeneratePeakList <- function(userPath) {
 }
 
 
-#' featureSUM
-#'
+#' @title featureSUM
+#' @description a function used to summarize peak features
 #' @param MS_group MS_group
 #' @param frtr frtr
 #' @noRd
@@ -218,9 +218,9 @@ peakTableSUM <- function(peak_table) {
   }
 }
 
-#' @param folderPath guest folder
-#'
 #' @title Cache Update
+#' @param folderPath guest folder
+#' @description used only for web cache update
 #' @author Zhiqiang Pang
 #' @noRd
 CachePathCorrection <- function(folderPath){

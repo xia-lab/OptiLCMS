@@ -2,9 +2,7 @@
 % Please edit documentation in R/Perform_functions.R
 \name{PerformPeakProfiling}
 \alias{PerformPeakProfiling}
-\title{Perform peak profiling
-This function performs feature extraction of user's raw MS data using
-the rawData object created using the ImportRawMSData function.}
+\title{Perform peak profiling}
 \usage{
 PerformPeakProfiling(
   mSet,
@@ -30,7 +28,6 @@ Defaut is set to true.}
 \item{running.controller}{The resuming pipeline running controller. Optional. Don't need to define by hand.}
 }
 \description{
-Perform peak profiling
 This function performs feature extraction of user's raw MS data using
 the rawData object created using the ImportRawMSData function.
 }

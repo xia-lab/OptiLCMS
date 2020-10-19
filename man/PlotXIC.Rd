@@ -34,7 +34,7 @@ PlotXIC(
 \item{height}{Numeric, to define the height of the figure.}
 }
 \description{
-This functionn creates an extracted ion chromatogram (EIC) for a specific
+This functionn creates an extracted ion chromatogram (XIC/EIC) for a specific
 m/z and retention time. This is used for quality-control of raw m/s data.
 }
 \examples{
