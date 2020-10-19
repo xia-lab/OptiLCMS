@@ -2583,6 +2583,7 @@ PerformPeakFiling <- function(mSet,BPPARAM=bpparam()){
   if(.on.public.web){
     save(mSet, file = "mSet.rda");
   }
+  register(bpstop());
   
   return(mSet)
 }
