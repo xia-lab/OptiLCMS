@@ -204,15 +204,19 @@ ImportRawMSData <-
     
     filesNM <- sub(pattern = "(.*)\\..*$", replacement = "\\1", basename(files));
     
-    if(!all(basename(files) %in% metadata[,1])){
-      if(!all(basename(filesNM) %in% metadata[,1])){
-        warning("More files detected than metadata, will omit the extra files not in metadata!")
+    if (!is.null(metadata)){
+      
+      if(!all(basename(files) %in% metadata[,1])){
+        if(!all(basename(filesNM) %in% metadata[,1])){
+          warning("More files detected than metadata, will omit the extra files not in metadata!")
+        }
       }
+      
+      snames <- metadata[metadata[,1] %in% c(basename(files), filesNM), 1]
+      sclass <- metadata[metadata[,1] %in% c(basename(files), filesNM), 2]
+      
     }
-    
-    snames <- metadata[metadata[,1] %in% c(basename(files), filesNM), 1]
-    sclass <- metadata[metadata[,1] %in% c(basename(files), filesNM), 2]
-    
+
     if(length(snames) == 0 | length(sclass) == 0){
       stop("No correct sample/sclass found!")
     }
