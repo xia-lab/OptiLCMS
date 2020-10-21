@@ -263,7 +263,7 @@ optimize.xcms.doe <- function(raw_data, param, ncore = 8){
     Parameters$min_peakwidth <- c((Parameters$min_peakwidth)*0.5,(Parameters$min_peakwidth)*2)
     #Parameters$ppm <- c(Parameters$ppm*0.5,Parameters$ppm*1.5)
     Parameters$mzdiff <- c(-Parameters$mzdiff*1.2, Parameters$mzdiff*1.2)
-    Parameters$snthresh<-c(Parameters$snthresh*0.75,Parameters$snthresh*5)
+    Parameters$snthresh<-c(Parameters$snthresh*0.75,Parameters$snthresh*1.25)
     ## Parameters for Alignment
     Parameters$bw<-c(Parameters$bw*0.5,Parameters$bw*1.5)
   } else 
@@ -272,10 +272,10 @@ optimize.xcms.doe <- function(raw_data, param, ncore = 8){
       Parameters$value_of_prefilter <- Parameters$value_of_prefilter;
       ## Parameters for peak picking
       Parameters$max_peakwidth <- c(Parameters$min_peakwidth*2,Parameters$max_peakwidth*2)
-      Parameters$min_peakwidth <- c(1,(Parameters$min_peakwidth)*2)
+      Parameters$min_peakwidth <- c((Parameters$min_peakwidth)*0.5,(Parameters$min_peakwidth)*2)
       #Parameters$ppm <- c(1,Parameters$ppm*2);
       Parameters$mzdiff <- c(-Parameters$mzdiff*2, Parameters$mzdiff*2);
-      Parameters$snthresh<-c(1,Parameters$snthresh*10+1);
+      Parameters$snthresh<-c(Parameters$snthresh*0.75,Parameters$snthresh*1.25)
       ## Parameters for Alignment
       Parameters$bw<-c(Parameters$bw*0.5,Parameters$bw*1.5)
     } else 
