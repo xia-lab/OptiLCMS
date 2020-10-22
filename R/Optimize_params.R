@@ -226,10 +226,12 @@ PerformParamsOptimization <- function(mSet, param= NULL, method="DoE", ncore=4, 
     message("Time Spent In Total:",round((as.numeric(end.time) - as.numeric(start.time))/60, 1),"mins");
   }
   
+  best_params <- p1;
+  
   if(.on.public.web) {
-    # do nothing for now
+    save(best_params, file = "best_params.rda")
   } else {
-    return(p1);
+    return(best_params);
   }
 }
 
