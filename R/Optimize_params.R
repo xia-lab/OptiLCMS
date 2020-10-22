@@ -868,6 +868,8 @@ Statistic_doe <-function(object, object_mslevel, isotopeIdentification,
   QCoE<-0.2*(normalized.CV)+0.4*(normalized.GS+normalized.RCS);
   mSet_OPT$QS<-as.numeric(mSet_OPT$PPS[5])*QCoE*normalized.GaussianSI^2;
   
+  mSet_OPT$OptiParams <- xcms_parameters;
+  
   MessageOutput(paste0("Model Parsing Done !\n"), "\n", NULL)
 
   return(mSet_OPT)
