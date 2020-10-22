@@ -259,13 +259,13 @@ optimize.xcms.doe <- function(raw_data, param, ncore = 8){
     ## Keep these Parameters
     Parameters$value_of_prefilter <- Parameters$value_of_prefilter;
     ## Parameters for peak picking
-    Parameters$max_peakwidth <- c(Parameters$max_peakwidth*0.5,Parameters$max_peakwidth*2)
-    Parameters$min_peakwidth <- c((Parameters$min_peakwidth)*0.5,(Parameters$min_peakwidth)*2)
+    Parameters$max_peakwidth <- c(Parameters$max_peakwidth*0.5,Parameters$max_peakwidth*2);
+    Parameters$min_peakwidth <- c((Parameters$min_peakwidth)*0.5,(Parameters$min_peakwidth)*2);
     #Parameters$ppm <- c(Parameters$ppm*0.5,Parameters$ppm*1.5)
-    Parameters$mzdiff <- c(-Parameters$mzdiff*1.2, Parameters$mzdiff*1.2)
-    Parameters$snthresh<-c(Parameters$snthresh*0.75,Parameters$snthresh*1.25)
+    Parameters$mzdiff <- c(-Parameters$mzdiff*1.2, Parameters$mzdiff*1.2);
+    Parameters$snthresh<-c(Parameters$snthresh*0.75,Parameters$snthresh*1.25);
     ## Parameters for Alignment
-    Parameters$bw<-c(Parameters$bw*0.5,Parameters$bw*1.5)
+    Parameters$bw<-c(Parameters$bw*0.5,Parameters$bw*1.5);
   } else 
     if (Parameters$Peak_method=="centWave" && Parameters$RT_method=="obiwarp"){
       ## Keep these Parameters
@@ -444,33 +444,34 @@ optimizxcms.doe.peakpicking <- function(object = NULL, params = params,
         }
       }
       
-      xcms_parameters <- 
-        as.list(decodeAll(history[[max_index]]$max_settings[-1],
-                          history[[max_index]]$params$to_optimize))      
+      xcms_parameters <- mSet_OPT$OptiParams;
       
-      xcms_parameters <- combineParams(xcms_parameters, 
-                                       params$no_optimization)
-      
-      if(!is.list(xcms_parameters))
-        xcms_parameters <- as.list(xcms_parameters)
-      
-      # deal with the too narrow peak width issue
-      pkmin <- xcms_parameters$min_peakwidth;
-      pkmax <- xcms_parameters$max_peakwidth;
-      
-      if(abs(pkmax - pkmin) < 5 & pkmin > 5){
-        xcms_parameters$max_peakwidth <- pkmax + 2.5;
-        xcms_parameters$min_peakwidth <- pkmin - 2.5;
-      } else if (abs(pkmax - pkmin) < 5 & pkmin < 5) {
-        xcms_parameters$max_peakwidth <- pkmax + 5;
-      }
+      #   as.list(decodeAll(history[[max_index]]$max_settings[-1],
+      #                     history[[max_index]]$params$to_optimize))      
+      # 
+      # xcms_parameters <- combineParams(xcms_parameters, 
+      #                                  params$no_optimization)
+      # 
+      # if(!is.list(xcms_parameters))
+      #   xcms_parameters <- as.list(xcms_parameters)
+      # 
+      # # deal with the too narrow peak width issue
+      # pkmin <- xcms_parameters$min_peakwidth;
+      # pkmax <- xcms_parameters$max_peakwidth;
+      # 
+      # if(abs(pkmax - pkmin) < 5 & pkmin > 5){
+      #   xcms_parameters$max_peakwidth <- pkmax + 2.5;
+      #   xcms_parameters$min_peakwidth <- pkmin - 2.5;
+      # } else if (abs(pkmax - pkmin) < 5 & pkmin < 5) {
+      #   xcms_parameters$max_peakwidth <- pkmax + 5;
+      # }
       
       best_settings <- list()
       best_settings$parameters <- xcms_parameters
-      best_settings$xset <- history[[max_index]]$xset
+      #best_settings$xset <- history[[max_index]]$xset
       
-      target_value <- history[[max_index]]$QS 
-      best_settings$result <- target_value
+      #target_value <- history[[max_index]]$QS 
+      #best_settings$result <- target_value
       history$best_settings <- best_settings
       
       if(!.on.public.web){
@@ -811,11 +812,11 @@ Statistic_doe <-function(object, object_mslevel, isotopeIdentification,
   pkmin <- xcms_parameters$min_peakwidth;
   pkmax <- xcms_parameters$max_peakwidth;
   
-  if(abs(pkmax - pkmin) < 5 & pkmin > 5){
-    xcms_parameters$max_peakwidth <- pkmax + 2.5;
-    xcms_parameters$min_peakwidth <- pkmin - 2.5;
-  } else if (abs(pkmax - pkmin) < 5 & pkmin < 5) {
-    xcms_parameters$max_peakwidth <- pkmax + 5;
+  if(abs(pkmax - pkmin) < 7.5 & pkmin > 7.5){ # TO ENSURE THE PEAK WIDTH IS OVER 7.5
+    xcms_parameters$max_peakwidth <- pkmax + 3.75;
+    xcms_parameters$min_peakwidth <- pkmin - 3.75;
+  } else if (abs(pkmax - pkmin) < 7.5 & pkmin < 7.5) {
+    xcms_parameters$max_peakwidth <- pkmax + 7.5;
   }
   
   # Detect the peak features with the predicted best parameters
@@ -826,6 +827,8 @@ Statistic_doe <-function(object, object_mslevel, isotopeIdentification,
   if(class(mSet) != "mSet"){ # All params failed - avoid this corner case
     mSet_OPT$QS <- 0;
     mSet_OPT$PPS <- 0;
+    
+    mSet_OPT$OptiParams <- xcms_parameters;
     
     if (.on.public.web){
       print_mes <- paste0("Model Parsing Done !\n");    
