@@ -22,5 +22,6 @@ data(mSet);
 newPath <- dir(system.file("mzData", package = "mtbls2"),
                full.names = TRUE, recursive = TRUE)[c(10, 11, 12)]
 mSet <- updateRawSpectraPath(mSet, newPath);
-plotSingleTIC(mSet, "MSpos-Ex2-Col0-48h-Ag-2_1-A,3_01_9829.mzData")
+plotSingleTIC(mSet, "MSpos-Ex2-Col0-48h-Ag-2_1-A,3_01_9829.mzData", 
+              "MSpos-Ex2-Col0-48h-Ag-2_1-A,3_01_9829")
 }

@@ -36,11 +36,11 @@ PerformDataInspect <-
       fullUserPath <- getwd();
       
       if (datapath == "null" | is.null(datapath)) {
-        if (.on.public.web & dir.exists("upload/QC")) {
-          datapath <- "upload/QC"
+        if (.on.public.web & dir.exists("/upload/QC")) {
+          datapath <- "/upload/QC"
           datapath <- paste0(fullUserPath, datapath)
         } else if (.on.public.web) {
-          datapath <- paste0("upload/", list.files("upload", recursive = TRUE)[1])
+          datapath <- paste0("/upload/", list.files("upload", recursive = TRUE)[1])
           datapath <- paste0(fullUserPath, datapath)
         } else {
           MessageOutput("Local Inspectation !\n")
@@ -68,7 +68,6 @@ PerformDataInspect <-
         }
         
       }
-      # load_MSnbase();
       
       if (basename(datapath) == "NA") {
         # Handle the example issue - default showing
@@ -85,7 +84,7 @@ PerformDataInspect <-
         !grepl(pattern = c("*.mzml"), basename(datapath)) &
         !grepl(pattern = c("*.CDF"), basename(datapath)) &
         !grepl(pattern = c("*.cdf"), basename(datapath))) {
-      MessageOutput(paste("First file in ", datapath, " will be inspected !\n"))
+      MessageOutput(paste("First file in ", datapath, " will be inspected !\n"),SuppressWeb = TRUE)
       mzf <- list.files(datapath, recursive = FALSE, full.names = TRUE)[1]
     } else {
       mzf <- datapath
@@ -114,7 +113,7 @@ PerformDataInspect <-
         "and",
         max(hd$retentionTime),
         "seconds !\n"
-      ))
+      ), SuppressWeb = TRUE)
       
     } else{
       if (rt.range[2] < rt.range[1]) {
@@ -125,7 +124,7 @@ PerformDataInspect <-
         rt.range[2] <- rt.range[2] + 1
         rt.range[1] <- rt.range[1] - 1
       }
-      MessageOutput(paste("RT range is:", rt.range[1], "and", rt.range[2], "seconds !\n"))
+      MessageOutput(paste("RT range is:", rt.range[1], "and", rt.range[2], "seconds !\n"),SuppressWeb = TRUE)
       
       rtsel <-
         hd$retentionTime[ms1] > rt.range[1] &
@@ -160,7 +159,7 @@ PerformDataInspect <-
         max.mz <- 2000
       }
       
-      MessageOutput(paste("MZ range is:", min.mz, "and", max.mz, "Thomson !\n"))
+      MessageOutput(paste("MZ range is:", min.mz, "and", max.mz, "Thomson !\n"),SuppressWeb = TRUE)
       
       res.mz <- (max.mz - min.mz) / res
       M <- MSmap(ms,
@@ -181,7 +180,7 @@ PerformDataInspect <-
         mz.range[1] <- mz.range[1] - 0.01
       }
       
-      MessageOutput(paste("MZ range is:", mz.range[1], "and", mz.range[2], "Thomson !\n"))
+      MessageOutput(paste("MZ range is:", mz.range[1], "and", mz.range[2], "Thomson !\n"),SuppressWeb = TRUE)
       
       res.mz <- (mz.range[2] - mz.range[1]) / res
       M <- MSmap(ms,
@@ -227,6 +226,7 @@ PerformDataInspect <-
         dimension,
         ".png"
       )
+
     if(.on.public.web){
       Cairo::Cairo(
         file = filename,
@@ -238,12 +238,7 @@ PerformDataInspect <-
         bg = "white"
       )
     }
-    
-    oldpar <- par(no.readonly = TRUE);
-    on.exit(par(oldpar));
-    
-    par(mfrow = c(1, 2))
-    
+
     if (dimension == "3D") {
       print(plot.MS_3D(M))
     } else {
@@ -1152,15 +1147,18 @@ PlotSpectraBPIadj <-
 #' mSet <- updateRawSpectraPath(mSet, newPath);
 #' plotMSfeature (mSet, 1); # Here is only one group
 
-plotMSfeature <- function(mSet, FeatureNM,
+plotMSfeature <- function(mSet = NULL, FeatureNM = 1,
                           dpi = 72,
                           format = "png") {
-  # if(.on.public.web){
-  #   load_ggplot2();
-  #   load_ggrepel();
-  #   load_RColorBrewer();
-  # }
-  # 
+  
+  if(is.null(mSet)){
+    if(.on.public.web){
+      load("mSet.rda")
+    } else {
+      stop("No mSet Object found !")
+    }
+  }
+
   peakdata <- mSet@peakAnnotation$camera_output;
   peakdata1 <-
     peakdata[, c(-1:-6,-ncol(peakdata),-ncol(peakdata) + 1,-ncol(peakdata) + 2)]
@@ -1282,18 +1280,28 @@ plotMSfeature <- function(mSet, FeatureNM,
 #' newPath <- dir(system.file("mzData", package = "mtbls2"),
 #'                full.names = TRUE, recursive = TRUE)[c(10, 11, 12)]
 #' mSet <- updateRawSpectraPath(mSet, newPath);
-#' plotSingleTIC(mSet, "MSpos-Ex2-Col0-48h-Ag-2_1-A,3_01_9829.mzData")
+#' plotSingleTIC(mSet, "MSpos-Ex2-Col0-48h-Ag-2_1-A,3_01_9829.mzData", 
+#'               "MSpos-Ex2-Col0-48h-Ag-2_1-A,3_01_9829")
 
 plotSingleTIC <- function(mSet = NULL, filename, imagename) {
   
+  if(is.null(mSet)){
+    if(.on.public.web){
+      load("mSet.rda");
+    } else {
+      stop("No mSet found !")
+    }
+  }
+  
+  AllFileNMs <- sub(pattern = "(.*)\\..*$", replacement = "\\1", basename(mSet@rawOnDisk@processingData@files));
+  file_order <-
+    which(filename == AllFileNMs)
+  
   raw_data_filt <-
-    filterFile(mSet@rawOnDisk, file = na.omit(filename));
+    filterFile(mSet@rawOnDisk, file = file_order);
   
   tics <- chromatogram(raw_data_filt, aggregationFun = "sum");
-  
-  file_order <-
-    which(filename == basename(raw_data_filt@processingData@files))
-  
+
   if (.on.public.web) {
     Cairo::Cairo(
       file = paste0(imagename, ".png"),
@@ -1306,7 +1314,7 @@ plotSingleTIC <- function(mSet = NULL, filename, imagename) {
     )
   }
   
-  plot(tics[[file_order]], col = "#0080FF", main = filename);
+  plot(tics, col = "#0080FF", main = filename);
   
   if (.on.public.web) {
     dev.off()

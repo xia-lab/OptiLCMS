@@ -22,7 +22,7 @@
 InitDataObjects <- function(data.type, anal.type, paired=FALSE){
   
   if(anal.type == "raw" & data.type == "spec") {
-    MessageOutput("OptiLCMS R objects initialized ...\n");
+    MessageOutput("OptiLCMS R objects initialized ...\n", SuppressWeb = TRUE);
     return(new("mSet"))
   }
   
@@ -61,7 +61,6 @@ InitDataObjects <- function(data.type, anal.type, paired=FALSE){
 #' @importFrom tools file_path_as_absolute file_ext
 #' @importFrom Cairo Cairo
 #' @examples 
-#' ## load googledrive package to download example data
 #' ##' Load OptiLCMS package
 #' library(OptiLCMS)
 #' ##' Get raw spectra files
@@ -84,11 +83,16 @@ ImportRawMSData <-
            running.controller = NULL) {
     
     #Initialize a new mSet if missing
-    if(missing(mSet)){
+    if(missing(mSet) & !.on.public.web){
       message("No initialized mSet found, will initialize one automatically !")
       mSet <- new("mSet")
-    } else if(is.null(mSet)){
+    } else if(is.null(mSet) & !.on.public.web){
       message("Not a real initialized mSet found, will re-initialize one automatically !")
+      mSet <- new("mSet")
+    } else if(.on.public.web & file.exists("mSet.rda")) {
+      load("mSet.rda")
+    } else {
+      message("Something wierd happened, don't worry. We will re-initialize one automatically !")
       mSet <- new("mSet")
     }
     
@@ -112,7 +116,6 @@ ImportRawMSData <-
       .SwapEnv$count_total_sample <- 120; # maximum number for on.public.web
       .SwapEnv$envir <- new.env();
     }
-    .SwapEnv$.optimize_switch <- FALSE;
     
     start.time <- Sys.time()
     
@@ -226,13 +229,17 @@ ImportRawMSData <-
       sample_group = sclass,
       stringsAsFactors = FALSE
     )
+    
+    if(.SwapEnv$.optimize_switch){
+      MessageOutput(mes = "\nStep 2/6: Start to import the spectrum! \nThis step will take a short time...",
+                    ecol = "\n",
+                    progress = 21.0)
+    } else {
+      MessageOutput(mes = "\nStep 1/6: Start to import the spectrum! \nThis step will take a short time...",
+                    ecol = "\n",
+                    progress = 10.0)
+    }
 
-    
-    
-    MessageOutput(mes = "\nStep 2/6: Start to import the spectrum! \nThis step will take a short time...",
-                  ecol = "\n",
-                  progress = 21.0)
-    
     
     if (c1) {
       raw_data <-
@@ -265,7 +272,7 @@ ImportRawMSData <-
         
         if (plot.opts == "default") {
           #subset raw_data to first 50 samples
-          MessageOutput("To reduce memory usage BPIS and TICS plots will be created using only 10 samples per group.")
+          MessageOutput("To reduce memory usage BPIS and TICS plots will be created using only 10 samples per group.", SuppressWeb = TRUE)
           
           grp_nms <- names(table(pd$sample_group))
           files <- NA
@@ -389,22 +396,40 @@ ImportRawMSData <-
       }
     }
     
-    MessageOutput(
-      mes = paste0(
-        "Step 2/6: Successfully imported raw MS data! (",
-        Sys.time(),
-        ") \nGoing to the next step..."
-      ),
-      ecol = "\n",
-      progress = 24
-    )
+    if(.SwapEnv$.optimize_switch){
+      MessageOutput(
+        mes = paste0(
+          "Step 2/6: Successfully imported raw MS data! (",
+          Sys.time(),
+          ") \nGoing to the next step..."
+        ),
+        ecol = "\n",
+        progress = 24
+      )
+    } else {
+      MessageOutput(
+        mes = paste0(
+          "Step 1/6: Successfully imported raw MS data! (",
+          Sys.time(),
+          ") \nGoing to the next step..."
+        ),
+        ecol = "\n",
+        progress = 18
+      )
+    }
     
     if(mode == "onDisk"){
       mSet@rawOnDisk <- raw_data;
-    } else if( mode == "inMemory"){
+    } else if(mode == "inMemory"){
       mSet@rawInMemory <- raw_data;
     }
-      
+    
+    .SwapEnv$.optimize_switch <- FALSE;
+    
+    if(.on.public.web){
+      save(mSet, file = "mSet.rda");
+    }
+    
     return(mSet)
   }
 
@@ -880,8 +905,8 @@ read.OnDiskMS.data <- function(files,
 
 #' @title UpdateRawfiles
 #' @description Update the Raw spectra included for Processing. All wrong format and uncentroided files will be filtered. 
-#' NOTE: this function is only effective before data import stage.
-#' @param mSet mSet objects generated with \"mSet<-InitDataObjects(\"spec\", \"raw\", FALSE)\";
+#' NOTE: this function is only effective before data import stage AND can NOT be used for resuming pipeline.
+#' @param mSet mSet objects generated with \"mSet <- InitDataObjects(\"spec\", \"raw\", FALSE)\", or omitted.
 #' @param filesIncluded filesIncluded is a vector containing the files' paths for the following processing;
 #' @author Zhiqiang Pang \email{zhiqiang.pang@mail.mcgill.ca} and Jeff Xia \email{jeff.xia@mcgill.ca}
 #' McGill University, Canada
@@ -902,7 +927,7 @@ read.OnDiskMS.data <- function(files,
 #' # mSet<-UpdateRawfiles(mSet, c("Raw_data_example/CD/CD_SM-77FXR.mzML", 
 #' #                      "Raw_data_example/CD/CD_SM-6KUCT.mzML"))
 
-UpdateRawfiles <- function(mSet, filesIncluded = NULL){
+UpdateRawfiles <- function(mSet = NULL, filesIncluded = NULL){
   
   # TODO: to develope a shiny interface for user to select their files to include
   # if (interactive()) {
@@ -940,13 +965,22 @@ UpdateRawfiles <- function(mSet, filesIncluded = NULL){
   #   
   #   shinyApp(ui, server)
   # }
+  if(is.null(mSet)){
+    mSet <- new("mSet");
+  }
+  
+  if(.on.public.web){
+    filesList <- list.files(recursive = TRUE);
+    filesListBaseNMs <- basename(filesList);
+    filesIncluded <- filesList[sapply(filesIncluded, function(x){which(x == filesListBaseNMs)})];
+  }
   
   if(!is.null(filesIncluded)){
     
     # file exits check
     fileIdx <- file.exists(filesIncluded);
     if(!any(fileIdx)){
-      stop("No valid files provided ! Please check !")
+      stop("No valid files provided ! Please check your files or their path !")
     }
     filesIncluded_exited <- filesIncluded[fileIdx];
     filesIncluded_full <- unname(sapply(filesIncluded_exited, tools::file_path_as_absolute));
@@ -970,8 +1004,8 @@ UpdateRawfiles <- function(mSet, filesIncluded = NULL){
     # file size check
     fileSizeInfo <- file.size(filesIncluded_centroided)/1024^2;
     largeFileIdx <- fileSizeInfo > 200;
-    if(any(fileSizeInfo)){
-      message(paste0(filesIncluded_centroided[largeFileIdx]), "is larger than 200MB, please note your memory !")
+    if(any(largeFileIdx)){
+      message(paste0(basename(filesIncluded_centroided)[largeFileIdx]), "is larger than 200MB, please note your memory !")
     }
     
     filesIncluded <- filesIncluded_centroided;
@@ -1053,7 +1087,12 @@ Path2Files <- function(path){
     } else if(file.exists(Pathname)) {
       SingleFile <- TRUE;
     } else {
-      stop("Invalid path provided, please check!")
+      if(.on.public.web){
+        SingleFolder <- TRUE;
+        Pathname <- "/home/glassfish/projects/MetaboDemoRawData/upload"
+      } else {
+        stop("Invalid path provided, please check!")
+      }
     }
   } else {
     # one vector provided!
@@ -1066,13 +1105,7 @@ Path2Files <- function(path){
     }
     
   }
-  
-  if(.on.public.web){
-    if (!dir.exists(Pathname)) {
-      Pathname <- "/home/glassfish/projects/MetaboDemoRawData/upload"
-    }
-  }
-  
+
   pathnames <- unname(unlist(sapply(Pathname, tools::file_path_as_absolute)));
   
   if(SingleFile | MultiFile){

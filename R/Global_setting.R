@@ -1,5 +1,4 @@
-
-# Setting .on.public.web
+# Setting .on.public.web (if on.public.web, the version number will be even, local package is odd)
 .on.public.web <- FALSE;
 
 # Setting the global Variable to avoid notes in R CMD Check
@@ -104,9 +103,9 @@ utils::globalVariables(c(".SwapEnv"))
 
 #' MessageOutput
 #' @noRd
-MessageOutput <- function(mes = NULL, ecol = "\n", progress =NULL) {
+MessageOutput <- function(mes = NULL, ecol = "\n", progress =NULL, SuppressWeb = FALSE) {
   if (!is.null(mes)) {
-    if (.on.public.web) {
+    if (.on.public.web & !SuppressWeb) {
       # write down message
       write.table(
         mes,

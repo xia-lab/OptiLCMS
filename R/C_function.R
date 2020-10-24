@@ -22,7 +22,7 @@ continuousPtsAboveThreshold <-
   function(y, threshold, num, istart = 1) {
     if (!is.double(y))
       y <- as.double(y)
-    if (!.on.public.web) {
+
       if (.C(
         C_continuousPtsAboveThreshold,
         y,
@@ -35,20 +35,7 @@ continuousPtsAboveThreshold <-
         TRUE
       else
         FALSE
-    } else {
-      if (.C(
-        "continuousPtsAboveThreshold",
-        y,
-        as.integer(istart - 1),
-        length(y),
-        threshold = as.double(threshold),
-        num = as.integer(num),
-        n = integer(1)
-      )$n > 0)
-        TRUE
-      else
-        FALSE
-    }
+
   }
 
 #' continuousPtsAboveThresholdIdx
@@ -58,7 +45,7 @@ continuousPtsAboveThresholdIdx <-
   function(y, threshold, num, istart = 1) {
     if (!is.double(y))
       y <- as.double(y)
-    if (!.on.public.web) {
+
       as.logical(
         .C(
           C_continuousPtsAboveThresholdIdx,
@@ -71,19 +58,6 @@ continuousPtsAboveThresholdIdx <-
         )$n
       )
       
-    } else {
-      as.logical(
-        .C(
-          "continuousPtsAboveThresholdIdx",
-          y,
-          as.integer(istart - 1),
-          length(y),
-          threshold = as.double(threshold),
-          num = as.integer(num),
-          n = integer(length(y))
-        )$n
-      )
-    }
   }
 
 #' descendMin
@@ -92,7 +66,7 @@ continuousPtsAboveThresholdIdx <-
 descendMin <- function(y, istart = which.max(y)) {
   if (!is.double(y))
     y <- as.double(y)
-  if (!.on.public.web) {
+
     unlist(.C(
       C_DescendMin,
       y,
@@ -101,16 +75,7 @@ descendMin <- function(y, istart = which.max(y)) {
       ilower = integer(1),
       iupper = integer(1)
     )[4:5]) + 1
-  } else {
-    unlist(.C(
-      "DescendMin",
-      y,
-      length(y),
-      as.integer(istart - 1),
-      ilower = integer(1),
-      iupper = integer(1)
-    )[4:5]) + 1
-  }
+
 }
 
 #' which.colMax
@@ -127,25 +92,14 @@ which.colMax <- function (x, na.rm = FALSE, dims = 1) {
   dn <- dn[-(1:dims)]
   if (!is.double(x))
     x <- as.double(x)
-  
-  if (!.on.public.web) {
+
     z <- .C(C_WhichColMax,
             x,
             as.integer(n),
             as.integer(prod(dn)),
             integer(prod(dn)),
             PACKAGE = "OptiLCMS")[[4]]
-    
-  } else {
-    z <- .C("WhichColMax",
-            x,
-            as.integer(n),
-            as.integer(prod(dn)),
-            integer(prod(dn)))[[4]]
-    
-  }
-  
-  
+
   if (length(dn) > 1) {
     dim(z) <- dn
     dimnames(z) <- dimnames(x)[-(1:dims)]
@@ -161,8 +115,7 @@ which.colMax <- function (x, na.rm = FALSE, dims = 1) {
 descendZero <- function(y, istart = which.max(y)) {
   if (!is.double(y))
     y <- as.double(y)
-  
-  if (!.on.public.web) {
+
     unlist(
       .C(
         C_DescendZero,
@@ -174,17 +127,7 @@ descendZero <- function(y, istart = which.max(y)) {
         PACKAGE = "OptiLCMS"
       )[4:5]
     ) + 1
-  } else{
-    unlist(.C(
-      "DescendZero",
-      y,
-      length(y),
-      as.integer(istart - 1),
-      ilower = integer(1),
-      iupper = integer(1)
-    )[4:5]) + 1
-  }
-  
+
 }
 
 #' colMax
@@ -201,22 +144,14 @@ colMax <- function (x, na.rm = FALSE, dims = 1) {
   dn <- dn[-(1:dims)]
   if (!is.double(x))
     x <- as.double(x)
-  
-  if (!.on.public.web) {
+
     z <- .C(C_ColMax,
             x,
             as.integer(n),
             as.integer(prod(dn)),
             double(prod(dn)),
             PACKAGE = "OptiLCMS")[[4]]
-  } else {
-    z <- .C("ColMax",
-            x,
-            as.integer(n),
-            as.integer(prod(dn)),
-            double(prod(dn)))[[4]]
-  }
-  
+
   if (length(dn) > 1) {
     dim(z) <- dn
     dimnames(z) <- dimnames(x)[-(1:dims)]
@@ -238,7 +173,7 @@ rectUnique <-
     nc <- ncol(m)
     if (!is.double(m))
       m <- as.double(m)
-    if (!.on.public.web) {
+
       .C(
         C_RectUnique,
         m,
@@ -249,19 +184,8 @@ rectUnique <-
         as.double(ydiff),
         logical(nrow(m))
       )[[7]]
-    } else {
-      .C(
-        "RectUnique",
-        m,
-        as.integer(order - 1),
-        nr,
-        nc,
-        as.double(xdiff),
-        as.double(ydiff),
-        logical(nrow(m))
-      )[[7]]
-    }
-  }
+
+}
 
 #' findEqualGreaterM
 #' @noRd
@@ -271,22 +195,14 @@ findEqualGreaterM <- function(x, values) {
     x <- as.double(x)
   if (!is.double(values))
     values <- as.double(values)
-  
-  if (!.on.public.web) {
+
     .C(C_FindEqualGreaterM,
        x,
        length(x),
        values,
        length(values),
        index = integer(length(values)))$index + 1
-  } else {
-    .C("FindEqualGreaterM",
-       x,
-       length(x),
-       values,
-       length(values),
-       index = integer(length(values)))$index + 1
-  }
+
 }
 
 
@@ -305,30 +221,6 @@ R_set_obiwarp <-
            curP,
            parms) {
 
-    if(.on.public.web){
-      rtadj <-
-        .Call(
-          "R_set_obiwarp",
-          valscantime1,
-          scantime1,
-          mzvals,
-          mzs,
-          cntrPr$profMat,
-          valscantime2,
-          scantime2,
-          mzvals,
-          mzs,
-          curP$profMat,
-          parms$response,
-          parms$distFun,
-          parms$gapInit,
-          parms$gapExtend,
-          parms$factorDiag,
-          parms$factorGap,
-          as.numeric(parms$localAlignment),
-          parms$initPenalty
-        )
-    } else {
       rtadj <-
         .Call(
           C_R_set_obiwarp,
@@ -352,8 +244,7 @@ R_set_obiwarp <-
           parms$initPenalty,
           PACKAGE = 'OptiLCMS'
         )
-    }
-    
+ 
     return (rtadj)
   }
 
@@ -377,9 +268,7 @@ getEIC4Peaks <-
     npeaks <- dim(peaks)[1]
     
     scans  <- length(mset$scantime)
-    
     eics <- matrix(NA, npeaks, maxscans)
-    
     
     mset$env$mz <- as.double(unlist(mset$env$mz))
     mset$env$intensity <- as.double(unlist(mset$env$intensity))
@@ -399,8 +288,7 @@ getEIC4Peaks <-
         scanrange <- 1:scans
       }
       massrange <- c(peaks[p, "mzmin"], peaks[p, "mzmax"])
-      
-      if (!.on.public.web) {
+
         eic <- .Call(
           C_getEIC,
           mset$env$mz,
@@ -412,18 +300,6 @@ getEIC4Peaks <-
           PACKAGE = 'OptiLCMS'
         )$intensity
         
-      } else {
-        eic <- .Call(
-          "getEIC",
-          mset$env$mz,
-          mset$env$intensity,
-          as.integer(mset$scanindex),
-          as.double(massrange),
-          as.integer(scanrange),
-          scan_time_leng
-        )$intensity
-        
-      }
       eic[eic == 0] <- NA;
       eics[p, scanrange[1]:scanrange[2]] <- eic;
     }
@@ -450,12 +326,8 @@ breaks_on_nBins <-
       shiftIt <- 1L
     }
     
-    if (!.on.public.web) {
       res <- .Call(C_breaks_on_nBins, fromX, toX, nBins, shiftIt,
                    PACKAGE = "OptiLCMS")
-    } else {
-      res <- .Call("breaks_on_nBins", fromX, toX, nBins, shiftIt)
-    }
     
     return(res)
   }
@@ -481,15 +353,10 @@ imputeLinInterpol <-
       noInter <- 0L
       if (noInterpolAtEnds)
         noInter <- 1L
-      
-      if (!.on.public.web) {
         res <- .Call(C_impute_with_linear_interpolation,
                      x,
                      noInter,
                      PACKAGE = "OptiLCMS")
-      } else {
-        res <- .Call("impute_with_linear_interpolation", x, noInter)
-      }
       
       return(res)
     }
@@ -501,20 +368,12 @@ imputeLinInterpol <-
         baseValue <- as.double(baseValue)
       if (!is.integer(distance))
         distance <- as.integer(distance)
-      
-      if (!.on.public.web) {
+
         res <- .Call(C_impute_with_linear_interpolation_base,
                      x,
                      baseValue,
                      distance,
                      PACKAGE = "OptiLCMS")
-      } else {
-        res <-
-          .Call("impute_with_linear_interpolation_base",
-                x,
-                baseValue,
-                distance)
-      }
       
       return(res)
     }
@@ -618,7 +477,6 @@ binYonX <- function(x,
   if (returnX)
     getX <- 1L
   if (length(toIdx) > 1) {
-    if (!.on.public.web) {
       .Call(
         C_binYonX_multi,
         x,
@@ -637,29 +495,9 @@ binYonX <- function(x,
         getX,
         PACKAGE = "OptiLCMS"
       )
-      
-    } else {
-      .Call(
-        "binYonX_multi",
-        x,
-        y,
-        breaks,
-        nBins,
-        binSize,
-        binFromX,
-        binToX,
-        force(fromIdx - 1L),
-        force(toIdx - 1L),
-        shiftIt,
-        as.integer(.aggregateMethod2int(method)),
-        baseValue,
-        getIndex,
-        getX
-      )
-    }
-    
+
   } else {
-    if (!.on.public.web) {
+
       .Call(
         C_binYonX,
         x,
@@ -678,26 +516,6 @@ binYonX <- function(x,
         getX,
         PACKAGE = "OptiLCMS"
       )
-    } else{
-      .Call(
-        "binYonX",
-        x,
-        y,
-        breaks,
-        nBins,
-        binSize,
-        binFromX,
-        binToX,
-        force(fromIdx - 1L),
-        force(toIdx - 1L),
-        shiftIt,
-        as.integer(.aggregateMethod2int(method)),
-        baseValue,
-        getIndex,
-        getX
-      )
-    }
-    
   }
 }
 
@@ -776,7 +594,7 @@ getMZ <- function(mz,
                   mzrange,
                   scrange,
                   scantime) {
-  if (!.on.public.web) {
+
     omz <- .Call(
       C_getMZ,
       mz,
@@ -786,18 +604,7 @@ getMZ <- function(mz,
       as.integer(scrange),
       as.integer(length(scantime))
     )
-  } else {
-    omz <- .Call(
-      "getMZ",
-      mz,
-      int,
-      scanindex,
-      as.double(mzrange),
-      as.integer(scrange),
-      as.integer(length(scantime))
-    )
-  }
-  
+
   return(omz)
 }
 
@@ -812,22 +619,7 @@ findmzROI <- function(mz,
                       scantime,
                       param,
                       minCentroids) {
-  if (.on.public.web) {
-    roiList <- .Call(
-      "findmzROI",
-      mz,
-      int,
-      scanindex,
-      as.double(c(0.0, 0.0)),
-      as.integer(scanrange),
-      as.integer(length(scantime)),
-      as.double(param$ppm * 1e-6),
-      as.integer(minCentroids),
-      as.integer(param$prefilter),
-      as.integer(param$noise)
-    )
-    
-  } else {
+
     roiList <- .Call(
       C_findmzROI,
       mz,
@@ -843,8 +635,6 @@ findmzROI <- function(mz,
       PACKAGE = "OptiLCMS"
     )
     
-  }
-  
   return(roiList)
   
 }

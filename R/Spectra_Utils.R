@@ -280,9 +280,8 @@ PeakPicking_centWave_slave <- function(x, param){
   
   if (.on.public.web & !.optimize_switch){
     
-    print_mes_tmp <- paste0("Detecting peaks in ", length(roiList)," regions of interest ...");    
+    print_mes <- paste0("Detecting peaks in ", length(roiList)," regions of interest ...");    
     #write.table(print_mes,file="metaboanalyst_spec_proc.txt",append = TRUE,row.names = FALSE,col.names = FALSE, quote = FALSE, eol = " ");
-    print_mes <- paste0(print_mes,print_mes_tmp)
     
     .SwapEnv$count_current_sample <- count_current_sample <- .SwapEnv$count_current_sample +1;
     count_total_sample <- .SwapEnv$count_total_sample;
@@ -614,10 +613,9 @@ PeakPicking_centWave_slave <- function(x, param){
   
   
   if (.on.public.web & !.optimize_switch){
-    
     print_mes_tmp <- paste0(" OK: ", nrow(pr), " found.");    
-    print_mes <- paste0(print_mes,print_mes_tmp)
-    write.table(print_mes,file="metaboanalyst_spec_proc.txt",append = TRUE,row.names = FALSE,col.names = FALSE, quote = FALSE, eol = "\n");
+    print_mes <- paste0(print_mes, print_mes_tmp)
+    write.table(print_mes, file="metaboanalyst_spec_proc.txt",append = TRUE,row.names = FALSE,col.names = FALSE, quote = FALSE, eol = "\n");
     
   } else {
     message(" OK: ", nrow(pr), " found.")
@@ -1077,11 +1075,7 @@ PerformPeakGrouping<-function(mSet){
   if(is.null(.optimize_switch)){
     .optimize_switch <- FALSE;
   }
-  
-  # if(.on.public.web){
-  #   dyn.load(.getDynLoadPath());
-  # }
-  
+
   param <- mSet@params;
   
   ## 1. Verify & Extract Information-------
@@ -1097,11 +1091,7 @@ PerformPeakGrouping<-function(mSet){
   if(length(mSet@peakRTcorrection)==0){
     
     if(length(mSet@peakpicking) == 0){
-      if(.on.public.web){
-        MessageOutput("ERROR: No Chromatographic peaks detected, please \"PerformPeakPicking\" first !", NULL, NULL)
-      } else {
-        stop("No Chromatographic peaks detected, please \"PerformPeakPicking\" first !")
-      }
+      MessageOutput("ERROR: No Chromatographic peaks detected, please \"PerformPeakPicking\" first !")
     } else {
       peaks_0 <- mSet@peakpicking$chromPeaks;
     }
@@ -1204,10 +1194,6 @@ PerformPeakGrouping<-function(mSet){
   FeatureGroupTable <- df;
   n <- length(mSet@peakgrouping) + 1;
   mSet@peakgrouping[[n]] <- FeatureGroupTable;
-  
-  if(.on.public.web){
-    save(mSet, file = "mSet.rda");
-  }
 
   return(mSet)
 }
@@ -1385,11 +1371,11 @@ PerformRTcorrection <- function(mSet){
       progress = 88
     )
   }
-  
-  if(.on.public.web){
-    save(mSet, file = "mSet.rda");
-  }
-  
+  # 
+  # if(.on.public.web){
+  #   save(mSet, file = "mSet.rda");
+  # }
+  # 
   return(mSet);
 }
 
@@ -2331,7 +2317,7 @@ PerformPeakFiling <- function(mSet, BPPARAM=bpparam()){
     mSet@peakfilling[["FeatureGroupTable"]] <-
       mSet@peakgrouping[[length(mSet@peakgrouping)]];
     
-    if(.on.public.web){
+    if(.on.public.web & !.optimize_switch){
       save(mSet, file = "mSet.rda");
     }
     
@@ -2518,7 +2504,7 @@ PerformPeakFiling <- function(mSet, BPPARAM=bpparam()){
               "peaks! Consider increasing 'expandMz' and 'expandRt'.");
     }
     
-    if(.on.public.web){
+    if(.on.public.web & !.optimize_switch){
       save(mSet, file = "mSet.rda");
     }
     
@@ -2559,7 +2545,7 @@ PerformPeakFiling <- function(mSet, BPPARAM=bpparam()){
   mSet@peakfilling$msFeatureData <- newFd;
   mSet@peakfilling$FeatureGroupTable <- fdef;
 
-  if(.on.public.web){
+  if(.on.public.web & !.optimize_switch){
     save(mSet, file = "mSet.rda");
   }
   
@@ -3852,9 +3838,9 @@ GaussModel <- selfStart(~ h*exp(-(x-mu)^2/(2*sigma^2)), function(mCall, data, LH
   res[, "sample"] <- sample_idx
   res[, c("mzmin", "mzmax")] <- peakArea[, c("mzmin", "mzmax")]
   ## Load the data
-
-  MessageOutput(paste0("Requesting ", nrow(res), " peaks from ",basename(MSnbase::fileNames(object)), " ... "), "",NULL)
-
+  if(!.on.public.web){
+    MessageOutput(paste0("Requesting ", nrow(res), " peaks from ",basename(MSnbase::fileNames(object)), " ... "), "",NULL)
+  }
   object <- filterRt(
     object, rt = range(peakArea[, c("rtmin", "rtmax")]) + c(-2, 2))
   
@@ -3917,8 +3903,16 @@ GaussModel <- selfStart(~ h*exp(-(x-mu)^2/(2*sigma^2)), function(mCall, data, LH
     }
   }
   
-  MessageOutput(paste("got ", sum(!is.na(res[, "into"])), "."), "\n", NULL)
-
+  if(!.on.public.web){
+    MessageOutput(paste("got ", sum(!is.na(res[, "into"])), "."), "\n", NULL)  
+  }
+  
+  if(.on.public.web){
+    MessageOutput(paste0("Requesting ", nrow(res), " peaks from ",
+                         basename(MSnbase::fileNames(object)), " ... ", "got ", 
+                         sum(!is.na(res[, "into"])), ".\n"), "",NULL)
+  }
+  
   return(res)
 }
 

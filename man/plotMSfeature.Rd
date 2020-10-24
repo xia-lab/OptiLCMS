@@ -4,7 +4,7 @@
 \alias{plotMSfeature}
 \title{plotMSfeature}
 \usage{
-plotMSfeature(mSet, FeatureNM, dpi = 72, format = "png")
+plotMSfeature(mSet = NULL, FeatureNM = 1, dpi = 72, format = "png")
 }
 \arguments{
 \item{mSet}{mSet Object, should be processed aby 'PerformPeakProfiling'.}

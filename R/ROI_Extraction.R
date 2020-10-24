@@ -151,8 +151,11 @@ PerformROIExtraction <-
       
       if (.on.public.web) {
         #TODO: need to configure with the online pipeline
+        mSet <- NULL;
+        load("mSet.rda");
+        
         dda_file <- files;
-        rawfilenms <- mSet@rawfiles;
+        rawfilenms <- basename(mSet@rawfiles);
         
         if (basename(datapath) == "QC") {
           QC_uploaded_list <- basename(dda_file);
@@ -262,10 +265,11 @@ PerformROIExtraction <-
         }
         
       } else {
-        
-        dda_file1 <- files
+        mSet <- new("mSet");
+        mSet@rawfiles <- dda_file1 <- files;
       }
-      MessageOutput(paste0(dda_file1,collapse = "\n"),"\n")
+      
+      MessageOutput(paste0(basename(dda_file1), collapse = "\n"),"\n")
       
       pd <-
         data.frame(
@@ -469,8 +473,6 @@ PerformROIExtraction <-
       MessageOutput("Optimization will be started soon...", "\n", NULL);
     }
 
-    #save(trimed_MSnExp, file = "raw_data.rda");
-    mSet <- new("mSet");
     mSet@rawInMemory <- trimed_MSnExp;
     
     if(.on.public.web){

@@ -16,21 +16,21 @@
 # plan <- InitializaPlan("raw_opt","~/Data_IBD/")
 ## define/set running plan
 # plan <- running.plan(plan,
-#                      data_folder_QC <- "~/Data_IBD/QC",
+#                      data_folder_QC <- "/home/glassfish/projects/MetaboDemoRawData/upload/QC/",
 #                      mSet <- PerformROIExtraction(datapath = data_folder_QC,
-#                                                   rt.idx = 0.95, plot = F,
+#                                                   rt.idx = 0.9, plot = F,
 #                                                   rmConts = F,
 #                                                   running.controller = rc),
 #                      param_initial <- SetPeakParam(),
 #                      best_parameters <- PerformParamsOptimization(mSet = mSet,
-#                                                   param_initial, ncore = 2,
+#                                                   param_initial, ncore = 8,
 #                                                   running.controller = rc),
-#                      data_folder_Sample <- '',
+#                      data_folder_Sample <- '/home/glassfish/projects/MetaboDemoRawData/upload/',
 #                      param <- best_parameters,
 #                      plotSettings1 <- SetPlotParam(Plot=T),
 #                      plotSettings2 <- SetPlotParam(Plot=T),
 #                      mSet <- ImportRawMSData(mSet = mSet,
-#                                              foldername = data_folder_Sample,
+#                                              path = data_folder_Sample,
 #                                              plotSettings = plotSettings1,
 #                                              running.controller = rc),
 #                      mSet <- PerformPeakProfiling(mSet = mSet,
@@ -45,7 +45,7 @@
 #                                              running.controller = rc),
 #                      maPeaks <- FormatPeakList(mSet = mSet, annParams, filtIso =F,
 #                                              filtAdducts = FALSE, missPercent = 1));
-## Execute the defined plan
+# # Execute the defined plan
 # ExecutePlan(plan)
 
 #' # revise running plan, for example, revise mz_abs_add as 0.030

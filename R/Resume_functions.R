@@ -13,7 +13,13 @@
 
 InitializaPlan <- function(type = "raw_ms"){
   
-  tmp_cache_path <- tempdir();
+  if(.on.public.web){
+    tmp_cache_path <- getwd();
+  }else {
+    tmp_cache_path <- tempdir();
+  }
+  
+  plan <- NULL;
   
   if(!exists(".SwapEnv")){
     .SwapEnv <<- new.env(parent = .GlobalEnv);
@@ -24,51 +30,52 @@ InitializaPlan <- function(type = "raw_ms"){
     .SwapEnv$PlanWorkingDir <- paste0(tmp_cache_path, "/specTemp/");
   }
   
-  MessageOutput(paste0("Running Status -- Plan Initialized Successfully at: ", Sys.time(), "\nPlease define your running plan ..."), "\n", 0);
-  
   temp.path <- paste0(tmp_cache_path, "/specTemp/");
   
-  if(dir.exists(temp.path)){
+  if(dir.exists(temp.path) & !.on.public.web){
     unlink(temp.path, recursive = TRUE, force = TRUE);
   }
   
   .SwapEnv$PlanWorkingDir <- temp.path;
+
   #=============== raw_opt
   if (type == "raw_opt") {
     
     plan.path <- paste0(temp.path, "/plan");
     
-    if (!dir.exists(plan.path)) {
+    if (!dir.exists(plan.path)) { # THIS MEANS: if no following stuff, will create them (no matter local or web); If local, always recreate them.
       dir.create(paste0(temp.path, "/plan"),
-                 recursive = TRUE)
+                 recursive = TRUE, showWarnings = FALSE);
+      
+      #.running.as.plan <- .SwapEnv$.running.as.plan <- TRUE;
+      plan <- new("ResumingePlan");
+      .plan_count <- plan@PlanNumber <- 0;
+      plan@WorkingDir <- temp.path;
+      
+      saveRDS(plan, file = paste0(plan.path, "/plan.rds"));
+      saveRDS(.plan_count, file = paste0(plan.path, "/plan_count.rds"));
+      #----------------------/
+      .optimize_switch <- .SwapEnv$.optimize_switch <- TRUE;
+      switch.path <- paste0(temp.path, "/plan");
+      saveRDS(.optimize_switch,
+              file = paste0(switch.path, "/optimize_switch_", .plan_count, ".rds"))
+      
+    } else {
+      if(file.exists(paste0(plan.path, "/plan.rds"))){
+        plan <- readRDS(paste0(plan.path, "/plan.rds"));
+      } else {
+        stop(paste0("Cache file has been damaged ! Please remove your cache folder from ", tmp_cache_path, "!"))
+      }
     }
-    
-    #.running.as.plan <- .SwapEnv$.running.as.plan <- TRUE;
-    plan <- new("ResumingePlan");
-    .plan_count <- plan@PlanNumber <- 0;
-    plan@WorkingDir <- temp.path;
-    
-    saveRDS(plan, file = paste0(plan.path, "/plan.rds"));
-    #saveRDS(.running.as.plan, file = paste0(plan.path, "/running.as.plan.rds"));
-    saveRDS(.plan_count, file = paste0(plan.path, "/plan_count.rds"));
-    #----------------------
-    .optimize_switch <- .SwapEnv$.optimize_switch <- TRUE;
-    switch.path <- paste0(temp.path, "/plan");
-    saveRDS(.optimize_switch,
-            file = paste0(switch.path, "/optimize_switch_", .plan_count, ".rds"))
-    
+
     #----------------------
     envir.path <- paste0(temp.path, "/envir")
     if (!dir.exists(envir.path)) {
       dir.create(paste0(temp.path, "/envir"),
-                 recursive = TRUE)
-    }
-    
-    envir <- .SwapEnv$envir <- new.env()
-    saveRDS(envir, file = paste0(envir.path, "/envir.rds"))
-    #----------------------
-    if (exists(".plan_count") & .plan_count > 0) {
-      return(plan)
+                 recursive = TRUE, showWarnings = FALSE)
+      
+      envir <- .SwapEnv$envir <- new.env()
+      saveRDS(envir, file = paste0(envir.path, "/envir.rds"))
     }
   }
   
@@ -78,50 +85,58 @@ InitializaPlan <- function(type = "raw_ms"){
     
     if (!dir.exists(plan.path)) {
       dir.create(paste0(temp.path, "/plan"),
-                 recursive = TRUE)
+                 recursive = TRUE, showWarnings = FALSE)
+      
+      MessageOutput(paste0("Running Status -- Plan Initialized Successfully at: ", 
+                           Sys.time(), 
+                           "\nCurrent OptiLCMS version is ",
+                           packageVersion("OptiLCMS"),
+                           "\nPlease define your running plan ..."), "\n", 0);
+      #---------------
+      #.running.as.plan <- .SwapEnv$.running.as.plan <- TRUE;
+      plan <- new("ResumingePlan");
+      .plan_count <- plan@PlanNumber <- 0;
+      plan@WorkingDir <- temp.path;
+      
+      saveRDS(plan, file = paste0(plan.path, "/plan.rds"));
+      saveRDS(.plan_count, file = paste0(plan.path, "/plan_count.rds"));
+      #----------------------
+      .optimize_switch <- .SwapEnv$.optimize_switch <- FALSE;
+      switch.path <- paste0(temp.path, "/plan");
+      saveRDS(.optimize_switch,
+              file = paste0(switch.path, "/optimize_switch_", .plan_count, ".rds"));
+    } else {
+      if(file.exists(paste0(plan.path, "/plan.rds"))){
+        plan <- readRDS(paste0(plan.path, "/plan.rds"));
+      } else {
+        stop(paste0("Cache file has been damaged ! Please remove your cache folder from ", tmp_cache_path, "!"))
+      }
     }
-    
-    #---------------
-    #.running.as.plan <- .SwapEnv$.running.as.plan <- TRUE;
-    plan <- new("ResumingePlan");
-    .plan_count <- plan@PlanNumber <- 0;
-    plan@WorkingDir <- temp.path;
-    
-    saveRDS(plan, file = paste0(plan.path, "/plan.rds"));
-    #saveRDS(.running.as.plan, file = paste0(plan.path, "/running.as.plan.rds"));
-    saveRDS(.plan_count, file = paste0(plan.path, "/plan_count.rds"));
-    #----------------------
-    .optimize_switch <- .SwapEnv$.optimize_switch <- FALSE;
-    switch.path <- paste0(temp.path, "/plan");
-    saveRDS(.optimize_switch,
-            file = paste0(switch.path, "/optimize_switch_", .plan_count, ".rds"));
     
     #----------------------
     envir.path <- paste0(temp.path, "/envir")
     if (!dir.exists(envir.path)) {
       dir.create(paste0(temp.path, "/envir"),
-                 recursive = TRUE)
+                 recursive = TRUE, showWarnings = FALSE)
+      
+      envir <- .SwapEnv$envir <- new.env()
+      saveRDS(envir, file = paste0(envir.path, "/envir.rds"))
     }
-    
-    envir <- .SwapEnv$envir <- new.env()
-    saveRDS(envir, file = paste0(envir.path, "/envir.rds"))
-    #----------------------
-    if (exists(".plan_count") & .plan_count > 0) {
-      return(plan)
-    }
+
   }
-  
-  ## Recording cache file information
-  record.info <- matrix(nrow = 30, ncol = 2);
+
+  #============ Recording cache file information
   record.path <- paste0(temp.path, "/records");
   
   if (!dir.exists(record.path)) {
+    record.info <- matrix(nrow = 30, ncol = 2);
+    
     dir.create(paste0(temp.path, "/records"),
-               recursive = TRUE)
+               recursive = TRUE, showWarnings = FALSE);
+    
+    saveRDS(record.info, file = paste0(record.path, "/records.rds"))
   }
-  
-  saveRDS(record.info, file = paste0(record.path, "/records.rds"))
-  
+
   return(plan)
 }
 
@@ -307,9 +322,9 @@ running.plan <- function(plan=NULL,...){
 
 ExecutePlan <- function(plan=NULL){
   
-  MessageOutput("This plan is being excuted !\n");
-  MessageOutput(paste0("Working Directory: ",getwd()));
-  MessageOutput(paste0("Cache Directory: ",plan@WorkingDir,"\n"));
+  MessageOutput("This plan is being excuted !\n", SuppressWeb = TRUE);
+  MessageOutput(paste0("Working Directory: ",getwd()), SuppressWeb = TRUE);
+  MessageOutput(paste0("Cache Directory: ",plan@WorkingDir,"\n"), SuppressWeb = TRUE);
   
   if (is.null(plan)){
     stop("No running plan input. Please design you plan first with 'running.plan' function !")
@@ -327,7 +342,7 @@ ExecutePlan <- function(plan=NULL){
     
     envir <- .SwapEnv$envir;
     envir.path <- paste0(plan@WorkingDir,"/envir");
-    saveRDS(envir, file = paste0(envir.path,"/envir.rds"));
+    envir.save(envir, path = envir.path);
     
   } else if (length(plan@CommandSet) > 1) {
     
@@ -347,13 +362,13 @@ ExecutePlan <- function(plan=NULL){
                             last_command_set,
                             plan)
     }
-    
+    save(plan, file = "plan_1.rda")
     ## Module 7 - Detect whether some steps have been run in last plan excuting process (Secondary Decision switch)
     plan <- recording_identifier(plan);
-    
-    ## Module 8 - Dectect whether current plan type (raw_ms or raw_pre) is different from the last one (Final Decision switch)
-    # plan <- planType_identifier(plan);
-    
+    save(plan, file = "plan_2.rda")
+    ## Module 8 - Dectect whether current FilesInclusion is different from the last one (Final Decision switch)
+    plan <- FilesInclusion_identifier(plan);
+    save(plan, file = "plan_3.rda")
     .SwapEnv$envir$rc <- plan@running.controller
     # define.plan.controller <- str2lang('rc <- plan$running.controller');
     # eval (define.plan.controller,envir = envir);
@@ -378,7 +393,7 @@ ExecutePlan <- function(plan=NULL){
     
     envir <- .SwapEnv$envir;
     envir.path <- paste0(plan@WorkingDir,"/envir");
-    saveRDS(envir, file = paste0(envir.path,"/envir.rds"));
+    envir.save(envir, path = envir.path);
     
   } else {
     stop("Wrong plan has been prepared !");
@@ -441,6 +456,45 @@ recording_identifier <- function(plan) {
   
   return(plan)
   
+}
+
+#' @noRd
+FilesInclusion_identifier <- function(plan) {
+  
+  if(.on.public.web){
+    
+    envOld <- mSet <- NULL;
+    
+    load("mSet.rda");
+    currentfiles <- mSet@rawfiles;
+    envOld <- readRDS("specTemp/envir/envir.rds");
+    lastfiles <- envOld$mSet@rawfiles;
+    
+  } else {
+    
+    if(file.exists(paste0(tempdir(), "/envir/envir.rds"))){
+      
+      envOld <- readRDS(paste0(tempdir(), "/envir/envir.rds"));
+      lastfiles <- envOld$mSet@rawfiles;
+      
+      currentfiles <- list.files(plan@CommandSet[[plan@PlanNumber]]@ImportRawMSData[[3]][["path"]], 
+                                 recursive = TRUE, full.names = TRUE);
+      
+    } else {
+      stop("Cache missing! Please redo the InitializePlan() from the begining!")
+    }
+  }
+  
+  currentfiles <- basename(currentfiles);
+  lastfiles <- basename(lastfiles);
+  
+  res <- c(setdiff(currentfiles, lastfiles), setdiff(lastfiles, currentfiles));
+
+  if(length(res) != 0){
+    plan@running.controller <- controller.resetter();
+  }
+  
+  return(plan)
 }
 
 #' @noRd
@@ -573,6 +627,7 @@ controller.resetter <- function() {
   return(running.controller)
 }
 
+#' @noRd
 controller.modifier <- function(new_command_set, last_command_set, plan){
   
   ###-------------Operators definition ------------//
@@ -752,10 +807,10 @@ controller.modifier <- function(new_command_set, last_command_set, plan){
   
   if(is.null(ChangedArugsArray) | length(ChangedArugsArray) == 0){
     # Not changed !
-    plan@running.controller@data_import[c(1:2)] <- rep(TRUE, 2);
+    plan@running.controller@data_import[c(1:2)] <- rep(FALSE, 2);
   }
   
-  if("foldername" %in% ChangedArugsArray){
+  if("path" %in% ChangedArugsArray){
     plan@running.controller@data_import[1] <- TRUE;
   }
   
@@ -810,10 +865,40 @@ controller.modifier <- function(new_command_set, last_command_set, plan){
     # load params.rda and envir.rds and do a comparison
     envir.path <- paste0(plan@WorkingDir,"/envir");
     envir_tmp <- readRDS(paste0(envir.path,"/envir.rds"));
-    last_param <- envir_tmp[["param"]];
+    last_param <- envir_tmp$mSet@params;
     load("params.rda");
-    new_param <- peakParams;
-    # TODO: need to configure with the web; handle the annotate params at the same time
+    new_param <- updateRawSpectraParam(peakParams);
+    
+    # Compare the difference
+    if(class(new_command_set) == "OptiCommandSet"){
+      # For auto web pipeline
+      if(plan@running.controller@operators[2]){
+        plan@running.controller@peak_profiling[c(1:3)] <- rep(TRUE,3);
+        plan@running.controller@operators[3] <- TRUE;
+      }
+      
+    } else {
+      # For non-optimized web pipeline
+      ChangedParamArgus <- names(new_param)[
+      which(unlist(
+        sapply(c(1:25), function(i){
+          return(last_param[[i]] != new_param[[i]])
+        })
+      ))]
+     
+      if(is.null(ChangedParamArgus)){
+        plan@running.controller@peak_profiling[c(1:3)] <- rep(FALSE,3);
+      } else if (any(ChangedParamArgus %in% c("min_peakwidth","max_peakwidth","mzdiff","ppm","noise","prefilter","value_of_prefilter",
+                                              "Peak_method","snthresh","fwhm","sigma","steps"))){
+        plan@running.controller@peak_profiling[c(1:3)] <- rep(TRUE,3);
+        plan@running.controller@operators[3] <- TRUE;
+      } else if (any(ChangedParamArgus %in% c("bw","RT_method","minFraction","minSamples","maxFeatures","family","smooth",
+                                              "span","integrate","mzCenterFun","fitgauss"))){
+        plan@running.controller@peak_profiling[c(1:3)] <- c(FALSE, TRUE, TRUE);
+        plan@running.controller@operators[3] <- TRUE;
+      }
+    }
+    
     
   } else {
     
@@ -937,15 +1022,32 @@ perform.command <- function(command){
     eval(command,envir = envir);
     
     envir.path <- paste0(.SwapEnv$PlanWorkingDir,"/envir");
-    saveRDS(envir, file = paste0(envir.path,"/envir.rds"));
+    envir.save(envir, path = envir.path);
   } else {
     
     eval(command,envir = envir);
     
     envir.path <- paste0(.SwapEnv$PlanWorkingDir,"/envir");
-    saveRDS(envir, file = paste0(envir.path,"/envir.rds"));
+    envir.save(envir, path = envir.path);
   }
   
+}
+
+#' @noRd
+envir.save <- function(envir, path){
+  # this function is used to save the envir cache slowly 
+  # and avoid error from reading due to the interupt last time
+  
+  saveRDS(envir, file = paste0(path,"/envir_tmp.rds"));
+  
+  tmmenvir <- try(readRDS(paste0(path,"/envir_tmp.rds")));
+  
+  # To ensure the envir cache can be read
+  if(class(tmmenvir) != "try-error"){
+    file.rename(paste0(path,"/envir_tmp.rds"), paste0(path,"/envir.rds"))
+  } else {
+    # do nothing
+  }
 }
 
 #' @noRd
@@ -1102,7 +1204,7 @@ CommandsVerify <- function(commands){
           
           ArguList <- c("datapath", "mode", "write", "mz", "mzdiff", "rt", "rtdiff", "rt.idx", "plot", "running.controller");
           ArgNM <- ArguList[which(names(tmp_command[[3]])[-1] == "")];
-          ArgPos <- which(ArgNM == ArguList);
+          ArgPos <- unlist(sapply(ArgNM, function(x){which(x == ArguList)}))
           names(tmp_command[[3]])[ArgPos + 1] <- ArgNM;
           
           StandCommand@ROIExtraction <- tmp_command;
@@ -1114,7 +1216,7 @@ CommandsVerify <- function(commands){
           
           ArguList <- c("mSet", "param", "method", "ncore", "running.controller");
           ArgNM <- ArguList[which(names(tmp_command[[3]])[-1] == "")];
-          ArgPos <- which(ArgNM == ArguList);
+          ArgPos <- unlist(sapply(ArgNM, function(x){which(x == ArguList)}))
           names(tmp_command[[3]])[ArgPos + 1] <- ArgNM;
           
           StandCommand@ParamsOptimization <- tmp_command;
@@ -1126,7 +1228,7 @@ CommandsVerify <- function(commands){
           
           ArguList <- c("mSet", "foldername", "mode", "ncores", "plotSettings", "running.controller");
           ArgNM <- ArguList[which(names(tmp_command[[3]])[-1] == "")];
-          ArgPos <- which(ArgNM == ArguList);
+          ArgPos <- unlist(sapply(ArgNM, function(x){which(x == ArguList)}))
           names(tmp_command[[3]])[ArgPos + 1] <- ArgNM;
           
           StandCommand@ImportRawMSData <- tmp_command;
@@ -1138,7 +1240,7 @@ CommandsVerify <- function(commands){
           
           ArguList <- c("mSet", "Params", "plotSettings", "ncore", "running.controller");
           ArgNM <- ArguList[which(names(tmp_command[[3]])[-1] == "")];
-          ArgPos <- which(ArgNM == ArguList);
+          ArgPos <- unlist(sapply(ArgNM, function(x){which(x == ArguList)}))
           names(tmp_command[[3]])[ArgPos + 1] <- ArgNM;
           
           StandCommand@PeakProfiling <- tmp_command;
@@ -1150,7 +1252,7 @@ CommandsVerify <- function(commands){
           
           ArguList <- c("mSet", "annotaParam", "ncore", "running.controller");
           ArgNM <- ArguList[which(names(tmp_command[[3]])[-1] == "")];
-          ArgPos <- which(ArgNM == ArguList);
+          ArgPos <- unlist(sapply(ArgNM, function(x){which(x == ArguList)}))
           names(tmp_command[[3]])[ArgPos + 1] <- ArgNM;
           
           StandCommand@PeakAnnotation <- tmp_command;
@@ -1162,7 +1264,7 @@ CommandsVerify <- function(commands){
           
           ArguList <- c("mSet", "annParams", "filtIso", "filtAdducts", "missPercent");
           ArgNM <- ArguList[which(names(tmp_command[[3]])[-1] == "")];
-          ArgPos <- which(ArgNM == ArguList);
+          ArgPos <- unlist(sapply(ArgNM, function(x){which(x == ArguList)}))
           names(tmp_command[[3]])[ArgPos + 1] <- ArgNM;
           
           StandCommand@FormatPeakList <- tmp_command;
@@ -1173,9 +1275,9 @@ CommandsVerify <- function(commands){
     }
     
     if(length(commands) > 6){
-      MessageOutput("More functions than standard OptiPipeline were detected !\n")
-      warning(paste0("NOTE: Only ",paste(scales::ordinal(FUNCommandArray),collapse = ", "), 
-                     " functions in this plan and their direct defination on the argument will be included !\n"))
+      MessageOutput("More functions than standard OptiPipeline were detected !\n", SuppressWeb = TRUE)
+      MessageOutput(paste0("NOTE: Only ",paste(scales::ordinal(FUNCommandArray),collapse = ", "), 
+                     " functions in this plan and their direct defination on the argument will be included !\n"), SuppressWeb = TRUE)
     }
   }
   
@@ -1195,7 +1297,7 @@ CommandsVerify <- function(commands){
           
           ArguList <- c("mSet", "foldername", "mode", "ncores", "plotSettings", "running.controller");
           ArgNM <- ArguList[which(names(tmp_command[[3]])[-1] == "")];
-          ArgPos <- which(ArgNM == ArguList);
+          ArgPos <- unlist(sapply(ArgNM, function(x){which(x == ArguList)}))
           names(tmp_command[[3]])[ArgPos + 1] <- ArgNM;
           
           StandCommand@ImportRawMSData <- tmp_command;
@@ -1207,7 +1309,7 @@ CommandsVerify <- function(commands){
           
           ArguList <- c("mSet", "Params", "plotSettings", "ncore", "running.controller");
           ArgNM <- ArguList[which(names(tmp_command[[3]])[-1] == "")];
-          ArgPos <- which(ArgNM == ArguList);
+          ArgPos <- unlist(sapply(ArgNM, function(x){which(x == ArguList)}))
           names(tmp_command[[3]])[ArgPos + 1] <- ArgNM;
           
           StandCommand@PeakProfiling <- tmp_command;
@@ -1219,7 +1321,7 @@ CommandsVerify <- function(commands){
           
           ArguList <- c("mSet", "annotaParam", "ncore", "running.controller");
           ArgNM <- ArguList[which(names(tmp_command[[3]])[-1] == "")];
-          ArgPos <- which(ArgNM == ArguList);
+          ArgPos <- unlist(sapply(ArgNM, function(x){which(x == ArguList)}))
           names(tmp_command[[3]])[ArgPos + 1] <- ArgNM;
           
           StandCommand@PeakAnnotation <- tmp_command;
@@ -1231,7 +1333,7 @@ CommandsVerify <- function(commands){
           
           ArguList <- c("mSet", "annParams", "filtIso", "filtAdducts", "missPercent");
           ArgNM <- ArguList[which(names(tmp_command[[3]])[-1] == "")];
-          ArgPos <- which(ArgNM == ArguList);
+          ArgPos <- unlist(sapply(ArgNM, function(x){which(x == ArguList)}))
           names(tmp_command[[3]])[ArgPos + 1] <- ArgNM;
           
           StandCommand@FormatPeakList <- tmp_command;
@@ -1242,9 +1344,10 @@ CommandsVerify <- function(commands){
     }
     
     if(length(commands) > 4){
-      MessageOutput("More functions than standard OptiPipeline were detected !\n")
+      MessageOutput("More functions than standard OptiPipeline were detected !\n", SuppressWeb = TRUE)
       MessageOutput(paste0("NOTE: Only ",paste(scales::ordinal(FUNCommandArray),collapse = ", "), 
-                           " functions in this plan and their direct defination on the argument will be included !\n"))
+                           " functions in this plan and their direct defination on the argument will be included !\n"), 
+                    SuppressWeb = TRUE)
     }
     
   }

@@ -219,8 +219,6 @@ PerformParamsOptimization <- function(mSet, param= NULL, method="DoE", ncore=4, 
       
     }
     
-    .SwapEnv$.optimize_switch <-FALSE;
-    
   } else {
     end.time<-Sys.time();
     message("Time Spent In Total:",round((as.numeric(end.time) - as.numeric(start.time))/60, 1),"mins");
@@ -229,7 +227,8 @@ PerformParamsOptimization <- function(mSet, param= NULL, method="DoE", ncore=4, 
   best_params <- p1;
   
   if(.on.public.web) {
-    save(best_params, file = "best_params.rda")
+    save(best_params, file = "best_params.rda");
+    return(best_params);
   } else {
     return(best_params);
   }
@@ -353,12 +352,6 @@ optimizxcms.doe.peakpicking <- function(object = NULL, params = params,
   while(iterator < 20) {#Forcely stop to ensure the reasonability!
     MessageOutput(paste0("Round:",iterator, "\nDoE Running Begin..."), "\n", NULL)
 
-    # Parallel is unstable for matchedFilter Method, force to use only ne core
-    #if (params[["Peak_method"]]=="matchedFilter"){
-    #  nSlaves<-1;
-    #  message("Parallel for method 'matchedFilter' is unstable, set ncore as 1 !")
-    #}
-    
     mSet_OPT <- 
       ExperimentsCluster_doe(
         object = object,
@@ -632,7 +625,7 @@ ExperimentsCluster_doe <-function(object, object_mslevel,params,
   if(nSlaves > 1) {
     
     if (.on.public.web){
-      nstepby<-5;
+      nstepby <- 5;
       nstep<-ceiling(length(tasks)/nstepby);
       
     } else {
@@ -660,7 +653,7 @@ ExperimentsCluster_doe <-function(object, object_mslevel,params,
       if (data.size < 1) {
         data.size <- 0.5
       }
-      
+     
       if (memtotal / data.size > 30) {
         nstepby <- ceiling(memtotal * 1.5 / (data.size * 32))
       } else if (memtotal / data.size < 30 &&
@@ -683,11 +676,8 @@ ExperimentsCluster_doe <-function(object, object_mslevel,params,
     
     response <- matrix(0, nrow=length(design[[1]]), ncol=9)
     
-    if(.on.public.web){
-      parallel::clusterExport(cl, .optimize_function_list)
-    } else {
-      parallel::clusterExport(cl, .optimize_function_list, envir = asNamespace("OptiLCMS"))
-    }
+    parallel::clusterExport(cl, .optimize_function_list, envir = asNamespace("OptiLCMS"))
+
     
     # Setting progress bar and start the running loop
     pb <- progress_bar$new(format = "DoE Running [:bar] :percent Time left: :eta", total = nstep, clear = TRUE, width= 75)
@@ -894,7 +884,6 @@ Statistic_doe <-function(object, object_mslevel, isotopeIdentification,
 
 SlaveCluster_doe <-function(task, Set_parameters, object, object_mslevel, 
                             isotopeIdentification, BPPARAM = bpparam()) {
-  
 
   mSet <-
     calculateSet_doe(
@@ -904,10 +893,10 @@ SlaveCluster_doe <-function(task, Set_parameters, object, object_mslevel,
       task = task,
       BPPARAM = BPPARAM
     )
-  MessageOutput(paste("Finished", task,"/",length(Set_parameters),"in this round !"))
+  MessageOutput(paste("Finished", task,"/",length(Set_parameters),"in this round !"), SuppressWeb = TRUE)
   
   if (!class(mSet)=="character"){
-    MessageOutput("Peak Feature Analyzing...")
+    MessageOutput("Peak Feature Analyzing...", SuppressWeb = TRUE)
     
     #xset <- mSet[["xcmsSet"]]
     
@@ -943,7 +932,7 @@ SlaveCluster_doe <-function(task, Set_parameters, object, object_mslevel,
     names(result)[c(6,7,8,9)]<-c("CV","RCS","GS","GaussianSI")
     
     #result
-    MessageOutput("Peak Feature Analyzing Done !\n")
+    MessageOutput("Peak Feature Analyzing Done !\n", SuppressWeb = TRUE)
     
   } else{
     result<-c(task,0,0,0,0,0,0,0,0)

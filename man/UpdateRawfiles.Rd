@@ -4,16 +4,16 @@
 \alias{UpdateRawfiles}
 \title{UpdateRawfiles}
 \usage{
-UpdateRawfiles(mSet, filesIncluded = NULL)
+UpdateRawfiles(mSet = NULL, filesIncluded = NULL)
 }
 \arguments{
-\item{mSet}{mSet objects generated with \"mSet<-InitDataObjects(\"spec\", \"raw\", FALSE)\";}
+\item{mSet}{mSet objects generated with \"mSet <- InitDataObjects(\"spec\", \"raw\", FALSE)\", or omitted.}
 
 \item{filesIncluded}{filesIncluded is a vector containing the files' paths for the following processing;}
 }
 \description{
 Update the Raw spectra included for Processing. All wrong format and uncentroided files will be filtered.
-NOTE: this function is only effective before data import stage.
+NOTE: this function is only effective before data import stage AND can NOT be used for resuming pipeline.
 }
 \examples{
 ## load googledrive package to download example data

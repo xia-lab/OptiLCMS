@@ -81,12 +81,6 @@ PerformPeakProfiling <-
       c1 <- c2 <- c3 <- c4 <- TRUE;
       .running.as.plan <- FALSE;
       
-      ## Clean the existing results
-      mSet@peakpicking <- mSet@peakgrouping <- 
-        mSet@peakRTcorrection <- mSet@peakfilling <- 
-        mSet@peakAnnotation <- 
-        list();
-      
     } else {
       c1 <-
         running.controller@peak_profiling[["c1"]] # used to control peak picking
@@ -108,10 +102,17 @@ PerformPeakProfiling <-
       .SwapEnv$envir <- new.env();
     }
     
+    ## Clean the existing results
+    mSet@peakpicking <- mSet@peakgrouping <- 
+      mSet@peakRTcorrection <- mSet@peakfilling <- 
+      mSet@peakAnnotation <- 
+      list();
+    
     .optimize_switch <- .SwapEnv$.optimize_switch <- FALSE;
     
     if(.on.public.web){
       ### Update parameters' style
+      save(Params, file = "Params.rda");
       write.table(
         unlist(Params),
         file = "param_optimized.txt",
@@ -120,7 +121,7 @@ PerformPeakProfiling <-
         quote = FALSE
       )
     }
-
+    
     if(!is.null(Params)){
       mSet@params <- updateRawSpectraParam (Params);
     } else if (is.null(Params) & length(mSet@params) == 0){
@@ -327,6 +328,7 @@ PerformPeakProfiling <-
     if(.on.public.web){
       save(mSet, file = "mSet.rda");
     }
+    
     .SwapEnv$envir$mSet <- mSet;
 
     MessageOutput(
@@ -462,7 +464,12 @@ SetAnnotationParam <-
     peakParams <- NULL;
     
     if (.on.public.web) {
-      load("params.rda")
+      if(file.exists("params.rda")){
+        load("params.rda")
+      } else {
+        peakParams <- SetPeakParam();
+      }
+      
       
       annParams$polarity <- peakParams$polarity
       annParams$perf.whm <- peakParams$perc_fwhm
@@ -1445,7 +1452,6 @@ FormatPeakList <-
       stop("No annotation results found! Please 'PerformPeakAnnotation' first !")
     }
     
-    
     if(length(mSet@rawOnDisk) == 0){
       if(.on.public.web){
         MessageOutput("ERROR: No MS data imported, please import the MS data with 'ImportRawMSData' first !", NULL, NULL)
@@ -1645,7 +1651,7 @@ FormatPeakList <-
       mes = paste0("\nEverything has been finished Successfully ! (",
                    Sys.time(),
                    ")\n"),
-      ecol = "\n",
+      ecol = "",
       progress = 100
     );
     

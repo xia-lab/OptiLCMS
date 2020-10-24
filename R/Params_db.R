@@ -72,18 +72,18 @@ SetPeakParam <- function(platform = "general", Peak_method = "centWave", RT_meth
                          extra, span, smooth, family, fitgauss, # used for RT correction with peakgroup "loess"
                          polarity, perc_fwhm, mz_abs_iso, max_charge, max_iso, corr_eic_th, mz_abs_add, #used for annotation
                          rmConts #used to control remove contamination or not
-                         ){
+                         ) {
   
   
   if (.on.public.web & missing(platform) & missing(Peak_method) & file.exists("params.rda")){
     #marker_record(paste0("operators","_operators_1"));
     
-    print_mes <- "Step 1/6: Internalize parameters! \nThis step will be finished soon...";    
+    print_mes <- "\nStep 2/6: Internalize parameters! \nThis step will be finished soon...";    
     write.table(print_mes,file="metaboanalyst_spec_proc.txt",append = TRUE,row.names = FALSE,col.names = FALSE, quote = FALSE, eol = "\n");
     
     load("params.rda");
     
-    print_mes <- "Step 1/6: Parameters Internalized Successfully! \nGoing to the next step...";    
+    print_mes <- "Step 2/6: Parameters Internalized Successfully! \nGoing to the next step...";    
     write.table(print_mes,file="metaboanalyst_spec_proc.txt",append = TRUE,row.names = FALSE,col.names = FALSE, quote = FALSE, eol = "\n");
     write.table(unlist(peakParams),file="param_default.txt",row.names = TRUE,col.names = FALSE,quote = FALSE);
     
@@ -2040,14 +2040,12 @@ SetPeakParam <- function(platform = "general", Peak_method = "centWave", RT_meth
   }
 
   #Output a table for display 
-    if(.on.public.web){
+  if(.on.public.web){
       save(peakParams,file="params.rda");
       write.table(unlist(peakParams),file="param_default.txt",row.names = TRUE,col.names = FALSE,quote = FALSE);
       write.table("NOT Finished Yet!",file="param_optimized.txt",row.names = TRUE,col.names = FALSE,quote = FALSE);
-    }
-  
-  #marker_record(paste0("operators","_operators_1"));
-  
+  }
+
   #### Other Parameters
   # None for now !
   return(peakParams)
