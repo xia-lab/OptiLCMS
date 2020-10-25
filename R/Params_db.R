@@ -2038,12 +2038,18 @@ SetPeakParam <- function(platform = "general", Peak_method = "centWave", RT_meth
   } else {
     peakParams$rmConts <- as.logical(rmConts);
   }
+    
 
   #Output a table for display 
   if(.on.public.web){
-      save(peakParams,file="params.rda");
-      write.table(unlist(peakParams),file="param_default.txt",row.names = TRUE,col.names = FALSE,quote = FALSE);
-      write.table("NOT Finished Yet!",file="param_optimized.txt",row.names = TRUE,col.names = FALSE,quote = FALSE);
+    
+    if(file.exists("params.rda")){
+      file.rename("params.rda", "params_last.rda")
+    }
+    
+    save(peakParams,file="params.rda");
+    write.table(unlist(peakParams),file="param_default.txt",row.names = TRUE,col.names = FALSE,quote = FALSE);
+    write.table("NOT Finished Yet!",file="param_optimized.txt",row.names = TRUE,col.names = FALSE,quote = FALSE);
   }
 
   #### Other Parameters
