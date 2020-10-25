@@ -200,7 +200,7 @@ running.plan <- function(plan=NULL,...){
   #plan <- .get.current.plan(plan);
   commands <- match.call(expand.dots = FALSE)$...
   
-  ## Declare controller
+  ## Declare new controller
   plan@running.controller <- controller.resetter();
   ##
   
@@ -220,7 +220,7 @@ running.plan <- function(plan=NULL,...){
   saveRDS(.plan_count, file = paste0(plan.path, "/plan_count.rds"));
   
   recordMarker_resetter(.plan_count);
-  
+
   return(plan)
 }
 
@@ -362,13 +362,13 @@ ExecutePlan <- function(plan=NULL){
                             last_command_set,
                             plan)
     }
-    save(plan, file = "plan_1.rda")
+    #save(plan, file = "plan_1.rda")
     ## Module 7 - Detect whether some steps have been run in last plan excuting process (Secondary Decision switch)
     plan <- recording_identifier(plan);
-    save(plan, file = "plan_2.rda")
+    #save(plan, file = "plan_2.rda")
     ## Module 8 - Dectect whether current FilesInclusion is different from the last one (Final Decision switch)
     plan <- FilesInclusion_identifier(plan);
-    save(plan, file = "plan_3.rda")
+    #save(plan, file = "plan_3.rda")
     .SwapEnv$envir$rc <- plan@running.controller
     # define.plan.controller <- str2lang('rc <- plan$running.controller');
     # eval (define.plan.controller,envir = envir);
@@ -648,7 +648,7 @@ controller.modifier <- function(new_command_set, last_command_set, plan){
   if(class(new_command_set) == "OptiCommandSet"){
     
     # 1. ROIExtraction: -----
-    # 1.1 Note on controller: c1, read; c2, trim; c3, write; c4, plot; C5, rmConts.
+    # 1.1 Note on controller: c1, read; c2, trim; c3, write; c4, plot; c5, rmConts.
     new_ROIExtraction <- new_command_set@ROIExtraction[[3]];
     last_ROIExtraction <- last_command_set@ROIExtraction[[3]];
     ChangedArugsArray <- NULL;
@@ -707,6 +707,25 @@ controller.modifier <- function(new_command_set, last_command_set, plan){
     
     if("plot" %in% ChangedArugsArray){
       plan@running.controller@ROI_extract[4] <- TRUE;
+    }
+    
+    # web version special case to identify the rmConts has been changed or not
+    if(.on.public.web){
+      # load params.rda and params_last.rda and do a comparison
+      peakParams <- NULL;
+      load("params_last.rda");
+      last_param <-peakParams;
+      
+      peakParams <- NULL;
+      load("params.rda");
+      new_param <- peakParams;
+      
+      if(last_param$rmConts != new_param$rmConts){
+        plan@running.controller@ROI_extract[5] <- TRUE;
+        plan@running.controller@operators[1] <- TRUE;
+      } else {
+        plan@running.controller@ROI_extract[5] <- FALSE;
+      }
     }
     
     # 2. ParamsOptimization: -----
@@ -861,13 +880,15 @@ controller.modifier <- function(new_command_set, last_command_set, plan){
   }
   
   if(.on.public.web){
+    
+    # load params.rda and params_last.rda and do a comparison
     peakParams <- NULL;
-    # load params.rda and envir.rds and do a comparison
-    envir.path <- paste0(plan@WorkingDir,"/envir");
-    envir_tmp <- readRDS(paste0(envir.path,"/envir.rds"));
-    last_param <- envir_tmp$mSet@params;
+    load("params_last.rda");
+    last_param <-peakParams;
+    
+    peakParams <- NULL;
     load("params.rda");
-    new_param <- updateRawSpectraParam(peakParams);
+    new_param <- peakParams;
     
     # Compare the difference
     if(class(new_command_set) == "OptiCommandSet"){
@@ -876,7 +897,6 @@ controller.modifier <- function(new_command_set, last_command_set, plan){
         plan@running.controller@peak_profiling[c(1:3)] <- rep(TRUE,3);
         plan@running.controller@operators[3] <- TRUE;
       }
-      
     } else {
       # For non-optimized web pipeline
       ChangedParamArgus <- names(new_param)[

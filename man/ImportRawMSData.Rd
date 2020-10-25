@@ -44,7 +44,6 @@ to be used for parallel processing. It first determines the number of cores
 within a user's computer and then sets it that number/2.
 }
 \examples{
-## load googledrive package to download example data
 ##' Load OptiLCMS package
 library(OptiLCMS)
 ##' Get raw spectra files
