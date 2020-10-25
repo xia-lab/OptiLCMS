@@ -120,6 +120,10 @@ ImportRawMSData <-
     start.time <- Sys.time()
     
     ## Deal with the different file path cases
+    if(.on.public.web & !dir.exists(path)){
+      path <- "/home/glassfish/projects/MetaboDemoRawData/upload/"
+    }
+    
     files <- Path2Files(path = path);
     
     if (length(files) == 0) {
@@ -970,7 +974,13 @@ UpdateRawfiles <- function(mSet = NULL, filesIncluded = NULL){
   }
   
   if(.on.public.web){
-    filesList <- list.files(recursive = TRUE);
+    
+    if(!dir.exists("upload/")){
+      filesList <- list.files("/home/glassfish/projects/MetaboDemoRawData/upload/", recursive = TRUE, full.names = TRUE);
+    } else {
+      filesList <- list.files(recursive = TRUE);
+    }
+    
     filesListBaseNMs <- basename(filesList);
     filesIncluded <- filesList[sapply(filesIncluded, function(x){which(x == filesListBaseNMs)})];
   }
@@ -999,7 +1009,7 @@ UpdateRawfiles <- function(mSet = NULL, filesIncluded = NULL){
       stop("No centroided spectrum found ! Please Centroid them first !")
     }
     filesIncluded_centroided <- filesIncluded_formated[Centroididx];
-    message(paste0(filesIncluded_centroided, "will be included for further processing !"))
+    message(paste0(basename(filesIncluded_centroided), " will be included for further processing !\n"))
     
     # file size check
     fileSizeInfo <- file.size(filesIncluded_centroided)/1024^2;

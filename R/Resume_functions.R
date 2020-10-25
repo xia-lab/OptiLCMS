@@ -63,6 +63,7 @@ InitializaPlan <- function(type = "raw_ms"){
     } else {
       if(file.exists(paste0(plan.path, "/plan.rds"))){
         plan <- readRDS(paste0(plan.path, "/plan.rds"));
+        plan@WorkingDir <- temp.path;
       } else {
         stop(paste0("Cache file has been damaged ! Please remove your cache folder from ", tmp_cache_path, "!"))
       }
@@ -108,6 +109,7 @@ InitializaPlan <- function(type = "raw_ms"){
     } else {
       if(file.exists(paste0(plan.path, "/plan.rds"))){
         plan <- readRDS(paste0(plan.path, "/plan.rds"));
+        plan@WorkingDir <- temp.path;
       } else {
         stop(paste0("Cache file has been damaged ! Please remove your cache folder from ", tmp_cache_path, "!"))
       }
