@@ -367,14 +367,13 @@ PerformROIExtraction <-
           
           if(class(tmp_mes) == "try-error" | rmConts){
             raw_data <- ContaminatsRemoval(raw_data, ms_list);
-            #save(raw_data, file = "Contaminats_free_raw_data.rda");
+            raw_data <- .emptyscan.remove(raw_data, ms_list);
           } else if (.on.public.web) {
             
             if(exists("peakParams")){
               if(peakParams[["rmConts"]]){
                 raw_data <- ContaminatsRemoval(raw_data, ms_list);
                 raw_data <- .emptyscan.remove(raw_data, ms_list);
-                #save(raw_data, file = "Contaminats_free_raw_data.rda");
               }
             } else {
               raw_data <- ContaminatsRemoval(raw_data, ms_list);
