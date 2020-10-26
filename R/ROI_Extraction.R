@@ -97,6 +97,16 @@ PerformROIExtraction <-
            plot = TRUE,
            running.controller = NULL) {
     
+    if(!exists(".SwapEnv")){
+      .SwapEnv <<- new.env(parent = .GlobalEnv);
+      .SwapEnv$.optimize_switch <- TRUE;
+      .SwapEnv$count_current_sample <- 0;
+      .SwapEnv$count_total_sample <- 120; # maximum number for on.public.web
+      .SwapEnv$envir <- new.env();
+    }
+    
+    .SwapEnv$.optimize_switch <- TRUE;
+    
     datapath <- normalizePath(datapath);
     
     if(!.on.public.web){

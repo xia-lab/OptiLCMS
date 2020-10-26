@@ -112,7 +112,6 @@ PerformPeakProfiling <-
     
     if(.on.public.web){
       ### Update parameters' style
-      save(Params, file = "Params.rda");
       write.table(
         unlist(Params),
         file = "param_optimized.txt",

@@ -684,7 +684,7 @@ controller.modifier <- function(new_command_set, last_command_set, plan){
     }
     
     if("rmConts" %in% ChangedArugsArray){
-      plan@running.controller@ROI_extract[5] <- TRUE;
+      plan@running.controller@ROI_extract[c(2:5)] <- TRUE;
       plan@running.controller@operators[1] <- TRUE;
     }else {
       plan@running.controller@ROI_extract[5] <- FALSE;
@@ -723,7 +723,7 @@ controller.modifier <- function(new_command_set, last_command_set, plan){
       new_param <- peakParams;
       
       if(last_param$rmConts != new_param$rmConts){
-        plan@running.controller@ROI_extract[5] <- TRUE;
+        plan@running.controller@ROI_extract[c(2:5)] <- TRUE;
         plan@running.controller@operators[1] <- TRUE;
       } else {
         plan@running.controller@ROI_extract[5] <- FALSE;
@@ -880,7 +880,7 @@ controller.modifier <- function(new_command_set, last_command_set, plan){
   if("plotSettings" %in% ChangedArugsArray){
     plan@running.controller@peak_profiling[4] <- TRUE;
   }
-  
+
   if(.on.public.web){
     
     # load params.rda and params_last.rda and do a comparison

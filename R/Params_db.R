@@ -75,18 +75,27 @@ SetPeakParam <- function(platform = "general", Peak_method = "centWave", RT_meth
                          ) {
   
   
+  if(!exists(".SwapEnv")){
+    .SwapEnv <<- new.env(parent = .GlobalEnv);
+    .SwapEnv$.optimize_switch <- FALSE;
+    .SwapEnv$count_current_sample <- 0;
+    .SwapEnv$count_total_sample <- 120; # maximum number for on.public.web
+    .SwapEnv$envir <- new.env();
+  }
+  
   if (.on.public.web & missing(platform) & missing(Peak_method) & file.exists("params.rda")){
     #marker_record(paste0("operators","_operators_1"));
-    
-    print_mes <- "\nStep 2/6: Internalize parameters! \nThis step will be finished soon...";    
-    write.table(print_mes,file="metaboanalyst_spec_proc.txt",append = TRUE,row.names = FALSE,col.names = FALSE, quote = FALSE, eol = "\n");
-    
     load("params.rda");
     
-    print_mes <- "Step 2/6: Parameters Internalized Successfully! \nGoing to the next step...";    
-    write.table(print_mes,file="metaboanalyst_spec_proc.txt",append = TRUE,row.names = FALSE,col.names = FALSE, quote = FALSE, eol = "\n");
-    write.table(unlist(peakParams),file="param_default.txt",row.names = TRUE,col.names = FALSE,quote = FALSE);
-    
+    if(!.SwapEnv$.optimize_switch){
+      print_mes <- "\nStep 2/6: Internalize parameters! \nThis step will be finished soon...";    
+      write.table(print_mes,file="metaboanalyst_spec_proc.txt",append = TRUE,row.names = FALSE,col.names = FALSE, quote = FALSE, eol = "\n");
+      
+      print_mes <- "Step 2/6: Parameters Internalized Successfully! \nGoing to the next step...";    
+      write.table(print_mes,file="metaboanalyst_spec_proc.txt",append = TRUE,row.names = FALSE,col.names = FALSE, quote = FALSE, eol = "\n");
+      write.table(unlist(peakParams),file="param_default.txt",row.names = TRUE,col.names = FALSE,quote = FALSE);
+    }
+
     return(peakParams);
   }
   
