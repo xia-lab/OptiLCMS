@@ -630,9 +630,9 @@ ExperimentsCluster_doe <-function(object, object_mslevel,params,
       
     } else {
       # Memory optimization strategy
-      ncount <- length(object@phenoData@data[["sample_name"]]);
+      ncount <- object@phenoData@data[["sample_name"]];
       
-      data.size <- round(as.numeric(object.size(object) / 1024 / 1024 / ncount), 1)
+      data.size <- round(as.numeric(object.size(object) / 1024 / 1024), 1)
       
       if (.Platform$OS.type == "unix") {
         memtotal <-
@@ -653,16 +653,16 @@ ExperimentsCluster_doe <-function(object, object_mslevel,params,
       if (data.size < 1) {
         data.size <- 0.5
       }
-      
-      if (memtotal / data.size > 60) {
-        nstepby <- ceiling(memtotal * 2 / (data.size * ncount^2))
-      } else if (memtotal / data.size < 60 &&
-                 memtotal / data.size > 30) {
-        nstepby <- ceiling(memtotal * 1.25 / (data.size * ncount^2))
+     
+      if (memtotal / data.size > 30) {
+        nstepby <- ceiling(memtotal * 1.5 / (data.size * 32))
+      } else if (memtotal / data.size < 30 &&
+                 memtotal / data.size > 15) {
+        nstepby <- ceiling(memtotal * 1 / (data.size * 32))
       } else {
-        nstepby <- ceiling(memtotal * 0.5 / (data.size * ncount^2))
+        nstepby <- ceiling(memtotal * 0.5 / (data.size * 32))
       }
-
+      
       nstep <- ceiling(length(tasks) / nstepby)
     }
     
@@ -670,10 +670,6 @@ ExperimentsCluster_doe <-function(object, object_mslevel,params,
     #if('snow' %in% rownames(installed.packages())){
     #  unloadNamespace("snow")
     #}
-    
-    if(nstepby*ncount > nSlaves){
-      nstepby <- ceiling(nSlaves/ncount-0.5)
-    }
     
     cl_type <- getClusterType()
     cl <- parallel::makeCluster(nSlaves,type = cl_type)
