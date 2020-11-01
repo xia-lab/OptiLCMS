@@ -522,10 +522,10 @@ ssm_trim <- function(raw_data, ms_list, rt.idx){
   #} else {
   #  ms_list_s<-sort(names(ms_list))
   #}
-  
-  # if (.on.public.web){
-  #   load_msnbase();
-  # }
+
+  # Update ms_lsit
+  empty_toRemove <- which(sapply(names(ms_list),function(x){is.null(raw_data@assayData[[x]])}));
+  ms_list <- ms_list[-empty_toRemove];
   
   spectra_mz <- unlist(lapply(MSnbase::spectra(raw_data),mz))
   
@@ -611,17 +611,16 @@ ssm_trim <- function(raw_data, ms_list, rt.idx){
   
   for (i in 1:length(ms_list)){
     pb$tick();
+      ms.set<-raw_data@assayData[[names(ms_list)[i]]]@mz
+      k<-which(sapply(ms.set,FUN = function(x){(x > good.bins.list[[1]][[1]] && x < good.bins.list[[1]][[2]]) | 
+          (x > good.bins.list[[2]][[1]] && x < good.bins.list[[2]][[2]]) | 
+          (x > good.bins.list[[3]][[1]] && x < good.bins.list[[3]][[2]]) | 
+          (x > good.bins.list[[4]][[1]] && x < good.bins.list[[4]][[2]])}))
     
-    ms.set<-raw_data@assayData[[names(ms_list)[i]]]@mz
-    k<-which(sapply(ms.set,FUN = function(x){(x > good.bins.list[[1]][[1]] && x < good.bins.list[[1]][[2]]) | 
-        (x > good.bins.list[[2]][[1]] && x < good.bins.list[[2]][[2]]) | 
-        (x > good.bins.list[[3]][[1]] && x < good.bins.list[[3]][[2]]) | 
-        (x > good.bins.list[[4]][[1]] && x < good.bins.list[[4]][[2]])}))
-    
-    raw_data@assayData[[names(ms_list)[i]]]@mz<-raw_data@assayData[[names(ms_list)[i]]]@mz[k];
-    raw_data@assayData[[names(ms_list)[i]]]@intensity<-raw_data@assayData[[names(ms_list)[i]]]@intensity[k];
-    raw_data@assayData[[names(ms_list)[i]]]@tic<-sum(raw_data@assayData[[names(ms_list)[i]]]@intensity);
-    raw_data@assayData[[names(ms_list)[i]]]@peaksCount<-length(raw_data@assayData[[names(ms_list)[i]]]@mz)
+      raw_data@assayData[[names(ms_list)[i]]]@mz<-raw_data@assayData[[names(ms_list)[i]]]@mz[k];
+      raw_data@assayData[[names(ms_list)[i]]]@intensity<-raw_data@assayData[[names(ms_list)[i]]]@intensity[k];
+      raw_data@assayData[[names(ms_list)[i]]]@tic<-sum(raw_data@assayData[[names(ms_list)[i]]]@intensity);
+      raw_data@assayData[[names(ms_list)[i]]]@peaksCount<-length(raw_data@assayData[[names(ms_list)[i]]]@mz)
   }
   MessageOutput("Identifying ROIs in m/z dimensions Done !", "\n", NULL);
   
