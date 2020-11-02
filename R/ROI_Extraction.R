@@ -525,7 +525,9 @@ ssm_trim <- function(raw_data, ms_list, rt.idx){
 
   # Update ms_lsit
   empty_toRemove <- which(sapply(names(ms_list),function(x){is.null(raw_data@assayData[[x]])}));
-  ms_list <- ms_list[-empty_toRemove];
+  if(length(empty_toRemove)){
+    ms_list <- ms_list[-empty_toRemove];
+  }
   
   spectra_mz <- unlist(lapply(MSnbase::spectra(raw_data),mz))
   
