@@ -120,7 +120,7 @@ ImportRawMSData <-
     start.time <- Sys.time()
     
     ## Deal with the different file path cases
-    if(.on.public.web & !dir.exists(path)){
+    if(.on.public.web && !dir.exists(path)){
       path <- "/home/glassfish/projects/MetaboDemoRawData/upload/"
     }
     
