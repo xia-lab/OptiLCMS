@@ -3652,8 +3652,8 @@ na.flatfill <- function(x) {
 #' @export
 #' @examples 
 #' ints<- c(c(1:5,5:1))
-#' nls(y ~ GaussModel(x, mu, sigma, h), 
-#'                    + data.frame(x = 1:length(ints), y = ints))
+#' #nls(y ~ GaussModel(x, mu, sigma, h), 
+#' #                   data.frame(x = 1:length(ints), y = ints))
 
 GaussModel <- selfStart(~ h*exp(-(x-mu)^2/(2*sigma^2)), function(mCall, data, LHS) {
   
