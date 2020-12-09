@@ -484,9 +484,12 @@ read.InMemMSd.data <- function(files,
                                cache. = 1) {
   .testReadMSDataInput(environment())
   if (isCdfFile(files)) {
-    #message("Polarity can not be extracted from netCDF files, please set ",
-    #        "manually the polarity with the 'polarity' method.")
-    msLevel. <- 1;
+    if(missing(msLevel.)){
+      msLevel. <- 1;
+    }
+    isCDF <- TRUE;
+  } else {
+    isCDF <- FALSE;
   }
   
   if (msLevel. == 1) cache. <- 0
@@ -516,7 +519,16 @@ read.InMemMSd.data <- function(files,
     filenams <- c(filenams, f)
     ## issue #214: define backend based on file format.
     msdata <- mzR::openMSfile(f,backend = NULL)
-    .instrumentInfo <- c(.instrumentInfo, list(mzR::instrumentInfo(msdata)))
+    
+    ## Extract Instrument Information
+    instruInfo <- try(mzR::instrumentInfo(msdata), silent = TRUE);
+    if(class(instruInfo) == "list"){
+      .instrumentInfo <- c(.instrumentInfo, list(instruInfo));
+    } else {
+      MessageOutput("Some instrument related information is missing. But the whole process is still running...")
+      .instrumentInfo <- c(.instrumentInfo, list());
+    }
+    
     fullhd <- mzR::header(msdata)
     ## Issue #325: get centroided information from file, but overwrite if
     ## specified with centroided. parameter.
@@ -530,30 +542,76 @@ read.InMemMSd.data <- function(files,
       if (length(spidx) == 0)
         stop("No MS1 spectra in file",f)
       
-      
       if (.on.public.web){   
         print_mes <- paste0("Importing ",basename(f),":");    
         write.table(print_mes,file="metaboanalyst_spec_proc.txt",append = TRUE,row.names = FALSE,col.names = FALSE, quote = FALSE, eol = " ");
-      }
-      else {
+      } else {
         pb <- progress_bar$new(format = "Reading [:bar] :percent Time left: :eta", 
                                total = length(spidx), clear = TRUE, width= 75)
       }
       
       k_count <- 0;
+      if(isCDF){
+
+        Allpeaks <- mzR::peaks(msdata);
+
+        for (i in 1:length(spidx)){
+          
+          if (!.on.public.web){   
+            pb$tick();
+          } else {  
+            if (round(i/length(spidx),digits = 4)*100 - k_count > -0.2){
+              print_mes <- paste0(k_count,"% | ");    
+              write.table(print_mes,file="metaboanalyst_spec_proc.txt",append = TRUE,row.names = FALSE,col.names = FALSE, quote = FALSE, eol = " ");
+              k_count <- k_count +20;
+            }
+          }
+          
+          j <- spidx[i]
+          hd <- fullhd[j, ]
+          ## Fix missing polarity from netCDF
+          pol <- hd$polarity
+          if (length(pol) == 0)
+            pol <- NA
+          sp <- new("Spectrum1",
+                    rt = hd$retentionTime,
+                    acquisitionNum = as.integer(hd$acquisitionNum),
+                    scanIndex = as.integer(hd$seqNum),
+                    tic = hd$totIonCurrent,
+                    mz = Allpeaks[[j]][, 1],
+                    intensity = Allpeaks[[j]][, 2],
+                    fromFile = as.integer(filen),
+                    centroided = as.logical(hd$centroided),
+                    smoothed = as.logical(smoothed.),
+                    polarity = as.integer(pol))
+          ## peaksCount
+          ioncount[ioncounter] <- sum(Allpeaks[[j]][, 2])
+          ioncounter <- ioncounter + 1
+          .fname <- formatFileSpectrumNames(
+            fileIds = filen,
+            spectrumIds = i,
+            nSpectra = length(spidx),
+            nFiles = length(files)
+          )
+          assign(.fname, sp, assaydata)
+          fullhdorder[fullhdordercounter] <- .fname
+          fullhdordercounter <- fullhdordercounter + 1
+        }
+
+        rm(Allpeaks);
+        
+      } else {
+     
       for (i in 1:length(spidx)) {
         
         if (!.on.public.web){   
           pb$tick();
-        }
-        
-        if (.on.public.web){  
+        } else {  
           if (round(i/length(spidx),digits = 4)*100 - k_count > -0.2){
             print_mes <- paste0(k_count,"% | ");    
             write.table(print_mes,file="metaboanalyst_spec_proc.txt",append = TRUE,row.names = FALSE,col.names = FALSE, quote = FALSE, eol = " ");
             k_count <- k_count +20;
           }
-          
         }
         
         j <- spidx[i]
@@ -587,6 +645,9 @@ read.InMemMSd.data <- function(files,
         fullhdorder[fullhdordercounter] <- .fname
         fullhdordercounter <- fullhdordercounter + 1
       }
+      
+      }
+      
     } else { ## .msLevel != 1
       if (length(spidx) == 0)
         stop("No MS(n>1) spectra in file", f)
@@ -639,6 +700,7 @@ read.InMemMSd.data <- function(files,
         fullhdordercounter <- fullhdordercounter + 1
       }
     }
+    
     if (cache. >= 1)
       fullhd2 <- rbind(fullhd2, fullhd[spidx, ])
     
@@ -715,6 +777,11 @@ read.InMemMSd.data <- function(files,
               "the data has been acquired on different instruments!")
     for (nm in names(.instrumentInfo[[1]]))
       .instrumentInfo[[1]][[nm]] <- sapply(.instrumentInfo, "[[", nm)
+  } else if (length(.instrumentInfo) == 0){
+    .instrumentInfo[[1]] <- list(NULL);
+    .instrumentInfo[[1]]$manufacturer <- .instrumentInfo[[1]]$model <- 
+      .instrumentInfo[[1]]$ionisation <- .instrumentInfo[[1]]$analyzer <- .instrumentInfo[[1]]$detector <- 
+      "Unknown";
   }
   expdata <- new("MIAPE",
                  instrumentManufacturer = .instrumentInfo[[1]]$manufacturer,
@@ -751,8 +818,7 @@ read.OnDiskMS.data <- function(files,
   .instrumentInfo <- list()
   ## List eventual limitations
   if (isCdfFile(files)) {
-    message("Polarity can not be extracted from netCDF files, please set ",
-            "manually the polarity with the 'polarity' method.")
+    message("You are using CDF files, please make sure they are centroided !")
   }
   ## Idea:
   ## o initialize a featureData-data.frame,
@@ -779,7 +845,16 @@ read.OnDiskMS.data <- function(files,
     filenams <- c(filenams, f)
     ## issue #214: define backend based on file format.
     msdata <- mzR::openMSfile(f,backend = NULL)
-    .instrumentInfo <- c(.instrumentInfo, list(mzR::instrumentInfo(msdata)))
+    
+    ## Extract Instrument Information
+    instruInfo <- try(mzR::instrumentInfo(msdata), silent = TRUE);
+    if(class(instruInfo) == "list"){
+      .instrumentInfo <- c(.instrumentInfo, list(instruInfo));
+    } else {
+      MessageOutput("Some instrument related information is missing. But the whole process is still running...")
+      .instrumentInfo <- c(.instrumentInfo, list());
+    }
+    
     fullhd <- mzR::header(msdata)
     spidx <- seq_len(nrow(fullhd))
     
@@ -871,6 +946,11 @@ read.OnDiskMS.data <- function(files,
               "the data has been acquired on different instruments!")
     for (nm in names(.instrumentInfo[[1]]))
       .instrumentInfo[[1]][[nm]] <- sapply(.instrumentInfo, "[[", nm)
+  } else if (length(.instrumentInfo) == 0){
+    .instrumentInfo[[1]] <- list(NULL);
+    .instrumentInfo[[1]]$manufacturer <- .instrumentInfo[[1]]$model <- 
+      .instrumentInfo[[1]]$ionisation <- .instrumentInfo[[1]]$analyzer <- .instrumentInfo[[1]]$detector <- 
+      "Unknown";
   }
   expdata <- new("MIAPE",
                  instrumentManufacturer = .instrumentInfo[[1]]$manufacturer,
@@ -1080,6 +1160,91 @@ CentroidCheck <- function(filename) {
   
 }
 
+#' @title CentroidMSData
+#' @description Convert the MS data as centroid
+#' @param InFolder single file/folder name
+#' @param OutFolder output folder name, if not exits, will create one
+#' @param ncore the core number for parallel processing, default is 1
+#' @author Zhiqiang Pang \email{zhiqiang.pang@mail.mcgill.ca} and Jeff Xia \email{jeff.xia@mcgill.ca}
+#' McGill University, Canada
+#' License: GNU GPL (>= 2)
+#' @import MSnbase
+#' @import BiocParallel
+#' @export
+#' @examples  
+#' InFolder <- system.file("mzData", package = "mtbls2")
+#' CentroidMSData(InFolder)
+
+CentroidMSData <- function(InFolder, OutFolder = tempdir(), ncore = 1) {
+
+  if (.Platform$OS.type == "unix") {
+    register(bpstart(MulticoreParam(ceiling(ncore))))
+  } else if (.Platform$OS.type == "windows") {
+    register(bpstart(SnowParam(ceiling(ncore))))
+  }
+  
+  #TODO: to convert the vendor formats with wine
+  files.list <-
+    dir(
+      InFolder,
+      pattern = ".mzML|.mzml|.cdf|.mzXML|.mzxml|.mzData|.CDF",
+      recursive = TRUE,
+      full.names = TRUE
+    );
+  
+  if(length(files.list) == 0){
+    stop("No MS spectra found, please input a folder containing mzML, mzXML, mzData or CDF file(s) !")
+  }
+    
+  OutPath <- normalizePath(OutFolder);
+  
+  if(!dir.exists(OutPath)){
+    dir.create(OutPath);
+    OutPath <- normalizePath(OutFolder);
+  }
+  
+  if(ncore == 1){
+    
+    res <- sapply(files.list, function(x){
+      
+      if(!CentroidCheck(x)){
+        CMS <- .CentroidSpectra(x);
+        fileNM <- sub(pattern = "(.*)\\..*$", replacement = "\\1", basename(x));
+        files.mzml <- paste0(OutPath,"/", fileNM, ".mzML");
+        writeMSData(CMS, file = files.mzml);
+      }
+
+      })
+    
+  } else {
+    
+    res <- bplapply(files.list, function(x){
+      
+      if(!CentroidCheck(x)){
+        CMS <- .CentroidSpectra(x);
+        fileNM <- sub(pattern = "(.*)\\..*$", replacement = "\\1", basename(x));
+        files.mzml <- paste0(OutPath,"/", fileNM, ".mzML");
+        writeMSData(CMS, file = files.mzml);
+      }
+      
+    },
+    BPPARAM = bpparam())
+    
+  }
+  
+  register(bpstop());
+  
+}
+
+.CentroidSpectra <- function(InputFile){
+  
+  MS <- read.InMemMSd.data(InputFile, pdata = NULL, msLevel. = 1, centroided. = FALSE, smoothed. = FALSE);
+  return(MSnbase::pickPeaks(MS))
+  
+}
+
+
+
 Path2Files <- function(path){
   Pathname <- normalizePath(path);
   
@@ -1148,13 +1313,17 @@ Path2Files <- function(path){
   files <- files_tmp[formatRes];
   
   # Centroid check & filter
-  Centroididx <- unname(sapply(files, CentroidCheck));
-  
-  if(!all(Centroididx)){
-    warning(paste0("Uncentroieded file: ", basename(files[!Centroididx]), "will be filtered!\n"))
+  if(!isCdfFile(files)){
+    
+    Centroididx <- unname(sapply(files, CentroidCheck));
+    
+    if(!all(Centroididx)){
+      warning(paste0("Uncentroieded file: ", basename(files[!Centroididx]), "will be filtered!\n"));
+    }
+    
+    files <- files[Centroididx];
   }
-  
-  files <- files[Centroididx];
+
   return(files)
 }
 

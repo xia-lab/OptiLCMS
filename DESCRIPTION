@@ -22,7 +22,7 @@ Maintainer: Zhiqiang Pang <zhiqiang.pang@mail.mcgill.ca>
 Description: A pipeline for users to do the LC-MS (Liquid chromatography–mass spectrometry) raw data processing with automatically optimized parameters.
 License: MIT + file LICENSE
 Depends: R (>= 4.0.0), methods, Biobase, BiocParallel (>= 1.8.0), stats, utils
-Imports: mzR (>= 2.23.0), lattice, RColorBrewer, plyr,
+Imports: mzR (>= 2.22.0), lattice, RColorBrewer, plyr,
          RBGL, S4Vectors, ggplot2, graph, progress, rsm, Cairo, Hmisc, entropy, cluster, data.table,
          scales, ggrepel, MSnbase
 Suggests: knitr (>= 1.1.0), ncdf4, MALDIquant, SummarizedExperiment, MassSpecWavelet, mtbls2
