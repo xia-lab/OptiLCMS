@@ -470,6 +470,11 @@ FilesInclusion_identifier <- function(plan) {
     load("mSet.rda");
     currentfiles <- mSet@rawfiles;
     envOld <- readRDS("specTemp/envir/envir.rds");
+    if(is.null(envOld$mSet)){
+      # Handle a corner case : if old envir is missing - redo everything
+      plan@running.controller <- controller.resetter();
+      return (plan);
+    }
     lastfiles <- envOld$mSet@rawfiles;
     
   } else {
@@ -477,6 +482,11 @@ FilesInclusion_identifier <- function(plan) {
     if(file.exists(paste0(tempdir(), "/envir/envir.rds"))){
       
       envOld <- readRDS(paste0(tempdir(), "/envir/envir.rds"));
+      if(is.null(envOld$mSet)){
+        # Handle a corner case : if old envir is missing - redo everything
+        plan@running.controller <- controller.resetter();
+        return (plan);
+      }
       lastfiles <- envOld$mSet@rawfiles;
       
       currentfiles <- list.files(plan@CommandSet[[plan@PlanNumber]]@ImportRawMSData[[3]][["path"]], 
