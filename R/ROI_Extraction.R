@@ -937,7 +937,14 @@ rt.trim_specific<-function(raw_data,ms_list,rt,rtdiff=10){
   df.data0<-raw_data@featureData@data;
   df.data<-data.frame();
   
-  nchar.num<-nchar(names(ms_list)[1])-4
+  if(length(sample.set) > 9){
+    nchar.num<-nchar(names(ms_list)[1])-5
+  } else if (length(sample.set) > 99) {
+    nchar.num<-nchar(names(ms_list)[1])-6
+  } else {
+    nchar.num<-nchar(names(ms_list)[1])-4
+  }
+
   suppressWarnings(for (i in 1:length(raw_data@assayData)){
     
     if (!raw_data@assayData[[name.set[i]]]@tic==0){
@@ -948,7 +955,8 @@ rt.trim_specific<-function(raw_data,ms_list,rt,rtdiff=10){
         } 
       }
       
-      name0<-paste0(sample.set[which(sub(".[S][0-9]+","",name.set[i])==sample.set)],".S",formatC(k, width=nchar.num, digits = nchar.num, flag="0"))
+      name0<-paste0(sample.set[which(sub(".[S][0-9]+","",name.set[i])==sample.set)],
+                    ".S",formatC(k, width=nchar.num, digits = nchar.num, flag="0"))
       
       assayData[name0]<-raw_data@assayData[[name.set[i]]];
       assayData[[name0]]@acquisitionNum<-as.integer(k);
