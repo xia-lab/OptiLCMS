@@ -1451,7 +1451,10 @@ SanitySpectra <- function(rawData, cutoff = 0.15){
     })
     
     removingFile <- rawData@phenoData@data[["sample_name"]][res < cutoff];
-    MessageOutput(paste0("Base Peak Intensity of ", removingFile, " is lower than ", cutoff*100, "% of average, will be excluded!\n"));
+    if(length(removingFile) > 0){
+      MessageOutput(paste0("Base Peak Intensity of ", removingFile, " is lower than ", cutoff*100, "% of average, will be excluded!\n"));
+    }
+    
     exIdx <- which(res < cutoff);
     
     SpectraClean(rawData, exIdx)
