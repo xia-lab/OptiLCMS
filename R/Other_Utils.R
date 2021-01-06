@@ -63,7 +63,6 @@ GeneratePeakList <- function(userPath) {
   write.csv(
     cbind(ann_data, sample_data_mean),
     file = "peak_feature_summary.csv",
-    col.names = TRUE,
     row.names = FALSE,
     quote = FALSE
   )
