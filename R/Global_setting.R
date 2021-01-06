@@ -1,5 +1,5 @@
 # Setting .on.public.web (if on.public.web, the version number will be even, local package is odd)
-.on.public.web <- TRUE;
+.on.public.web <- FALSE;
 
 # Setting the global Variable to avoid notes in R CMD Check
 utils::globalVariables(c(".SwapEnv"))
