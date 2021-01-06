@@ -6050,20 +6050,7 @@ generateRules2 <- function (object) {
   return(object);
 }
 setDefaultLists <- function(object, lib.loc=.libPaths()) {
-  dataPath <- .getDataPath();
-  if (.on.public.web){
-    ##Read Tabellen
-    object@ionlistfile <- paste0(dataPath, "ions.csv");
-    if (!file.exists(object@ionlistfile)) stop('ions.csv not found.')
-    
-    object@neutrallossfile <- paste0(dataPath,"neutralloss.csv")
-    if (!file.exists(object@neutrallossfile)) stop('neutralloss.csv not found.')
-    
-    object@neutraladditionfile <-  paste0(dataPath,"neutraladdition.csv");
-    if (!file.exists(object@neutraladditionfile)) stop('neutraladdition.csv not found.')
-    object
-    
-  } else {
+
     ##Read Tabellen
     object@ionlistfile <- system.file('lists/ions.csv', package = "OptiLCMS",
                                       lib.loc=lib.loc)[1]
@@ -6077,8 +6064,7 @@ setDefaultLists <- function(object, lib.loc=.libPaths()) {
                                               package = "OptiLCMS", lib.loc=lib.loc)[1]
     if (!file.exists(object@neutraladditionfile)) stop('neutraladdition.csv not found.')
     object
-  }
-  
+
 }
 readLists <- function(object) {
   

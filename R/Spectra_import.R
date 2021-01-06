@@ -264,6 +264,8 @@ ImportRawMSData <-
       marker_record("data_import_1")
     }
     
+    raw_data <- SanitySpectra(raw_data, cutoff = 0.25);
+    
     MessageOutput(NULL, NULL, 22)
     
     if (c2) {
@@ -1433,3 +1435,59 @@ formatFileSpectrumNames <- function(fileIds, spectrumIds,
   sprintf(paste0("F%0", digits[1L], "d.S%0", digits[2L], "d"),
           fileIds, spectrumIds)
 }
+
+SanitySpectra <- function(rawData, cutoff = 0.25){
+  if(length(rawData) != 0){
+    
+    fileList <- unique(rawData@featureData@data[["fileIdx"]]);
+    exIdx = NULL
+    
+    res <- sapply(fileList, function(x){
+      
+      otherMean <- mean(rawData@featureData@data[["basePeakIntensity"]][rawData@featureData@data[["fileIdx"]] != x]);
+      thisFile <- mean(rawData@featureData@data[["basePeakIntensity"]][rawData@featureData@data[["fileIdx"]] == x]);
+      return(thisFile/otherMean)
+      
+    })
+    
+    removingFile <- rawData@phenoData@data[["sample_name"]][res < cutoff];
+    MessageOutput(paste0("Base Peak Intensity of ", removingFile, " is lower than 25% of average, will be excluded!\n"));
+    exIdx <- which(res < cutoff);
+    
+    SpectraClean(rawData, exIdx)
+    
+  } else {
+    return(rawData)
+  }
+  
+}
+
+SpectraClean <- function(rawData, exIdx = NULL){
+  
+  if(!is.null(exIdx) & length(exIdx) > 0){
+    
+    rawData@phenoData@data <- rawData@phenoData@data[-exIdx,];
+    
+    fileExIdx <- (rawData@featureData@data[["fileIdx"]] %in% exIdx);
+    rawData@featureData@data <- rawData@featureData@data[!fileExIdx,];
+    
+    filesArray <- unique(rawData@featureData@data[["fileIdx"]]);
+    
+    for (i in seq(filesArray)){
+      rawData@featureData@data[["fileIdx"]][rawData@featureData@data[["fileIdx"]] == filesArray[i]] <- i
+    }
+    
+    rawData@experimentData@instrumentModel <- rawData@experimentData@instrumentModel[-exIdx];
+    rawData@experimentData@instrumentManufacturer <- rawData@experimentData@instrumentManufacturer[-exIdx];
+    rawData@experimentData@ionSource <- rawData@experimentData@ionSource[-exIdx];
+    rawData@experimentData@analyser <- rawData@experimentData@analyser[-exIdx];
+    rawData@experimentData@detectorType <- rawData@experimentData@detectorType[-exIdx];
+    rawData@processingData@files <- rawData@processingData@files[-exIdx];
+    
+  }
+  
+  return(rawData)
+  
+}
+
+
