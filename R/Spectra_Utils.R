@@ -1811,7 +1811,7 @@ RT.Adjust_peakGroup <-
           warn.overcorrect <- TRUE
       } else {
         if (nrow(pts) < 2 & !.optimize_switch) {
-          stop("Not enough peak groups even for linear smoothing available! Please decrease \"bw\" util to 1.")
+          stop("No enough peak groups even for linear smoothing available! Please check your data quality or decrease \"bw\" util to 1.")
         }
         ## Use lm instead?
         fit <- suppressWarnings(lsfit(pts$rt, pts$rtdev));

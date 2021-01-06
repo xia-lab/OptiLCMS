@@ -110,9 +110,8 @@ PerformParamsOptimization <- function(mSet, param= NULL, method="DoE", ncore=4, 
         }
       )
       
-      
-      if (.on.public.web) {
-        if (class(p2)[1] == "simpleError") {
+      if (class(p2)[1] == "simpleError") {
+        
           print_mes_tmp <-
             paste0("\n",
                    "<font color=\"red\">",
@@ -129,11 +128,10 @@ PerformParamsOptimization <- function(mSet, param= NULL, method="DoE", ncore=4, 
             )
           
           print_mes <- paste0(print_mes_tmp, print_mes_tmp2)
+          MessageOutput(print_mes, "\n", NULL)
           
-          MessageOutput(print_mes, "\n", NULL);
-        }
-        
-        MessageOutput("Done!", "\n", NULL);
+      } else {
+        MessageOutput("Done!", "\n", NULL)
       }
       
       if(class(p2)[1]=="simpleError"){
@@ -429,8 +427,8 @@ optimizxcms.doe.peakpicking <- function(object = NULL, params = params,
         useNoise = params[["noise"]]
       ), error = function(e) e)
     
-    if(class(a1)[1] == "simpleError"){
-      MessageOutput("Optimization Failed: Too few peaks in your data ! Will use default parameters for processing!")
+    if(class(mSet_OPT)[1] == "simpleError"){
+      MessageOutput("Optimization Failed: Too few peaks in your data ! Will use default parameters for processing!","\n")
       break;
     }
     
@@ -438,58 +436,64 @@ optimizxcms.doe.peakpicking <- function(object = NULL, params = params,
     
     params <- mSet_OPT$params
     
-    if(!resultIncreased_doe(history)) {
-
-      MessageOutput("No Increase Stopping !")
-
-      maxima <- 0
-      max_index <- 1
-      for(i in 1:length(history)) {
-        ## TODO: need to think more on this discrimination criteria: based on max setting or max QS?
-        if(history[[i]]$max_settings[1] > maxima) {
-          maxima <- history[[i]]$max_settings[1]
-          max_index <- i
+    increaRes <- resultIncreased_doe(history);
+    if(!is.null(increaRes)){
+      if(!increaRes) {
+        
+        MessageOutput("No Increase Stopping !")
+        
+        maxima <- 0
+        max_index <- 1
+        for(i in 1:length(history)) {
+          ## TODO: need to think more on this discrimination criteria: based on max setting or max QS?
+          if(history[[i]]$max_settings[1] > maxima) {
+            maxima <- history[[i]]$max_settings[1]
+            max_index <- i
+          }
         }
+        
+        xcms_parameters <- mSet_OPT$OptiParams;
+        
+        #   as.list(decodeAll(history[[max_index]]$max_settings[-1],
+        #                     history[[max_index]]$params$to_optimize))      
+        # 
+        # xcms_parameters <- combineParams(xcms_parameters, 
+        #                                  params$no_optimization)
+        # 
+        # if(!is.list(xcms_parameters))
+        #   xcms_parameters <- as.list(xcms_parameters)
+        # 
+        # # deal with the too narrow peak width issue
+        # pkmin <- xcms_parameters$min_peakwidth;
+        # pkmax <- xcms_parameters$max_peakwidth;
+        # 
+        # if(abs(pkmax - pkmin) < 5 & pkmin > 5){
+        #   xcms_parameters$max_peakwidth <- pkmax + 2.5;
+        #   xcms_parameters$min_peakwidth <- pkmin - 2.5;
+        # } else if (abs(pkmax - pkmin) < 5 & pkmin < 5) {
+        #   xcms_parameters$max_peakwidth <- pkmax + 5;
+        # }
+        
+        best_settings <- list()
+        best_settings$parameters <- xcms_parameters
+        #best_settings$xset <- history[[max_index]]$xset
+        
+        #target_value <- history[[max_index]]$QS 
+        #best_settings$result <- target_value
+        history$best_settings <- best_settings
+        
+        if(!.on.public.web){
+          message("best parameter settings:")
+          message(paste(rbind(paste(names(xcms_parameters), sep="", ": "), 
+                              paste(xcms_parameters, sep="", "\n")), sep=""))
+        }
+        
+        return(history)
+        
       }
-      
-      xcms_parameters <- mSet_OPT$OptiParams;
-      
-      #   as.list(decodeAll(history[[max_index]]$max_settings[-1],
-      #                     history[[max_index]]$params$to_optimize))      
-      # 
-      # xcms_parameters <- combineParams(xcms_parameters, 
-      #                                  params$no_optimization)
-      # 
-      # if(!is.list(xcms_parameters))
-      #   xcms_parameters <- as.list(xcms_parameters)
-      # 
-      # # deal with the too narrow peak width issue
-      # pkmin <- xcms_parameters$min_peakwidth;
-      # pkmax <- xcms_parameters$max_peakwidth;
-      # 
-      # if(abs(pkmax - pkmin) < 5 & pkmin > 5){
-      #   xcms_parameters$max_peakwidth <- pkmax + 2.5;
-      #   xcms_parameters$min_peakwidth <- pkmin - 2.5;
-      # } else if (abs(pkmax - pkmin) < 5 & pkmin < 5) {
-      #   xcms_parameters$max_peakwidth <- pkmax + 5;
-      # }
-      
-      best_settings <- list()
-      best_settings$parameters <- xcms_parameters
-      #best_settings$xset <- history[[max_index]]$xset
-      
-      #target_value <- history[[max_index]]$QS 
-      #best_settings$result <- target_value
-      history$best_settings <- best_settings
-      
-      if(!.on.public.web){
-        message("best parameter settings:")
-        message(paste(rbind(paste(names(xcms_parameters), sep="", ": "), 
-                            paste(xcms_parameters, sep="", "\n")), sep=""))
-      }
-      
-      return(history)
-      
+    } else {
+      MessageOutput("Optimization Failed: Too few peaks in your data ! Will use default parameters for processing!","\n")
+      break;
     }
     
     for(i in 1:length(params$to_optimize)) {
@@ -1322,8 +1326,10 @@ extFUN <- function(z, object, useNoise) {
 resultIncreased_doe <- function(history) {
   
   index = length(history)
-  if(history[[index]]$PPS["PPS"] == 0 & index == 1)
+  if(history[[index]]$PPS["PPS"] == 0 & index == 1){
     MessageOutput(paste("Error: No isotopes detected in your the Intensive ROI of your data, Please manually customize the parameter!"), "\n")
+    return(NULL)
+  }
   
   if(index < 2)
     return(TRUE)
