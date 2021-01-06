@@ -313,7 +313,15 @@ optimize.xcms.doe <- function(raw_data, param, ncore = 8){
   optimizedxcmsObject <- result$best_settings$xset;
   
   ##Parameters Out-put
-  best_parameters <- result[["best_settings"]][["parameters"]];
+  if (length(result) > 0) {
+    if (!is.null(result[["best_settings"]][["parameters"]])) {
+      best_parameters <- result[["best_settings"]][["parameters"]]
+    } else{
+      return(param)
+    }
+  } else{
+    return(param)
+  }
   
   MessageOutput(paste0("Step 1/6: Parameters Optimization Finished ! (", Sys.time(),")"), "\n", NULL);
 
@@ -408,7 +416,7 @@ optimizxcms.doe.peakpicking <- function(object = NULL, params = params,
     MessageOutput(paste0("Round ",iterator," Finished !"), "\n", NULL)
     
     mSet_OPT <-
-      Statistic_doe(
+      tryCatch(Statistic_doe(
         object = object,
         object_mslevel=object_mslevel,
         isotopeIdentification = isotopeIdentification,
@@ -419,7 +427,12 @@ optimizxcms.doe.peakpicking <- function(object = NULL, params = params,
         iterator = iterator,
         index.set = index.set,
         useNoise = params[["noise"]]
-      )
+      ), error = function(e) e)
+    
+    if(class(a1)[1] == "simpleError"){
+      MessageOutput("Optimization Failed: Too few peaks in your data ! Will use default parameters for processing!")
+      break;
+    }
     
     history[[iterator]] <- mSet_OPT     
     
@@ -1310,7 +1323,7 @@ resultIncreased_doe <- function(history) {
   
   index = length(history)
   if(history[[index]]$PPS["PPS"] == 0 & index == 1)
-    stop(paste("No isotopes have been detected, Please adjust the trimming method!"))
+    MessageOutput(paste("Error: No isotopes detected in your the Intensive ROI of your data, Please manually customize the parameter!"), "\n")
   
   if(index < 2)
     return(TRUE)
