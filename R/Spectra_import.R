@@ -264,7 +264,7 @@ ImportRawMSData <-
       marker_record("data_import_1")
     }
     
-    raw_data <- SanitySpectra(raw_data, cutoff = 0.25);
+    raw_data <- SanitySpectra(raw_data, cutoff = 0.05);
     
     MessageOutput(NULL, NULL, 22)
     
@@ -1436,7 +1436,7 @@ formatFileSpectrumNames <- function(fileIds, spectrumIds,
           fileIds, spectrumIds)
 }
 
-SanitySpectra <- function(rawData, cutoff = 0.25){
+SanitySpectra <- function(rawData, cutoff = 0.15){
   if(length(rawData) != 0){
     
     fileList <- unique(rawData@featureData@data[["fileIdx"]]);
@@ -1451,7 +1451,7 @@ SanitySpectra <- function(rawData, cutoff = 0.25){
     })
     
     removingFile <- rawData@phenoData@data[["sample_name"]][res < cutoff];
-    MessageOutput(paste0("Base Peak Intensity of ", removingFile, " is lower than 25% of average, will be excluded!\n"));
+    MessageOutput(paste0("Base Peak Intensity of ", removingFile, " is lower than ", cutoff*100, "% of average, will be excluded!\n"));
     exIdx <- which(res < cutoff);
     
     SpectraClean(rawData, exIdx)
