@@ -479,6 +479,16 @@ PlotXIC <-
     
     peak_width <- max(res$RT) - min(res$RT);
     
+    if(!is.null(mSet@params[["Peak_method"]])){
+      if(mSet@params[["Peak_method"]] == "Massifquant"){
+        spanValue <- 0.8
+      }else {
+        spanValue <- 0.4
+      }
+    } else {
+      spanValue <- 0.5
+    }
+    
     if (.on.public.web) {
       Cairo::Cairo(
         file = paste0("EIC_", title, "_sample_", dpi, ".", format),
@@ -497,7 +507,7 @@ PlotXIC <-
         geom = 'area',
         method = "loess",
         se = FALSE,
-        span = 0.4,
+        span = spanValue,
         size = 0.35,
         formula = "y ~ x",
         alpha = 1 / 4,
@@ -577,7 +587,7 @@ PlotXIC <-
         geom = 'area',
         method = "loess",
         se = FALSE,
-        span = 0.4,
+        span = spanValue,
         size = 0.35,
         formula = "y ~ x",
         alpha = 1 / 4,
