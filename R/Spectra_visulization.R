@@ -408,7 +408,7 @@ PlotXIC <-
           #Multiple features in corresponding sample  - extract a little bit more
           mzr <-
             c(peak_table[j, 2] - 0.001, peak_table[j, 3] + 0.001)
-          rtr <- c(peak_table[j, 5] - 0.1, peak_table[j, 6] + 0.1)
+          rtr <- c(peak_table[j, 4] - 0.1, peak_table[j, 5] + 0.1)
           IntoListg[[i]] <- IntoListg[[i]] +  peak_table[j, 7]
           IntoLists[[i]][[samples_names[x]]] <- peak_table[j, 7]
           

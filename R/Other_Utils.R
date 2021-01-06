@@ -123,15 +123,14 @@ featureSUM <- function(MS_group, frtr) {
     }
   )
   
+  rt_min_sum <- rt_min_sum[is.finite(rt_min_sum)]
+  rt_max_sum <- rt_max_sum[is.finite(rt_max_sum)]
+  
   # correct RT
   rt_min_corrected <- sum(rt_min_sum * inten_sum) / sum(inten_sum)
   rt_max_corrected <- sum(rt_max_sum * inten_sum) / sum(inten_sum)
   rt_range_cor <- abs(rt_max_corrected - rt_min_corrected)
-  
-  # if(.on.public.web){
-  #   load_scales()
-  # }
-  
+
   MS_group <-
     sapply(
       MS_group,
