@@ -254,7 +254,7 @@ ImportRawMSData <-
           msLevel. = 1
         ), error = function(e) {e})
       
-      if (class(raw_data)[2] == "error") {
+      if (!(class(raw_data)[1] == "OnDiskMSnExp" | class(raw_data)[1] == "MSnExp")) {
         MessageOutput(
           mes = paste0(
             "<font color=\"red\">",
@@ -556,7 +556,7 @@ read.InMemMSd.data <- function(files,
     fullhdorder <- c(fullhdorder, numeric(length(spidx)))
     if (msLevel. == 1) {
       if (length(spidx) == 0)
-        stop("No MS1 spectra in file",basename(f))
+        stop("No MS1 spectra in file: ",basename(f))
       
       if (.on.public.web){   
         print_mes <- paste0("Importing ",basename(f),":");    
@@ -994,6 +994,10 @@ read.OnDiskMS.data <- function(files,
       for (i in seq_along(centroided.))
         centroided(res, msLevel. = i) <- centroided.[i]
     }
+  }
+  
+  if(nrow(res@featureData@data)==0){
+    stop(paste0("None of your spectra contains MS signal at MS level: ", msLevel., "! Please check your data !"))
   }
   
   if (.on.public.web){

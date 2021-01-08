@@ -302,7 +302,7 @@ PerformROIExtraction <-
           mode = "inMemory"
         ), error = function(e) {e})
       
-      if (class(raw_data)[2] == "error") {
+      if (class(raw_data)[1] != "MSnExp") {
         MessageOutput(
           mes = paste0(
             "<font color=\"red\">",
