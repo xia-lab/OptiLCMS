@@ -794,11 +794,11 @@ PerformPeakAnnotation <-
               
             } else{
               idx <- maxo[iint, 1]
-              MessageOutput(
+              MessageOutput(paste0(
                 "Warning: Feature ",
                 idx,
                 " looks odd for at least one peak. Please check afterwards.\n"
-              )
+              ))
               
               pspectra[[length(pspectra) + 1]] <- idx
               #create groups
@@ -851,11 +851,11 @@ PerformPeakAnnotation <-
               
             } else{
               idx <- maxo[iint, 1]
-              MessageOutput(
+              MessageOutput(paste0(
                 "Warning: Feature ",
                 idx,
                 " looks odd for at least one peak. Please check afterwards.\n"
-              )
+              ))
               
               pspectra[[length(pspectra) + 1]] <- idx
               #create groups
