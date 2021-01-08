@@ -247,12 +247,26 @@ ImportRawMSData <-
     
     if (c1) {
       raw_data <-
-        suppressMessages(read.MSdata(
+        tryCatch(read.MSdata(
           files = files,
           pdata = new("NAnnotatedDataFrame", pd),
           mode = mode,
           msLevel. = 1
-        ))
+        ),error = function(e) {e})
+      
+      if (class(raw_data)[2] == "error") {
+        MessageOutput(
+          mes = paste0(
+            "<font color=\"red\">",
+            "\nERROR:",
+            raw_data$message,
+            "</font>"
+          ),
+          ecol = "\n",
+          progress = 1
+        )
+        stop("EXCEPTION POINT CODE: RMS2")
+      }
       
       if(plan_switch){
         cache.save(raw_data, funpartnm = "data_import_c1");
