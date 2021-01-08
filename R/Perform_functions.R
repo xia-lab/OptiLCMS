@@ -193,7 +193,7 @@ PerformPeakProfiling <-
     .SwapEnv$envir$mSet <- mSet;
     
     if (.on.public.web) {
-      if (class(mSet)[2] == "error") {
+      if (class(mSet)[1] != "mSet") {
         MessageOutput(
           mes =  paste0(
             "<font color=\"red\">",
