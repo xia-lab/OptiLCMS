@@ -295,12 +295,26 @@ PerformROIExtraction <-
       MessageOutput("Data Loading...", "\n", NULL)
       
       raw_data <-
-        read.MSdata(
+        tryCatch(read.MSdata(
           dda_file1,
           pdata = new("NAnnotatedDataFrame", pd),
           msLevel. = 1L,
           mode = "inMemory"
+        ), error = function(e) {e})
+      
+      if (class(raw_data)[2] == "error") {
+        MessageOutput(
+          mes = paste0(
+            "<font color=\"red\">",
+            "\nERROR:",
+            raw_data$message,
+            "</font>"
+          ),
+          ecol = "\n",
+          progress = 1
         )
+        stop("EXCEPTION POINT CODE: RMS1")
+      }
       
       MessageOutput("Data Loaded !", "\n", NULL)
 

@@ -252,7 +252,7 @@ ImportRawMSData <-
           pdata = new("NAnnotatedDataFrame", pd),
           mode = mode,
           msLevel. = 1
-        ),error = function(e) {e})
+        ), error = function(e) {e})
       
       if (class(raw_data)[2] == "error") {
         MessageOutput(
@@ -556,7 +556,7 @@ read.InMemMSd.data <- function(files,
     fullhdorder <- c(fullhdorder, numeric(length(spidx)))
     if (msLevel. == 1) {
       if (length(spidx) == 0)
-        stop("No MS1 spectra in file",f)
+        stop("No MS1 spectra in file",basename(f))
       
       if (.on.public.web){   
         print_mes <- paste0("Importing ",basename(f),":");    
