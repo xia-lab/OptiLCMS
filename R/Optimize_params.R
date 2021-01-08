@@ -145,24 +145,24 @@ PerformParamsOptimization <- function(mSet, param= NULL, method="DoE", ncore=4, 
       } else {
         
         if(!is.nan(p2$ppm) & !is.finite(p2$ppm) & !is.infinite(p2$ppm)){
-          param[["ppm"]]<-round(p2$ppm,2);
+          p2[["ppm"]]<-round(p2$ppm,2);
         } else {
-          param[["ppm"]] <- 15.00;
+          p2[["ppm"]] <- 15.00;
         }
         if(!is.nan(p2$noise) & !is.finite(p2$noise) & !is.infinite(p2$noise)){
-          param[["noise"]]<-round(p2$noise,2);
+          p2[["noise"]]<-round(p2$noise,2);
         } else {
-          param[["noise"]] <- 100;
+          p2[["noise"]] <- 100;
         }
         if(!is.nan(p2$prefilter) & !is.finite(p2$prefilter) & !is.infinite(p2$prefilter)){
-          param[["prefilter"]]<-round(p2$prefilter,2);
+          p2[["prefilter"]]<-round(p2$prefilter,2);
         } else {
-          param[["prefilter"]] <- 3;
+          p2[["prefilter"]] <- 3;
         }
         if(!is.nan(p2$value_of_prefilter) & !is.finite(p2$value_of_prefilter) & !is.infinite(p2$value_of_prefilter)){
-          param[["value_of_prefilter"]]<-round(p2$value_of_prefilter,2);
+          p2[["value_of_prefilter"]]<-round(p2$value_of_prefilter,2);
         } else {
-          param[["value_of_prefilter"]] <- 10;
+          p2[["value_of_prefilter"]] <- 10;
         }
         
         param[["ppm"]]<-round(p2$ppm,2);
