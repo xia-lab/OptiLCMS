@@ -997,7 +997,7 @@ SlaveCluster_doe <-function(task, Set_parameters, object, object_mslevel,
 calculateSet_doe <- function(object, object_mslevel, Set_parameters, task = 1,
                              BPPARAM = bpparam()) {
   
-  if (length(Set_parameters) < 31){ # deal with the usual processing case
+  if (sum(lengths(Set_parameters)) < 31){ # deal with the usual processing case
     param <- updateRawSpectraParam(Set_parameters)
   } else { # deal with the optimization case, usaully 44 (33 each set)
     param <- updateRawSpectraParam(Set_parameters[[task]])
