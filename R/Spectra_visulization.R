@@ -812,8 +812,8 @@ PlotSpectraPCA <-
       return(NULL)
     }
     
+    pca_feats[is.na(pca_feats)] <- 0;
     df0 <- na.omit(pca_feats);
-    
     df1 <- df0[is.finite(rowSums(df0)),];
     df <- t(df1);
     
@@ -824,16 +824,58 @@ PlotSpectraPCA <-
     
     xlabel <- paste("PC1", "(", round(100 * var.pca[1], 1), "%)");
     ylabel <- paste("PC2", "(", round(100 * var.pca[2], 1), "%)");
+    zlabel <- paste("PC2", "(", round(100 * var.pca[3], 1), "%)");
     
     # using ggplot2
     df <- as.data.frame(mSet_pca$x);
     df$group <- sample_idx;
     
-    # if(.on.public.web){
-    #   load_ggplot2();
-    #   load_ggrepel();
-    # }
-    # 
+    ## Handle to generate json file for PCA3D online
+    if(.on.public.web){
+      ## For score plot
+      pca3d <- list();
+      pca3d$score$axis <- c(xlabel, ylabel, zlabel);
+      xyz0 <- df[,c(1:3)];
+      colnames(xyz0) <- rownames(xyz0) <- NULL;
+      pca3d$score$xyz <- data.frame(t(xyz0));
+      colnames(pca3d$score$xyz) <- NULL;
+      pca3d$score$name <- rownames(df);
+      pca3d$score$facA <- df$group;
+      
+      if(length(unique(df$group)) < 9){
+        col.fun <-
+          grDevices::colorRampPalette(RColorBrewer::brewer.pal(length(unique(df$group)), "Set1"));
+      } else {
+        col.fun <-
+          grDevices::colorRampPalette(RColorBrewer::brewer.pal(length(unique(df$group)), "Set3"));
+      }
+      
+      pca3d$score$colors <- col.fun(length(unique(df$group)));
+      
+      json.obj <- RJSONIO::toJSON(pca3d, .na='null');
+      sink("spectra_3d_score.json");
+      cat(json.obj);
+      sink();
+      ## For loading plot
+      pca3d <- list();
+      
+      pca3d$loading$axis <- paste("Loading ", c(1:3), sep="");
+      coords <- data.frame(t(signif(mSet_pca$rotation[,1:3], 5)));
+      colnames(coords) <- NULL; 
+      pca3d$loading$xyz <- coords;
+      pca3d$loading$name <- rownames(mSet_pca$rotation);
+      pca3d$loading$entrez <- paste0(round(mSet@peakfilling[["FeatureGroupTable"]]@listData$mzmed, 4), 
+                                     "@", 
+                                     round(mSet@peakfilling[["FeatureGroupTable"]]@listData$rtmed, 2));
+      
+      pca3d$cls =  df$group;
+      
+      json.obj <- RJSONIO::toJSON(pca3d, .na='null');
+      sink("spectra_3d_loading.json");
+      cat(json.obj);
+      sink();
+    }
+    
     if (nrow(df) < 30) {
       if (length(unique(sample_idx)) > 9) {
         col.fun <-
@@ -846,8 +888,9 @@ PlotSpectraPCA <-
             color = "group",
             label = "row.names(df)"
           )) +
-          geom_text_repel(force = 1.5) + geom_point(size = 5,  fill = col.fun(length(unique(sample_idx)))) + theme(axis.text =
-                                                                                                                     element_text(size = 12))
+          geom_text_repel(force = 1.5) + 
+          geom_point(size = 5,  fill = col.fun(length(unique(sample_idx)))) + 
+          theme(axis.text = element_text(size = 12))
 
       } else{
         p <-
@@ -857,8 +900,10 @@ PlotSpectraPCA <-
             color = "group",
             label = "row.names(df)"
           )) +
-          geom_text_repel(force = 1.5) + geom_point(size = 5) + scale_color_brewer(palette =
-                                                                                     "Set1") + theme(axis.text = element_text(size = 12))
+          geom_text_repel(force = 1.5) + 
+          geom_point(size = 5) + 
+          scale_color_brewer(palette = "Set1") + 
+          theme(axis.text = element_text(size = 12))
       }
 
     } else {
