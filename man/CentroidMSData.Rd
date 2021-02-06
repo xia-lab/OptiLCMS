@@ -4,7 +4,7 @@
 \alias{CentroidMSData}
 \title{CentroidMSData}
 \usage{
-CentroidMSData(InFolder, OutFolder = "centroided", ncore = 1)
+CentroidMSData(InFolder, OutFolder = tempdir(), ncore = 1)
 }
 \arguments{
 \item{InFolder}{single file/folder name}

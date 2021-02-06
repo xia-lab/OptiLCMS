@@ -358,10 +358,10 @@ ImportRawMSData <-
                 plotSettings$format,
                 sep = "")
         
-        #save(bpis, file = "bpis.rda"); # Don't need bpis for now.
         if(.on.public.web){
           save(raw_data_filt, file = "raw_data_filt.rda");
           save(tics, file = "tics.rda");
+          save(bpis, file = "bpis.rda");
         }
         
         if (.on.public.web) {
@@ -369,8 +369,8 @@ ImportRawMSData <-
             file = bpis_name,
             unit = "in",
             dpi = plotSettings$dpi,
-            width = 8,
-            height = 6,
+            width = 9,
+            height = 6.75,
             type = plotSettings$format,
             bg = "white"
           )
@@ -391,8 +391,8 @@ ImportRawMSData <-
             file = tics_name,
             unit = "in",
             dpi = plotSettings$dpi,
-            width = 8,
-            height = 6,
+            width = 9,
+            height = 6.75,
             type = plotSettings$format,
             bg = "white"
           )

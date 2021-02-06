@@ -376,7 +376,7 @@ PerformPeakProfiling <-
           paste0(plotSettings$name_PCA, ".", plotSettings$format),
           plotSettings$format,
           plotSettings$dpi,
-          8
+          9
         )
         
         ### 3. Adjusted RT plotting -----
@@ -385,7 +385,7 @@ PerformPeakProfiling <-
           paste0(plotSettings$name_adj_RT, ".", plotSettings$format),
           plotSettings$format,
           plotSettings$dpi,
-          8
+          9
         )
         
         ### 4. Chromatogram Generation -----
@@ -394,7 +394,7 @@ PerformPeakProfiling <-
           paste0(plotSettings$name_adj_BPI, ".", plotSettings$format),
           plotSettings$format,
           plotSettings$dpi,
-          plotSettings$width
+          9
         )
         
         MessageOutput(

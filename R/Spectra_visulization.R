@@ -252,7 +252,6 @@ PerformDataInspect <-
     return(filename)
   }
 
-
 #' @title SetPlotParam
 #' @description This function sets the generic Plotting Parameters for different functions
 #' @param Plot Logical, if true, the function will plot internal figures for different functions.
@@ -489,7 +488,7 @@ PlotXIC <-
     } else {
       spanValue <- 0.55
     }
-    
+    print(paste0("EIC_", title, "_sample_", dpi, ".", format));
     if (.on.public.web) {
       Cairo::Cairo(
         file = paste0("EIC_", title, "_sample_", dpi, ".", format),
@@ -1009,8 +1008,8 @@ PlotSpectraRTadj <-
       pch = NA,
       xlim = range(xRt, na.rm = TRUE),
       ylim = ylim,
-      xlab = "RT_adj",
-      ylab = "RT_diff"
+      xlab = "RT_Adjustment",
+      ylab = "RT_Difference"
     )
     
     for (i in 1:length(diffRt)) {
@@ -1115,7 +1114,7 @@ PlotSpectraBPIadj <-
         unit = "in",
         dpi = dpi,
         width = width,
-        height = width * 0.618,
+        height = width * 0.75,
         type = format,
         bg = "white"
       )
@@ -1203,9 +1202,11 @@ PlotSpectraBPIadj <-
 #' mSet <- updateRawSpectraPath(mSet, newPath);
 #' plotMSfeature (mSet, 1); # Here is only one group
 
-plotMSfeature <- function(mSet = NULL, FeatureNM = 1,
+plotMSfeature <- function(mSet = NULL, 
+                          FeatureNM = 1,
                           dpi = 72,
-                          format = "png") {
+                          format = "png",
+                          width = NA) {
   
   if(is.null(mSet)){
     if(.on.public.web){
@@ -1231,15 +1232,21 @@ plotMSfeature <- function(mSet = NULL, FeatureNM = 1,
   data_table[, 1] <- as.numeric(data_table[, 1])
   colnames(data_table) <- c("value", "Group")
   rownames(data_table) <- NULL
-  title = paste0(round(peakdata[FeatureNM, 1], 4), "mz@", round(peakdata[FeatureNM, 4], 2), "s")
+  
+  if(is.na(width)){
+    width = 6;
+    title = paste0(round(peakdata[FeatureNM, 1], 4), "mz@", round(peakdata[FeatureNM, 4], 2), "s")
+  } else {
+    title = paste0(round(peakdata[FeatureNM, 1], 4), "mz@", round(peakdata[FeatureNM, 4], 2), "s_", dpi, "_", width)
+  }
   
   if (.on.public.web) {
     Cairo::Cairo(
-      file = paste0(title, ".png"),
+      file = paste0(title, ".", format),
       unit = "in",
       dpi = dpi,
-      width = 6,
-      height = 6.18,
+      width = width,
+      height = width/6*6.18,
       type = format,
       bg = "white"
     )
@@ -1317,11 +1324,9 @@ plotMSfeature <- function(mSet = NULL, FeatureNM = 1,
   
   if (.on.public.web) {
     dev.off()
-    return(paste0(title, ".png"))
+    return(paste0(title, ".", format))
   }
 }
-
-
 
 #' @title plotSingleTIC
 #' @description plotSingleTIC is used to plot the TIC of a certain spectra
@@ -1337,9 +1342,9 @@ plotMSfeature <- function(mSet = NULL, FeatureNM = 1,
 #'                full.names = TRUE, recursive = TRUE)[c(10, 11, 12)]
 #' mSet <- updateRawSpectraPath(mSet, newPath);
 #' plotSingleTIC(mSet, "MSpos-Ex2-Col0-48h-Ag-2_1-A,3_01_9829.mzData", 
-#'               "MSpos-Ex2-Col0-48h-Ag-2_1-A,3_01_9829")
+#'               "MSpos-Ex2-Col0-48h-Ag-2_1-A,3_01_9829.png")
 
-plotSingleTIC <- function(mSet = NULL, filename, imagename) {
+plotSingleTIC <- function(mSet = NULL, filename, imagename, dpi = 72, width = 7, format = "png") {
   
   if(is.null(mSet)){
     if(.on.public.web){
@@ -1360,12 +1365,12 @@ plotSingleTIC <- function(mSet = NULL, filename, imagename) {
 
   if (.on.public.web) {
     Cairo::Cairo(
-      file = paste0(imagename, ".png"),
+      file = imagename,
       unit = "in",
-      dpi = 72,
-      width = 7,
-      height = 5,
-      type = "png",
+      dpi = dpi,
+      width = width,
+      height = width/7*5,
+      type = format,
       bg = "white"
     )
   }
@@ -1376,4 +1381,148 @@ plotSingleTIC <- function(mSet = NULL, filename, imagename) {
     dev.off()
   }
 }
+
+#' @title plotTICs
+#' @description plotTICs is used to plot the TIC of all files
+#' @param mSet mSet Object, should be processed by ImportMSData.
+#' @param imgName Character, to name the imgName for the TIC plotting.
+#' @param dpi Numeric, to define the dpi of the figures. Default is 72. (only works for web version)
+#' @param format Character, to give the format of BPI figures ploted. Can be "jpeg", "png", "pdf", "svg",
+#'  "tiff" or "ps". Default is "png". (only works for web version)
+#' @export
+#' @importFrom Cairo Cairo
+#' @examples
+
+plotTICs <-function(mSet = NULL,
+                   imgName,
+                   format = "png",
+                   dpi = 72,
+                   width = NA){
+  #need to extract the plotting part from import function
+  if(is.null(mSet) & !.on.public.web){
+    load("mSet.rda")
+    raw_data_filt <- mSet@rawOnDisk;
+  } else if(!.on.public.web & (class(mSet) == "mSet")) {
+    raw_data_filt <- mSet@rawOnDisk;
+  } else if(.on.public.web) {
+    load("raw_data_filt.rda");
+    load("tics.rda");
+  } else if(is.null(mSet)) {
+    stop("mSet is missing!")
+  }
+  
+  samplegroup <- raw_data_filt@phenoData@data$sample_group;
+  samplename <- raw_data_filt@phenoData@data$sample_name;
+  
+  groupInfo <-as.factor(samplegroup);
+  groupNum <- nlevels(groupInfo)
+  
+  if (groupNum > 9) {
+    col.fun <-
+      grDevices::colorRampPalette(RColorBrewer::brewer.pal(12, "Set3"))
+    group_colors <- col.fun(groupNum)
+    
+  } else{
+    group_colors <-
+      paste0(RColorBrewer::brewer.pal(9, "Set1")[1:groupNum], "60")
+  }
+  
+  names(group_colors) <- levels(groupInfo)
+  if (.on.public.web) {
+    Cairo::Cairo(
+      file = imgName,
+      unit = "in",
+      dpi = dpi,
+      width = width,
+      height = width* 0.75,
+      type = format,
+      bg = "white"
+    )
+  }
+  
+  plot(tics, col = group_colors[raw_data_filt$sample_group])
+  legend(
+    "topright",
+    legend = levels(groupInfo),
+    pch = 15,
+    col = group_colors
+  )
+  
+  if (.on.public.web) {
+    dev.off()
+  }
+
+}
+
+#' @title plotBPIs
+#' @description plotBPIs is used to plot the BPI of all files
+#' @param mSet mSet Object, should be processed by ImportMSData.
+#' @param filename Character, to give the filename for the TIC plotting.
+#' @param dpi Numeric, to define the dpi of the figures. Default is 72. (only works for web version)
+#' @param format Character, to give the format of BPI figures ploted. Can be "jpeg", "png", "pdf", "svg",
+#'  "tiff" or "ps". Default is "png". (only works for web version)
+#' @export
+#' @importFrom Cairo Cairo
+#' @examples
+plotBPIs <-function(mSet = NULL,
+                    imgName,
+                    format = "png",
+                    dpi = 72,
+                    width = NA){
+  #need to extract the plotting part from import function
+  if(is.null(mSet) & !.on.public.web){
+    load("mSet.rda")
+    raw_data_filt <- mSet@rawOnDisk;
+  } else if(!.on.public.web & (class(mSet) == "mSet")) {
+    raw_data_filt <- mSet@rawOnDisk;
+  } else if(.on.public.web) {
+    load("raw_data_filt.rda");
+    load("bpis.rda");
+  } else if(is.null(mSet)) {
+    stop("mSet is missing!")
+  }
+  
+  samplegroup <- raw_data_filt@phenoData@data$sample_group;
+  samplename <- raw_data_filt@phenoData@data$sample_name;
+  
+  groupInfo <-as.factor(samplegroup);
+  groupNum <- nlevels(groupInfo)
+  
+  if (groupNum > 9) {
+    col.fun <-
+      grDevices::colorRampPalette(RColorBrewer::brewer.pal(12, "Set3"))
+    group_colors <- col.fun(groupNum)
+    
+  } else{
+    group_colors <-
+      paste0(RColorBrewer::brewer.pal(9, "Set1")[1:groupNum], "60")
+  }
+  
+  names(group_colors) <- levels(groupInfo)
+  if (.on.public.web) {
+    Cairo::Cairo(
+      file = imgName,
+      unit = "in",
+      dpi = dpi,
+      width = width,
+      height = width* 0.75,
+      type = format,
+      bg = "white"
+    )
+  }
+  
+  plot(bpis, col = group_colors[raw_data_filt$sample_group])
+  legend(
+    "topright",
+    legend = levels(groupInfo),
+    pch = 15,
+    col = group_colors
+  )
+  
+  if (.on.public.web) {
+    dev.off()
+  }
+  
+}
+
 
