@@ -663,18 +663,6 @@ PlotSpectraInsensityStistics <-
     sample_num <-
       mSet@rawOnDisk@phenoData@data[["sample_name"]];
     
-    if (.on.public.web) {
-      Cairo::Cairo(
-        file = imgName,
-        unit = "in",
-        dpi = dpi,
-        width = width,
-        height = length(sample_num) * 0.65,
-        type = format,
-        bg = "white"
-      )
-    }
-
     if (length(unique(sample_idx)) > 9) {
       col.fun <-
         grDevices::colorRampPalette(RColorBrewer::brewer.pal(12, "Set3"))
@@ -700,22 +688,37 @@ PlotSpectraInsensityStistics <-
         }
       )
     
-    oldpar <- par(no.readonly = TRUE);
-    on.exit(par(oldpar));
+    if(!.on.public.web){
+      oldpar <- par(no.readonly = TRUE);
+      on.exit(par(oldpar));
+    }
     
-    op <- par(mar = c(3.5, 10, 4, 1.5), xaxt = "s")
+    if (.on.public.web) {
+      Cairo::Cairo(
+        file = imgName,
+        unit = "in",
+        dpi = dpi,
+        width = width,
+        height = length(sample_num) * 0.65,
+        type = format,
+        bg = "white"
+      )
+    }
+    
+    #op <- 
+    par(mar = c(3.5, 10, 4, 1.5), xaxt = "s")
     
     sampleNMs <- names(ints);
     len_nms <- nchar(sampleNMs);
     if(any(len_nms > 15)){
       names(ints) <- 
-      unname(unlist(sapply(sampleNMs, function(x){
-        LEN_x <- nchar(x);
-        if(LEN_x > 15){
-          substring(x, LEN_x-14,LEN_x)
-        } else {
-          x
-        }
+        unname(unlist(sapply(sampleNMs, function(x){
+          LEN_x <- nchar(x);
+          if(LEN_x > 15){
+            substring(x, LEN_x-14,LEN_x)
+          } else {
+            x
+          }
         })))
     }
     

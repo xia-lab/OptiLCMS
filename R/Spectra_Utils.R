@@ -2303,7 +2303,9 @@ PerformPeakFiling <- function(mSet, BPPARAM=bpparam()){
   
   ## Check if there is anything to fill...
   if (!any(is.na(rowSums(pkGrpVal)))) {
-    MessageOutput("\nNo missing peaks present.","\n",76)
+    if (!.optimize_switch){
+      MessageOutput("\nNo missing peaks present.","\n",76)
+    }
     # mSet@peakfilling <-""; # need to save something here
     mSet@peakfilling[["msFeatureData"]][["chromPeaks"]] <- 
       mSet@peakRTcorrection$chromPeaks;
