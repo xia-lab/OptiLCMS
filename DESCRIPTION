@@ -1,6 +1,6 @@
 Package: OptiLCMS
 Title: Optimized LC-MS Spectra Processing
-Version: 0.99.8
+Version: 0.99.7
 Authors@R: c(
            person(given = "Zhiqiang",
            family = "Pang",

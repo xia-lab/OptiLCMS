@@ -9,23 +9,7 @@
 
 There are 3 typical approaches provided for users to install this package as below.
 
-#### Install from CRAN 
-
-```R
-# Install from CRAN repository
-install.packages("OptiLCMS")
-
-```
-
-#### Install from Bioconductor 
-
-```R
-# Install from Bioconductor repository, Please make sure 'Bioconductor' has been installed first
-BiocManager::install("OptiLCMS")
-
-```
-
-#### Install devlopement (beta) version
+#### (a.) Install devlopement (beta) version
 
 ```R
 # Latest features could only be obtained from this approach, make sure 'devtools' installed first
@@ -33,9 +17,36 @@ devtools::install_github("xia-lab/OptiLCMS", build = TRUE, build_vignettes = FAL
 
 ```
 
+#### (b.) Install from the local R tar package
+
+Download the latest version from the following Options:
+
+1. Local version ([v0.99.7](https://drive.google.com/file/d/19CBsJQnvdmhK7WrAk3SqPH8GwRMn5TT_/view?usp=sharing));
+
+2. Web version ([v0.99.8](https://drive.google.com/file/d/1nayoRQxk0Xpn66_dC_gyGsJM28T0mHwZ/view?usp=sharing));
+
+Download the packages above (Recommending Option 1 for local use) and run the following command in R terminal. 
+
+**NOTE:** option 2 (web version) is used by our website and highly synchronized with the local version.
+
+```R
+# Remember to replace the PATH_TO_TAR as the right path of your downloaded package (OptiLCMS_0.99.x.tar.gz).
+install.packages(PATH_TO_TAR, repos = NULL, type="source")
+
+```
+
+
+#### (c.) Install from Bioconductor (available soon)
+
+```R
+# Install from Bioconductor repository, Please make sure 'Bioconductor' has been installed first
+BiocManager::install("OptiLCMS")
+
+```
+
 ### Tutorial
 
-A step-by-step tutorial will be prepared for users to start their analysis by following them.
+A step-by-step tutorial will be prepared for users to start their analysis by following them (available soon).
 
 ### Citation
 
@@ -52,4 +63,8 @@ citation("OptiLCMS")
 ### New features requests & Bugs reports
 
 To inform us of any bugs or requests, please open a new issue (and @ Zhiqiang-PANG !!) or send an email to zhiqiang.pang@mail.mcgill.ca.
+
+
+
+
 
