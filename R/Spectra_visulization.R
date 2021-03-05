@@ -626,7 +626,7 @@ PlotXIC <-
                                   show.legend = FALSE)
     }
     require(grid);
-    print(g_image); print(pCV,vp=viewport(.24, .82, .24, 0.24));
+    print(g_image); print(pCV,vp=viewport(.255, .82, .24, 0.24));
     
     if (.on.public.web) {
       dev.off()

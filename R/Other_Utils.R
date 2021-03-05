@@ -218,6 +218,16 @@ peakTableSUM <- function(peak_table) {
 
 PeakGroupCV <- function(IntoLists, groupsInfo){
   allGroups <- names(groupsInfo)
+  if(is.null(allGroups)){
+    newGrIn <- list();
+    allGroups <- colnames(groupsInfo);
+    for(j in seq_along(allGroups)){
+      newGrIn[[j]] <- as.vector(groupsInfo[,j]);
+    }
+    names(newGrIn) <- allGroups;
+    groupsInfo <- newGrIn;
+  }
+  
   groups <- names(IntoLists);
   
   statsdf <- data.frame();
