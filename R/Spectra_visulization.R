@@ -721,13 +721,13 @@ PlotSpectraInsensityStistics <-
     len_nms <- nchar(sampleNMs);
     if(any(len_nms > 15)){
       names(ints) <- 
-      unname(unlist(sapply(sampleNMs, function(x){
-        LEN_x <- nchar(x);
-        if(LEN_x > 15){
-          substring(x, LEN_x-14,LEN_x)
-        } else {
-          x
-        }
+        unname(unlist(sapply(sampleNMs, function(x){
+          LEN_x <- nchar(x);
+          if(LEN_x > 15){
+            substring(x, LEN_x-14,LEN_x)
+          } else {
+            x
+          }
         })))
     }
     
