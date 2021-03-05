@@ -216,6 +216,36 @@ peakTableSUM <- function(peak_table) {
   }
 }
 
+PeakGroupCV <- function(IntoLists, groupsInfo){
+  allGroups <- names(groupsInfo)
+  groups <- names(IntoLists);
+  
+  statsdf <- data.frame();
+  count <- 0;
+  
+  for(i in allGroups){
+    if(i %in% groups){
+      count <- count +1;
+      
+      if(length(IntoLists[[i]]) == length(groupsInfo[[i]])){
+        cv<- sd(as.numeric(IntoLists[[i]]))/mean(as.numeric(IntoLists[[i]]));
+        statsdf[count, c(1,2)] <- c(i, round(cv, 2)) 
+      } else {
+        nmissing <- abs(length(IntoLists[[i]]) - length(groupsInfo[[i]]));
+        ints <- c(as.numeric(IntoLists[[i]]), rep(0, nmissing));
+        
+        cv<- sd(ints)/mean(ints);
+        statsdf[count, c(1,2)] <- c(i, round(cv, 2));
+      }
+    }
+  }
+  
+  statsdf$V2 <- as.numeric(statsdf$V2)
+  statsdf$V2[statsdf$V2 == 0] <- 0.05
+  
+  return(statsdf)
+}
+
 #' @title Cache Update
 #' @param folderPath guest folder
 #' @description used only for web cache update

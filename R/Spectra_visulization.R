@@ -298,6 +298,7 @@ SetPlotParam <-
 #' @param height Numeric, to define the height of the figure.
 #' @importFrom Cairo Cairo
 #' @importFrom ggrepel geom_text_repel
+#' @importFrom grid viewport
 #' @export
 #' @examples 
 #' library(OptiLCMS)
@@ -436,7 +437,15 @@ PlotXIC <-
       }
       
     }
-    
+    ## Get Group CV Table
+    CVTable <- PeakGroupCV(IntoLists, groupsInfo);
+    CVTable <- data.frame(x = CVTable$V1,y=CVTable$V2);
+    pCV <- ggplot(data=CVTable, aes(x=x, y=y, fill =x, alpha = 0.5))  + geom_col(width = 1.32/ncol(CVTable)) + 
+      theme_bw() + 
+      theme(text = element_text(size=10), axis.title.x = element_blank(),axis.text.x=element_blank(), legend.position = "none") + 
+      labs(y = expression(italic("Coefficient of variation"))) + 
+      geom_hline(yintercept=1, linetype="dashed", color = "red");
+
     ## PLotting sample EIC begin -
     
     res0 <- lapply(
@@ -616,8 +625,8 @@ PlotXIC <-
                                   force = 1.5,
                                   show.legend = FALSE)
     }
-    
-    print(g_image);
+    require(grid);
+    print(g_image); print(pCV,vp=viewport(.24, .82, .24, 0.24));
     
     if (.on.public.web) {
       dev.off()
@@ -663,18 +672,6 @@ PlotSpectraInsensityStistics <-
     sample_num <-
       mSet@rawOnDisk@phenoData@data[["sample_name"]];
     
-    if (.on.public.web) {
-      Cairo::Cairo(
-        file = imgName,
-        unit = "in",
-        dpi = dpi,
-        width = width,
-        height = length(sample_num) * 0.65,
-        type = format,
-        bg = "white"
-      )
-    }
-
     if (length(unique(sample_idx)) > 9) {
       col.fun <-
         grDevices::colorRampPalette(RColorBrewer::brewer.pal(12, "Set3"))
@@ -700,10 +697,25 @@ PlotSpectraInsensityStistics <-
         }
       )
     
-    oldpar <- par(no.readonly = TRUE);
-    on.exit(par(oldpar));
+    if(!.on.public.web){
+      oldpar <- par(no.readonly = TRUE);
+      on.exit(par(oldpar));
+    }
     
-    op <- par(mar = c(3.5, 10, 4, 1.5), xaxt = "s")
+    if (.on.public.web) {
+      Cairo::Cairo(
+        file = imgName,
+        unit = "in",
+        dpi = dpi,
+        width = width,
+        height = length(sample_num) * 0.65,
+        type = format,
+        bg = "white"
+      )
+    }
+    
+    #op <- 
+      par(mar = c(3.5, 10, 4, 1.5), xaxt = "s")
     
     sampleNMs <- names(ints);
     len_nms <- nchar(sampleNMs);
