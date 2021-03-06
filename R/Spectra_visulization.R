@@ -803,7 +803,16 @@ PlotSpectraPCA <-
         missing = NA
       );
     
-    pca_feats <- log2(feature_value);
+    int.mat <- feature_value
+    rowNms <- rownames(int.mat);
+    colNms <- colnames(int.mat);
+    int.mat <- t(apply(int.mat, 1, .replace.by.lod));
+    rownames(int.mat) <- rowNms;
+    colnames(int.mat) <- colNms; 
+    feature_value <- int.mat;
+    feature_value[feature_value==0] <- 1;
+    
+    pca_feats <- log10(feature_value);
     
     if (nrow(feature_value) < 2) {
       MessageOutput(
@@ -828,7 +837,7 @@ PlotSpectraPCA <-
     df1 <- df0[is.finite(rowSums(df0)),];
     df <- t(df1);
     
-    mSet_pca <- prcomp(df, center = TRUE, scale = TRUE);
+    mSet_pca <- prcomp(df, center = TRUE, scale = FALSE);
     sum.pca <- summary(mSet_pca);
     var.pca <-
       sum.pca$importance[2,]; # variance explained by each PCA

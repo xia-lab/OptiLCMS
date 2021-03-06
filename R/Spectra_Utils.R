@@ -6593,5 +6593,10 @@ naOmit <- function(x) {
   return(path)
 }
 
+.replace.by.lod <- function(x){
+  lod <- min(x[x>0], na.rm=T)/5;
+  x[x==0|is.na(x)] <- lod;
+  return(x);
+}
 
 
