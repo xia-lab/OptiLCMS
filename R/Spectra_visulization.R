@@ -777,6 +777,10 @@ PlotSpectraPCA <-
            dpi = 72,
            width = NA) {
     
+    if(missing(mSet) || is.null(mSet)){
+      load("mSet.rda")
+    }
+    
     if (.on.public.web) {
       Cairo::Cairo(
         file = imgName,
@@ -792,21 +796,26 @@ PlotSpectraPCA <-
     sample_idx <-
       mSet@rawOnDisk@phenoData@data[["sample_group"]];
     
-    feature_value <-
-      .feature_values(
-        pks = mSet@peakfilling$msFeatureData$chromPeaks,
-        fts = mSet@peakfilling$FeatureGroupTable,
-        method = "medret",
-        value = "into",
-        intensity = "into",
-        colnames = mSet@rawOnDisk@phenoData@data[["sample_name"]],
-        missing = NA
-      );
+    # feature_value <-
+    #   .feature_values(
+    #     pks = mSet@peakfilling$msFeatureData$chromPeaks,
+    #     fts = mSet@peakfilling$FeatureGroupTable,
+    #     method = "medret",
+    #     value = "into",
+    #     intensity = "into",
+    #     colnames = mSet@rawOnDisk@phenoData@data[["sample_name"]],
+    #     missing = NA
+    #   );
     
-    int.mat <- feature_value
+    feature_value0 <- mSet@dataSet[-1,];
+    rownames(feature_value0) <- feature_value0[,1];
+    feature_value <- feature_value0[,-1];
+    feature_value[is.na(feature_value)] <- 0;
+    
+    int.mat <- as.matrix(feature_value)
     rowNms <- rownames(int.mat);
     colNms <- colnames(int.mat);
-    int.mat <- t(apply(int.mat, 1, .replace.by.lod));
+    int.mat <- t(apply(int.mat, 1, function(x) .replace.by.lod(as.numeric(x))));
     rownames(int.mat) <- rowNms;
     colnames(int.mat) <- colNms; 
     feature_value <- int.mat;

@@ -371,13 +371,13 @@ PerformPeakProfiling <-
         #   load_ggplot()
         # }
         
-        PlotSpectraPCA(
-          mSet,
-          paste0(plotSettings$name_PCA, ".", plotSettings$format),
-          plotSettings$format,
-          plotSettings$dpi,
-          9
-        )
+        # PlotSpectraPCA(
+        #   mSet,
+        #   paste0(plotSettings$name_PCA, ".", plotSettings$format),
+        #   plotSettings$format,
+        #   plotSettings$dpi,
+        #   9
+        # )
         
         ### 3. Adjusted RT plotting -----
         PlotSpectraRTadj(
@@ -1655,6 +1655,15 @@ FormatPeakList <-
     );
     
     mSet@dataSet <- ma_feats_miss;
+    
+    PlotSpectraPCA(
+      mSet,
+      paste0("PCA.png"),
+      "png",
+      72,
+      9
+    )
+    
     if(.on.public.web){
       save(mSet, file = "mSet.rda");
     }
