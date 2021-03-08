@@ -889,13 +889,16 @@ PlotSpectraPCA <-
       pca3d <- list();
       
       pca3d$loading$axis <- paste("Loading ", c(1:3), sep="");
-      coords <- data.frame(t(signif(mSet_pca$rotation[,1:3], 5)));
+      coords0 <- coords <- data.frame(t(signif(mSet_pca$rotation[,1:3], 5)));
       colnames(coords) <- NULL; 
       pca3d$loading$xyz <- coords;
       pca3d$loading$name <- rownames(mSet_pca$rotation);
       pca3d$loading$entrez <- paste0(round(mSet@peakfilling[["FeatureGroupTable"]]@listData$mzmed, 4), 
                                      "@", 
                                      round(mSet@peakfilling[["FeatureGroupTable"]]@listData$rtmed, 2));
+      save(coords0, file = "coords0_ori.rda")
+      dists <- GetDist3D(coords0);
+      pca3d$loading$cols <- GetRGBColorGradient(dists);
       
       pca3d$cls =  df$group;
       
