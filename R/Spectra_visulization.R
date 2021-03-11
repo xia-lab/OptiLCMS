@@ -316,7 +316,9 @@ PlotXIC <-
            format,
            dpi,
            width,
-           height) {
+           height,
+           sample_filled,
+           group_filled) {
     # Parameters initialization
     if (missing(sample_labeled)) {
       sample_labeled <- FALSE
@@ -335,6 +337,14 @@ PlotXIC <-
     }
     if (missing(height)) {
       height <- width * 1.05
+    }
+    
+    if(missing(sample_filled)){
+      sample_filled <- FALSE;
+    }
+    
+    if(missing(group_filled)){
+      group_filled <- TRUE;
     }
     
     # Load data results
@@ -440,9 +450,15 @@ PlotXIC <-
     ## Get Group CV Table
     CVTable <- PeakGroupCV(IntoLists, groupsInfo);
     CVTable <- data.frame(x = CVTable$V1,y=CVTable$V2);
-    pCV <- ggplot(data=CVTable, aes(x=x, y=y, fill =x, alpha = 0.5))  + geom_col(width = 1.32/ncol(CVTable)) + 
+    pCV <- ggplot(data=CVTable, aes(x=x, y=y, fill =x, alpha = 0.5))  + 
+      geom_col(width = 1.32/ncol(CVTable)) + 
       theme_bw() + 
-      theme(text = element_text(size=10), axis.title.x = element_blank(),axis.text.x=element_blank(), legend.position = "none") + 
+      theme(text = element_text(size=10), 
+            axis.title.x = element_blank(),
+            axis.text.x=element_blank(), 
+            legend.position = "none",
+            panel.grid.major = element_blank(), 
+            panel.grid.minor = element_blank()) + 
       labs(y = expression(italic("Coefficient of variation"))) + 
       geom_hline(yintercept=1, linetype="dashed", color = "red");
 
@@ -510,18 +526,34 @@ PlotXIC <-
       )
     }
     
-    s_image <-
-      ggplot(res, aes_string(x = "RT", y = "Intensity", color = "Samples")) + #geom_line() #+
-      stat_smooth(
-        geom = 'area',
-        method = "loess",
-        se = FALSE,
-        span = spanValue,
-        size = 0.35,
-        formula = "y ~ x",
-        alpha = 1 / 4,
-        aes_string(fill = "Samples")
-      ) +
+    if(sample_filled){
+      s_image0 <- ggplot(res, aes_string(x = "RT", y = "Intensity", color = "Samples")) +
+        stat_smooth(
+          geom = 'area',
+          method = "loess",
+          se = FALSE,
+          span = spanValue,
+          size = 0.35,
+          formula = "y ~ x",
+          alpha = 1 / 4,
+          aes_string(fill = "Samples")
+        )
+    } else {
+      s_image0 <- ggplot(res, aes_string(x = "RT", y = "Intensity", color = "Samples")) +
+        stat_smooth(
+          geom = 'area',
+          method = "loess",
+          se = FALSE,
+          span = spanValue,
+          size = 0.35,
+          formula = "y ~ x",
+          alpha = 1 / 4,
+          aes_string(color = "Samples"),
+          fill = NA
+        )
+    }
+    
+    s_image <-s_image0 +
       theme_bw() +
       ylim(0, NA) +
       xlim(min(res$RT) - peak_width * 0.05 , max(res$RT) + peak_width * 0.35) +
@@ -534,7 +566,9 @@ PlotXIC <-
         ),
         legend.title = element_text(size = 8.5),
         legend.text = element_text(size = 8),
-        legend.key.size = unit(3, "mm")
+        legend.key.size = unit(3, "mm"),
+        panel.grid.major = element_blank(), 
+        panel.grid.minor = element_blank()
       ) +
       ggtitle(title)
     
@@ -590,18 +624,34 @@ PlotXIC <-
       )
     }
     
-    g_image <-
-      ggplot(res_data, aes_string(x = "RT", y = "Intensity", color = "Groups")) + #geom_line() +
-      stat_smooth(
-        geom = 'area',
-        method = "loess",
-        se = FALSE,
-        span = spanValue,
-        size = 0.35,
-        formula = "y ~ x",
-        alpha = 1 / 4,
-        aes_string(fill = "Groups")
-      ) +
+    if(group_filled){
+      g_image0 <- ggplot(res_data, aes_string(x = "RT", y = "Intensity", color = "Groups")) + #geom_line() +
+        stat_smooth(
+          geom = 'area',
+          method = "loess",
+          se = FALSE,
+          span = spanValue,
+          size = 0.35,
+          formula = "y ~ x",
+          alpha = 1 / 4,
+          aes_string(fill = "Groups")
+        ) 
+    } else {
+      g_image0 <- ggplot(res_data, aes_string(x = "RT", y = "Intensity", color = "Groups")) + #geom_line() +
+        stat_smooth(
+          geom = 'area',
+          method = "loess",
+          se = FALSE,
+          span = spanValue,
+          size = 0.35,
+          formula = "y ~ x",
+          alpha = 1 / 4,
+          aes_string(color = "Groups"),
+          fill = NA
+        ) 
+    }
+    
+    g_image <- g_image0 +
       theme_bw() +
       ylim(0, NA) +
       xlim(min(res_data$RT) - peak_width * 0.75 ,
@@ -615,7 +665,9 @@ PlotXIC <-
         ),
         legend.title = element_text(size = 9),
         legend.text = element_text(size = 9),
-        legend.key.size = unit(4, "mm")
+        legend.key.size = unit(4, "mm"),
+        panel.grid.major = element_blank(), 
+        panel.grid.minor = element_blank()
       ) +
       ggtitle(title)
     
