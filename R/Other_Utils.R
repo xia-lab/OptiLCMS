@@ -260,7 +260,8 @@ GetRGBColorGradient <- function(vals) {
   library(RColorBrewer)
   
   #seed.cols <- brewer.pal(3, "YlOrRd")
-  seed.cols <- brewer.pal(9, "Oranges")[c(2,5,7)]
+  #seed.cols <- brewer.pal(9, "Oranges")[c(2,5,7)]
+  seed.cols <- c("#FCF5DF", "#FFEDA0", "#F03B20")
   cols <- colorRampPalette(seed.cols)(length(vals))
   # set alpha for
   my.alpha <-
