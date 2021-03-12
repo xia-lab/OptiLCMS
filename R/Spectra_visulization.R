@@ -447,6 +447,7 @@ PlotXIC <-
       }
       
     }
+    
     ## Get Group CV Table
     CVTable <- PeakGroupCV(IntoLists, groupsInfo);
     CVTable <- data.frame(x = CVTable$V1,y=CVTable$V2);
@@ -463,7 +464,6 @@ PlotXIC <-
       geom_hline(yintercept=1, linetype="dashed", color = "red");
 
     ## PLotting sample EIC begin -
-    
     res0 <- lapply(
       MSdb,
       FUN = function(x) {
@@ -471,8 +471,17 @@ PlotXIC <-
         
         if (length(x) != 0) {
           for (j in 1:length(x)) {
-            res_sample <- rbind(res_sample,
-                                data.frame(x[[j]]@rtime, x[[j]]@intensity, rep(names(x)[j], length(x[[j]]@rtime))))
+            sampleRes <- data.frame(x[[j]]@rtime, x[[j]]@intensity, rep(names(x)[j], length(x[[j]]@rtime)));
+            rtdiff <- mean(diff(sampleRes$x..j...rtime));
+            insertEmptyScan <- data.frame(c(unname(x[[j]]@rtime[1]) - 4*rtdiff, unname(x[[j]]@rtime[1]) - 3*rtdiff, 
+                                            unname(x[[j]]@rtime[1]) - 2*rtdiff, unname(x[[j]]@rtime[1]) - rtdiff,
+                                            unname(tail(x[[j]]@rtime,1)) + rtdiff, unname(tail(x[[j]]@rtime,1)) + 2*rtdiff,
+                                            unname(tail(x[[j]]@rtime,1)) + 3*rtdiff, unname(tail(x[[j]]@rtime,1)) + 4*rtdiff),
+                                            rep(0, 8), 
+                                            rep(names(x)[j], 8));
+            colnames(sampleRes) <- colnames(insertEmptyScan) <- colnames(sampleRes);
+            sampleRes <- rbind(insertEmptyScan, sampleRes)
+            res_sample <- rbind(res_sample,sampleRes);
           }
         }
         
