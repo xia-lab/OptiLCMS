@@ -550,7 +550,6 @@ PlotXIC <-
     } else {
       s_image0 <- ggplot(res, aes_string(x = "RT", y = "Intensity", color = "Samples")) +
         stat_smooth(
-          geom = 'area',
           method = "loess",
           se = FALSE,
           span = spanValue,

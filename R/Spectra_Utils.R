@@ -1806,9 +1806,14 @@ RT.Adjust_peakGroup <-
             (rtadj_start + (1:length(adj_idxs)) * incr)
         }
         
-        rtdevsmorange <- range(rtdevsmo[[i]])
-        if (any(rtdevsmorange / rtdevrange > 2))
-          warn.overcorrect <- TRUE
+        rtdevsmorange <- range(rtdevsmo[[i]]);
+        
+        divRes <- unique((rtdevsmorange / rtdevrange > 2));
+        if(!is.na(divRes)){
+          if (any(divRes))
+            warn.overcorrect <- TRUE
+        }
+        
       } else {
         if (nrow(pts) < 2 & !.optimize_switch) {
           stop("No enough peak groups even for linear smoothing available! Please check your data quality or decrease \"bw\" util to 1.")
