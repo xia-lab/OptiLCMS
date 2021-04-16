@@ -5050,6 +5050,10 @@ calcPC.hcs <- function(mSet, ajc=NULL,psg_list=NULL) {
 }
 findAdducts <- function(mSet, ppm=5, mzabs=0.015, multiplier=3, polarity=NULL, rules=NULL, 
                         max_peaks=100, psg_list=NULL, intval="maxo",maxcharge){
+  
+  if(!is.vector(rules) && !is.null(rules)){
+    stop("Your customized adducts rules are wrong! It should a vector like c('[M-H]-','[M-2H]2-','[M-3H]3-')");
+  }
   multFragments=FALSE;
   # Scaling ppm factor
   devppm <- ppm / 1000000;
@@ -5122,19 +5126,41 @@ findAdducts <- function(mSet, ppm=5, mzabs=0.015, multiplier=3, polarity=NULL, r
         mSet@peakAnnotation$AnnotateObject$ruleset <- rules;
       }
     }else{ 
-      mSet@peakAnnotation$AnnotateObject$ruleset <- rules;
+      
+      rule0 <- calcRules(maxcharge=maxcharge, mol=3, nion=2, nnloss=1, nnadd=1, nh=2,
+                         polarity=mSet@peakAnnotation[["AnnotateObject"]][["polarity"]], 
+                         lib.loc= .libPaths(), multFragments=multFragments);
+      
+      rrowidx <- vector();
+      for (r in rules){
+        rrowidx <- c(rrowidx, which(r == rule0$name))
+      }
+      
+      mSet@peakAnnotation$AnnotateObject$ruleset <- rule0[rrowidx, ];
       MessageOutput("Found and use user-defined ruleset!","\n",NULL)
     }
     
-  }else{
+  } else {
+    
     if(!is.null(polarity)){
       if(polarity %in% c("positive","negative")){
         if(is.null(rules)){
           rules <- calcRules(maxcharge=maxcharge, mol=3, nion=2, nnloss=1, nnadd=1, 
                              nh=2, polarity=polarity, lib.loc= .libPaths(),
                              multFragments=multFragments);
+          #save ruleset
+          mSet@peakAnnotation$AnnotateObject$ruleset <- rules;
         }else{
-          MessageOutput("Found and use user-defined ruleset!","\n",NULL);
+          rule0 <- calcRules(maxcharge=maxcharge, mol=3, nion=2, nnloss=1, nnadd=1, nh=2,
+                             polarity=mSet@peakAnnotation[["AnnotateObject"]][["polarity"]], 
+                             lib.loc= .libPaths(), multFragments=multFragments);
+          rrowidx <- vector();
+          for (r in rules){
+            rrowidx <- c(rrowidx, which(r == rule0$name))
+          }
+          
+          mSet@peakAnnotation$AnnotateObject$ruleset <- rule0[rrowidx, ];
+          MessageOutput("Found and use user-defined ruleset!","\n",NULL)
           }
         mSet@peakAnnotation$AnnotateObject$polarity <- polarity;
       }else stop("polarity mode unknown, please choose between positive and negative.")
@@ -5148,16 +5174,28 @@ findAdducts <- function(mSet, ppm=5, mzabs=0.015, multiplier=3, polarity=NULL, r
           rules <- calcRules(maxcharge=maxcharge, mol=3, nion=2, nnloss=1, nnadd=1, 
                              nh=2, polarity=mSet$xcmsSet@polarity[index], 
                              lib.loc= .libPaths(), multFragments=multFragments);
-        }else{
-          MessageOutput("Found and use user-defined ruleset!","\n",NULL);
+          #save ruleset
+          mSet@peakAnnotation$AnnotateObject$ruleset <- rules;
+        } else {
+          rule0 <- calcRules(maxcharge=maxcharge, mol=3, nion=2, nnloss=1, nnadd=1, nh=2,
+                             polarity=mSet@peakAnnotation[["AnnotateObject"]][["polarity"]], 
+                             lib.loc= .libPaths(), multFragments=multFragments);
+          rrowidx <- vector();
+          for (r in rules){
+            rrowidx <- c(rrowidx, which(r == rule0$name))
           }
+          
+          mSet@peakAnnotation$AnnotateObject$ruleset <- rule0[rrowidx, ];
+          MessageOutput("Found and use user-defined ruleset!","\n",NULL)
+        }
         mSet@peakAnnotation$AnnotateObject$polarity <- polarity;
       }else stop("polarity mode in xcmsSet unknown, please define variable polarity.")
       
     }else stop("polarity mode could not be estimated from the xcmsSet, please define variable polarity!")
-    #save ruleset
-    mSet@peakAnnotation$AnnotateObject$ruleset <- rules;
+    
   }
+  
+  mSet@peakAnnotation$AnnotateObject$ruleset -> rules;
   
   ##Run as single or parallel mode
   runParallel <- 0;
@@ -6572,6 +6610,9 @@ profMat <- function(object,method = "bin",step = 0.1,baselevel = NULL,
   x
 }
 
+.exportmSetRuleClass <- function(){
+  return(new("mSetRule"))
+}
 valueCount2ScanIndex <- function(valCount){
   ## Convert into 0 based.
   valCount <- cumsum(valCount)

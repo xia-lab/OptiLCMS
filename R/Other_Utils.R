@@ -247,6 +247,9 @@ PeakGroupCV <- function(IntoLists, groupsInfo){
         cv<- sd(ints)/mean(ints);
         statsdf[count, c(1,2)] <- c(i, round(cv, 2));
       }
+    } else {
+      count <- count +1;
+      statsdf[count, c(1,2)] <- c(i, 0.05);
     }
   }
   

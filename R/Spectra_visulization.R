@@ -103,8 +103,8 @@ PerformDataInspect <-
     
     if (missing(rt.range) | (rt.range[1] == 0 & rt.range[2] == 0)) {
       rtsel <-
-        hd$retentionTime[ms1] > min(hd$retentionTime) &
-        hd$retentionTime[ms1] < max(hd$retentionTime)
+        hd$retentionTime[ms1] >= min(hd$retentionTime) &
+        hd$retentionTime[ms1] <= max(hd$retentionTime)
       
       rt.extension <- F
       MessageOutput(paste(
@@ -359,7 +359,7 @@ PlotXIC <-
       unlist(mSet@peakRTcorrection$adjustedRT);
     
     # Get groups information
-    groupsInfo <- raw_data@phenoData@data[["sample_group"]]
+    groupsInfo0 <- groupsInfo <- raw_data@phenoData@data[["sample_group"]]
     group_levels <- levels(as.factor(groupsInfo))
     
     groupsInfo <-
@@ -445,16 +445,16 @@ PlotXIC <-
         MSdb[[i]] <- MSdb0
         MSdb0 <- list()
       }
-      
     }
     
     ## Get Group CV Table
     CVTable <- PeakGroupCV(IntoLists, groupsInfo);
+    
     CVTable <- data.frame(x = CVTable$V1,y=CVTable$V2);
     pCV <- ggplot(data=CVTable, aes(x=x, y=y, fill =x, alpha = 0.5))  + 
       geom_col(width = 1.32/ncol(CVTable)) + 
       theme_bw() + 
-      theme(text = element_text(size=10), 
+      theme(text = element_text(size=8.5), 
             axis.title.x = element_blank(),
             axis.text.x=element_blank(), 
             legend.position = "none",
@@ -509,9 +509,25 @@ PlotXIC <-
     }
     
     colnames(res) <-
-      c("RT", "Intensity", "Samples", "Groups", "Labels")
-    
+      c("RT", "Intensity", "Samples", "Groups", "Labels");
     peak_width <- max(res$RT) - min(res$RT);
+    
+    ## Resume for the missing peaks
+    minRT <- min(res$RT);
+    maxRT <- max(res$RT);
+    RTvec <- c(minRT, minRT + (maxRT - minRT)/4, minRT + (maxRT - minRT)/2, minRT + (maxRT - minRT)*3/4, maxRT)
+    
+    missingIdx <- which(!(samples_names %in% unique(res$Samples)));
+
+    for(m in missingIdx){
+      res <- rbind(res, data.frame(RT=RTvec, 
+                                   Intensity = rep(0, 5), 
+                                   Samples = rep(samples_names[m], 5), 
+                                   Groups = rep(groupsInfo0[m], 5), 
+                                   Labels = c(NA, NA, 0, NA, NA)))
+    }
+
+    
     
     if(!is.null(mSet@params[["Peak_method"]])){
       if(mSet@params[["Peak_method"]] == "Massifquant"){
@@ -602,23 +618,39 @@ PlotXIC <-
       res <- res[-which(sapply(res, is.null))]
     }
     
-    res_data <- data.frame()
+    res_data <- data.frame();
     
     for (k in 1:length(res)) {
-      ncout <- nrow(res[[k]])
+      ncout <- nrow(res[[k]]);
       
       resd <-
         cbind(res[[k]], rep(names(res[k]), ncout), rep(NA, ncout))
       
       resd[which(resd$Inten_mean == max(resd$Inten_mean)), 4] <-
-        formatC(IntoListg[[k]], format = "e", digits = 2)
+        formatC(IntoListg[[names(res[k])]], format = "e", digits = 2)
       
       res_data <- rbind(res_data, resd)
     }
     
-    colnames(res_data) <- c("RT", "Intensity", "Groups", "Labels")
-    rownames(res_data) <- NULL
-    peak_width <- max(res_data$RT) - min(res_data$RT)
+    colnames(res_data) <- c("RT", "Intensity", "Groups", "Labels");
+    rownames(res_data) <- NULL;
+    peak_width <- max(res_data$RT) - min(res_data$RT);
+    
+    ## ADD the missing groups
+    minRT <- maxRT <- RTvec <- missingIdx <- m <- NULL;
+    minRT <- min(res_data$RT);
+    maxRT <- max(res_data$RT);
+    RTvec <- c(minRT, minRT + (maxRT - minRT)/4, minRT + (maxRT - minRT)/2, minRT + (maxRT - minRT)*3/4, maxRT)
+    
+    missingIdx <- which(!(unique(groupsInfo0) %in% unique(res_data$Groups)));
+    
+    for(m in missingIdx){
+      res_data <- rbind(res_data, data.frame(RT=RTvec,
+                                             Intensity = rep(0, 5),
+                                             Groups = rep(unique(groupsInfo0)[m], 5), 
+                                             Labels = c(NA, NA, 0, NA, NA)))
+    }
+    
     
     if (.on.public.web) {
       Cairo::Cairo(
@@ -686,7 +718,7 @@ PlotXIC <-
                                   show.legend = FALSE)
     }
     require(grid);
-    print(g_image); print(pCV,vp=viewport(.255, .82, .24, 0.24));
+    print(g_image); print(pCV,vp=viewport(.3, .76, .24, 0.24));
     
     if (.on.public.web) {
       dev.off()
@@ -761,14 +793,14 @@ PlotSpectraInsensityStistics <-
       oldpar <- par(no.readonly = TRUE);
       on.exit(par(oldpar));
     }
-    
+
     if (.on.public.web) {
       Cairo::Cairo(
         file = imgName,
         unit = "in",
         dpi = dpi,
         width = width,
-        height = length(sample_num) * 0.65,
+        height = length(sample_num) * 0.65 * (width/8),
         type = format,
         bg = "white"
       )

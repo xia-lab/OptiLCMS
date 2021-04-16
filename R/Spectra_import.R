@@ -1265,7 +1265,7 @@ CentroidMSData <- function(InFolder, OutFolder = tempdir(), ncore = 1) {
 
 
 
-Path2Files <- function(path){
+Path2Files <- function(path, centroid = TRUE){
   Pathname <- normalizePath(path);
   
   if (length(Pathname) > 1){
@@ -1333,7 +1333,7 @@ Path2Files <- function(path){
   files <- files_tmp[formatRes];
   
   # Centroid check & filter
-  if(!isCdfFile(files)){
+  if(!isCdfFile(files) && centroid){
     
     Centroididx <- unname(sapply(files, CentroidCheck));
     

@@ -46,6 +46,7 @@
 #' @param max_iso PeakAnnotation parameters, (Only effective for website pipeline, for local package, OptiLCMS, please use SetAnnotationParam to define the annotation parameters).
 #' @param corr_eic_th PeakAnnotation parameters, (Only effective for website pipeline, for local package, OptiLCMS, please use SetAnnotationParam to define the annotation parameters).
 #' @param mz_abs_add PeakAnnotation parameters, (Only effective for website pipeline, for local package, OptiLCMS, please use SetAnnotationParam to define the annotation parameters).
+#' @param adducts PeakAnnotation parameters, (Only effective for website pipeline, for local package, OptiLCMS, please use SetAnnotationParam to define the annotation parameters).
 #' @param rmConts Logical, specify whether to exclude/remove the potential contaminations (the ones with RT range over 50% of the whole spetra).
 #' @param criticalValue criticalValue for massifquant (supported later).
 #' @param consecMissedLimit consecMissedLimit for massifquant (supported later).
@@ -70,7 +71,7 @@ SetPeakParam <- function(platform = "general", Peak_method = "centWave", RT_meth
                          profStep, # used for "obiwarp"
                          minFraction, minSamples, maxFeatures, mzCenterFun, integrate,# used for grouping
                          extra, span, smooth, family, fitgauss, # used for RT correction with peakgroup "loess"
-                         polarity, perc_fwhm, mz_abs_iso, max_charge, max_iso, corr_eic_th, mz_abs_add, #used for annotation
+                         polarity, perc_fwhm, mz_abs_iso, max_charge, max_iso, corr_eic_th, mz_abs_add, adducts, #used for annotation
                          rmConts #used to control remove contamination or not
                          ) {
   
@@ -2039,11 +2040,16 @@ SetPeakParam <- function(platform = "general", Peak_method = "centWave", RT_meth
       peakParams$mz_abs_add <- mz_abs_add;
     }
     
+    if (missing(adducts)){
+      peakParams$adducts <- NULL;
+    } else{
+      peakParams$adducts <- adducts;
+    }
   }
   
   # Set potential Contaminats removal (rmConts) or not
   if(missing(rmConts)){
-    peakParams$rmConts <- T;
+    peakParams$rmConts <- TRUE;
   } else {
     peakParams$rmConts <- as.logical(rmConts);
   }

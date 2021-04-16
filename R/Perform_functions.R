@@ -433,6 +433,7 @@ PerformPeakProfiling <-
 #' Default is set to 0.85.
 #' @param mz_abs_add Numeric, set the allowed variance for the search (for adduct annotation).
 #' The default is set to 0.001.
+#' @param adducts Character, specify the adducts based on your instrument settings.
 #' @author Zhiqiang Pang \email{zhiqiang.pang@mail.mcgill.ca}, Jasmine Chong \email{jasmine.chong@mail.mcgill.ca},
 #' and Jeff Xia \email{jeff.xia@mcgill.ca}
 #' McGill University, Canada
@@ -457,7 +458,8 @@ SetAnnotationParam <-
            max_charge = 2,
            max_iso = 2,
            corr_eic_th = 0.85,
-           mz_abs_add = 0.001) {
+           mz_abs_add = 0.001,
+           adducts = NULL) {
     
     annParams <- list()
     peakParams <- NULL;
@@ -476,7 +478,8 @@ SetAnnotationParam <-
       annParams$max.charge <- peakParams$max_charge
       annParams$max.iso <- peakParams$max_iso
       annParams$corr.eic.th <- peakParams$corr_eic_th
-      annParams$mz.abs.add <- peakParams$mz_abs_add
+      annParams$mz.abs.add <- peakParams$mz_abs_add;
+      annParams$adducts <- unlist(strsplit(peakParams$adducts, "\\|"));
       
     } else {
       annParams$polarity <- polarity
@@ -486,6 +489,7 @@ SetAnnotationParam <-
       annParams$max.iso <- max_iso
       annParams$corr.eic.th <- corr_eic_th
       annParams$mz.abs.add <- mz_abs_add
+      annParams$adducts <- NULL;
       
     }
     
@@ -722,12 +726,12 @@ PerformPeakAnnotation <-
             index <- sample
           }
           
-          gvals    <- groupval(mSet)[, index, drop = FALSE]
-          peakmat  <- mSet@peakAnnotation$peaks
-          groupmat <- mSet@peakAnnotation$groupmat
+          gvals    <- groupval(mSet)[, index, drop = FALSE];
+          peakmat  <- mSet@peakAnnotation$peaks;
+          groupmat <- mSet@peakAnnotation$groupmat;
           
           #calculate highest peaks
-          maxo      <-
+          maxo <-
             as.numeric(apply(gvals, 1, function(x, peakmat) {
               val <- na.omit(peakmat[x, intval])
               if (length(val) == 0) {
@@ -735,13 +739,13 @@ PerformPeakAnnotation <-
               } else{
                 return(max(val))
               }
-            }, peakmat))
+            }, peakmat));
           
-          maxo[which(is.na(maxo))] <- -1
-          maxo      <- cbind(1:length(maxo), maxo)
+          maxo[which(is.na(maxo))] <- -1;
+          maxo <- cbind(1:length(maxo), maxo);
           
           #highest peak index
-          int.max   <-
+          int.max <-
             as.numeric(apply(gvals, 1, function(x, peakmat) {
               which.max(peakmat[x, intval])
             }, peakmat))
@@ -1324,13 +1328,20 @@ PerformPeakAnnotation <-
       )
       
       ## 5. Annotate adducts (and fragments) -----
-      mSet@peakAnnotation$AnnotateObject$ruleset <- NULL
+      mSet@peakAnnotation$AnnotateObject$ruleset <- NULL;
+      rules <- annotaParam$adducts;
+      
+      if(rules == "NULL"){
+        rules <- NULL;
+      }
+      
       mSet <-
         findAdducts (
           mSet,
           polarity = annotaParam$polarity,
           mzabs = annotaParam$mz.abs.add,
-          maxcharge = annotaParam$max.charge
+          maxcharge = annotaParam$max.charge,
+          rules = rules
         )
       
       MessageOutput(mes = NULL,
