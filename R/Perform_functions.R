@@ -1556,7 +1556,7 @@ FormatPeakList <-
     combo_info <- rbind(as.character(group_info), feats_digits);
     
     mzs_rd <-
-      paste0(round(unique_feats[, 1], 4), "@", round(unique_feats[, 4], 2));
+      paste0(round(unique_feats[, 1], 4), "__", round(unique_feats[, 4], 2));
     mzs <- data.frame(c("Label", mzs_rd), stringsAsFactors = FALSE);
     
     # ensure features are unique
@@ -1665,6 +1665,8 @@ FormatPeakList <-
       progress = 100
     );
     
+    ma_feats_miss[is.na(ma_feats_miss)] <- 0;
+    ma_feats_miss[ma_feats_miss == ""] <- 0;
     mSet@dataSet <- ma_feats_miss;
     
     PlotSpectraPCA(
