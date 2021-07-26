@@ -11,6 +11,9 @@ updateRawSpectraPath(mSet, newPath)
 
 \item{newPath}{Character vector, a character vector specify the absolute path of the new raw spectra files.}
 }
+\value{
+will return an mSet object with raw files' path updated
+}
 \description{
 updateRawSpectraPath
 }

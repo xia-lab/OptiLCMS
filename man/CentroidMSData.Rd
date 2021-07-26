@@ -13,13 +13,15 @@ CentroidMSData(InFolder, OutFolder = tempdir(), ncore = 1)
 
 \item{ncore}{the core number for parallel processing, default is 1}
 }
+\value{
+will output a centroid mzML file into the input path
+}
 \description{
 Convert the MS data as centroid
 }
 \examples{
- 
 InFolder <- system.file("mzData", package = "mtbls2")
-CentroidMSData(InFolder)
+# CentroidMSData(InFolder) #remove the # befroe your testing
 }
 \author{
 Zhiqiang Pang \email{zhiqiang.pang@mail.mcgill.ca} and Jeff Xia \email{jeff.xia@mcgill.ca}

@@ -10,11 +10,13 @@ InitializaPlan(type = "raw_ms")
 \item{type}{Character, Initialized plan type for a resumable running mode. Can be "raw_opt" for
 automated optimization option, or "raw_ms" for customized pipeline.}
 }
+\value{
+will return an initial plan for execution
+}
 \description{
 Initialize a running plan
 }
 \examples{
-library(OptiLCMS);
 plan <- InitializaPlan("raw_opt")
 }
 \seealso{

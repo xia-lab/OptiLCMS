@@ -13,13 +13,14 @@
 #' @param mSet the raw data object read by ImportRawMSData function.
 #' @param BPPARAM parallel method used for data processing. Default is bpparam(). Optional.
 #' @export
+#' @return will return an mSet object with peaks picked
 #' @references Smith, C.A. et al. 2006. {Analytical Chemistry}, 78, 779-787
 #' @examples
 #' data(mSet);
 #' newPath <- dir(system.file("mzData", package = "mtbls2"),
 #'                full.names = TRUE, recursive = TRUE)[c(10, 11, 12)]
 #' mSet <- updateRawSpectraPath(mSet, newPath);
-#' mSet <- PerformPeakPicking(mSet);
+#' # mSet <- PerformPeakPicking(mSet);
 #' @author Zhiqiang Pang, Jeff Xia \email{jeff.xia@mcgill.ca}
 #' McGill University, Canada
 #' License: GNU GPL (>= 2)
@@ -68,7 +69,7 @@ PerformPeakPicking<-function(mSet, BPPARAM = bpparam()){
   
 
   # Splite the MS data 
-  object_mslevel <- lapply(1:length(fileNames(object_mslevel)),
+  object_mslevel <- lapply(seq_along(fileNames(object_mslevel)),
                            FUN = filterFile,
                            object = object_mslevel)
   
@@ -105,7 +106,7 @@ PerformPeakPicking<-function(mSet, BPPARAM = bpparam()){
   ##### PEAK SUMMARY------------
   
   pks <- vector("list", length(resList))
-  for (i in 1:length(resList)) {
+  for (i in seq_along(resList)) {
     n_pks <- nrow(resList[[i]])
     if (is.null(n_pks))
       n_pks <- 0
@@ -163,7 +164,7 @@ PeakPicking_centWave_slave <- function(x, param){
  
   # load necessary C code for data processing
   # for raw data processing
-  if (class(x)=="OnDiskMSnExp"){ 
+  if (is(x, "OnDiskMSnExp")){ 
     
     scan.set <- MSnbase::spectra(x, BPPARAM = SerialParam());
     rt <- MSnbase::rtime(x);
@@ -171,7 +172,7 @@ PeakPicking_centWave_slave <- function(x, param){
   }
   
   # for parameters optimization
-  if (class(x) == "list") {
+  if (is(x,"list")) {
     scan.set <- x;
     rt <- unlist(lapply(x,  MSnbase::rtime), use.names = FALSE);
   }
@@ -296,7 +297,7 @@ PeakPicking_centWave_slave <- function(x, param){
   
   roiScales = NULL;
  
-  for (f in 1:lf) {
+  for (f in seq_len(lf)) {
     
     feat <- roiList[[f]]
     N <- feat$scmax - feat$scmin + 1
@@ -397,13 +398,13 @@ PeakPicking_centWave_slave <- function(x, param){
     rL <- MSW.getRidge(localMax)
     wpeaks <- sapply(rL,
                      function(x) {
-                       w <- min(1:length(x),ncol(wCoefs))
+                       w <- min(seq_along(x),ncol(wCoefs))
                        any(wCoefs[x,w]- baseline >= sdthr)
                      })
     if (any(wpeaks)) {
       wpeaksidx <- which(wpeaks)
       ## check each peak in ridgeList
-      for (p in 1:length(wpeaksidx)) {
+      for (p in seq_along(wpeaksidx)) {
         opp <- rL[[wpeaksidx[p]]]
         pp <- unique(opp)
         if (length(pp) >= 1) {
@@ -422,7 +423,7 @@ PeakPicking_centWave_slave <- function(x, param){
                 ## try to decide which scale describes the peak best
                 inti <- numeric(length(opp))
                 irange <- rep(ceiling(scales[1]/2), length(opp))
-                for (k in 1:length(opp)) {
+                for (k in seq_along(opp)) {
                   kpos <- opp[k]
                   r1 <- ifelse(kpos - irange[k] > 1,
                                kpos-irange[k], 1)
@@ -505,7 +506,7 @@ PeakPicking_centWave_slave <- function(x, param){
       colnames(peaks) <- c(basenames, verbosenames)
       colnames(peakinfo) <- c("scale", "scaleNr", "scpos",
                               "scmin", "scmax")
-      for (p in 1:dim(peaks)[1]) {
+      for (p in seq_len(dim(peaks)[1])) {
         ## find minima (peak boundaries), assign rt and intensity values
         if (param$integrate == 1) {
           lm <- descendMin(wCoefs[, peakinfo[p, "scaleNr"]],
@@ -641,12 +642,12 @@ PeakPicking_Massifquant_slave <- function(x, param){
   # }
   # load necessary C code for data processing
   
-  if (class(x)=="OnDiskMSnExp"){ # for raw data processing
+  if (is(x,"OnDiskMSnExp")){ # for raw data processing
     
     scan.set <- MSnbase::spectra(x, BPPARAM = SerialParam());
     rt <- unname(MSnbase::rtime(x));
     
-  } else if (class(x) == "list") { # for parameters optimization
+  } else if (is(x,"list")) { # for parameters optimization
     
     scan.set <- x;
     rt <- unlist(lapply(x,  MSnbase::rtime), use.names = FALSE);
@@ -707,7 +708,7 @@ PeakPicking_Massifquant_slave <- function(x, param){
   }
   
   if (!exists(mzCenterFun, mode="function"))
-    stop("Error: >", mzCenterFun, "< not defined !")
+    stop(" >", mzCenterFun, "< not defined !")
   
   if(.on.public.web){
     
@@ -768,7 +769,7 @@ PeakPicking_Massifquant_slave <- function(x, param){
         scanBack = scanBack))
 
   #if (withWave) {
-  if (F) {
+  if (FALSE) {
     # featlist <- do_findChromPeaks_centWave(mz = mz, int = int,
     #                                        scantime = scantime,
     #                                        valsPerSpect = valsPerSpect,
@@ -852,6 +853,8 @@ PeakPicking_Massifquant_slave <- function(x, param){
 #' @param x ms objects
 #' @param param parameters set for processing
 #' @noRd
+#' @importFrom stats deriv3
+#' @importFrom stats fft
 #' @author Zhiqiang Pang, Jeff Xia \email{jeff.xia@mcgill.ca}
 #' McGill University, Canada
 #' License: GNU GPL (>= 2)
@@ -863,12 +866,12 @@ PeakPicking_MatchedFilter_slave <- function(x,param){
   #   dyn.load(.getDynLoadPath());
   # }
   
-  if (class(x)=="OnDiskMSnExp"){ # for raw data processing
+  if (is(x,"OnDiskMSnExp")){ # for raw data processing
     
     scan.set <- MSnbase::spectra(x, BPPARAM = SerialParam());
     rt <- MSnbase::rtime(x);
     
-  } else if (class(x) == "list") { # for parameters optimization
+  } else if (is(x, "list")){ # for parameters optimization
     
     scan.set <- x;
     rt <- unlist(lapply(x,  MSnbase::rtime), use.names = FALSE);
@@ -1255,6 +1258,7 @@ Densitygrouping_slave <- function(x, bw, densFrom, densTo, densN, sampleGroups,
 #' @param mSet the mSet object generated by PerformPeakPicking function.
 #' @export
 #' @references Smith, C.A. et al. 2006. {Analytical Chemistry}, 78, 779-787
+#' @return will return an mSet object with peak aligned done
 #' @examples 
 #' data(mSet);
 #' newPath <- dir(system.file("mzData", package = "mtbls2"),
@@ -1353,7 +1357,7 @@ PerformRTcorrection <- function(mSet){
     
   }
   
-  if (class(mSet)[1]=="simpleError" & !.optimize_switch){
+  if (is(mSet,"simpleError") & !.optimize_switch){
    
     MessageOutput(
       mes = paste0("<font color=\"red\">","\nERROR:",mSet$message,"</font>"),
@@ -1466,7 +1470,7 @@ adjustRtime_peakGroup <- function(mSet, param, msLevel = 1L) {
   
   tmp <- split(rtime_0, fromFile(specdata))
   rtime <- vector("list", length(fileNames(specdata)))
-  names(rtime) <- as.character(1:length(rtime))
+  names(rtime) <- as.character(seq_along(rtime))
   rtime[as.numeric(names(tmp))] <- tmp
   
   res <- RT.Adjust_peakGroup(peaks_0,
@@ -1498,6 +1502,7 @@ adjustRtime_peakGroup <- function(mSet, param, msLevel = 1L) {
   return(mSet);
 }
 
+#' @importFrom stats approxfun
 adjustRtime_obiwarp <- function(mSet, param, msLevel = 1L) {
   
   if(!exists(".SwapEnv")){
@@ -1559,7 +1564,7 @@ adjustRtime_obiwarp <- function(mSet, param, msLevel = 1L) {
     rtime_all <- split(rtime(specdata), fromFile(specdata))
     rtime_sub <- split(rtime(object_sub), fromFile(object_sub))
     ## For loop is faster than lapply. No sense to do parallel
-    for (i in 1:length(rtime_all)) {
+    for (i in seq_along(rtime_all)) {
       n_vals <- length(rtime_sub[[i]])
       idx_below <- which(rtime_all[[i]] < rtime_sub[[i]][1])
       if (length(idx_below))
@@ -1598,7 +1603,7 @@ adjustRtime_obiwarp <- function(mSet, param, msLevel = 1L) {
   rtime_0 <- rtime(specdata)
   tmp <- split(rtime_0, fromFile(specdata))
   rtime <- vector("list", length(fileNames(specdata)))
-  names(rtime) <- as.character(1:length(rtime))
+  names(rtime) <- as.character(seq_along(rtime))
   rtime[as.numeric(names(tmp))] <- tmp
   
   fts <- .applyRtAdjToChromPeaks(mSet@peakpicking$chromPeaks,
@@ -1624,6 +1629,10 @@ adjustRtime_obiwarp <- function(mSet, param, msLevel = 1L) {
 #' @param peakGroupsMatrix peakGroupsMatrix
 #' @param subset subset
 #' @param subsetAdjust subsetAdjust
+#' @importFrom stats approx
+#' @importFrom stats lsfit
+#' @importFrom stats loess
+#' @importFrom stats predict
 #' @noRd
 #' @author Zhiqiang Pang, Jeff Xia \email{jeff.xia@mcgill.ca}
 #' McGill University, Canada
@@ -1803,13 +1812,13 @@ RT.Adjust_peakGroup <-
           adj_idxs <- (decidx[1] + 1):(next_larger - 1)
           incr <- (rtadj_end - rtadj_start) / length(adj_idxs)
           rtdevsmo[[i]][adj_idxs] <- rtime[[i_all]][adj_idxs] -
-            (rtadj_start + (1:length(adj_idxs)) * incr)
+            (rtadj_start + (seq_along(adj_idxs)) * incr)
         }
         
         rtdevsmorange <- range(rtdevsmo[[i]]);
         
         divRes <- unique((rtdevsmorange / rtdevrange > 2));
-        if(!is.na(divRes)){
+        if(!is.na(divRes)[1]){
           if (any(divRes))
             warn.overcorrect <- TRUE
         }
@@ -1877,7 +1886,7 @@ mSet.obiwarp <- function(mSet, object, param) { ## Do not use the params defined
   param$gapExtend <- 2.4;
   param$factorDiag <- 2;
   param$factorGap <- 1;
-  param$localAlignment <- F;
+  param$localAlignment <- FALSE;
   param$initPenalty <- 0;
   
   # 1.1). Subset selection
@@ -1902,7 +1911,7 @@ mSet.obiwarp <- function(mSet, object, param) { ## Do not use the params defined
     stop("Can not perform a retention time correction on less than two",
          " files.")
   
-  centerSample <- floor(median(1:nSamples));
+  centerSample <- floor(median(seq_len(nSamples)));
   
   if (.on.public.web & !.optimize_switch){
     
@@ -2019,11 +2028,11 @@ mSet.obiwarp <- function(mSet, object, param) { ## Do not use the params defined
       ## Cut at the start or at the end, depending on where we have the
       ## larger difference
       if (diffs[2] > diffs[1]) {
-        scantime1 <- scantime1[1:min_number]
-        scantime2 <- scantime2[1:min_number]
+        scantime1 <- scantime1[seq_len(min_number)]
+        scantime2 <- scantime2[seq_len(min_number)]
       } else {
-        scantime1 <- rev(rev(scantime1)[1:min_number])
-        scantime2 <- rev(rev(scantime2)[1:min_number])
+        scantime1 <- rev(rev(scantime1)[seq_len(min_number)])
+        scantime2 <- rev(rev(scantime2)[seq_len(min_number)])
       }
       valscantime1 <- length(scantime1)
       valscantime2 <- length(scantime2)
@@ -2154,6 +2163,7 @@ mSet.obiwarp <- function(mSet, object, param) { ## Do not use the params defined
 #' @param mSet the mSet object generated by PerformPeakPicking function.
 #' @param BPPARAM parallel method used for data processing. Default is bpparam().
 #' @export
+#' @return will return an mSet object with peak gaps filled
 #' @references Smith, C.A. et al. 2006. {Analytical Chemistry}, 78, 779-787
 #' @examples 
 #' data(mSet);
@@ -2283,7 +2293,7 @@ PerformPeakFiling <- function(mSet, BPPARAM=bpparam()){
   
   colnames(pkArea) <- c("rtmin", "rtmax", "mzmin", "mzmax")
   ## Add mzmed column - needed for MSW peak filling.
-  pkArea <- cbind(group_idx = 1:nrow(pkArea), pkArea,
+  pkArea <- cbind(group_idx = seq_len(nrow(pkArea)), pkArea,
                   mzmed = as.numeric(fdef$mzmed))
   
   if (length(mSet@rawOnDisk) != 0){
@@ -2341,7 +2351,7 @@ PerformPeakFiling <- function(mSet, BPPARAM=bpparam()){
   ## We need "only" a list of OnDiskMSnExp, one for each file but
   ## instead of filtering by file we create small objects to keep
   ## memory requirement to a minimum.
-  if (class(specdata) == "OnDiskMSnExp"){
+  if (is(specdata,"OnDiskMSnExp")){
     
     req_fcol <- requiredFvarLabels("OnDiskMSnExp")
     min_fdata <- specdata@featureData@data[, req_fcol]
@@ -2360,7 +2370,7 @@ PerformPeakFiling <- function(mSet, BPPARAM=bpparam()){
     
     min_fdata$retentionTime <- res
     
-    for (i in 1:length(specdata@phenoData@data[["sample_name"]])) {
+    for (i in seq_along(specdata@phenoData@data[["sample_name"]])) {
       
       fd <- min_fdata[min_fdata$fileIdx == i, ]
       fd$fileIdx <- 1
@@ -2395,7 +2405,7 @@ PerformPeakFiling <- function(mSet, BPPARAM=bpparam()){
     res <- bpmapply(FUN = .getChromPeakData, 
                     objectL,
                     pkAreaL, 
-                    as.list(1:length(objectL)),
+                    as.list(seq_along(objectL)),
                     MoreArgs = list(cn = cp_colnames,
                                     mzCenterFun = "weighted.mean"),
                     BPPARAM = BPPARAM, 
@@ -2419,7 +2429,7 @@ PerformPeakFiling <- function(mSet, BPPARAM=bpparam()){
     filesname <- basename(MSnbase::fileNames(specdata));
     res_new <-list();
     
-    for (ii in 1:length(specdata@phenoData@data[["sample_name"]])) {
+    for (ii in seq_along(specdata@phenoData@data[["sample_name"]])) {
       
       cn <-colnames(mSet@peakRTcorrection$chromPeaks);
       peakArea <- pkArea[is.na(pkGrpVal[, ii]), , drop = FALSE];
@@ -2583,7 +2593,7 @@ mSet2xcmsSet <- function(mSet) {
   
   rts <- list()
   
-  if (class(mSet[[2]]) == "OnDiskMSnExp"){
+  if (is(mSet[[2]],"OnDiskMSnExp")){
     format <- "onDiskData"
   } else {
     format <- "inMemoryData"
@@ -2662,7 +2672,7 @@ updateRawSpectraParam <- function (Params){
     param$prefilter <- c(as.numeric(Params[["prefilter"]]), 
                          as.numeric(Params[["value_of_prefilter"]]));
     param$roiList <- list();
-    param$firstBaselineCheck <- T;
+    param$firstBaselineCheck <- TRUE;
     param$roiScales <- numeric(0);
     
     param$mzCenterFun <- Params[["mzCenterFun"]];
@@ -2689,7 +2699,7 @@ updateRawSpectraParam <- function (Params){
     param$impute <- "none";
     param$baseValue<- numeric(0);
     param$distance<- numeric(0);
-    param$index<- F;
+    param$index<- FALSE;
     
     param$binSize <-0.25; # density Param
     
@@ -2706,7 +2716,7 @@ updateRawSpectraParam <- function (Params){
     param$prefilter <- c(as.numeric(Params[["prefilter"]]), 
                          as.numeric(Params[["value_of_prefilter"]]));
     param$roiList <- list();
-    param$firstBaselineCheck <- T;
+    param$firstBaselineCheck <- TRUE;
     param$roiScales <- numeric(0);
     
     param$mzCenterFun <- Params[["mzCenterFun"]];
@@ -2802,6 +2812,7 @@ creatPeakTable <- function(mSet){
 #' @param mSet mSet object generated by ImportRawMSData or the following functions.
 #' @param newPath Character vector, a character vector specify the absolute path of the new raw spectra files.
 #' @export
+#' @return will return an mSet object with raw files' path updated
 #' @examples 
 #' data(mSet);
 #' newPath <- dir(system.file("mzData", package = "mtbls2"),
@@ -2951,6 +2962,8 @@ getLocalNoiseEstimate <- function(d, td, ftd, noiserange, Nscantime, threshold, 
   
   c(min(baseline1,baseline2),min(sdnoise1,sdnoise2))
 }
+
+#' @importFrom stats convolve
 MSW.cwt <- function (ms, scales = 1, wavelet = "mexh") { ## modified from package MassSpecWavelet
   if (wavelet == "mexh") {
     psi_xval <- seq(-6, 6, length = 256)
@@ -2981,29 +2994,31 @@ MSW.cwt <- function (ms, scales = 1, wavelet = "mexh") { ## modified from packag
   psi_xval <- psi_xval - psi_xval[1]
   dxval <- psi_xval[2]
   xmax <- psi_xval[length(psi_xval)]
-  for (i in 1:length(scales)) {
+  for (i in seq_along(scales)) {
     scale.i <- scales[i]
     f <- rep(0, len)
     j <- 1 + floor((0:(scale.i * xmax))/(scale.i * dxval))
     if (length(j) == 1)
       j <- c(1, 1)
     lenWave <- length(j)
-    f[1:lenWave] <- rev(psi[j]) - mean(psi[j])
+    f[seq_len(lenWave)] <- rev(psi[j]) - mean(psi[j])
     if (length(f) > len)
     {i<-i-1;break;}   ##  stop(paste("scale", scale.i, "is too large!"))
     wCoefs.i <- 1/sqrt(scale.i) * convolve(ms, f)
     wCoefs.i <- c(wCoefs.i[(len - floor(lenWave/2) + 1):len],
-                  wCoefs.i[1:(len - floor(lenWave/2))])
+                  wCoefs.i[seq_len(len - floor(lenWave/2))])
     wCoefs <- cbind(wCoefs, wCoefs.i)
   }
   if (i < 1) return(NA)
-  scales <- scales[1:i]
+  scales <- scales[seq_len(i)]
   if (length(scales) == 1)
     wCoefs <- matrix(wCoefs, ncol = 1)
   colnames(wCoefs) <- scales
-  wCoefs <- wCoefs[1:oldLen, , drop = FALSE]
+  wCoefs <- wCoefs[seq_len(oldLen), , drop = FALSE]
   wCoefs
 }
+
+#' @importFrom stats nextn
 MSW.extendNBase <- function(x, nLevel=1, base=2, ...) { ## from package MassSpecWavelet
   if (!is.matrix(x)) x <- matrix(x, ncol=1)
   
@@ -3040,7 +3055,7 @@ MSW.extendLength <-   function(x, addLength=NULL, method=c('reflection', 'open',
     x <- switch(method,
                 reflection =rbind(x, x[nR:(2 * nR - nR1 + 1), , drop=FALSE]),
                 open = rbind(x, matrix(rep(x[nR,], addLength), ncol=ncol(x), byrow=TRUE)),
-                circular = rbind(x, x[1:(nR1 - nR),, drop=FALSE]))
+                circular = rbind(x, x[seq_len(nR1 - nR),, drop=FALSE]))
   }
   
   if (left > 0) {
@@ -3057,7 +3072,7 @@ MSW.getLocalMaximumCWT <-  function(wCoefs, minWinSize=5, amp.Th=0)  {        ##
   localMax <- NULL
   scales <- as.numeric(colnames(wCoefs))
   
-  for (i in 1:length(scales)) {
+  for (i in seq_along(scales)) {
     scale.i <- scales[i]
     winSize.i <- scale.i * 2 + 1
     if (winSize.i < minWinSize) {
@@ -3077,7 +3092,7 @@ MSW.localMaximum <-  function (x, winSize = 5)  {   ## from package MassSpecWave
   rNum <- ceiling(len/winSize)
   
   ## Transform the vector as a matrix with column length equals winSize
-  ##		and find the maximum position at each row.
+  ## and find the maximum position at each row.
   y <- matrix(c(x, rep(x[len], rNum * winSize - len)), nrow=winSize)
   y.maxInd <- apply(y, 2, which.max)
   ## Only keep the maximum value larger than the boundary values
@@ -3112,12 +3127,12 @@ MSW.localMaximum <-  function (x, winSize = 5)  {   ## from package MassSpecWave
 MSW.getRidge <-  function(localMax, iInit=ncol(localMax), step=-1, iFinal=1, minWinSize=3, gapTh=3, skip=NULL)  {  ## modified from package MassSpecWavelet
   
   scales <- as.numeric(colnames(localMax))
-  if (is.null(scales))  scales <- 1:ncol(localMax)
+  if (is.null(scales))  scales <- seq_len(ncol(localMax))
   
   maxInd_curr <- which(localMax[, iInit] > 0)
   nMz <- nrow(localMax)
   
-  if (is.null(skip))	{
+  if (is.null(skip)) {
     skip <- iInit + 1
   }
   
@@ -3136,7 +3151,7 @@ MSW.getRidge <-  function(localMax, iInit=ncol(localMax), step=-1, iFinal=1, min
   orphanRidgeName <- NULL
   nLevel <- length(colInd)
   
-  for (j in 1:nLevel) {
+  for (j in seq_len(nLevel)) {
     col.j <- colInd[j]
     scale.j <- scales[col.j]
     
@@ -3163,7 +3178,7 @@ MSW.getRidge <-  function(localMax, iInit=ncol(localMax), step=-1, iFinal=1, min
     
     selPeak.j <- NULL
     remove.j <- NULL
-    for (k in 1:length(maxInd_curr)) {
+    for (k in seq_along(maxInd_curr)) {
       ind.k <- maxInd_curr[k]
       start.k <- ifelse(ind.k-winSize.j < 1, 1, ind.k-winSize.j)
       end.k <- ifelse(ind.k+winSize.j > nMz, nMz, ind.k+winSize.j)
@@ -3176,7 +3191,7 @@ MSW.getRidge <-  function(localMax, iInit=ncol(localMax), step=-1, iFinal=1, min
         ##
         if (status.k > gapTh & scale.j >= 2) {
           temp <- ridgeList[[as.character(ind.k)]]
-          orphanRidgeList <- c(orphanRidgeList, list(temp[1:(length(temp)-status.k)]))
+          orphanRidgeList <- c(orphanRidgeList, list(temp[seq_len(length(temp)-status.k)]))
           orphanRidgeName <- c(orphanRidgeName, paste(col.j + status.k + 1, ind.k, sep='_'))
           remove.j <- c(remove.j, as.character(ind.k))
           next
@@ -3328,7 +3343,7 @@ joinOverlappingPeaks <- function(td, d, otd, omz, od, scantime, scan.range, peak
       for (j in 2:dim(gm)[1]) { ## search for connections
         ccl <- unlist(cc)
         nl <- sapply(cc, function(x) length(x))
-        ccidx <- rep(1:length(nl),nl)
+        ccidx <- rep(seq_along(nl),nl)
         idx <- match(gm[j,],ccl)
         if (any(!is.na(idx))) { ## connection found, add to list
           pos <- ccidx[idx[which(!is.na(idx))[1]]]
@@ -3342,7 +3357,7 @@ joinOverlappingPeaks <- function(td, d, otd, omz, od, scantime, scan.range, peak
       ins <- rep(FALSE,lcc)
       if (lcc > 1) {
         jcomb <- which(upper.tri(matrix(0,lcc,lcc)),arr.ind = TRUE)
-        for (j in 1:dim(jcomb)[1]) {
+        for (j in seq_len(dim(jcomb)[1])) {
           j1 <- jcomb[j,1]; j2 <- jcomb[j,2]
           if (any(cc[[j1]] %in% cc[[j2]]))
             ccn[[length(ccn) +1]] <- unique(c(cc[[j1]],cc[[j2]]))
@@ -3363,7 +3378,7 @@ joinOverlappingPeaks <- function(td, d, otd, omz, od, scantime, scan.range, peak
       s2idx <- which(size >= 2)
       
       if (length(s2idx) > 0) {
-        for (j in 1:length(s2idx)) {
+        for (j in seq_along(s2idx)) {
           pgroup <- unique(ccn[[ s2idx[j] ]])
           jlist[[j]] <- pgroup
         }
@@ -3446,7 +3461,7 @@ joinOverlappingPeaks <- function(td, d, otd, omz, od, scantime, scan.range, peak
   grt.max <- newpeaks[, "rtmax"]
   
   if (nrow(peaks) - Ngp > 0) { ## notgausspeaks
-    for (k in 1:nrow(notgausspeaks)) {
+    for (k in seq_len(nrow(notgausspeaks))) {
       ## here we can only check if they are completely overlapped
       ## by other peaks
       if (!any((notgausspeaks[k, "rtmin"] >= grt.min) &
@@ -3550,29 +3565,178 @@ fitGauss <- function(td, d, pgauss = NA) {
   if (length(d) < 3) return(rep(NA,3))
   if (!any(is.na(pgauss))) { mu <- pgauss$mu; sigma <- pgauss$sigma;h <- pgauss$h }
   fit <- try(nls(d ~ GaussModel(td,mu,sigma,h)), silent = TRUE)
-  if (class(fit) == "try-error")
+  if (is(fit, "try-error"))
     fit <- try(nls(d ~ GaussModel(td, mu, sigma, h), algorithm = 'port'),
                silent = TRUE)
-  if (class(fit) == "try-error")  return(rep(NA, 3))
+  if (is(fit, "try-error"))  return(rep(NA, 3))
   
   as.data.frame(t(fit$m$getPars()))
 }
+
+#' nls.start
+#'
+#' @param formula NA
+#' @param data NA
+#' @param start NA
+#' @param algorithm NA
+#' @param subset NA
+#' @param weights NA
+#' @param na.action NA
+#' @param model NA
+#' @param lower NA
+#' @param upper NA
+#' @param ... NA
+#' @return NA
+#' @noRd
+#' @importFrom stats setNames
+#' @importFrom stats model.weights
+#' @importFrom stats getInitial
+nls.start <- function (formula, data = parent.frame(), start,
+                       algorithm = c("default", "plinear", "port"),
+                       subset, weights, na.action, model = FALSE, lower = -Inf, 
+                       upper = Inf, ...)
+{
+
+  formula <- as.formula(formula)
+  algorithm <- match.arg(algorithm)
+  if (!is.list(data) && !is.environment(data)) 
+    stop("'data' must be a list or an environment")
+  mf <- cl <- match.call()
+  varNames <- all.vars(formula)
+  if (length(formula) == 2L) {
+    formula[[3L]] <- formula[[2L]]
+    formula[[2L]] <- 0
+  }
+  form2 <- formula
+  form2[[2L]] <- 0
+  varNamesRHS <- all.vars(form2)
+  mWeights <- missing(weights)
+  pnames <- if (missing(start)) {
+    if (!is.null(attr(data, "parameters"))) {
+      names(attr(data, "parameters"))
+    }
+    else {
+      cll <- formula[[length(formula)]]
+      if (is.symbol(cll)) {
+        cll <- substitute(S + 0, list(S = cll))
+      }
+      fn <- as.character(cll[[1L]])
+      if (is.null(func <- tryCatch(get(fn), error = function(e) NULL))) 
+        func <- get(fn, envir = parent.frame())
+      if (!is.null(pn <- attr(func, "pnames"))) 
+        as.character(as.list(match.call(func, call = cll))[-1L][pn])
+    }
+  }
+  else names(start)
+  env <- environment(formula)
+  if (is.null(env)) 
+    env <- parent.frame()
+  if (length(pnames)) 
+    varNames <- varNames[is.na(match(varNames, pnames))]
+  lenVar <- function(var) tryCatch(length(eval(as.name(var), 
+                                               data, env)), error = function(e) -1L)
+  if (length(varNames)) {
+    n <- vapply(varNames, lenVar, 0)
+    if (any(not.there <- n == -1L)) {
+      nnn <- names(n[not.there])
+      if (missing(start)) {
+        if (algorithm == "plinear") 
+          stop("no starting values specified")
+        warning("No starting values specified for some parameters.\n", 
+                "Initializing ", paste(sQuote(nnn), collapse = ", "), 
+                " to '1.'.\n", "Consider specifying 'start' or using a selfStart model", 
+                domain = NA)
+        setNames <- stats::setNames;
+        start <- setNames(as.list(rep_len(1, length(nnn))), 
+                          nnn)
+        varNames <- varNames[i <- is.na(match(varNames, 
+                                              nnn))]
+        n <- n[i]
+      }
+      else stop(gettextf("parameters without starting value in 'data': %s", 
+                         paste(nnn, collapse = ", ")), domain = NA)
+    }
+  }
+  else {
+    if (length(pnames) && any((np <- sapply(pnames, lenVar)) == 
+                              -1)) {
+      message(sprintf(ngettext(sum(np == -1), "fitting parameter %s without any variables", 
+                               "fitting parameters %s without any variables"), 
+                      paste(sQuote(pnames[np == -1]), collapse = ", ")), 
+              domain = NA)
+      n <- integer()
+    }
+    else stop("no parameters to fit")
+  }
+  respLength <- length(eval(formula[[2L]], data, env))
+  if (length(n) > 0L) {
+    varIndex <- n%%respLength == 0
+    if (is.list(data) && diff(range(n[names(n) %in% names(data)])) > 
+        0) {
+      mf <- data
+      if (!missing(subset)) 
+        warning("argument 'subset' will be ignored")
+      if (!missing(na.action)) 
+        warning("argument 'na.action' will be ignored")
+      if (missing(start)) 
+        start <- getInitial(formula, mf)
+      startEnv <- new.env(hash = FALSE, parent = environment(formula))
+      for (i in names(start)) assign(i, start[[i]], envir = startEnv)
+      rhs <- eval(formula[[3L]], data, startEnv)
+      n <- NROW(rhs)
+      wts <- if (mWeights) 
+        rep_len(1, n)
+      else eval(substitute(weights), data, environment(formula))
+    }
+    else {
+      vNms <- varNames[varIndex];
+      model.weights <- stats::model.weights
+      if (any(nEQ <- vNms != make.names(vNms))) 
+        vNms[nEQ] <- paste0("`", vNms[nEQ], "`")
+      mf$formula <- as.formula(paste("~", paste(vNms, 
+                                                collapse = "+")), env = environment(formula))
+      mf$start <- mf$control <- mf$algorithm <- mf$trace <- mf$model <- NULL
+      mf$lower <- mf$upper <- NULL
+      mf[[1L]] <- quote(stats::model.frame)
+      mf <- eval.parent(mf)
+      n <- nrow(mf)
+      mf <- as.list(mf)
+      wts <- if (!mWeights) 
+        model.weights(mf)
+      else rep_len(1, n)
+    }
+    if (any(wts < 0 | is.na(wts))) 
+      stop("missing or negative weights not allowed")
+  }
+  else {
+    varIndex <- logical()
+    mf <- list(0)
+    wts <- numeric()
+  }
+  getInitial <- stats::getInitial;
+  start <- getInitial(formula, mf)
+  
+  return(start)
+  
+}
+
+
 running <- function (X, Y = NULL, fun = mean, width = min(length(X), 20),
                      allow.fewer = FALSE, pad = FALSE, align = c("right", "center",
                                                                  "left"), simplify = TRUE, by, ...) {   ## from package gtools
   align = match.arg(align)
   n <- length(X)
   if (align == "left") {
-    from <- 1:n
-    to <- pmin((1:n) + width - 1, n)
+    from <- seq_len(n)
+    to <- pmin(seq_len(n) + width - 1, n)
   }
   else if (align == "right") {
-    from <- pmax((1:n) - width + 1, 1)
-    to <- 1:n
+    from <- pmax(seq_len(n) - width + 1, 1)
+    to <- seq_len(n)
   }
   else {
     from <- pmax((2 - width):n, 1)
-    to <- pmin(1:(n + width - 1), n)
+    to <- pmin(seq_len(n + width - 1), n)
     if (!odd(width))
       stop("width must be odd for center alignment")
   }
@@ -3641,7 +3805,7 @@ na.flatfill <- function(x) {
   
   realloc <- which(!is.na(x))
   if (realloc[1] > 1)
-    x[1:(realloc[1]-1)] <- x[realloc[1]]
+    x[seq_len(realloc[1]-1)] <- x[realloc[1]]
   if (realloc[length(realloc)] < length(x))
     x[(realloc[length(realloc)]+1):length(x)] <- x[realloc[length(realloc)]]
   x
@@ -3656,6 +3820,7 @@ na.flatfill <- function(x) {
 #' @references Smith, C.A., Want, E.J., O'Maille, G., Abagyan,R., Siuzdak, G. (2006). 
 #' "XCMS: Processing mass spectrometry data for metabolite profiling using nonlinear 
 #' peak alignment, matching and identification." Analytical Chemistry, 78, 779-787.
+#' @return return result of selfstart
 #' @export
 #' @examples 
 #' ints<- c(c(1:5,5:1))
@@ -3667,7 +3832,7 @@ GaussModel <- selfStart(~ h*exp(-(x-mu)^2/(2*sigma^2)), function(mCall, data, LH
   xy <- sortedXyData(mCall[["x"]], LHS, data);
   
   len <- dim(xy)[1];
-  xyarea <- sum((xy[2:len,2]+xy[1:(len-1),2])*(xy[2:len,1]-xy[1:(len-1),1]))/2;
+  xyarea <- sum((xy[2:len,2]+xy[seq_len(len-1),2])*(xy[2:len,1]-xy[seq_len(len-1),1]))/2;
   maxpos <- which.max(xy[,2]);
   
   mu <- xy[maxpos,1];
@@ -3690,7 +3855,7 @@ GaussModel <- selfStart(~ h*exp(-(x-mu)^2/(2*sigma^2)), function(mCall, data, LH
   hd <- vapply(x, function(z) mean(head(z, n = n)), numeric(1))
   tl <- vapply(x, function(z) mean(tail(z, n = n)), numeric(1))
   if (diff(range(hd)) <= diff(range(tl)))
-    replicate(n = length(x), 1:min_len, FALSE)
+    replicate(n = length(x), seq_len(min_len), FALSE)
   else
     lapply(lens, function(z) (z - min_len + 1):z)
 }
@@ -3734,12 +3899,12 @@ GaussModel <- selfStart(~ h*exp(-(x-mu)^2/(2*sigma^2)), function(mCall, data, LH
   if (scanrange[1] == 1)
     startidx <- 1
   else
-    startidx <- sum(valsPerSpect[1:(scanrange[1] - 1)]) + 1
-  endidx <- sum(valsPerSpect[1:scanrange[2]])
+    startidx <- sum(valsPerSpect[seq_len(scanrange[1] - 1)]) + 1
+  endidx <- sum(valsPerSpect[seq_len(scanrange[2])])
   scans <- rep(scanrange[1]:scanrange[2],
                valsPerSpect[scanrange[1]:scanrange[2]])
   masses <- mz[startidx:endidx]
-  massidx <- 1:length(masses)
+  massidx <- seq_along(masses)
   if (length(mzrange) >= 2) {
     mzrange <- range(mzrange)
     massidx <- massidx[(masses >= mzrange[1] & (masses <= mzrange[2]))]
@@ -3801,7 +3966,7 @@ GaussModel <- selfStart(~ h*exp(-(x-mu)^2/(2*sigma^2)), function(mCall, data, LH
 }
 .applyRtAdjToChromPeaks <- function(x, rtraw, rtadj) {
   ## Using a for loop here.
-  for (i in 1:length(rtraw)) {
+  for (i in seq_along(rtraw)) {
     whichSample <- which(x[, "sample"] == i)
     if (length(whichSample)) {
       x[whichSample, c("rt", "rtmin", "rtmax")] <-
@@ -4065,10 +4230,10 @@ GaussModel <- selfStart(~ h*exp(-(x-mu)^2/(2*sigma^2)), function(mCall, data, LH
 filtfft <- function(y, filt) {
   
   yfilt <- numeric(length(filt))
-  yfilt[1:length(y)] <- y
+  yfilt[seq_along(y)] <- y
   yfilt <- fft(fft(yfilt, inverse = TRUE) * filt)
   
-  Re(yfilt[1:length(y)])
+  Re(yfilt[seq_along(y)])
 }
 
 
@@ -4112,7 +4277,7 @@ PeakPicking_prep <- function(object){
   ##### Revise for Centwave MSnExp -------------
   
   ## (1) split the object per file from MSnExp.
-  object_mslevel_i<-splitByFile(object = object, f = factor(c(1:length(object@phenoData@data[["sample_name"]]))))
+  object_mslevel_i<-splitByFile(object = object, f = factor(c(seq_along(object@phenoData@data[["sample_name"]]))))
   object_mslevel_o<-bplapply(object_mslevel_i, FUN = function(x){x@assayData})
   
   if (.on.public.web){
@@ -4129,8 +4294,8 @@ PeakPicking_prep <- function(object){
   
   object_mslevel_name<-bplapply(object_mslevel_o,ls);
   object_mslevell<-object_mslevel<-list();
-  for (j in 1:length(object_mslevel_o)){
-    for (i in 1:length(object_mslevel_name[[j]])){
+  for (j in seq_along(object_mslevel_o)){
+    for (i in seq_along(object_mslevel_name[[j]])){
       #print(i,j,"\n")
       object_mslevell[[i]]<-object_mslevel_o[[j]][[object_mslevel_name[[j]][i]]]
     }
@@ -4138,7 +4303,7 @@ PeakPicking_prep <- function(object){
     object_mslevel[[j]]<-object_mslevell;
   }
   
-  for (i in 1:length(object_mslevel)){
+  for (i in seq_along(object_mslevel)){
     #for (j in 1:length(object_mslevel[[i]])){
     ncount<-as.numeric(which(sapply(names(object_mslevel[[i]]),is.na)));
     if (!identical(ncount,numeric(0))){
@@ -4184,7 +4349,7 @@ PeakPicking_core <-function(object, object_mslevel, param, msLevel = 1L){
   }
   
   if(missing(object) | missing(object_mslevel)){
-    stop("Peakpicking error for missing object! CODE: x10001")
+    stop("Peakpicking cannot continue for missing object! CODE: x10001")
   }
   
   ## Restrict to MS 1 data for now.
@@ -4221,7 +4386,7 @@ PeakPicking_core <-function(object, object_mslevel, param, msLevel = 1L){
   ## (3) PEAK SUMMARY------------
   
   pks <- vector("list", length(resList))
-  for (i in 1:length(resList)) {
+  for (i in seq_along(resList)) {
     n_pks <- nrow(resList[[i]])
     if (is.null(n_pks))
       n_pks <- 0
@@ -4299,7 +4464,7 @@ PeakPicking_core <-function(object, object_mslevel, param, msLevel = 1L){
   filteredMs2spectra <- list()
   
   #isolate only the ones within range
-  for(i in 1:length(ms2spectra)) {
+  for(i in seq_along(ms2spectra)) {
     
     #isolate Ms2 spectrum
     ms2spectrum <- ms2spectra[[i]]
@@ -4327,7 +4492,7 @@ PeakPicking_core <-function(object, object_mslevel, param, msLevel = 1L){
 ####### ---------- ====== Function Kit From CAMERA ======= ----------- ######/
 getPeaks_selection <- function(mSet, method="medret", value="into"){
   
-  if (!class(mSet) == "mSet") {
+  if (!is(mSet,"mSet")) {
     stop ("Parameter mSet is no mSet object\n")
   }
  
@@ -4401,8 +4566,8 @@ calcIsotopeMatrix <- function(maxiso=4){
   if(!is.numeric(maxiso)){
     stop("Parameter maxiso is not numeric!\n")  
   } else if(maxiso < 1 | maxiso > 8){
-    stop(paste("Parameter maxiso must between 1 and 8. ",
-               "Otherwise use your own IsotopeMatrix.\n"),sep="")
+    stop(c("Parameter maxiso must between 1 and 8. ",
+               "Otherwise use your own IsotopeMatrix.\n"))
   }
   
   isotopeMatrix <- matrix(NA, 8, 4);
@@ -4417,7 +4582,7 @@ calcIsotopeMatrix <- function(maxiso=4){
   isotopeMatrix[7, ] <- c(1.000, 1.0040, 0.0000001, 200)
   isotopeMatrix[8, ] <- c(1.000, 1.0040, 0.00000001, 200)  
   
-  return(isotopeMatrix[1:maxiso, , drop=FALSE])
+  return(isotopeMatrix[seq_len(maxiso), , drop=FALSE])
   
 }
 findIsotopesPspec <- function(isomatrix, mz, ipeak, int, params){
@@ -4442,11 +4607,11 @@ findIsotopesPspec <- function(isomatrix, mz, ipeak, int, params){
   #error.abs <- ),1, function(x) x + params$mzabs*rbind(1,2,3)));
   
   #for every peak in pseudospectrum
-  for ( j in 1:(length(mz) - 1)){
+  for (j in seq_len(length(mz) - 1)){
     #create distance matrix
     MI <- spectra[j:cnt, 1] - spectra[j, 1];
     #Sum up all possible/allowed isotope distances + error(ppm of peak mz and mzabs)
-    max.index <- max(which(MI < (sum(params$IM[1:params$maxiso, "mzmax"]) + error.ppm[j] + params$mzabs )))
+    max.index <- max(which(MI < (sum(params$IM[seq_len(params$maxiso), "mzmax"]) + error.ppm[j] + params$mzabs )))
     #check if one peaks falls into isotope window
     if(max.index == 1){
       #no promising candidate found, move on
@@ -4454,17 +4619,18 @@ findIsotopesPspec <- function(isomatrix, mz, ipeak, int, params){
     }
     
     #IM - isotope matrix (column diffs(min,max) per charge, row num. isotope)
-    IM <- t(sapply(1:params$maxcharge,function(x){
+    IM <- t(sapply(seq_len(params$maxcharge),
+                   function(x){
       mzmin <- (params$IM[, "mzmin"]) / x;
       mzmax <- (params$IM[, "mzmax"]) / x;
       error <-      (error.ppm[j]+params$mzabs) / x
       res   <- c(0,0);
-      for(k in 1:length(mzmin)){
+      for(k in seq_along(mzmin)){
         res <- c(res, mzmin[k]+res[2*k-1], mzmax[k]+res[2*k])
       }
       res[seq(1,length(res),by=2)] <- res[seq(1,length(res),by=2)]-error
       res[seq(2,length(res),by=2)] <- res[seq(2,length(res),by=2)]+error
-      return (res[-c(1:2)])
+      return (res[-seq_len(2)])
     } ))
     
     #Sort IM to fix bug, with high ppm and mzabs values 
@@ -4472,16 +4638,16 @@ findIsotopesPspec <- function(isomatrix, mz, ipeak, int, params){
     IM <- t(apply(IM,1,sort))
     
     #find peaks, which m/z value is in isotope interval
-    hits <- t(apply(IM, 1, function(x){ findInterval(MI[1:max.index], x)}))
-    rownames(hits) <- c(1:nrow(hits))
-    colnames(hits) <- c(1:ncol(hits))
+    hits <- t(apply(IM, 1, function(x){ findInterval(MI[seq_len(max.index)], x)}))
+    rownames(hits) <- c(seq_len(nrow(hits)))
+    colnames(hits) <- c(seq_len(ncol(hits)))
     hits[which(hits==0)] <-NA
     hits <- hits[, -1, drop=FALSE]
     hits.iso <- hits%/%2 + 1;
     
     
     #check occurence of first isotopic peak
-    for(iso in 1:min(params$maxiso,ncol(hits.iso))){
+    for(iso in seq_len(min(params$maxiso,ncol(hits.iso)))){
       hit <- apply(hits.iso,1, function(x) any(naOmit(x)==iso))
       hit[which(is.na(hit))] <- TRUE
       if(all(hit)) break;
@@ -4512,7 +4678,7 @@ findIsotopesPspec <- function(isomatrix, mz, ipeak, int, params){
     #TODO: unique or not????
     #isolength <- apply(hits, 1, function(x) length(which(unique(x) %% 2 !=0)))
     #isohits - for each charge, length of peak within intervals
-    isohits   <- lapply(1:nrow(hits), function(x) which(hits[x, ] %% 2 !=0))
+    isohits   <- lapply(seq_len(nrow(hits)), function(x) which(hits[x, ] %% 2 !=0))
     isolength <- sapply(isohits, length)
     
     #Check if any result is found
@@ -4526,9 +4692,9 @@ findIsotopesPspec <- function(isomatrix, mz, ipeak, int, params){
     #second column - how often could a isotope int test be performed
     candidate.matrix <- matrix(0, nrow=length(isohits), ncol=max(isolength)*2);
     
-    for(iso in 1:length(isohits)){
-      for(candidate in 1:length(isohits[[iso]])){
-        for(sample.index in c(1:ncol(int))){
+    for(iso in seq_along(isohits)){
+      for(candidate in seq_along(isohits[[iso]])){
+        for(sample.index in c(seq_len(ncol(int)))){
           #Test if C12 Peak is NA
           if(!is.na(int[j, sample.index])){              
             #candidate.matrix[maxIso, 1] <- candidate.matrix[maxIso, 1] + 1
@@ -4588,7 +4754,7 @@ findIsotopesPspec <- function(isomatrix, mz, ipeak, int, params){
     }
     
     #decision between multiple charges or peaks
-    for(charge in 1:nrow(candidate.matrix)){
+    for(charge in seq_len(nrow(candidate.matrix))) {
       if(any(duplicated(hits[charge, isohits[[charge]]]))){
         #One isotope peaks has more than one candidate
         ##check if problem is still consistent
@@ -4608,7 +4774,7 @@ findIsotopesPspec <- function(isomatrix, mz, ipeak, int, params){
         }
       }#end if
       
-      for(isotope in 1:ncol(candidate.ratio)){
+      for(isotope in seq_len(ncol(candidate.ratio))) {
         if(candidate.ratio[charge, isotope] >= params$minfrac){
           isomatrix <- rbind(isomatrix, 
                              c(spectra[j, 2],
@@ -4650,7 +4816,7 @@ addFragments <- function(hypothese, rules, mz){
   }
   
   orderMZ <- cbind(order(mz),order(order(mz)))
-  sortMZ <- cbind(mz,1:length(mz))
+  sortMZ <- cbind(mz,seq_along(mz))
   sortMZ <- sortMZ[order(sortMZ[,1]),]
   
   for(massgrp in unique(hypothese[, "massgrp"])){
@@ -4661,9 +4827,9 @@ addFragments <- function(hypothese, rules, mz){
       indexFrag <- which(fragments[, "parent"] == ruleID)
       
       while(length(massID) > 0){
-        result <- fastMatch(sortMZ[1:orderMZ[massID[1],2],1], mz[massID[1]] + 
+        result <- fastMatch(sortMZ[seq_len(orderMZ[massID[1],2]),1], mz[massID[1]] + 
                               fragments[indexFrag, "massdiff"], tol=0.05)
-        invisible(sapply(1:orderMZ[massID[1],2], function(x){
+        invisible(sapply(seq_len(orderMZ[massID[1],2]), function(x){
           if(!is.null(result[[x]])){
             massID <<- c(massID, orderMZ[x,1]);        
             indexFrags <- indexFrag[result[[x]]];
@@ -4745,7 +4911,7 @@ getAllPeakEICs <- function(mSet, index=NULL){
     MessageOutput(".","\n",NULL)
     
     #loop over all samples
-    for (f in 1:nfiles){
+    for (f in seq_len(nfiles)){
       MessageOutput(paste("Detecting ",basename(mSet@rawOnDisk@processingData@files)[f]," ... "),"",NULL)
 
       #which peaks should read from this sample    
@@ -4806,10 +4972,10 @@ fastMatch <- function(x,y,tol=0.001, symmetric=FALSE) {
   fm2 <- vector("list", length=length(fm))
   #stop("!")
   if (symmetric){  
-    for (a in 1:length(fm)) {
+    for (a in seq_along(fm)) {
       if (!is.null(fm[[a]][1])){
         tmp<-NULL
-        for (b in 1:length(fm[[a]])){
+        for (b in seq_along(fm[[a]])){
           if ((abs(x[a]-y[fm[[a]]][b]) == min(abs(x[a]-y[fm[[a]][b]]),
                                               abs(x[a]  -y[fm[[a]][b]-1]),
                                               abs(x[a]  -y[fm[[a]][b]+1]),
@@ -4890,7 +5056,7 @@ calcCiS<- function(mSet, EIC=EIC, corval=0.75, pval=0.05, psg_list=NULL ){
   #Check if object have been preprocessed with groupFWHM
   if(npspectra < 1){
     npspectra <- 1;
-    mSet@peakAnnotation$AnnotateObject$pspectra[[1]] <- seq(1:nrow(mSet@peakAnnotation$AnnotateObject$groupInfo));
+    mSet@peakAnnotation$AnnotateObject$pspectra[[1]] <- seq_len(nrow(mSet@peakAnnotation$AnnotateObject$groupInfo));
     MessageOutput(paste0('Calculating peak correlations in 1 group.'),"\n",NULL)
 
     lp <- -1;
@@ -4900,7 +5066,7 @@ calcCiS<- function(mSet, EIC=EIC, corval=0.75, pval=0.05, psg_list=NULL ){
     if(is.null(psg_list)){
       MessageOutput(paste('Calculating peak correlations in',npspectra,'Groups... '),"\n",NULL);
       lp <- -1;
-      pspectra_list <- 1:npspectra;
+      pspectra_list <- seq_len(npspectra);
     }else{
       MessageOutput(paste('Calculating peak correlations in',length(psg_list),'Groups... '),"\n",NULL);
       lp <- -1;
@@ -4913,14 +5079,14 @@ calcCiS<- function(mSet, EIC=EIC, corval=0.75, pval=0.05, psg_list=NULL ){
     EIC <- t(EIC);
     #Second check, otherwise number of peaks != number of EIC curves
     if(dim(EIC)[2] != npeaks){
-      stop(paste("Wrong dimension of EIC. It has ",dim(EIC)[1]," Rows for ",npeaks,"peaks",sep=""));
+      stop(c("Wrong dimension of EIC. It has ",dim(EIC)[1]," Rows for ",npeaks,"peaks"));
     }
   }
   lp <- -1;
   #Iterate over all PS-spectra
   pb <- progress_bar$new(format = "Generating [:bar] :percent Time left: :eta", total = length(pspectra_list), clear = TRUE, width= 75)
   
-  for(j in 1:length(pspectra_list)){
+  for(j in seq_along(pspectra_list)){
     i  <- pspectra_list[j];
     pi <- mSet@peakAnnotation$AnnotateObject$pspectra[[i]];
     npi <- length(pi);
@@ -4950,7 +5116,7 @@ calcCiS<- function(mSet, EIC=EIC, corval=0.75, pval=0.05, psg_list=NULL ){
     }
     
     if(length(index) > 0){
-      for( x in 1:(length(index))){
+      for(x in seq_along(index)){
         col <- index[x] %/% npi + 1;
         row <- index[x] %%  npi;
         if(row == 0){
@@ -4968,7 +5134,7 @@ calcCiS<- function(mSet, EIC=EIC, corval=0.75, pval=0.05, psg_list=NULL ){
     }
   }
   
-  return(invisible(resMat[1:cnt,,drop=FALSE]))
+  return(invisible(resMat[seq_len(cnt),,drop=FALSE]))
 }
 calcPC.hcs <- function(mSet, ajc=NULL,psg_list=NULL) {
   
@@ -4984,7 +5150,7 @@ calcPC.hcs <- function(mSet, ajc=NULL,psg_list=NULL) {
     MessageOutput(paste('Calculating graph cross linking in', npspectra, 'Groups...'), "\n", NULL)
     
     lperc <- -1;
-    pspectra_list <- 1:npspectra;
+    pspectra_list <- seq_len(npspectra);
     ncl <- sum(sapply(mSet@peakAnnotation$AnnotateObject$pspectra, length));
   }else{
     MessageOutput(paste('Calculating graph cross linking in', npspectra, 'Groups...'), "\n", NULL)
@@ -4998,7 +5164,7 @@ calcPC.hcs <- function(mSet, ajc=NULL,psg_list=NULL) {
   lp <- -1;
   pb <- progress_bar$new(format = "Calculating [:bar] :percent Time left: :eta", total = length(pspectra_list), clear = TRUE, width= 75)
   
-  for(j in 1:length(pspectra_list)){
+  for(j in seq_along(pspectra_list)){
     i  <- pspectra_list[j];#index of pseudospectrum
     pi <- mSet@peakAnnotation$AnnotateObject$pspectra[[i]]; #peak_id in pseudospectrum
     names(pi) <- as.character(pi);
@@ -5011,16 +5177,16 @@ calcPC.hcs <- function(mSet, ajc=NULL,psg_list=NULL) {
     if(length(index) < 1){
       g <- ftM2graphNEL(matrix(nrow=0,ncol=2),V=as.character(pi),edgemode="undirected")
     }else{
-      g <- ftM2graphNEL(ajc[index,1:2,drop=FALSE],W=ajc[index,3,drop=FALSE], V=as.character(pi), edgemode="undirected");
+      g <- ftM2graphNEL(ajc[index,seq_len(2),drop=FALSE],W=ajc[index,3,drop=FALSE], V=as.character(pi), edgemode="undirected");
     }
     hcs <- highlyConnSG(g);
     
     #order cluster after size
     cnts <- sapply(hcs$clusters,length);
-    grps <- 1:length(hcs$clusters);     
+    grps <- seq_along(hcs$clusters);     
     grps <- grps[order(cnts, decreasing = TRUE)]
     
-    for (ii in 1:length(grps)){
+    for (ii in seq_along(grps)){
       if(ii==1){
         #save old pspectra number
         pspectra[[i]] <- as.integer(hcs$cluster[[grps[ii]]])
@@ -5034,7 +5200,7 @@ calcPC.hcs <- function(mSet, ajc=NULL,psg_list=NULL) {
     }
     index <- which(!is.na(pi));
     if(length(index)>0){
-      for(ii in 1:length(index)){
+      for(ii in seq_along(index)){
         npspectra <- npspectra +1
         pspectra[[npspectra]] <- pi[index[ii]]
         psSamples[npspectra] <- psSamples[i]
@@ -5069,7 +5235,7 @@ findAdducts <- function(mSet, ppm=5, mzabs=0.015, multiplier=3, polarity=NULL, r
   #If groupCorr or groupFHWM have not been invoke, select all peaks in one sample
   if(npspectra < 1){ 
     npspectra <- 1;
-    mSet@peakAnnotation$AnnotateObject$pspectra[[1]] <- seq(1:nrow(mSet@peakAnnotation$AnnotateObject$groupInfo)); 
+    mSet@peakAnnotation$AnnotateObject$pspectra[[1]] <- seq_len(nrow(mSet@peakAnnotation$AnnotateObject$groupInfo)); 
   }
   
   if(mSet@peakAnnotation$AnnotateObject$sample == 1 && length(rownames(pData(mSet@rawOnDisk))) == 1){
@@ -5078,7 +5244,7 @@ findAdducts <- function(mSet, ppm=5, mzabs=0.015, multiplier=3, polarity=NULL, r
   }else{
     ##multiple sample
     if(is.na(mSet@peakAnnotation$AnnotateObject$sample[1])){
-      index <- 1:length(mSet@rawOnDisk@processingData@files);
+      index <- seq_along(mSet@rawOnDisk@processingData@files);
     }else{
       index <- mSet@peakAnnotation$AnnotateObject$sample;
     }
@@ -5344,7 +5510,7 @@ findAdducts <- function(mSet, ppm=5, mzabs=0.015, multiplier=3, polarity=NULL, r
     if(is.null(psg_list)){
       MessageOutput(paste('Calculating possible adducts in',npspectra,'Groups... '),"\n",NULL); 
       lp <- -1;
-      pspectra_list <- 1:npspectra;
+      pspectra_list <- seq_len(npspectra);
     }else{
       MessageOutput(paste('Calculating possible adducts in',length(psg_list),'Groups... '),"\n",NULL); 
       lp <- -1;
@@ -5357,7 +5523,7 @@ findAdducts <- function(mSet, ppm=5, mzabs=0.015, multiplier=3, polarity=NULL, r
       parent <- TRUE;
     }else{
       #backup for old rule sets
-      rules.idx <- 1:nrow(rules);
+      rules.idx <- seq_len(nrow(rules));
       parent <- FALSE;
     }
     along = pspectra_list;
@@ -5385,7 +5551,7 @@ findAdducts <- function(mSet, ppm=5, mzabs=0.015, multiplier=3, polarity=NULL, r
         old_massgrp <- 0;
         
         #combine annotation hypotheses to annotation groups for one compound mass
-        for(hyp in 1:nrow(hypothese)){
+        for(hyp in seq_len(nrow(hypothese))){
           peakid <- as.numeric(ipeak[hypothese[hyp, "massID"]]);
           if(old_massgrp != hypothese[hyp, "massgrp"]) {
             massgrp <- massgrp + 1;
@@ -5580,7 +5746,7 @@ generateRules <- function (object) {
   ## Molekülionen
   if(polarity=="positive"){
     ## Wasserstoff, hard codiert
-    for(k in 1:mol){
+    for(k in seq_len(mol)){
       if(k == 1){
         str    <- "";
         tmpips <- 1.0;
@@ -5613,7 +5779,7 @@ generateRules <- function (object) {
       oidscore<-append(oidscore,3);
       ips<-append(ips,tmpips)
       oid<-3;
-      for(i in 1:nrow(ionlist)){
+      for(i in seq_len(nrow(ionlist))){
         if(ionlist[i,2]<=0) {next;}
         if(ionlist[i,2]==1){
           name<-append(name,paste("[",str,"M+H+",ionlist[i,1],"]2+",sep=""));
@@ -5640,7 +5806,7 @@ generateRules <- function (object) {
       coeff<-cbind(coeff,rep(0,nrow(coeff)));
       coeff<-coeff[-1,]
       tmp<-NULL;
-      for(i in 1:nrow(ionlist)){
+      for(i in seq_len(nrow(ionlist))){
         if(ionlist[i,2]<=0)next;
         ## Austausch erstmal nur einen pro Ion
         tmp<-rbind(tmp,t(apply(coeff,1,function(x) {x[i]<-x[i]+1;x[nrow(ionlist)+1]<-1;x})));
@@ -5650,7 +5816,7 @@ generateRules <- function (object) {
       while (i <= nrow(coeff)){
         tmpname<-paste("[",str,"M",sep="");
         tmpcharge<-0;tmpmass<-0;
-        for(ii in 1:(ncol(coeff)-1)){
+        for(ii in seq_len(ncol(coeff)-1)){
           if(coeff[i,ii]>0){
             if(coeff[i,ii]>1){
               tmpname<-paste(tmpname,"+",coeff[i,ii],ionlist[ii,1],sep="");
@@ -5698,9 +5864,9 @@ generateRules <- function (object) {
     index<-which(quasi==1)
     
     if (nrow(neutraladdition)>0) {
-      for(i in 1:nrow(neutraladdition)) {
+      for(i in seq_len(nrow(neutraladdition))) {
         if(length(index2<-which(ionlist[,2]>0))>0){
-          for(ii in 1:length(index2)){
+          for(ii in seq_along(index2)){
             if(ionlist[index2[ii],2] > 1){
               name    <-  append(name,paste("[M+",ionlist[index2[ii],1],"+",neutraladdition[i,1],"]",abs(ionlist[index2[ii],2]),"+",sep=""));
             }else{
@@ -5728,8 +5894,8 @@ generateRules <- function (object) {
     
     ##Erzeuge Neutral loss
     index<-which(quasi==1)
-    for(i in 1:nrow(neutralloss)){
-      for(ii in 1:maxcharge){
+    for(i in seq_len(nrow(neutralloss))){
+      for(ii in seq_len(maxcharge)){
         if(ii > 1){
           name<-append(name,paste("[M+",ii,"H-",neutralloss[i,1],"]",ii,"+",sep=""));
         }else {name<-append(name,paste("[M+H-",neutralloss[i,1],"]+",sep=""));}
@@ -5747,14 +5913,14 @@ generateRules <- function (object) {
     }
   }else if(polarity=="negative"){
     ## Wasserstoff, hard codiert
-    for(k in 1:mol){
+    for(k in seq_len(mol)){
       if(k==1){str<-"";tmpips<-1.0;}else{str<-k;tmpips<-0.5};
       name<-append(name,paste("[",str,"M-H]-",sep=""));
       charge<-append(charge,-1);massdiff<-append(massdiff,-1.007276);nmol<-append(nmol,k);if(k==1){quasi<-append(quasi,1);}else{quasi<-append(quasi,0);};oidscore<-append(oidscore,1);ips<-append(ips,tmpips)
       name<-append(name,paste("[",str,"M-2H]2-",sep=""));charge<-append(charge,-2);massdiff<-append(massdiff,-2.014552);nmol<-append(nmol,k);quasi<-append(quasi,0);oidscore<-append(oidscore,2);ips<-append(ips,tmpips)
       name<-append(name,paste("[",str,"M-3H]3-",sep=""));charge<-append(charge,-3);massdiff<-append(massdiff,-3.021828);nmol<-append(nmol,k);quasi<-append(quasi,0);oidscore<-append(oidscore,3);ips<-append(ips,tmpips)
       oid<-3;
-      for(i in 1:nrow(ionlist)){
+      for(i in seq_len(nrow(ionlist))){
         if(ionlist[i,2]>=0){
           if(ionlist[i,2] == 1){
             name<-append(name,paste("[",str,"M-2H+",ionlist[i,1],"]-",sep=""));
@@ -5803,7 +5969,7 @@ generateRules <- function (object) {
       while (i <= nrow(coeff)){
         tmpname<-paste("[",str,"M",sep="");
         tmpcharge<-0;tmpmass<-0;
-        for(ii in 1:(ncol(coeff)-1)){
+        for(ii in seq_len(ncol(coeff)-1)){
           if(coeff[i,ii]>0){
             if(coeff[i,ii]>1){
               tmpname<-paste(tmpname,"+",coeff[i,ii],ionlist[ii,1],sep="");
@@ -5844,9 +6010,9 @@ generateRules <- function (object) {
     
     ##Erzeuge Neutral Addition
     index<-which(quasi==1)
-    for(i in 1:nrow(neutraladdition)){
+    for(i in seq_len(nrow(neutraladdition))){
       if(length(index2<-which(ionlist[,2]<0))>0){
-        for(ii in 1:length(index2)){
+        for(ii in seq_along(index2)){
           if(ionlist[index2[ii],2]< -1){
             name <- append(name,paste("[M+",ionlist[index2[ii],1],"+",neutraladdition[i,1],"]",abs(ionlist[index2[ii],2]),"-",sep=""));
           }else{
@@ -5872,7 +6038,7 @@ generateRules <- function (object) {
     
     ##Erzeuge Neutral loss
     index<-which(quasi==1)
-    for(i in 1:nrow(neutralloss)){
+    for(i in seq_len(nrow(neutralloss))){
       name<-append(name,paste("[M-H-",neutralloss[i,1],"]-",sep=""));
       charge<-append(charge,-1);
       massdiff<-  append(massdiff,-neutralloss[i,2]-1.007276);
@@ -5885,7 +6051,7 @@ generateRules <- function (object) {
     if(length(index<-which(ruleset[,"charge"]< -maxcharge))>0){
       ruleset<- ruleset[-index,];
     }
-  }else stop("Unknown error")
+  }else stop("Unknown issue appers: CODE: OPX0001")
   
   ## Update object rules and return ruleset
   object@rules=ruleset
@@ -5930,7 +6096,7 @@ generateRules2 <- function (object) {
   }
   
   #Hydrogen part is hard coded
-  for(k in 1:mol) {
+  for(k in seq_len(mol)){
     if(k == 1){
       #For M+H
       str    <- "";
@@ -5954,7 +6120,7 @@ generateRules2 <- function (object) {
       }
     }
     
-    for(i in 1:nrow(ionlist)){
+    for(i in seq_len(nrow(ionlist))){
       #Add change of kat- respectively anion against one hydrogen
       if(ionlist[i, 2] > 0 & charge == "-"){
         if(ionlist[i, 2] == 1){
@@ -6007,7 +6173,7 @@ generateRules2 <- function (object) {
     }
     
     tmp <- NULL;
-    for(i in 1:nrow(ionlist)){
+    for(i in seq_len(nrow(ionlist))){
       if((chargeValue > 0 & ionlist[i, 2] <= 0) | (chargeValue < 0 & ionlist[i,2] >=0)){
         next;
       }
@@ -6023,8 +6189,8 @@ generateRules2 <- function (object) {
     colnames(tmp)[4] <- "Var4"
     coeff <- unique(rbind(coeff, tmp));
     
-    for(i in 1:nrow(coeff)){
-      if(sum(coeff[i, 1:nrow(ionlist)]) > 2 | sum(coeff[i, 1:nrow(ionlist)]) < 1){
+    for(i in seq_len(nrow(coeff))){
+      if(sum(coeff[i, seq_len(nrow(ionlist))]) > 2 | sum(coeff[i, seq_len(nrow(ionlist))]) < 1){
         next;
       }
       
@@ -6032,7 +6198,7 @@ generateRules2 <- function (object) {
       tmpcharge <- 0;
       tmpmass   <- 0;
       
-      for(ii in 1:(ncol(coeff))){
+      for(ii in seq_len(ncol(coeff))){
         if(coeff[i,ii] > 0){
           if(coeff[i,ii] > 1){
             tmpname <- paste(tmpname, "+", coeff[i, ii], ionlist[ii, 1], sep="");
@@ -6067,14 +6233,14 @@ generateRules2 <- function (object) {
   }#end for loop k
   
   # Create neutral addition to M+H from list
-  for(i in 1:nrow(neutraladdition)){
+  for(i in seq_len(nrow(neutraladdition))){
     #Add neutral ion to only M+H
     ruleset <- rbind(ruleset, cbind(paste("[M", charge, "H+", neutraladdition[i, 1], "]", charge, sep="") , 1, chargeValue, 
                                     neutraladdition[i, 2]+(massH*chargeValue), "A", 0, 0.25, 1));
   }
   
   ## Add neutral loss from list to ruleset
-  for(i in 1:nrow(neutralloss)){
+  for(i in seq_len(nrow(neutralloss))){
     ruleset <- rbind(ruleset, cbind(paste("-", neutralloss[i, 1], sep=""), 1, 0, 
                                     -neutralloss[i, 2], "F", 0, 0.25, 1));
     #Eliminate rules with charge > maxcharge
@@ -6208,12 +6374,14 @@ massDiffMatrix <- function(m, rules){
   }
   return(DM)
 }
+
+#' @importFrom stats cutree hclust
 createHypothese <- function(ML, rules, devppm, mzabs, naIdx){
   ML.nrow <- nrow(ML);
   ML.vec <- as.vector(ML);
   max.value <- max(round(ML, 0));
   hashmap <- vector(mode="list", length=max.value);
-  for(i in 1:length(ML)){
+  for(i in seq_along(ML)){
     val <- trunc(ML[i],0);
     if(val>1){
       hashmap[[val]] <- c(hashmap[[val]],i);
@@ -6254,9 +6422,9 @@ createHypothese <- function(ML, rules, devppm, mzabs, naIdx){
       next;
     }
     m <- lapply(index, function(x) which(result == x));
-    for(ii in 1:length(m)){
+    for(ii in seq_along(m)){
       ini.adducts <- candidates.index[m[[ii]]];
-      for( iii in 1:length(ini.adducts)){
+      for(iii in seq_along(ini.adducts)){
         adduct <- ini.adducts[iii] %/% ML.nrow +1;
         mass   <- ini.adducts[iii] %% ML.nrow;
         if(mass == 0){
@@ -6276,7 +6444,7 @@ createHypothese <- function(ML, rules, devppm, mzabs, naIdx){
   return(hypothese);
 }
 checkIsotopes <- function(hypothese, isotopes, ipeak){
-  for(hyp in 1:nrow(hypothese)){
+  for(hyp in seq_len(nrow(hypothese))){
     peakid <- ipeak[hypothese[hyp, 1]];
     if(!is.null(isotopes[[peakid]])){
       #Isotope da
@@ -6311,7 +6479,7 @@ checkHypothese <- function(hypothese){
 }
 
 checkIps <- function(hypothese){
-  for(hyp in 1:nrow(hypothese)){
+  for(hyp in seq_len(nrow(hypothese))){
     if(length(which(hypothese[, "massgrp"] == hypothese[hyp, "massgrp"])) < 2){
       hypothese[hyp, "check"] = 0;
     }
@@ -6324,7 +6492,7 @@ checkIps <- function(hypothese){
     colnames(hypothese)<-c("massID", "ruleID", "nmol", "charge", "mass", "oidscore", "ips","massgrp", "check")
     return(hypothese)
   }
-  for(hyp in 1:nrow(hypothese)){
+  for(hyp in seq_len(nrow(hypothese))){
     if(length(id <- which(hypothese[, "massID"] == hypothese[hyp, "massID"] & hypothese[, "check"] != 0)) > 1){
       masses <- hypothese[id, "mass"]
       nmasses <- sapply(masses, function(x) { 
@@ -6369,7 +6537,7 @@ checkOidCausality <- function(hypothese,rules){
 }
 checkQuasimolion <- function(hypothese, quasimolion){
   hypomass <- unique(hypothese[, "mass"])
-  for(mass in 1:length(hypomass)){
+  for(mass in seq_along(hypomass)){
     if(!any(quasimolion %in% hypothese[which(hypothese[, "mass"] == hypomass[mass]), "ruleID"])){
       hypothese[which(hypothese[, "mass"] == hypomass[mass]), "check"] = 0;
     }else if(is.null(nrow(hypothese[which(hypothese[, "mass"] == hypomass[mass]), ]))){
@@ -6396,7 +6564,7 @@ getderivativeIons <- function(annoID, annoGrp, rules, npeaks){
     return(derivativeIons);
   }
   
-  for(i in 1:nrow(annoID)){
+  for(i in seq_len(nrow(annoID))){
     
     peakid  <-  annoID[i, 1];
     grpid   <-  annoID[i, 2];
@@ -6452,9 +6620,9 @@ profMat <- function(object,method = "bin",step = 0.1,baselevel = NULL,
                                                           bmzrange.,
                                                           breturnBreaks) {
 
-    if (class(z) == "MSnExp") {
+    if (is(z, "MSnExp")) {
       sps <- z@assayData
-    } else if (class(z) == "OnDiskMSnExp") {
+    } else if (is(z, "OnDiskMSnExp")) {
       sps <- spectra(z, BPPARAM = SerialParam())
     } else {
       stop("Wrong Data provided!")
@@ -6604,7 +6772,7 @@ profMat <- function(object,method = "bin",step = 0.1,baselevel = NULL,
       if (pos[i] == ncol(x))
         x <- cbind(x, val[[i]])
       else
-        x <- cbind(x[, 1:(pos[i]-1)], val[[i]], x[, pos[i]:ncol(x)])
+        x <- cbind(x[, seq_len(pos[i]-1)], val[[i]], x[, pos[i]:ncol(x)])
     }
   }
   x
@@ -6640,7 +6808,7 @@ naOmit <- function(x) {
 }
 
 .replace.by.lod <- function(x){
-  lod <- min(x[x>0], na.rm=T)/5;
+  lod <- min(x[x>0], na.rm=TRUE)/5;
   x[x==0|is.na(x)] <- lod;
   return(x);
 }

@@ -11,6 +11,9 @@ PerformPeakFiling(mSet, BPPARAM = bpparam())
 
 \item{BPPARAM}{parallel method used for data processing. Default is bpparam().}
 }
+\value{
+will return an mSet object with peak gaps filled
+}
 \description{
 PerformPeakFiling
 }

@@ -9,6 +9,9 @@ SetGlobalParallel(ncore = 1)
 \arguments{
 \item{ncore}{Numeric, used to set the global core numbers, default is 1}
 }
+\value{
+void function, return nothing but will define the global parallel number
+}
 \description{
 SetGlobalParallel used to set the global core numbers
 }
@@ -17,7 +20,8 @@ SetGlobalParallel(1);
 register(bpstop());
 }
 \author{
-Zhiqiang Pang \email{zhiqiang.pang@mail.mcgill.ca}, Jasmine Chong \email{jasmine.chong@mail.mcgill.ca},
+Zhiqiang Pang \email{zhiqiang.pang@mail.mcgill.ca},
+Jasmine Chong \email{jasmine.chong@mail.mcgill.ca},
 and Jeff Xia \email{jeff.xia@mcgill.ca}
 McGill University, Canada
 License: GNU GPL (>= 2)

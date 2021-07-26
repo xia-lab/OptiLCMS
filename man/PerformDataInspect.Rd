@@ -28,12 +28,14 @@ users to inspect. This is an optional parameter, if absent, will display the MS 
 \item{res}{Numeric, the resolution for data inspectation. The larger the value, the higher the resolution.
 The default value is 100. This value is usually clearly enough and also give consideration to the speed.}
 }
+\value{
+will output a figure for viewing the data structure
+}
 \description{
 This functions provide a path for users to visually inspect their raw data before the data
 trimming so as to remove the dirty or significantly uneluted peaks.
 }
 \examples{
-library(OptiLCMS)
 ## Get raw spectra files
 DataFiles <- dir(system.file("mzData", package = "mtbls2"), full.names = TRUE,
                  recursive = TRUE)[c(10:12, 14:16)]

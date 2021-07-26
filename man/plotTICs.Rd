@@ -15,7 +15,19 @@ plotTICs(mSet = NULL, imgName, format = "png", dpi = 72, width = NA)
 "tiff" or "ps". Default is "png". (only works for web version)}
 
 \item{dpi}{Numeric, to define the dpi of the figures. Default is 72. (only works for web version)}
+
+\item{width}{Numeric, width of the figure (default is NA, usually set it as 6~12)}
+}
+\value{
+will return a figure of TICs
 }
 \description{
 plotTICs is used to plot the TIC of all files
+}
+\examples{
+newPath <- dir(system.file("mzData", package = "mtbls2"), 
+full.names = TRUE, recursive = TRUE)[c(10:12)]
+data(mSet)
+mSet <- updateRawSpectraPath(mSet, newPath)
+plotTICs(mSet)
 }

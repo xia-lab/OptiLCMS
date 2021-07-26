@@ -13,7 +13,7 @@ There are 3 typical approaches provided for users to install this package as bel
 
 ```R
 # Latest features could only be obtained from this approach, make sure 'devtools' installed first
-devtools::install_github("xia-lab/OptiLCMS", build = TRUE, build_vignettes = FALSE, build_manual =T)
+devtools::install_github("xia-lab/OptiLCMS", build = TRUE, build_vignettes = FALSE, build_manual =TRUE)
 
 ```
 

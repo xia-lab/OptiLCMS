@@ -7,15 +7,29 @@
 UpdateRawfiles(mSet = NULL, filesIncluded = NULL)
 }
 \arguments{
-\item{mSet}{mSet objects generated with \"mSet <- InitDataObjects(\"spec\", \"raw\", FALSE)\", or omitted.}
+\item{mSet}{mSet objects generated
+with \"mSet <- InitDataObjects(\"spec\", \"raw\", FALSE)\", or omitted.}
 
-\item{filesIncluded}{filesIncluded is a vector containing the files' paths for the following processing;}
+\item{filesIncluded}{filesIncluded is a vector containing the files'
+paths for the following processing;}
+}
+\value{
+will return an mSet object with raw files updated
 }
 \description{
-Update the Raw spectra included for Processing. All wrong format and uncentroided files will be filtered.
-NOTE: this function is only effective before data import stage AND can NOT be used for resuming pipeline.
+Update the Raw spectra included for Processing.
+All wrong format and uncentroided files will be filtered.
+NOTE: this function is only effective before data import stage
+AND can NOT be used for resuming pipeline.
 }
 \examples{
+### Example 1 ---
+data(mSet)
+newfiles <- dir(system.file("mzData", package = "mtbls2"), 
+full.names = TRUE, recursive = TRUE)[c(14:16)]
+mSet <- UpdateRawfiles(mSet, filesIncluded = newfiles)
+ 
+### Example 2 ---
 ## load googledrive package to download example data
 # library("googledrive");
 # data_folder_Sample <- "Raw_data_example"
@@ -24,14 +38,14 @@ NOTE: this function is only effective before data import stage AND can NOT be us
 # dl <- drive_download(as_id("1CjEPed1WZrwd5T3Ovuic1KVF-Uz13NjO"), path = temp, overwrite = TRUE);
 # out <- unzip(temp, exdir = data_folder_Sample);
 # out;
-# library(OptiLCMS);
 # mSet<-InitDataObjects("spec", "raw", FALSE);
 ## include only two samples CD_SM-77FXR.mzML and CD_SM-6KUCT.mzML for data import.
 # mSet<-UpdateRawfiles(mSet, c("Raw_data_example/CD/CD_SM-77FXR.mzML", 
 #                      "Raw_data_example/CD/CD_SM-6KUCT.mzML"))
 }
 \author{
-Zhiqiang Pang \email{zhiqiang.pang@mail.mcgill.ca} and Jeff Xia \email{jeff.xia@mcgill.ca}
+Zhiqiang Pang \email{zhiqiang.pang@mail.mcgill.ca} and
+Jeff Xia \email{jeff.xia@mcgill.ca}
 McGill University, Canada
 License: GNU GPL (>= 2)
 }

@@ -50,6 +50,9 @@ please consider increasing this value.}
 
 \item{running.controller}{The resuming pipeline running controller. Optional. Don't need to define by hand.}
 }
+\value{
+will return an mSet objects with extracted ROI
+}
 \description{
 This function performs the raw data trimming. This function will output
 an trimmed MSnExp file to memory or hardisk according to the choice of users must
@@ -57,7 +60,7 @@ provide the data path for 'datapath', and optionally provide other corresponding
 }
 \examples{
 DataFiles <- dir(system.file("mzData", package = "mtbls2"), full.names = TRUE, recursive = TRUE)
-mSet <- PerformROIExtraction(datapath = DataFiles[1],rt.idx = 0.025, rmConts = FALSE);
+# mSet <- PerformROIExtraction(datapath = DataFiles[1],rt.idx = 0.025, rmConts = FALSE);
 }
 \seealso{
 \code{\link{PerformDataTrimming}} for the old version of this function.
@@ -66,5 +69,4 @@ mSet <- PerformROIExtraction(datapath = DataFiles[1],rt.idx = 0.025, rmConts = F
 Zhiqiang Pang \email{zhiqiang.pang@mail.mcgill.ca} Jeff Xia \email{jeff.xia@mcgill.ca}
 Mcgill University
 License: GNU GPL (>= 2)
-library(OptiLCMS)
 }

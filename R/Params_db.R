@@ -59,6 +59,7 @@
 #' License: GNU GPL (>= 2)
 #' @import utils
 #' @export
+#' @return will return a peak processing parameters' set
 #' @references Smith, C.A. et al. 2006. {Analytical Chemistry}, 78, 779-787
 #' @examples
 #' params <- SetPeakParam(platform = "UPLC-Q/E")
@@ -1866,7 +1867,7 @@ SetPeakParam <- function(platform = "general", Peak_method = "centWave", RT_meth
       };
       
       if (missing(withWave)){
-        peakParams$withWave <- F;
+        peakParams$withWave <- FALSE;
       } else{
         peakParams$withWave <- withWave;
       };

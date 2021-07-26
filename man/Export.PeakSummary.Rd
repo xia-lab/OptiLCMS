@@ -11,6 +11,9 @@ Export.PeakSummary(mSet = NULL, path = getwd())
 
 \item{path}{character, used to specify the path for result rds and csv file. Default is the working directory.#'}
 }
+\value{
+will save peak_result_summary.txt into working path
+}
 \description{
 Export.PeakSummary is used to export the result of peak' summary
 }

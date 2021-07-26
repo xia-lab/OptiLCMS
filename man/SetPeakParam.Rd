@@ -45,6 +45,7 @@ SetPeakParam(
   max_iso,
   corr_eic_th,
   mz_abs_add,
+  adducts,
   rmConts
 )
 }
@@ -136,7 +137,12 @@ need to change.}
 
 \item{mz_abs_add}{PeakAnnotation parameters, (Only effective for website pipeline, for local package, OptiLCMS, please use SetAnnotationParam to define the annotation parameters).}
 
+\item{adducts}{PeakAnnotation parameters, (Only effective for website pipeline, for local package, OptiLCMS, please use SetAnnotationParam to define the annotation parameters).}
+
 \item{rmConts}{Logical, specify whether to exclude/remove the potential contaminations (the ones with RT range over 50\% of the whole spetra).}
+}
+\value{
+will return a peak processing parameters' set
 }
 \description{
 This function sets all the parameters used for downstream

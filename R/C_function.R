@@ -13,7 +13,7 @@ NULL
 
 
 
-############# ============ ------------- Call C by .C ----------- ============ ###########
+######## =-------- Call C by .C -------= ########
 
 #' continuousPtsAboveThreshold
 #' @noRd
@@ -88,8 +88,8 @@ which.colMax <- function (x, na.rm = FALSE, dims = 1) {
     stop("`x' must be an array of at least two dimensions")
   if (dims < 1 || dims > length(dn) - 1)
     stop("invalid `dims'")
-  n <- prod(dn[1:dims])
-  dn <- dn[-(1:dims)]
+  n <- prod(dn[seq_len(dims)])
+  dn <- dn[-(seq_len(dims))]
   if (!is.double(x))
     x <- as.double(x)
 
@@ -102,7 +102,7 @@ which.colMax <- function (x, na.rm = FALSE, dims = 1) {
 
   if (length(dn) > 1) {
     dim(z) <- dn
-    dimnames(z) <- dimnames(x)[-(1:dims)]
+    dimnames(z) <- dimnames(x)[-(seq_len(dims))]
   }
   else
     names(z) <- dimnames(x)[[dims + 1]]
@@ -140,8 +140,8 @@ colMax <- function (x, na.rm = FALSE, dims = 1) {
     stop("`x' must be an array of at least two dimensions")
   if (dims < 1 || dims > length(dn) - 1)
     stop("invalid `dims'")
-  n <- prod(dn[1:dims])
-  dn <- dn[-(1:dims)]
+  n <- prod(dn[seq_len(dims)])
+  dn <- dn[-(seq_len(dims))]
   if (!is.double(x))
     x <- as.double(x)
 
@@ -154,7 +154,7 @@ colMax <- function (x, na.rm = FALSE, dims = 1) {
 
   if (length(dn) > 1) {
     dim(z) <- dn
-    dimnames(z) <- dimnames(x)[-(1:dims)]
+    dimnames(z) <- dimnames(x)[-(seq_len(dims))]
   }
   else
     names(z) <- dimnames(x)[[dims + 1]]
@@ -206,7 +206,7 @@ findEqualGreaterM <- function(x, values) {
 }
 
 
-############# ============ ------------- Call C by .Call ----------- ============ ###########
+######## = ------- Call C by .Call -----= #########
 #' R_set_obiwarp
 #' @noRd
 #' @references Smith, C.A. et al. 2006. {Analytical Chemistry}, 78, 779-787
@@ -262,8 +262,9 @@ getEIC4Peaks <-
     mset$scantime <- MSnbase::rtime(mset$onDiskData)
     
     valCount <- cumsum(lengths(mset$env$mz, FALSE))
+    ## Get index vector for C calls
     mset$scanindex <-
-      as.integer(c(0, valCount[-length(valCount)])) ## Get index vector for C calls
+      as.integer(c(0, valCount[-length(valCount)])) 
     
     npeaks <- dim(peaks)[1]
     
@@ -276,7 +277,7 @@ getEIC4Peaks <-
     
     MessageOutput(paste0(npeaks, " peaks found!"), "\n", NULL)
     
-    for (p in 1:npeaks) {
+    for (p in seq_len(npeaks)) {
       timerange <- c(peaks[p, "rtmin"], peaks[p, "rtmax"])
       tidx <-
         which((mset$scantime >= timerange[1]) &
@@ -285,7 +286,7 @@ getEIC4Peaks <-
       if (length(tidx) > 0) {
         scanrange <- range(tidx)
       } else{
-        scanrange <- 1:scans
+        scanrange <- seq_len(scans)
       }
       massrange <- c(peaks[p, "mzmin"], peaks[p, "mzmax"])
 

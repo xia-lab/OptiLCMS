@@ -17,6 +17,9 @@ raw MS data pre-processing.}
 
 \item{running.controller}{The resuming pipeline running controller. Optional. Don't need to define by hand.}
 }
+\value{
+will return an mSet object wirh annotation finished
+}
 \description{
 This function performs peak annotation on
 the xset object created using the PerformPeakPicking function.

@@ -15,6 +15,9 @@ GaussModel(x, mu, sigma, h)
 
 \item{h}{height of the distribution function}
 }
+\value{
+return result of selfstart
+}
 \description{
 GaussModel
 }

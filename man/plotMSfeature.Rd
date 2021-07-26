@@ -15,12 +15,16 @@ plotMSfeature(mSet = NULL, FeatureNM = 1, dpi = 72, format = "png", width = NA)
 
 \item{format}{Character, to give the format of BPI figures ploted. Can be "jpeg", "png", "pdf", "svg",
 "tiff" or "ps". Default is "png". (only works for web version)}
+
+\item{width}{Numeric, width of the figure (default is NA, usually set it as 6~12)}
+}
+\value{
+will return a figure of ms stats
 }
 \description{
 plotMSfeature is used to plot the feature intensity of different groups
 }
 \examples{
-library(OptiLCMS)
 data(mSet);
 newPath <- dir(system.file("mzData", package = "mtbls2"),
                full.names = TRUE, recursive = TRUE)[c(10, 11, 12)]

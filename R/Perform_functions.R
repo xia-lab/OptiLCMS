@@ -18,9 +18,8 @@
 #' @import MSnbase
 #' @import BiocParallel
 #' @import ggplot2
+#' @return will return a complete mSet object with the whole processes finished
 #' @examples 
-#' ##' Load OptiLCMS package
-#' library(OptiLCMS)
 #' ##' Get raw spectra files
 #' DataFiles <- dir(system.file("mzData", package = "mtbls2"), full.names = TRUE,
 #'                  recursive = TRUE)[c(10:12, 14:16)]
@@ -33,12 +32,12 @@
 #' mSet <- ImportRawMSData(path = DataFiles, metadata = pd);
 #' 
 #' ##' Perform spectra profiling
-#' mSet <- PerformPeakProfiling(mSet, Params = SetPeakParam(ppm = 5, 
+#' mSet <- PerformPeakProfiling(mSet, Params = SetPeakParam(ppm = 15, 
 #'                                                          bw = 10, 
 #'                                                          mzdiff = 0.001, 
 #'                                                          max_peakwidth = 15, 
 #'                                                          min_peakwidth = 10), 
-#'                                                          ncore = 1, 
+#'                                                          ncore = 2, 
 #'                              plotSettings = SetPlotParam(Plot = TRUE))
 #' 
 #' ##' Set peak annotation parameters
@@ -65,7 +64,6 @@
 #' 
 #' ##' Export the Peak summary
 #' Export.PeakSummary(mSet, path = tempdir())
-
 
 PerformPeakProfiling <-
   function(mSet,
@@ -180,7 +178,7 @@ PerformPeakProfiling <-
       
       gc()
       
-      if (.running.as.plan & class(mSet)[1] != "simpleError") {
+      if (.running.as.plan & !is(mSet,"simpleError")) {
         cache.save(mSet, paste0(function.name, "_c1"))
         marker_record(paste0(function.name, "_c1"))
       }
@@ -193,7 +191,7 @@ PerformPeakProfiling <-
     .SwapEnv$envir$mSet <- mSet;
     
     if (.on.public.web) {
-      if (class(mSet)[1] != "mSet") {
+      if (!is(mSet, "mSet")) {
         MessageOutput(
           mes =  paste0(
             "<font color=\"red\">",
@@ -233,7 +231,7 @@ PerformPeakProfiling <-
       
       gc()
       
-      if (.running.as.plan & class(mSet)[1] != "simpleError") {
+      if (.running.as.plan & !is(mSet, "simpleError")) {
         cache.save(mSet, paste0(function.name, "_c2"))
         marker_record(paste0(function.name, "_c2"))
       }
@@ -245,7 +243,7 @@ PerformPeakProfiling <-
     
     if (.on.public.web) {
 
-      if (class(mSet)[1] == "simpleError") {
+      if (is(mSet, "simpleError")) {
         MessageOutput(
           mes = paste0(
             "<font color=\"red\">",
@@ -288,7 +286,7 @@ PerformPeakProfiling <-
       
       gc()
       
-      if (.running.as.plan & class(mSet)[1] != "simpleError") {
+      if (.running.as.plan & !is(mSet,"simpleError")) {
         cache.save(mSet, paste0(function.name, "_c3"))
         marker_record(paste0(function.name, "_c3"))
       }
@@ -298,7 +296,7 @@ PerformPeakProfiling <-
       marker_record("peak_profiling_c3")
     }
     
-    if (class(mSet)[1] == "simpleError") {
+    if (is(mSet,"simpleError")) {
       MessageOutput(
         mes = paste0(
           "<font color=\"red\">",
@@ -439,11 +437,9 @@ PerformPeakProfiling <-
 #' McGill University, Canada
 #' License: GNU GPL (>= 2)
 #' @export
+#' @return will return a annotation parameter set for following annotation steps
 #' @seealso \code{\link{ExecutePlan}} and \code{\link{PerformPeakProfiling}} for the whole pipeline.
 #' @examples 
-#' ##' Load OptiLCMS package
-#' library(OptiLCMS)
-#' 
 #' ##' Set peak annotation parameters
 #' annParams <- SetAnnotationParam(polarity = 'positive',
 #'                                 mz_abs_add = 0.035);
@@ -489,7 +485,7 @@ SetAnnotationParam <-
       annParams$max.iso <- max_iso
       annParams$corr.eic.th <- corr_eic_th
       annParams$mz.abs.add <- mz_abs_add
-      annParams$adducts <- NULL;
+      annParams$adducts <- 'NULL';
       
     }
     
@@ -513,6 +509,7 @@ SetAnnotationParam <-
 #' @import MSnbase
 #' @importFrom graph ftM2graphNEL
 #' @importFrom RBGL highlyConnSG
+#' @return will return an mSet object wirh annotation finished
 #' @references Kuhl C, Tautenhahn R, Boettcher C, Larson TR, Neumann S (2012).
 #' "CAMERA: an integrated strategy for compound spectra extraction and annotation of
 #' liquid chromatography/mass spectrometry data sets." Analytical Chemistry, 84, 283-289.
@@ -589,7 +586,7 @@ PerformPeakAnnotation <-
       
       if (is.null(mSet)) {
         stop("No mSet object was given !")
-      } else if (!class(mSet) == "mSet") {
+      } else if (!is(mSet,"mSet")) {
         stop("There is correct mSet object !")
       }
       
@@ -714,14 +711,14 @@ PerformPeakAnnotation <-
       
       if (mSet@peakAnnotation$AnnotateObject$groupInfo[1, "rt"] == -1) {
         # Like FTICR Data
-        warning("Warning: no retention times avaiable. Do nothing\n")
+        warning("no retention times avaiable. Do nothing\n")
         return(invisible(mSet@peakAnnotation$AnnotateObject))
         
       } else{
         if (is.na(sample[1]) || length(mSet@rawOnDisk@processingData@files) > 1) {
           # grouped peaktable within automatic selection or sub selection
           if (is.na(sample[1])) {
-            index <- 1:length(mSet@rawOnDisk@processingData@files)
+            index <- seq_along(mSet@rawOnDisk@processingData@files)
           } else{
             index <- sample
           }
@@ -742,7 +739,7 @@ PerformPeakAnnotation <-
             }, peakmat));
           
           maxo[which(is.na(maxo))] <- -1;
-          maxo <- cbind(1:length(maxo), maxo);
+          maxo <- cbind(seq_along(maxo), maxo);
           
           #highest peak index
           int.max <-
@@ -822,7 +819,7 @@ PerformPeakAnnotation <-
           peakmat <- mSet@peakAnnotation$peaks
           maxo    <- peakmat[, intval]
           #max intensities of all peaks
-          maxo    <- cbind(1:length(maxo), maxo)
+          maxo    <- cbind(seq_along(maxo), maxo)
           
           while (length(maxo) > 0) {
             iint   <- which.max(maxo[, 2])
@@ -956,7 +953,7 @@ PerformPeakAnnotation <-
         npspectra <- 1
         
         mSet@peakAnnotation$AnnotateObject$pspectra[[1]] <-
-          seq(1:nrow(mSet@peakAnnotation$AnnotateObject$groupInfo))
+          seq_len(nrow(mSet@peakAnnotation$AnnotateObject$groupInfo))
         mSet@peakAnnotation$AnnotateObject$psSamples  <- 1
       }
       
@@ -967,7 +964,7 @@ PerformPeakAnnotation <-
       if (nrow(mSet@peakAnnotation$groups) > 0) {
         ##multiple sample or grouped single sample
         if (is.na(mSet@peakAnnotation$AnnotateObject$sample[1])) {
-          index <- 1:length(mSet@rawOnDisk@processingData@files)
+          index <- seq_along(mSet@rawOnDisk@processingData@files)
         } else{
           index <- mSet@peakAnnotation$AnnotateObject$sample
         }
@@ -1048,7 +1045,7 @@ PerformPeakAnnotation <-
                  which(duplicated(isomatrix[, 2]))) > 0) {
         peak.idx <- unique(isomatrix[idx.duplicated, 2])
         
-        for (i in 1:length(peak.idx)) {
+        for (i in seq_along(peak.idx)) {
           #peak.idx has two or more annotated charge
           #select the charge with the higher cardinality
           peak <- peak.idx[i]
@@ -1094,7 +1091,7 @@ PerformPeakAnnotation <-
         #at least one pair of peakindex and number of isotopic peak is identical
         peak.idx <- unique(isomatrix[idx.duplicated, 1])
         
-        for (i in 1:length(peak.idx)) {
+        for (i in seq_along(peak.idx)) {
           #peak.idx has two or more annotated charge
           #select the charge with the higher cardinality
           peak <- peak.idx[i]
@@ -1133,7 +1130,7 @@ PerformPeakAnnotation <-
       
       if (length(idx.duplicated <-
                  which(isomatrix[, 1] %in% isomatrix[, 2])) > 0) {
-        for (i in 1:length(idx.duplicated)) {
+        for (i in seq_along(idx.duplicated)) {
           index <-  which(isomatrix[, 2] == isomatrix[idx.duplicated[i], 1])
           index2 <-
             sapply(index, function(x, isomatrix)
@@ -1169,14 +1166,14 @@ PerformPeakAnnotation <-
       
       #Add isomatrix to object
       mSet@peakAnnotation$AnnotateObject$isoID <-
-        rbind(mSet@peakAnnotation$AnnotateObject$isoID, isomatrix[, 1:4])
+        rbind(mSet@peakAnnotation$AnnotateObject$isoID, isomatrix[, seq_len(4)])
       
       # counter for isotope groups
       globalcnt <- 0
       oldnum    <- 0
       
       if (nrow(isomatrix) > 0) {
-        for (i in 1:nrow(isomatrix)) {
+        for (i in seq_len(nrow(isomatrix))) {
           if (!isomatrix[i, 1] == oldnum) {
             globalcnt <- globalcnt + 1
             
@@ -1251,7 +1248,7 @@ PerformPeakAnnotation <-
         npspectra <- 1
         
         mSet@peakAnnotation$AnnotateObject$pspectra[[1]] <-
-          seq(1:nrow(mSet@peakAnnotation$AnnotateObject$groupInfo))
+          seq_len(nrow(mSet@peakAnnotation$AnnotateObject$groupInfo))
         
         if (is.na(mSet@peakAnnotation$AnnotateObject$sample[1])) {
           mSet@peakAnnotation$AnnotateObject$psSamples <-
@@ -1274,7 +1271,7 @@ PerformPeakAnnotation <-
       #Autoselect sample path for EIC correlation
       index <- rep(0, nrow(mSet@peakAnnotation$AnnotateObject$groupInfo))
       
-      for (i in 1:npspectra) {
+      for (i in seq_len(npspectra)) {
         index[mSet@peakAnnotation$AnnotateObject$pspectra[[i]]] <-
           mSet@peakAnnotation$AnnotateObject$psSamples[[i]]
       }
@@ -1420,6 +1417,7 @@ PerformPeakAnnotation <-
 #' missing in X\% of samples. For instance, 0.5 specifies to remove features
 #' that are missing from 50\% of all samples per group. Method is only valid
 #' when there are two groups.
+#' @return will return a mSet object with all result table formatted
 #' @seealso \code{\link{ExecutePlan}} and \code{\link{PerformPeakProfiling}} for the whole pipeline.
 #' @author Jasmine Chong \email{jasmine.chong@mail.mcgill.ca}, and Jeff Xia \email{jeff.xia@mcgill.ca}
 #' McGill University, Canada
@@ -1565,7 +1563,7 @@ FormatPeakList <-
     while (length(mzs_unq) > 0) {
       mzs[duplicated(mzs), ] <-
         sapply(mzs_unq, function(x)
-          paste0(x, sample(1:999, 1, replace = FALSE)))
+          paste0(x, sample(seq_len(999), 1, replace = FALSE)))
       
       mzs_unq <- mzs[duplicated(mzs), ]
     };
@@ -1591,7 +1589,7 @@ FormatPeakList <-
     
     # generate peak summary results
     peaksum <-
-      camera_output[, -c(1:6, (ncol(camera_output) - 2):ncol(camera_output))];
+      camera_output[, -c(seq_len(6), (ncol(camera_output) - 2):ncol(camera_output))];
     
     rt_info_min <-
       round(apply(
@@ -1689,6 +1687,7 @@ FormatPeakList <-
 #' @description Export.Annotation is used to export the result of annotation
 #' @param mSet mSet object, processed by FormatPeakList.
 #' @param path character, used to specify the path for result rds and csv file. Default is the working directory.
+#' @return will save annotated_peaklist.rds and annotated_peaklist.csv into working path
 #' @export
 #' @seealso \code{\link{ExecutePlan}} and \code{\link{PerformPeakProfiling}} for the whole pipeline.
 #' @author Zhiqiang Pang \email{zhiqiang.pang@mail.mcgill.ca}, Jeff Xia \email{jeff.xia@mcgill.ca}
@@ -1718,6 +1717,7 @@ Export.Annotation <- function(mSet = NULL, path = getwd()){
 #' @param mSet mSet object, processed by FormatPeakList.
 #' @param path character, used to specify the path for result rds and csv file. Default is the working directory.#'
 #' @export
+#' @return will save metaboanalyst_input.csv into working path
 #' @seealso \code{\link{ExecutePlan}} and \code{\link{PerformPeakProfiling}} for the whole pipeline.
 #' @author Zhiqiang Pang \email{zhiqiang.pang@mail.mcgill.ca}, Jeff Xia \email{jeff.xia@mcgill.ca}
 #' @examples
@@ -1744,6 +1744,7 @@ Export.PeakTable <- function(mSet = NULL, path = getwd()){
 #' @param mSet mSet object, processed by FormatPeakList.
 #' @param path character, used to specify the path for result rds and csv file. Default is the working directory.#'
 #' @export
+#' @return will save peak_result_summary.txt into working path
 #' @seealso \code{\link{ExecutePlan}} and \code{\link{PerformPeakProfiling}} for the whole pipeline.
 #' @author Zhiqiang Pang \email{zhiqiang.pang@mail.mcgill.ca}, Jeff Xia \email{jeff.xia@mcgill.ca}
 #' @examples

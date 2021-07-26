@@ -1,11 +1,14 @@
-# Setting .on.public.web (if on.public.web, the version number will be even, local package is odd)
+# Setting .on.public.web (if on.public.web, the version number will be even, 
+# local package is odd)
 .on.public.web <- FALSE;
 
 # Setting the global Variable to avoid notes in R CMD Check
 utils::globalVariables(c(".SwapEnv"))
 
 # OTHER SETTINGS
-#' @references Gatto L, Gibb S, Rainer J (2020). “MSnbase, efficient and elegant R-based processing and visualisation of raw mass spectrometry data.” bioRxiv.
+#' @references Gatto L, Gibb S, Rainer J (2020). “MSnbase, efficient and 
+#' elegant R-based processing and visualisation of 
+#' raw mass spectrometry data.” bioRxiv.
 .MSnExpReqFvarLabels <- c("fileIdx", "spIdx", "acquisitionNum",
                           "retentionTime", "msLevel", "precursorScanNum")
 
@@ -103,7 +106,11 @@ utils::globalVariables(c(".SwapEnv"))
 
 #' MessageOutput
 #' @noRd
-MessageOutput <- function(mes = NULL, ecol = "\n", progress =NULL, SuppressWeb = FALSE, sleep = 0) {
+MessageOutput <- function(mes = NULL, 
+                          ecol = "\n", 
+                          progress =NULL, 
+                          SuppressWeb = FALSE, 
+                          sleep = 0) {
   if (!is.null(mes)) {
     if (.on.public.web & !SuppressWeb) {
       # write down message
@@ -151,7 +158,8 @@ fast.write.csv <- function(dat, file, row.names=TRUE){
   tryCatch(
     {
       if(is.data.frame(dat)){
-        # there is a rare bug in data.table (R 3.6) which kill the R process in some cases 
+        # there is a rare bug in data.table (R 3.6) which kill the R process
+        # in some cases 
         data.table::fwrite(dat, file, row.names=row.names);
       }else{
         write.csv(dat, file, row.names=row.names);  
@@ -170,10 +178,12 @@ fast.write.csv <- function(dat, file, row.names=TRUE){
 #' @param ncore Numeric, used to set the global core numbers, default is 1
 #' @export
 #' @import BiocParallel
+#' @return void function, return nothing but will define the global parallel number
 #' @examples
 #' SetGlobalParallel(1);
 #' register(bpstop());
-#' @author Zhiqiang Pang \email{zhiqiang.pang@mail.mcgill.ca}, Jasmine Chong \email{jasmine.chong@mail.mcgill.ca},
+#' @author Zhiqiang Pang \email{zhiqiang.pang@mail.mcgill.ca}, 
+#' Jasmine Chong \email{jasmine.chong@mail.mcgill.ca},
 #' and Jeff Xia \email{jeff.xia@mcgill.ca}
 #' McGill University, Canada
 #' License: GNU GPL (>= 2)

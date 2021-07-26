@@ -11,12 +11,12 @@
 #'@author Jeff Xia \email{jeff.xia@mcgill.ca}
 #'McGill University, Canada
 #'License: GNU GPL (>= 2)
+#' @return will initialize an mSet object
 #' @export
 #' @import methods
 #' @import BiocParallel
 #' @importFrom  Cairo CairoFonts
 #' @examples 
-#' library(OptiLCMS);
 #' mSet<-InitDataObjects("spec", "raw", FALSE)
 
 InitDataObjects <- function(data.type, anal.type, paired=FALSE){
@@ -58,11 +58,14 @@ InitDataObjects <- function(data.type, anal.type, paired=FALSE){
 #' @import MSnbase
 #' @import BiocParallel
 #' @import parallel
+#' @import RColorBrewer
 #' @importFrom tools file_path_as_absolute file_ext
 #' @importFrom Cairo Cairo
+#' @importFrom stats na.omit
+#' @importFrom graphics legend
+#' @importFrom grDevices dev.off
+#' @return will return a mSet object will raw data read inside.
 #' @examples 
-#' ##' Load OptiLCMS package
-#' library(OptiLCMS)
 #' ##' Get raw spectra files
 #' DataFiles <- dir(system.file("mzData", package = "mtbls2"), full.names = TRUE,
 #'                  recursive = TRUE)[c(10:12, 14:16)]
@@ -73,6 +76,7 @@ InitDataObjects <- function(data.type, anal.type, paired=FALSE){
 #'                  stringsAsFactors = FALSE)
 #' ##' Import raw spectra
 #' mSet <- ImportRawMSData(path = DataFiles, metadata = pd);
+
 
 ImportRawMSData <-
   function(mSet = NULL,
@@ -157,11 +161,12 @@ ImportRawMSData <-
     # Update first
     if(length(mSet@rawfiles) == 0){
       rawfilenms <- basename(files);
+      mSet@rawfiles <- files;
     } else {
       rawfilenms <- basename(mSet@rawfiles);
     }
     
-    for (i in 1:length(files)) {
+    for (i in seq_along(files)) {
       file = basename(files[i])
       if (!(file %in% rawfilenms)) {
         toRemove = c(toRemove, files[i])
@@ -190,7 +195,7 @@ ImportRawMSData <-
       
       i <-
         min(i, tail(c(0, which(
-          scomp[1:i, 1] == .Platform$file.sep
+          scomp[seq_len(i), 1] == .Platform$file.sep
         )), n = 1) + 1)
       
       if (i > 1 && i <= nrow(scomp)) {
@@ -254,7 +259,7 @@ ImportRawMSData <-
           msLevel. = 1
         ), error = function(e) {e})
       
-      if (!(class(raw_data)[1] == "OnDiskMSnExp" | class(raw_data)[1] == "MSnExp")) {
+      if (!(is(raw_data,"OnDiskMSnExp") | is(raw_data,"MSnExp"))) {
         MessageOutput(
           mes = paste0(
             "<font color=\"red\">",
@@ -297,7 +302,7 @@ ImportRawMSData <-
           grp_nms <- names(table(pd$sample_group))
           files <- NA
           
-          for (i in 1:length(grp_nms)) {
+          for (i in seq_along(grp_nms)) {
             numb2ext <- min(table(pd$sample_group)[i], 10)
             filt_df <- pd[pd$sample_group == grp_nms[i], ]
             files.inx <- sample(nrow(filt_df), numb2ext)
@@ -339,7 +344,7 @@ ImportRawMSData <-
           
         } else{
           group_colors <-
-            paste0(RColorBrewer::brewer.pal(9, "Set1")[1:groupNum], "60")
+            paste0(RColorBrewer::brewer.pal(9, "Set1")[seq_len(groupNum)], "60")
         }
         
         names(group_colors) <- levels(groupInfo)
@@ -451,7 +456,7 @@ ImportRawMSData <-
     }
     
     return(mSet)
-  }
+}
 
 read.MSdata <- function(files, 
                         pdata = NULL, 
@@ -538,7 +543,7 @@ read.InMemMSd.data <- function(files,
     
     ## Extract Instrument Information
     instruInfo <- try(mzR::instrumentInfo(msdata), silent = TRUE);
-    if(class(instruInfo) == "list"){
+    if(is(instruInfo,"list")){
       .instrumentInfo <- c(.instrumentInfo, list(instruInfo));
     } else {
       MessageOutput("Some instrument related information is missing. But the whole process is still running...")
@@ -571,7 +576,7 @@ read.InMemMSd.data <- function(files,
 
         Allpeaks <- mzR::peaks(msdata);
 
-        for (i in 1:length(spidx)){
+        for (i in seq_along(spidx)){
           
           if (!.on.public.web){   
             pb$tick();
@@ -618,7 +623,7 @@ read.InMemMSd.data <- function(files,
         
       } else {
      
-      for (i in 1:length(spidx)) {
+      for (i in seq_along(spidx)) {
         
         if (!.on.public.web){   
           pb$tick();
@@ -677,7 +682,7 @@ read.InMemMSd.data <- function(files,
       pb <- progress_bar$new(format = "Reading [:bar] :percent Time left: :eta", 
                              total = length(spidx), clear = TRUE, width= 75)
       
-      for (i in 1:length(spidx)) {
+      for (i in seq_along(spidx)) {
         
         pb$tick();
         
@@ -782,7 +787,7 @@ read.InMemMSd.data <- function(files,
   }
   fdata <- new("AnnotatedDataFrame",
                data = data.frame(
-                 spectrum = 1:length(nms),
+                 spectrum = seq_along(nms),
                  row.names = nms))
   fdata <- fdata[ls(assaydata)] ## reorder features
   ## expriment data slot
@@ -864,7 +869,7 @@ read.OnDiskMS.data <- function(files,
     
     ## Extract Instrument Information
     instruInfo <- try(mzR::instrumentInfo(msdata), silent = TRUE);
-    if(class(instruInfo) == "list"){
+    if(is(instruInfo,"list")){
       .instrumentInfo <- c(.instrumentInfo, list(instruInfo));
     } else {
       MessageOutput("Some instrument related information is missing. But the whole process is still running...")
@@ -909,10 +914,8 @@ read.OnDiskMS.data <- function(files,
     ## the spIdx (is the index of the spectrum within the file) for
     ## subsetting and extracting.
     if (!all(sort(fdData$acquisitionNum) == fdData$acquisitionNum))
-      warning(paste("Unexpected acquisition number order detected.",
-                    "Please contact the maintainers or open an issue",
-                    "on https://github.com/lgatto/MSnbase.",
-                    sep = "\n")) ## see issue #160
+      warning(c("Unexpected acquisition number order detected. ",
+                    "\n")) ## see issue #160
     fdData <- fdData[order(fdData$acquisitionNum), ]
     featureDataList <- c(featureDataList, list(fdData))
     ## Fix for #151; would be nice if we could remove that at some point.
@@ -942,7 +945,7 @@ read.OnDiskMS.data <- function(files,
   ## If we've got a featureDataList, use it
   if (length(featureDataList) > 0) {
     fdata <- do.call(rbind, featureDataList)
-    fdata <- cbind(fdata, spectrum = 1:nrow(fdata),
+    fdata <- cbind(fdata, spectrum = seq_len(nrow(fdata)),
                    stringsAsFactors = FALSE)
     ## Setting rownames on the data.frame not on the AnnotatedDataFrame;
     ## did get strange errors otherwise.
@@ -997,7 +1000,7 @@ read.OnDiskMS.data <- function(files,
   }
   
   if(nrow(res@featureData@data)==0){
-    stop(paste0("None of your spectra contains MS signal at MS level: ", msLevel., "! Please check your data !"))
+    stop(c("None of your spectra contains MS signal at MS level: ", msLevel., "! Please check your data !"))
   }
   
   if (.on.public.web){
@@ -1008,15 +1011,28 @@ read.OnDiskMS.data <- function(files,
 }
 
 #' @title UpdateRawfiles
-#' @description Update the Raw spectra included for Processing. All wrong format and uncentroided files will be filtered. 
-#' NOTE: this function is only effective before data import stage AND can NOT be used for resuming pipeline.
-#' @param mSet mSet objects generated with \"mSet <- InitDataObjects(\"spec\", \"raw\", FALSE)\", or omitted.
-#' @param filesIncluded filesIncluded is a vector containing the files' paths for the following processing;
-#' @author Zhiqiang Pang \email{zhiqiang.pang@mail.mcgill.ca} and Jeff Xia \email{jeff.xia@mcgill.ca}
+#' @description Update the Raw spectra included for Processing. 
+#' All wrong format and uncentroided files will be filtered. 
+#' NOTE: this function is only effective before data import stage 
+#' AND can NOT be used for resuming pipeline.
+#' @param mSet mSet objects generated 
+#' with \"mSet <- InitDataObjects(\"spec\", \"raw\", FALSE)\", or omitted.
+#' @param filesIncluded filesIncluded is a vector containing the files' 
+#' paths for the following processing;
+#' @author Zhiqiang Pang \email{zhiqiang.pang@mail.mcgill.ca} and 
+#' Jeff Xia \email{jeff.xia@mcgill.ca}
 #' McGill University, Canada
 #' License: GNU GPL (>= 2)
+#' @return will return an mSet object with raw files updated
 #' @export
 #' @examples 
+#' ### Example 1 ---
+#' data(mSet)
+#' newfiles <- dir(system.file("mzData", package = "mtbls2"), 
+#' full.names = TRUE, recursive = TRUE)[c(14:16)]
+#' mSet <- UpdateRawfiles(mSet, filesIncluded = newfiles)
+#'  
+#' ### Example 2 ---
 #' ## load googledrive package to download example data
 #' # library("googledrive");
 #' # data_folder_Sample <- "Raw_data_example"
@@ -1025,7 +1041,6 @@ read.OnDiskMS.data <- function(files,
 #' # dl <- drive_download(as_id("1CjEPed1WZrwd5T3Ovuic1KVF-Uz13NjO"), path = temp, overwrite = TRUE);
 #' # out <- unzip(temp, exdir = data_folder_Sample);
 #' # out;
-#' # library(OptiLCMS);
 #' # mSet<-InitDataObjects("spec", "raw", FALSE);
 #' ## include only two samples CD_SM-77FXR.mzML and CD_SM-6KUCT.mzML for data import.
 #' # mSet<-UpdateRawfiles(mSet, c("Raw_data_example/CD/CD_SM-77FXR.mzML", 
@@ -1109,13 +1124,13 @@ UpdateRawfiles <- function(mSet = NULL, filesIncluded = NULL){
       stop("No centroided spectrum found ! Please Centroid them first !")
     }
     filesIncluded_centroided <- filesIncluded_formated[Centroididx];
-    message(paste0(basename(filesIncluded_centroided), " will be included for further processing !\n"))
+    message(c(basename(filesIncluded_centroided), " will be included for further processing !\n"))
     
     # file size check
     fileSizeInfo <- file.size(filesIncluded_centroided)/1024^2;
     largeFileIdx <- fileSizeInfo > 200;
     if(any(largeFileIdx)){
-      message(paste0(basename(filesIncluded_centroided)[largeFileIdx]), "is larger than 200MB, please note your memory !")
+      message(c(basename(filesIncluded_centroided)[largeFileIdx]), " is larger than 200MB, please note your memory !")
     }
     
     filesIncluded <- filesIncluded_centroided;
@@ -1146,15 +1161,17 @@ UpdateRawfiles <- function(mSet = NULL, filesIncluded = NULL){
 #' License: GNU GPL (>= 2)
 #' @importFrom stats quantile
 #' @export
-#' @examples  
+#' @return will output a logical value to indicate centroid (TRUE) or not (FALSE)
+#' @examples
 #' DataFiles <- dir(system.file("mzData", package = "mtbls2"), full.names = TRUE,
-#'                  recursive = TRUE)[c(10:12, 14:16)]
-#' sapply(DataFiles, CentroidCheck)
+#'                  recursive = TRUE)[c(10:11)] 
+#' # sapply(DataFiles, CentroidCheck)
+#' 
 
 CentroidCheck <- function(filename) {
   # fileh <- MSnbase:::.openMSfile(filename)
   fileh <- mzR::openMSfile(filename, backend = NULL)
-  allSpect <- mzR::peaks(fileh, c(1:10))
+  allSpect <- mzR::peaks(fileh, seq_len(10))
   
   nValues <- base::lengths(allSpect, use.names = FALSE) / 2
 
@@ -1176,7 +1193,7 @@ CentroidCheck <- function(filename) {
   )
   
   res <- unlist(res[!is.na(res)]);
-  return(sum(res) > 0.8*length(res))
+  return(sum(res) > 0.6*length(res))
   
 }
 
@@ -1191,9 +1208,11 @@ CentroidCheck <- function(filename) {
 #' @import MSnbase
 #' @import BiocParallel
 #' @export
-#' @examples  
+#' @return will output a centroid mzML file into the input path
+#' @examples
 #' InFolder <- system.file("mzData", package = "mtbls2")
-#' CentroidMSData(InFolder)
+#' # CentroidMSData(InFolder) #remove the # befroe your testing
+
 
 CentroidMSData <- function(InFolder, OutFolder = tempdir(), ncore = 1) {
 
@@ -1207,7 +1226,7 @@ CentroidMSData <- function(InFolder, OutFolder = tempdir(), ncore = 1) {
   files.list <-
     dir(
       InFolder,
-      pattern = ".mzML|.mzml|.cdf|.mzXML|.mzxml|.mzData|.CDF",
+      pattern = ".mzML|.mzml|.cdf|.mzXML|.mzxml|.mzData|.CDF|.mzdata.xml|.mzData.xml",
       recursive = TRUE,
       full.names = TRUE
     );
@@ -1333,16 +1352,16 @@ Path2Files <- function(path, centroid = TRUE){
   files <- files_tmp[formatRes];
   
   # Centroid check & filter
-  if(!isCdfFile(files) && centroid){
-    
-    Centroididx <- unname(sapply(files, CentroidCheck));
-    
-    if(!all(Centroididx)){
-      warning(paste0("Uncentroieded file: ", basename(files[!Centroididx]), "will be filtered!\n"));
-    }
-    
-    files <- files[Centroididx];
-  }
+  # if(!isCdfFile(files) && centroid){
+  #   
+  #   Centroididx <- unname(sapply(files, CentroidCheck));
+  #   
+  #   if(!all(Centroididx)){
+  #     warning(paste0("Uncentroieded file: ", basename(files[!Centroididx]), "will be filtered!\n"));
+  #   }
+  #   
+  #   files <- files[Centroididx];
+  # }
 
   return(files)
 }
@@ -1357,9 +1376,9 @@ Path2Files <- function(path, centroid = TRUE){
     stop("Non unique files provided as input. ")
   extensions <- unique(toupper(sub("^.+\\.", "", e$files)))
   if (length(extensions) > 1)
-    warning(paste("Reading different file formats in.",
-                  "This is untested and you are welcome to try it out.",
-                  "Please report back!", sep = "\n"))
+    warning(c("Reading different file formats in. ",
+                  "This is untested and you are welcome to try it out. ",
+                  "Please report back!", "\n"))
   invisible(TRUE)
 }
 testCacheArg <- function(cache, maxCache = 2) {
@@ -1469,8 +1488,9 @@ SanitySpectra <- function(rawData, cutoff = 0.15){
     })
     
     removingFile <- rawData@phenoData@data[["sample_name"]][res < cutoff];
-    if(length(removingFile) > 0 && !is.na(removingFile)){
-      MessageOutput(paste0("Base Peak Intensity of ", removingFile, " is lower than ", cutoff*100, "% of average, will be excluded!\n"));
+    if(length(removingFile) > 0 && any(!is.na(removingFile))){
+      MessageOutput(paste0("Base Peak Intensity of ", removingFile, " is lower than ", 
+                           cutoff*100, "% of average, will be excluded!\n"));
     }
     
     exIdx <- which(res < cutoff);

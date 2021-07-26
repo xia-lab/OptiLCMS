@@ -9,14 +9,17 @@ CentroidCheck(filename)
 \arguments{
 \item{filename}{single file name, should contain the absolute path}
 }
+\value{
+will output a logical value to indicate centroid (TRUE) or not (FALSE)
+}
 \description{
 Verify the data is centroid or not
 }
 \examples{
- 
 DataFiles <- dir(system.file("mzData", package = "mtbls2"), full.names = TRUE,
-                 recursive = TRUE)[c(10:12, 14:16)]
-sapply(DataFiles, CentroidCheck)
+                 recursive = TRUE)[c(10:11)] 
+# sapply(DataFiles, CentroidCheck)
+
 }
 \author{
 Zhiqiang Pang \email{zhiqiang.pang@mail.mcgill.ca} and Jeff Xia \email{jeff.xia@mcgill.ca}

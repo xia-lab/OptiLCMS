@@ -1,6 +1,6 @@
 Package: OptiLCMS
 Title: Optimized LC-MS Spectra Processing
-Version: 0.99.9
+Version: 0.99.0
 Authors@R: c(
            person(given = "Zhiqiang",
            family = "Pang",
@@ -10,7 +10,7 @@ Authors@R: c(
            person(given = "Jasmine",
            family = "Chong",
            role = c("aut"),
-           email = "jasmine.chong@mail.mcgill.ca",
+           email = "jasmine.chinsong@mail.mcgill.ca",
            comment = c(ORCID = "0000-0002-2848-038X")),
            person(given = "Jianguo",
            family = "Xia",
@@ -18,15 +18,17 @@ Authors@R: c(
            email = "jeff.xia@mcgill.ca",
            comment = c(ORCID = "0000-0003-2040-2624"))
            )
-Maintainer: Zhiqiang Pang <zhiqiang.pang@mail.mcgill.ca>
-Description: A pipeline for users to do the LC-MS (Liquid chromatography–mass spectrometry) raw data processing with automatically optimized parameters.
+Description: A pipeline for users to do the LC-MS (Liquid chromatography–mass spectrometry) raw data processing with automatically optimized parameters. An automated 
+             pipeline is implemented inside this page for users to avoid manaually optimized the parameters. More functions on MS/MS data processing is on the way.
 License: MIT + file LICENSE
 Depends: R (>= 4.0.0), methods, Biobase, BiocParallel (>= 1.8.0), stats, utils
-Imports: mzR (>= 2.22.0), lattice, RColorBrewer, plyr,
+Imports: mzR (>= 2.22.0), lattice, RColorBrewer, plyr, RJSONIO, parallel, tools, grDevices, grid, graphics,
          RBGL, S4Vectors, ggplot2, graph, progress, rsm, Cairo, Hmisc, entropy, cluster, data.table,
          scales, ggrepel, MSnbase
-Suggests: knitr (>= 1.1.0), ncdf4, MALDIquant, SummarizedExperiment, MassSpecWavelet, mtbls2
-Enhances: XML, parallel
+Suggests: knitr (>= 1.1.0), MALDIquant, MassSpecWavelet, mtbls2, rmarkdown, BiocStyle
+Enhances: XML
+VignetteBuilder: knitr
+biocViews: Software, MassSpectrometry, Metabolomics, DataImport
 BugReports: https://github.com/xia-lab/OptiLCMS/issues/new
 URL: https://github.com/xia-lab/OptiLCMS
 Encoding: UTF-8

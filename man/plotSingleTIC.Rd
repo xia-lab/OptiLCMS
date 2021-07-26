@@ -19,12 +19,20 @@ plotSingleTIC(
 \item{filename}{Character, to give the filename for the TIC plotting.}
 
 \item{imagename}{Character, to give the filename of the TIC plotted. (only works for web version)}
+
+\item{dpi}{Numeric, dpi of the figure (default is 72, usually set it as 72, 144, 360)}
+
+\item{width}{Numeric, width of the figure (default is 7, usually set it as 6~12)}
+
+\item{format}{Character, format of the figure (default is 'png', usually can be 'png', 'pdf','tiff','svg','eps','jpg')}
+}
+\value{
+will return a figure of a single TIC
 }
 \description{
 plotSingleTIC is used to plot the TIC of a certain spectra
 }
 \examples{
-library(OptiLCMS)
 data(mSet);
 newPath <- dir(system.file("mzData", package = "mtbls2"),
                full.names = TRUE, recursive = TRUE)[c(10, 11, 12)]

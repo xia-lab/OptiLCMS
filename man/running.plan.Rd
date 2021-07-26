@@ -11,6 +11,9 @@ running.plan(plan = NULL, ...)
 
 \item{...}{Multiple Processing commands can be input here.}
 }
+\value{
+will return a defined plan
+}
 \description{
 define a plan for resumalbe running
 }
@@ -23,9 +26,6 @@ pd <- data.frame(sample_name = sub(basename(DataFiles), pattern = ".mzData",
                                    replacement = "", fixed = TRUE),
                  sample_group = c(rep("col0", 3), rep("cyp79", 3)),
                  stringsAsFactors = FALSE)
-
-##' Load OptiLCMS
-library(OptiLCMS);
 
 ##' Initialize your plan
 plan <- InitializaPlan("raw_opt")

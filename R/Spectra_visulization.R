@@ -12,13 +12,13 @@
 #' @param res Numeric, the resolution for data inspectation. The larger the value, the higher the resolution.
 #' The default value is 100. This value is usually clearly enough and also give consideration to the speed.
 #' @export
+#' @return will output a figure for viewing the data structure
 #' @import MSnbase
 #' @importFrom Cairo Cairo
 #' @author Zhiqiang Pang \email{zhiqiang.pang@mail.mcgill.ca} Jeff Xia \email{jeff.xia@mcgill.ca}
 #' Mcgill University
 #' License: GNU GPL (>= 2)
 #' @examples 
-#' library(OptiLCMS)
 #' ## Get raw spectra files
 #' DataFiles <- dir(system.file("mzData", package = "mtbls2"), full.names = TRUE,
 #'                  recursive = TRUE)[c(10:12, 14:16)]
@@ -106,7 +106,7 @@ PerformDataInspect <-
         hd$retentionTime[ms1] >= min(hd$retentionTime) &
         hd$retentionTime[ms1] <= max(hd$retentionTime)
       
-      rt.extension <- F
+      rt.extension <- FALSE
       MessageOutput(paste(
         "RT range is:",
         min(hd$retentionTime),
@@ -134,9 +134,9 @@ PerformDataInspect <-
       rt.max <- max(hd$retentionTime[ms1])
       
       if (rt.range[1] < rt.min | rt.range[2] > rt.max) {
-        rt.extension <- T
+        rt.extension <- TRUE
       } else {
-        rt.extension <- F
+        rt.extension <- FALSE
       }
     }
     if (missing(mz.range) | (mz.range[1] == 0 & mz.range[2] == 0)) {
@@ -239,10 +239,15 @@ PerformDataInspect <-
       )
     }
 
+    seed.cols <- c("#fafafa", "#e0e0e0");
+    cols <- colorRampPalette(seed.cols)(8)
+    seed.cols22 <- c("#ffee00","#ffc400", "#ff0000","#a600ff", "#0006b0","#000363")
+    cols2 <- colorRampPalette(seed.cols22)(8)
+    
     if (dimension == "3D") {
       print(plot.MS_3D(M))
     } else {
-      print(plot(M, aspect = 1, allTicks = FALSE))
+      print(plot(M, aspect = 1, allTicks = FALSE, col.regions = c(cols, cols2)))
     }
     
     if(.on.public.web){
@@ -263,6 +268,7 @@ PerformDataInspect <-
 #' @author Zhiqiang Pang \email{zhiqiang.pang@mail.mcgill.ca}, and Jeff Xia \email{jeff.xia@mcgill.ca}
 #' McGill University, Canada
 #' License: GNU GPL (>= 2)
+#' @return will return a plotting parameters set
 #' @export
 #' @examples
 #' SetPlotParam(Plot = TRUE, dpi = 144, width = 12)
@@ -296,17 +302,20 @@ SetPlotParam <-
 #' @param dpi Numeric, to define the dpi of the figures. Default is 72.
 #' @param width Numeric, to define the width of the figure.
 #' @param height Numeric, to define the height of the figure.
+#' @param sample_filled Logical, to determine the EIC/XIC is filled or not for sample EIC
+#' @param group_filled Logical, to determine the EIC/XIC is filled or not for group EIC
 #' @importFrom Cairo Cairo
 #' @importFrom ggrepel geom_text_repel
 #' @importFrom grid viewport
 #' @export
+#' @return will return a figure of EIC/XIC
 #' @examples 
-#' library(OptiLCMS)
 #' data(mSet);
 #' newPath <- dir(system.file("mzData", package = "mtbls2"),
 #'                full.names = TRUE, recursive = TRUE)[c(10, 11, 12)]
 #' mSet <- updateRawSpectraPath(mSet, newPath);
-#' PlotXIC(mSet, 1, TRUE, TRUE);
+#' #PlotXIC(mSet, 1, TRUE, TRUE);
+
 
 PlotXIC <-
   function(mSet = NULL,
@@ -402,7 +411,7 @@ PlotXIC <-
     for (i in group_levels) {
       IntoListg[[i]] <- 0
       #Different groups
-      if (class(groupsInfo)[1] == "list") {
+      if (is(groupsInfo,"list")) {
         array_sample <- groupsInfo[[i]]
       } else {
         array_sample <- groupsInfo[, i]
@@ -448,6 +457,7 @@ PlotXIC <-
     }
     
     ## Get Group CV Table
+    y <- NULL;
     CVTable <- PeakGroupCV(IntoLists, groupsInfo);
     
     CVTable <- data.frame(x = CVTable$V1,y=CVTable$V2);
@@ -470,7 +480,7 @@ PlotXIC <-
         res_sample <- data.frame()
         
         if (length(x) != 0) {
-          for (j in 1:length(x)) {
+          for (j in seq_along(x)) {
             sampleRes <- data.frame(x[[j]]@rtime, x[[j]]@intensity, rep(names(x)[j], length(x[[j]]@rtime)));
             rtdiff <- mean(diff(sampleRes$x..j...rtime));
             insertEmptyScan <- data.frame(c(unname(x[[j]]@rtime[1]) - 4*rtdiff, unname(x[[j]]@rtime[1]) - 3*rtdiff, 
@@ -492,13 +502,13 @@ PlotXIC <-
     
     res <- data.frame()
     
-    for (w in 1:length(res0)) {
+    for (w in seq_along(res0)) {
       ncouts <- nrow(res0[[w]])
       
       resds <-
         cbind(res0[[w]], rep(names(res0)[w], nrow(res0[[w]])), rep(NA, ncouts))
       
-      for (ww in 1:length(unique(resds[, 3]))) {
+      for (ww in seq_along(unique(resds[, 3]))) {
         cn <- unique(resds[, 3])[ww]
         cint <- IntoLists[[w]][cn == names(IntoLists[[w]])]
         resds[resds[, 3] == cn,][which(resds[resds[, 3] == cn, 2] == max(resds[resds[, 3] == cn, 2])), 5] <-
@@ -620,7 +630,7 @@ PlotXIC <-
     
     res_data <- data.frame();
     
-    for (k in 1:length(res)) {
+    for (k in seq_along(res)) {
       ncout <- nrow(res[[k]]);
       
       resd <-
@@ -717,7 +727,7 @@ PlotXIC <-
                                   force = 1.5,
                                   show.legend = FALSE)
     }
-    require(grid);
+    #require(grid);
     print(g_image); print(pCV,vp=viewport(.3, .76, .24, 0.24));
     
     if (.on.public.web) {
@@ -737,9 +747,13 @@ PlotXIC <-
 #' @param dpi Numeric, to define the dpi of the figures. Default is 72.
 #' @param width Numeric, to define the width of the figure. Height = width * 0.618. 
 #' @export
+#' @return will return a figure of spectral peak intensity
 #' @importFrom Cairo Cairo
+#' @importFrom graphics par
+#' @importFrom graphics boxplot
+#' @importFrom graphics grid
+#' @import RColorBrewer
 #' @examples 
-#' library(OptiLCMS)
 #' data(mSet);
 #' newPath <- dir(system.file("mzData", package = "mtbls2"),
 #'                full.names = TRUE, recursive = TRUE)[c(10, 11, 12)]
@@ -771,7 +785,7 @@ PlotSpectraInsensityStistics <-
       
     } else{
       group_colors <-
-        paste0(RColorBrewer::brewer.pal(9, "Set1")[1:length(unique(sample_idx))], "60")
+        paste0(RColorBrewer::brewer.pal(9, "Set1")[seq_along(unique(sample_idx))], "60")
     }
     
     ints <-
@@ -853,9 +867,12 @@ PlotSpectraInsensityStistics <-
 #' @param dpi Numeric, to define the dpi of the figures. Default is 72.
 #' @param width Numeric, to define the width of the figure. Height = width * 0.618. 
 #' @importFrom ggrepel geom_text_repel
+#' @importFrom RJSONIO toJSON
+#' @importFrom stats prcomp
+#' @import RColorBrewer
+#' @return will return a figure of PCA after log tranformation (log2)
 #' @export
 #' @examples 
-#' library(OptiLCMS)
 #' data(mSet);
 #' newPath <- dir(system.file("mzData", package = "mtbls2"),
 #'                full.names = TRUE, recursive = TRUE)[c(10, 11, 12)]
@@ -956,7 +973,7 @@ PlotSpectraPCA <-
       ## For score plot
       pca3d <- list();
       pca3d$score$axis <- c(xlabel, ylabel, zlabel);
-      xyz0 <- df[,c(1:3)];
+      xyz0 <- df[,seq_len(3)];
       colnames(xyz0) <- rownames(xyz0) <- NULL;
       pca3d$score$xyz <- data.frame(t(xyz0));
       colnames(pca3d$score$xyz) <- NULL;
@@ -980,8 +997,8 @@ PlotSpectraPCA <-
       ## For loading plot
       pca3d <- list();
       
-      pca3d$loading$axis <- paste("Loading ", c(1:3), sep="");
-      coords0 <- coords <- data.frame(t(signif(mSet_pca$rotation[,1:3], 5)));
+      pca3d$loading$axis <- paste("Loading ", seq_len(3), sep="");
+      coords0 <- coords <- data.frame(t(signif(mSet_pca$rotation[,seq_len(3)], 5)));
       colnames(coords) <- NULL; 
       pca3d$loading$xyz <- coords;
       pca3d$loading$name <- rownames(mSet_pca$rotation);
@@ -1064,10 +1081,12 @@ PlotSpectraPCA <-
 #'  "tiff" or "ps". Default is "png".
 #' @param dpi Numeric, to define the dpi of the figures. Default is 72.
 #' @param width Numeric, to define the width of the figure. Height = width * 0.618. 
+#' @return will return a figure of spectral adjustment of retention time
 #' @export
+#' @import RColorBrewer
 #' @importFrom Cairo Cairo
+#' @importFrom graphics points
 #' @examples 
-#' library(OptiLCMS)
 #' data(mSet);
 #' newPath <- dir(system.file("mzData", package = "mtbls2"),
 #'                full.names = TRUE, recursive = TRUE)[c(10, 11, 12)]
@@ -1107,7 +1126,7 @@ PlotSpectraRTadj <-
       group_colors <- col.fun(length(unique(sample_idx)))
     } else{
       group_colors <-
-        paste0(RColorBrewer::brewer.pal(9, "Set1")[1:length(unique(sample_idx))], "60")
+        paste0(RColorBrewer::brewer.pal(9, "Set1")[seq_along(unique(sample_idx))], "60")
     }
     
     names(group_colors) <- unique(sample_idx)
@@ -1137,7 +1156,7 @@ PlotSpectraRTadj <-
       ylab = "RT_Difference"
     )
     
-    for (i in 1:length(diffRt)) {
+    for (i in seq_along(diffRt)) {
       points(
         x = xRt[[i]],
         y = diffRt[[i]],
@@ -1166,7 +1185,7 @@ PlotSpectraRTadj <-
     ## Have to "adjust" these for peakgroup only:
     pkGroupAdj <- pkGroup
     if (!is.null(pkGroup)) {
-      for (i in 1:ncol(pkGroup)) {
+      for (i in seq_len(ncol(pkGroup))){
         pkGroupAdj[, i] <-
           .applyRtAdjustment(pkGroup[, i], rawRt[[i]], adjRt[[i]])
       }
@@ -1175,7 +1194,7 @@ PlotSpectraRTadj <-
       xRt <- pkGroupAdj
       
       ## Loop through the rows and plot points - ordered by diffRt!
-      for (i in 1:nrow(xRt)) {
+      for (i in seq_len(nrow(xRt))){
         idx <- order(diffRt[i, ])
         points(
           x = xRt[i, ][idx],
@@ -1210,10 +1229,11 @@ PlotSpectraRTadj <-
 #'  "tiff" or "ps". Default is "png".
 #' @param dpi Numeric, to define the dpi of the figures. Default is 72.
 #' @param width Numeric, to define the width of the figure. Height = width * 0.618. 
+#' @return will return a figure of adjusted BPIs
 #' @export
+#' @import RColorBrewer
 #' @importFrom Cairo Cairo
 #' @examples 
-#' library(OptiLCMS)
 #' data(mSet);
 #' newPath <- dir(system.file("mzData", package = "mtbls2"),
 #'                full.names = TRUE, recursive = TRUE)[c(10, 11, 12)]
@@ -1256,7 +1276,7 @@ PlotSpectraBPIadj <-
       
     } else{
       group_colors <-
-        paste0(RColorBrewer::brewer.pal(9, "Set1")[1:length(unique(sample_idx))], "60")
+        paste0(RColorBrewer::brewer.pal(9, "Set1")[seq_along(unique(sample_idx))], "60")
     }
     
     group_colors2 <- group_colors
@@ -1317,10 +1337,12 @@ PlotSpectraBPIadj <-
 #' @param dpi Numeric, to define the dpi of the figures. Default is 72. (only works for web version)
 #' @param format Character, to give the format of BPI figures ploted. Can be "jpeg", "png", "pdf", "svg",
 #'  "tiff" or "ps". Default is "png". (only works for web version)
+#' @param width Numeric, width of the figure (default is NA, usually set it as 6~12)
 #' @export
+#' @return will return a figure of ms stats
+#' @import RColorBrewer
 #' @importFrom Cairo Cairo
 #' @examples 
-#' library(OptiLCMS)
 #' data(mSet);
 #' newPath <- dir(system.file("mzData", package = "mtbls2"),
 #'                full.names = TRUE, recursive = TRUE)[c(10, 11, 12)]
@@ -1343,7 +1365,7 @@ plotMSfeature <- function(mSet = NULL,
 
   peakdata <- mSet@peakAnnotation$camera_output;
   peakdata1 <-
-    peakdata[, c(-1:-6,-ncol(peakdata),-ncol(peakdata) + 1,-ncol(peakdata) + 2)]
+    peakdata[, c((-1):-6,-ncol(peakdata),-ncol(peakdata) + 1,-ncol(peakdata) + 2)]
   
   peakdata1[is.na(peakdata1)] <- 0
   
@@ -1458,10 +1480,13 @@ plotMSfeature <- function(mSet = NULL,
 #' @param mSet mSet Object, should be processed by ImportMSData.
 #' @param filename Character, to give the filename for the TIC plotting.
 #' @param imagename Character, to give the filename of the TIC plotted. (only works for web version)
+#' @param dpi Numeric, dpi of the figure (default is 72, usually set it as 72, 144, 360)
+#' @param width Numeric, width of the figure (default is 7, usually set it as 6~12)
+#' @param format Character, format of the figure (default is 'png', usually can be 'png', 'pdf','tiff','svg','eps','jpg')
 #' @export
+#' @return will return a figure of a single TIC
 #' @importFrom Cairo Cairo
 #' @examples
-#' library(OptiLCMS)
 #' data(mSet);
 #' newPath <- dir(system.file("mzData", package = "mtbls2"),
 #'                full.names = TRUE, recursive = TRUE)[c(10, 11, 12)]
@@ -1469,7 +1494,12 @@ plotMSfeature <- function(mSet = NULL,
 #' plotSingleTIC(mSet, "MSpos-Ex2-Col0-48h-Ag-2_1-A,3_01_9829.mzData", 
 #'               "MSpos-Ex2-Col0-48h-Ag-2_1-A,3_01_9829.png")
 
-plotSingleTIC <- function(mSet = NULL, filename, imagename, dpi = 72, width = 7, format = "png") {
+plotSingleTIC <- function(mSet = NULL, 
+                          filename, 
+                          imagename, 
+                          dpi = 72, 
+                          width = 7, 
+                          format = "png") {
   
   if(is.null(mSet)){
     if(.on.public.web){
@@ -1514,21 +1544,30 @@ plotSingleTIC <- function(mSet = NULL, filename, imagename, dpi = 72, width = 7,
 #' @param dpi Numeric, to define the dpi of the figures. Default is 72. (only works for web version)
 #' @param format Character, to give the format of BPI figures ploted. Can be "jpeg", "png", "pdf", "svg",
 #'  "tiff" or "ps". Default is "png". (only works for web version)
+#' @param width Numeric, width of the figure (default is NA, usually set it as 6~12)
 #' @export
+#' @return will return a figure of TICs
 #' @importFrom Cairo Cairo
+#' @import RColorBrewer
 #' @examples
-
+#' newPath <- dir(system.file("mzData", package = "mtbls2"), 
+#' full.names = TRUE, recursive = TRUE)[c(10:12)]
+#' data(mSet)
+#' mSet <- updateRawSpectraPath(mSet, newPath)
+#' plotTICs(mSet)
 plotTICs <-function(mSet = NULL,
                    imgName,
                    format = "png",
                    dpi = 72,
                    width = NA){
+  tics <- NULL;
   #need to extract the plotting part from import function
   if(is.null(mSet) & !.on.public.web){
     load("mSet.rda")
     raw_data_filt <- mSet@rawOnDisk;
-  } else if(!.on.public.web & (class(mSet) == "mSet")) {
+  } else if(!.on.public.web & (is(mSet, "mSet"))) {
     raw_data_filt <- mSet@rawOnDisk;
+    tics <- chromatogram(raw_data_filt, aggregationFun = "sum")
   } else if(.on.public.web) {
     load("raw_data_filt.rda");
     load("tics.rda");
@@ -1549,7 +1588,7 @@ plotTICs <-function(mSet = NULL,
     
   } else{
     group_colors <-
-      paste0(RColorBrewer::brewer.pal(9, "Set1")[1:groupNum], "60")
+      paste0(RColorBrewer::brewer.pal(9, "Set1")[seq_len(groupNum)], "60")
   }
   
   names(group_colors) <- levels(groupInfo)
@@ -1582,24 +1621,34 @@ plotTICs <-function(mSet = NULL,
 #' @title plotBPIs
 #' @description plotBPIs is used to plot the BPI of all files
 #' @param mSet mSet Object, should be processed by ImportMSData.
-#' @param filename Character, to give the filename for the TIC plotting.
+#' @param imgName Character, to give the filename for the TIC plotting.
 #' @param dpi Numeric, to define the dpi of the figures. Default is 72. (only works for web version)
 #' @param format Character, to give the format of BPI figures ploted. Can be "jpeg", "png", "pdf", "svg",
 #'  "tiff" or "ps". Default is "png". (only works for web version)
+#' @param width Numeric, width of the figure (default is NA, usually set it as 6~12)
 #' @export
+#' @import RColorBrewer
 #' @importFrom Cairo Cairo
+#' @return will return a figure of BPIs
 #' @examples
+#' newPath <- dir(system.file("mzData", package = "mtbls2"), 
+#' full.names = TRUE, recursive = TRUE)[c(10:12)]
+#' data(mSet)
+#' mSet <- updateRawSpectraPath(mSet, newPath)
+#' plotBPIs(mSet)
 plotBPIs <-function(mSet = NULL,
                     imgName,
                     format = "png",
                     dpi = 72,
                     width = NA){
+  bpis <- NULL;
   #need to extract the plotting part from import function
   if(is.null(mSet) & !.on.public.web){
     load("mSet.rda")
     raw_data_filt <- mSet@rawOnDisk;
-  } else if(!.on.public.web & (class(mSet) == "mSet")) {
+  } else if(!.on.public.web & (is(mSet, "mSet"))) {
     raw_data_filt <- mSet@rawOnDisk;
+    bpis <- chromatogram(raw_data_filt, aggregationFun = "max")
   } else if(.on.public.web) {
     load("raw_data_filt.rda");
     load("bpis.rda");
@@ -1620,7 +1669,7 @@ plotBPIs <-function(mSet = NULL,
     
   } else{
     group_colors <-
-      paste0(RColorBrewer::brewer.pal(9, "Set1")[1:groupNum], "60")
+      paste0(RColorBrewer::brewer.pal(9, "Set1")[seq_len(groupNum)], "60")
   }
   
   names(group_colors) <- levels(groupInfo)
@@ -1647,7 +1696,6 @@ plotBPIs <-function(mSet = NULL,
   if (.on.public.web) {
     dev.off()
   }
-  
 }
 
 

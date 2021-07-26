@@ -11,6 +11,9 @@ Export.PeakTable(mSet = NULL, path = getwd())
 
 \item{path}{character, used to specify the path for result rds and csv file. Default is the working directory.#'}
 }
+\value{
+will save metaboanalyst_input.csv into working path
+}
 \description{
 Export.PeakTable is used to export the table of peak
 }

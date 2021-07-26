@@ -26,6 +26,9 @@ SetPlotParam(
 
 \item{...}{Other specific parameters for specific function. Please set them according to the corresponding function.}
 }
+\value{
+will return a plotting parameters set
+}
 \description{
 This function sets the generic Plotting Parameters for different functions
 }

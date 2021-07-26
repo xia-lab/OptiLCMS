@@ -31,6 +31,9 @@ missing in X\\% of samples. For instance, 0.5 specifies to remove features
 that are missing from 50\\% of all samples per group. Method is only valid
 when there are two groups.}
 }
+\value{
+will return a mSet object with all result table formatted
+}
 \description{
 This function formats the CAMERA output to a usable format for OptiLCMS.
 }

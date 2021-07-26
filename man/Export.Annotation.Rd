@@ -11,6 +11,9 @@ Export.Annotation(mSet = NULL, path = getwd())
 
 \item{path}{character, used to specify the path for result rds and csv file. Default is the working directory.}
 }
+\value{
+will save annotated_peaklist.rds and annotated_peaklist.csv into working path
+}
 \description{
 Export.Annotation is used to export the result of annotation
 }

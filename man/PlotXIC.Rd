@@ -12,7 +12,9 @@ PlotXIC(
   format,
   dpi,
   width,
-  height
+  height,
+  sample_filled,
+  group_filled
 )
 }
 \arguments{
@@ -32,16 +34,22 @@ PlotXIC(
 \item{width}{Numeric, to define the width of the figure.}
 
 \item{height}{Numeric, to define the height of the figure.}
+
+\item{sample_filled}{Logical, to determine the EIC/XIC is filled or not for sample EIC}
+
+\item{group_filled}{Logical, to determine the EIC/XIC is filled or not for group EIC}
+}
+\value{
+will return a figure of EIC/XIC
 }
 \description{
 This functionn creates an extracted ion chromatogram (XIC/EIC) for a specific
 m/z and retention time. This is used for quality-control of raw m/s data.
 }
 \examples{
-library(OptiLCMS)
 data(mSet);
 newPath <- dir(system.file("mzData", package = "mtbls2"),
                full.names = TRUE, recursive = TRUE)[c(10, 11, 12)]
 mSet <- updateRawSpectraPath(mSet, newPath);
-PlotXIC(mSet, 1, TRUE, TRUE);
+#PlotXIC(mSet, 1, TRUE, TRUE);
 }

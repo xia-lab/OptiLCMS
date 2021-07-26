@@ -16,12 +16,14 @@ cmpdmap, smpmap, or pathinteg}
 
 \item{paired}{Indicate if the data is paired or not. Logical, default set to FALSE}
 }
+\value{
+will initialize an mSet object
+}
 \description{
 This functions handles the construction of a mSetObj object for storing data for further processing and analysis.
 It is necessary to utilize this function to specify to MetaboAnalystR the type of data and the type of analysis you will perform.
 }
 \examples{
-library(OptiLCMS);
 mSet<-InitDataObjects("spec", "raw", FALSE)
 }
 \author{

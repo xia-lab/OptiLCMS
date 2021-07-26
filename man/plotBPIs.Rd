@@ -9,13 +9,25 @@ plotBPIs(mSet = NULL, imgName, format = "png", dpi = 72, width = NA)
 \arguments{
 \item{mSet}{mSet Object, should be processed by ImportMSData.}
 
+\item{imgName}{Character, to give the filename for the TIC plotting.}
+
 \item{format}{Character, to give the format of BPI figures ploted. Can be "jpeg", "png", "pdf", "svg",
 "tiff" or "ps". Default is "png". (only works for web version)}
 
 \item{dpi}{Numeric, to define the dpi of the figures. Default is 72. (only works for web version)}
 
-\item{filename}{Character, to give the filename for the TIC plotting.}
+\item{width}{Numeric, width of the figure (default is NA, usually set it as 6~12)}
+}
+\value{
+will return a figure of BPIs
 }
 \description{
 plotBPIs is used to plot the BPI of all files
+}
+\examples{
+newPath <- dir(system.file("mzData", package = "mtbls2"), 
+full.names = TRUE, recursive = TRUE)[c(10:12)]
+data(mSet)
+mSet <- updateRawSpectraPath(mSet, newPath)
+plotBPIs(mSet)
 }

@@ -1,12 +1,12 @@
 # .onAttatch
 #
 .onAttach <- function (libname, pkgname){
-  k1 <- paste("OptiLCMS",utils::packageVersion( "OptiLCMS"),"initialized Successfully !")
+  k1 <- paste("OptiLCMS",
+              utils::packageVersion( "OptiLCMS"),
+              "initialized Successfully !")
   k0 <- "\n"
-  k2 <- paste("https://github.com/xia-lab/OptiLCMS")
-  
-  packageStartupMessage(c(k1,k0,k2))
-  
+  #k2 <- paste("https://github.com/xia-lab/OptiLCMS")
+  packageStartupMessage(c(k1,k0))
 }
 
 # Internal mSet Class for OptiLCMS
@@ -48,8 +48,9 @@ setClass("mSet",
 # 1. mSetRule were set for CAMERA processing.
 ##' This class is highly referenced from CAMERA but will improve later
 ##' @references Kuhl C, Tautenhahn R, Boettcher C, Larson TR, Neumann S (2012). 
-##' "CAMERA: an integrated strategy for compound spectra extraction and annotation of 
-##' liquid chromatography/mass spectrometry data sets." Analytical Chemistry, 84, 283-289. 
+##' "CAMERA: an integrated strategy for compound spectra extraction 
+##' and annotation of liquid chromatography/mass spectrometry data sets.
+##' " Analytical Chemistry, 84, 283-289. 
 ##' http://pubs.acs.org/doi/abs/10.1021/ac202450g.
 #' @noRd
 #' 

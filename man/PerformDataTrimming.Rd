@@ -50,6 +50,9 @@ please consider increasing this value.}
 
 \item{running.controller}{The resuming pipeline running controller. Optional. Don't need to define by hand.}
 }
+\value{
+will return an mSet objects with extracted ROI
+}
 \description{
 This function performs the raw data trimming. This function will output
 an trimmed MSnExp file to memory or hardisk according to the choice of users must
@@ -66,5 +69,4 @@ DataFiles <- dir(system.file("mzData", package = "mtbls2"), full.names = TRUE, r
 Zhiqiang Pang \email{zhiqiang.pang@mail.mcgill.ca} Jeff Xia \email{jeff.xia@mcgill.ca}
 Mcgill University
 License: GNU GPL (>= 2)
-library(OptiLCMS)
 }

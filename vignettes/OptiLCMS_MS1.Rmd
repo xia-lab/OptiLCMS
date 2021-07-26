@@ -1,0 +1,405 @@
+---
+title: "OptiLCMS-MS1"
+date: "26/07/2021"
+output: 
+  BiocStyle::html_document:
+    toc_float: true
+vignette: >
+  %\VignetteIndexEntry{LC-MS data analysis with OptiLCMS}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+  %\VignetteKeywords{Optimization, mass spectrometry, annotation, metabolomics}
+---
+
+```{r style, echo = FALSE, results = 'asis'}
+BiocStyle::markdown()
+```
+
+**Package**: `r Biocpkg("OptiLCMS")`<br/>
+**Authors**: Zhiqiang Pang<br/>
+**Modified**: `r file.info("OptiLCMS_MS1.Rmd")$mtime`<br/>
+**Compiled**: `r date()`
+
+```{r init, message = FALSE, echo = FALSE, results = "hide"}
+## Silently loading all packages
+library(BiocStyle)
+library(OptiLCMS)
+library(mtbls2)
+```
+
+
+# Introduction
+
+Global metabolomics aims to comprehensively study metabolic profiles of various biological systems. Despite high-resolution mass spectrometry (MS) has been implemented extensively, high-quality data processing remains challenging. OptiLCMS is an R package derived from `r Biocpkg("xcms")` and `r Biocpkg("CAMERA")`. It is providing a series of functions to do the peak profiling (including peak picking, alignment and gap filling) and annotation. This R package is also the Core of the LC-MS Spectral Processing Module in [MetaboAnalyst](https://www.metaboanalyst.ca/).
+
+This vignette tutorial is providing a hand-to-hand guidance for users to run raw spectral analysis. Now, let's start from installation.
+
+# Installation
+
+## Regular Installation
+
+At first, you need to confirm that you have R (4.0 and later) and Bioconductor installed, and then run the following command:
+
+```{r install1, eval=FALSE}
+BiocManager::install("OptiLCMS")
+```
+
+## Install dev version
+
+The development version of this package can be install directly from github of `Githubpkg("xia-lab/OptiLCMS")` by using the following command:
+
+```{r install2, eval=FALSE}
+# Latest features could only be obtained from 
+# this approach, make sure 'devtools' installed first
+devtools::install_github("xia-lab/OptiLCMS",
+                         build = TRUE,
+                         build_vignettes = TRUE, 
+                         build_manual =TRUE)
+```
+
+The latest function could be available from this way.
+
+## Install with tar ball
+
+You could download the tar package from this [link](https://drive.google.com/file/d/19CBsJQnvdmhK7WrAk3SqPH8GwRMn5TT_/view?usp=sharing) and install it by using the following command:
+```{r install3, eval=FALSE}
+# Remember to replace the PATH_TO_TAR as the 
+# right path of your downloaded package (OptiLCMS_0.99.x.tar.gz).
+install.packages(PATH_TO_TAR, repos = NULL, type="source")
+```
+
+# Params Optimization
+
+## ROI extraction
+
+Parameters' setting is quite critical to get optimal results for *centWave* algorithm. However, the optimization of parameters maybe very hard for fresh users. Here, we provide an automated pipeline to optimize the paramters for *centWave*.
+This step is used to extract ROIs of the data from m/z and RT dimensions, respectively. The extracted ROIs are considered as the representative regions of the whole spectrum. The extraction details has been described in MetaboAnalystR 3.0 [paper](https://www.mdpi.com/2218-1989/10/5/186).
+
+```{r ROI,eval=TRUE}
+# ROI extraction for optimization
+# 1. Define a vector of files' paths for optimization
+DataFiles <- dir(system.file("mzData", package = "mtbls2"), 
+                 full.names = TRUE, 
+                 recursive = TRUE)
+# 2. Extract Regions of Interests (ROI)
+#    rt.idx is extraction percentage (10% here, default is 1/15) from RT dimension
+#    rmConts is used to define whether to remove potential contaminants 
+mSet <- PerformROIExtraction(datapath = DataFiles[10:11],
+                             rt.idx = 0.1, 
+                             rmConts = FALSE);
+
+```
+
+
+## DoE Optimization
+
+Then the parameters for following steps will be optimzied automatically here by simply using function `PerformParamsOptimization`. Users only need to define the parallel of tasks (e.g. ncore = 2) and (optionally) the initial parameters.
+
+```{r DoE,eval=TRUE}
+## DoE optimization for optimal parameters' combination
+# This step is used to optimize the parameters for 
+# following steps with DoE model
+best_params <- PerformParamsOptimization(mSet = mSet, 
+                                         param = SetPeakParam(), 
+                                         ncore = 2);
+
+```
+
+
+# Data import
+
+**Initialize an Object (Optional)**
+
+Before we start the whole pipeline, we should initialize an empty mSet object as the running target for all following steps. This step is optional, users could also get an mSet object immediately the data import finished with the following steps.
+
+```{r initialize, eval=TRUE}
+library(OptiLCMS)
+mSet<-InitDataObjects("spec", "raw", FALSE)
+```
+
+Then please set the global parallel cores (optional)
+
+```{r parallel, eval=TRUE}
+SetGlobalParallel(1);
+register(bpstop());
+```
+
+
+**Import as onDisk Mode**
+
+Here we import MS data as onDisk mode. This mode is more compatible for all computers (Less memory used, but might be slower for next peak profiling steps).
+
+```{r import1, eval=TRUE, fig.cap=c("Base Peak Ions (BPIs) of all spectra files.", "Total Ion Chromatogram (TICs) of all spectra files.")}
+##' Get raw spectra files
+DataFiles <- dir(system.file("mzData", package = "mtbls2"), 
+                 full.names = TRUE,
+                 recursive = TRUE)[c(10:12, 14:16)]
+##' Create a phenodata data.frame
+pd <- data.frame(sample_name = sub(basename(DataFiles), 
+                                   pattern = ".mzData",
+                                   replacement = "", fixed = TRUE),
+                 sample_group = c(rep("col0", 3), rep("cyp79", 3)),
+                 stringsAsFactors = FALSE);
+##' Define plotting parameters
+PlottingParam <- SetPlotParam(Plot = TRUE,
+                              labels = TRUE);
+##' Import raw spectra
+mSet <- ImportRawMSData(path = DataFiles, 
+                        mode = "onDisk",
+                        plotSettings = PlottingParam,
+                        metadata = pd);
+```
+
+**Import as inMemory Mode**
+
+MS data can be fully imported into memory by using 'inMemory' mode. Compared to 'onDisk' mode, the raw spectral signal in memory will speed up the whole step, but may consume too much RAM. Please use this option only you have equipped your PC with a large RAM chip (> 16GB for 30 samples).
+
+```{r import2, eval=F}
+##' Get raw spectra files
+DataFiles <- dir(system.file("mzData", package = "mtbls2"), 
+                 full.names = TRUE,
+                 recursive = TRUE)[10:12]
+##' Create a phenodata data.frame
+pd <- data.frame(sample_name = sub(basename(DataFiles), 
+                                   pattern = ".mzData",
+                                   replacement = "", fixed = TRUE),
+                 sample_group = rep("col0",3),
+                 stringsAsFactors = FALSE);
+##' Import raw spectra
+mSet0 <- ImportRawMSData(path = DataFiles, 
+                        mode = "inMemory",
+                        plotSettings = SetPlotParam(),
+                        metadata = pd);
+```
+
+# Peak Profiling
+
+`PerformPeakProfiling` is a wrapped function used to do peak picking, peak alignment and gaps filling in one step automatically. Here we provide two workflows: <br />
+**4.1** Use `PerformPeakProfiling` directly;<br/>
+**4.2** Use `PerformPeakPicking`, `PerformPeakAlignment` and `PerformPeakFilling`; <br/>
+
+
+## One Step Method
+
+Here, the peak profiling step is executed with the parameters defined by function `SetPeakParam`;
+
+```{r profiling, eval=TRUE, fig.cap=c("Statistics of all features' intensity","Retention time alignment results of all samples","Aligned BPI of all spectral files")}
+Customized_params <- SetPeakParam(ppm = 5,
+                                  bw = 10, 
+                                  mzdiff = 0.001, 
+                                  max_peakwidth = 15, 
+                                  min_peakwidth = 10)
+
+##' Perform spectra profiling
+# User could use the 'Customized_params' or the optimized 'best_params' above
+mSet <- PerformPeakProfiling(mSet, 
+                             Params = best_params, 
+                             ncore = 1, 
+                             plotSettings = SetPlotParam(Plot = TRUE))
+
+```
+
+```{r comment1, eval=TRUE}
+### Everything has been done! All figures will be generated during the process.
+```
+
+
+## Step by step
+
+Peak Profiling function can also be achieved by using `PerformPeakPicking`, `PerformPeakAlignment` and `PerformPeakFilling` functions, respectively.
+
+```{r setParams, eval=TRUE}
+##' Perform spectra peak picking
+
+# 1. Extract the internal mSet object
+data(mSet);
+newPath <- dir(system.file("mzData", package = "mtbls2"),
+               full.names = TRUE, recursive = TRUE)[c(10, 11, 12)]
+# 2. Update spectra data file path
+mSet <- updateRawSpectraPath(mSet, newPath);
+
+```
+
+### Peak Picking
+
+```{r peakpicking, eval=TRUE}
+# 3. Perform the peak picking step
+mSet <- PerformPeakPicking(mSet);
+```
+
+### Peak Alignment
+
+```{r peakalignment, eval=TRUE}
+# 4. Perform the peak picking step
+mSet <- PerformPeakAlignment(mSet);
+```
+
+
+### Gaps Filling
+
+```{r gapfilling, eval=TRUE}
+# 5. Perform the peak picking step
+mSet <- PerformPeakFiling(mSet);
+# 6. Stop the parallel when all processing done
+register(bpstop());
+```
+
+# Feature Annotation
+
+Mass spectra generated by LC-MS are often complicated with various adducts, isotopologues, dimers and fragments and thus the molecular ion is often not the highest mass MS peak and not easy to identify. As a result, thousands of features can be detected and aligned into a feature table. It is now well accepted that the large number of features, that has been increased by several mentioned cases (adducts, isotopes etc.) could cause an over-estimation on the real number of compounds. Here, we internalized `r Biocpkg("CAMERA")` into the pipeline for annotation for now. More advanced and highly-efficient algorithm will be available soon.
+
+
+```{r Annotation, eval=TRUE}
+# This step is used to define the parameters for annotation
+annParams <- SetAnnotationParam(polarity = 'positive',
+                                mz_abs_add = 0.035);
+
+## Perform peak annotation with newly deinfed annParams
+mSet <- PerformPeakAnnotation(mSet = mSet,
+                              annotaParam = annParams,
+                              ncore =1)
+
+```
+
+
+# Feature Identification
+
+Feature Annotation resolves the issue from redundant adducts and isotopes etc., however, matching the feature to their chemical identity will be more attractive for following tandem targeted acquisition. This section will provide a series of function for users to identify the chemical compounds from MS level as several limited candidates with highest plausibility. 
+
+```{r Identification, eval=TRUE}
+# [Development done, under comprehensive evaluation, will be Available soon]
+
+```
+
+
+# Results Export
+
+The results generated by the steps above can be easily exported by doing **Result Formatting** and **Exports**. These two steps are finished by `FormatPeakList` and a series of *Export* functions.
+
+```{r format, eval=TRUE}
+## Format the PeakList
+mSet <- FormatPeakList(mSet = mSet,
+                       annParams,
+                       filtIso =FALSE,
+                       filtAdducts = FALSE,
+                       missPercent = 1)
+
+```
+
+
+```{r Export1, eval=TRUE}
+## 1. Export Annotated peak table
+# Please replace the path as your destination folder (absolute)
+Export.Annotation(mSet, path = tempdir())
+```
+
+```{r Export2, eval=TRUE}
+# 2. Export peak table for other module analysis with MetaboAnalyst
+# Please replace the path as your destination folder (absolute)
+Export.PeakTable(mSet, path = tempdir())
+```
+
+```{r Export3, eval=TRUE}
+# 3. Export peak summary results
+# Please replace the path as your destination folder (absolute)
+Export.PeakSummary(mSet, path = tempdir())
+```
+
+
+# Resumable Pipeline
+
+All steps above (including both customized and optimized options) can be used with resumable mechanism of OptiLCMS. Here we take an example of customized pipeline for users to learn and understand it quickly. Users could easily remove optimization steps in the `running.plan` function to adapt customization as resumable workflow.
+
+```{r resumming1, eval=TRUE}
+##' Fetch the raw spectra data
+DataFiles <- dir(system.file("mzData", package = "mtbls2"), full.names = TRUE,
+                 recursive = TRUE)[c(10:12, 14:16)]
+##' Create a phenodata data.frame
+pd <- data.frame(sample_name = sub(basename(DataFiles), pattern = ".mzData", 
+                                   replacement = "", fixed = TRUE),
+                 sample_group = c(rep("col0", 3), rep("cyp79", 3)),
+                 stringsAsFactors = FALSE)
+                 
+##' Initialize your plan
+plan <- InitializaPlan("raw_opt")
+
+##' Define your plan
+plan <- running.plan(plan,
+                     mSet <- PerformROIExtraction(datapath = DataFiles[c(1:2)], rt.idx = 0.025,
+                                                  plot = FALSE, rmConts = FALSE,
+                                                  running.controller = rc),
+                     param_initial <- SetPeakParam(),
+                     best_parameters <- PerformParamsOptimization(mSet = mSet, param_initial,
+                                                                  ncore = 2,
+                                                                  running.controller = rc),
+                     param <- best_parameters,
+                     plotSettings1 <- SetPlotParam(Plot=FALSE),
+                     plotSettings2 <- SetPlotParam(Plot=FALSE),
+                     mSet <- ImportRawMSData(mSet = mSet, path = DataFiles, 
+                                             metadata = pd,
+                                             plotSettings = plotSettings1,
+                                             running.controller = rc),
+                     mSet <- PerformPeakProfiling(mSet = mSet, Params = param,
+                                                  plotSettings = plotSettings2, ncore = 1,
+                                                  running.controller = rc),
+                     annParams <- SetAnnotationParam(polarity = 'negative',
+                                                     mz_abs_add = 0.025),
+                     mSet <- PerformPeakAnnotation(mSet = mSet,
+                                                   annotaParam = annParams, ncore =1,
+                                                   running.controller = rc),
+                     mSet <- FormatPeakList(mSet = mSet, annParams,
+                                            filtIso =FALSE, filtAdducts = FALSE,
+                                            missPercent = 1));
+##' Run it!
+result <- ExecutePlan(plan);
+
+```
+
+Now, let's try to update the running plan and execute it!
+
+```{r resumming2, eval=TRUE}
+##' Re-define your plan with a change on mz_abs_add from 0.025 to 0.035
+plan <- running.plan(plan,
+                     mSet <- PerformROIExtraction(datapath = DataFiles[c(1:2)], rt.idx = 0.025,
+                                                  plot = FALSE, rmConts = FALSE,
+                                                  running.controller = rc),
+                     param_initial <- SetPeakParam(),
+                     best_parameters <- PerformParamsOptimization(mSet = mSet, param_initial,
+                                                                  ncore = 2,
+                                                                  running.controller = rc),
+                     param <- best_parameters,
+                     plotSettings1 <- SetPlotParam(Plot=FALSE),
+                     plotSettings2 <- SetPlotParam(Plot=FALSE),
+                     mSet <- ImportRawMSData(mSet = mSet,
+                                             path = DataFiles,
+                                             metadata = pd,
+                                             plotSettings = plotSettings1,
+                                             running.controller = rc),
+                     mSet <- PerformPeakProfiling(mSet = mSet, Params = param,
+                                                  plotSettings = plotSettings2, ncore = 1,
+                                                  running.controller = rc),
+                     annParams <- SetAnnotationParam(polarity = 'negative',
+                                                     mz_abs_add = 0.035),
+                     mSet <- PerformPeakAnnotation(mSet = mSet,
+                                                   annotaParam = annParams, ncore =1,
+                                                   running.controller = rc),
+                     mSet <- FormatPeakList(mSet = mSet, 
+                                            annParams,
+                                            filtIso =FALSE, 
+                                            filtAdducts = FALSE,
+                                            missPercent = 1));
+
+##' Re-run it! Most steps will be resumed from cache and save your time!
+result <- ExecutePlan(plan)
+```
+
+
+# References
+
+1. Tautenhahn, R.; Bottcher, C.; Neumann, S. Highly sensitive feature detection for high resolution LC/MS. BMC Bioinformatics 2008, 9, 504, doi:10.1186/1471-2105-9-504. 
+
+2. Libiseller, G.; Dvorzak, M.; Kleb, U.; Gander, E.; Eisenberg, T.; Madeo, F.; Neumann, S.; Trausinger, G.; Sinner, F.; Pieber, T.; et al. IPO: a tool for automated optimization of XCMS parameters. BMC Bioinformatics 2015, 16, 118, doi:10.1186/s12859-015-0562-8.
+
+3. Kuhl, C.; Tautenhahn, R.; Bottcher, C.; Larson, T.R.; Neumann, S. CAMERA: an integrated strategy for compound spectra extraction and annotation of liquid chromatography/mass spectrometry data sets. Anal Chem 2012, 84, 283-289, doi:10.1021/ac202450g. 
+
+4. Smith, C.A.; Want, E.J.; O'Maille, G.; Abagyan, R.; Siuzdak, G. XCMS: processing mass spectrometry data for metabolite profiling using nonlinear peak alignment, matching, and identification. Anal Chem 2006, 78, 779-787, doi:10.1021/ac051437y. 

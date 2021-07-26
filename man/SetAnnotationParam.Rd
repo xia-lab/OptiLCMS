@@ -11,7 +11,8 @@ SetAnnotationParam(
   max_charge = 2,
   max_iso = 2,
   corr_eic_th = 0.85,
-  mz_abs_add = 0.001
+  mz_abs_add = 0.001,
+  adducts = NULL
 )
 }
 \arguments{
@@ -35,14 +36,16 @@ Default is set to 0.85.}
 
 \item{mz_abs_add}{Numeric, set the allowed variance for the search (for adduct annotation).
 The default is set to 0.001.}
+
+\item{adducts}{Character, specify the adducts based on your instrument settings.}
+}
+\value{
+will return a annotation parameter set for following annotation steps
 }
 \description{
 This function sets the parameters for peak annotation.
 }
 \examples{
-##' Load OptiLCMS package
-library(OptiLCMS)
-
 ##' Set peak annotation parameters
 annParams <- SetAnnotationParam(polarity = 'positive',
                                 mz_abs_add = 0.035);

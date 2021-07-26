@@ -32,6 +32,9 @@ memory crash, especially for large sample dataset.}
 
 \item{running.controller}{The resuming pipeline running controller. Optional. Don't need to define by hand.}
 }
+\value{
+will return a mSet object will raw data read inside.
+}
 \description{
 This function handles the reading in of
 raw MS data (.mzML, .CDF and .mzXML). Users must set
@@ -44,8 +47,6 @@ to be used for parallel processing. It first determines the number of cores
 within a user's computer and then sets it that number/2.
 }
 \examples{
-##' Load OptiLCMS package
-library(OptiLCMS)
 ##' Get raw spectra files
 DataFiles <- dir(system.file("mzData", package = "mtbls2"), full.names = TRUE,
                  recursive = TRUE)[c(10:12, 14:16)]

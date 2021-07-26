@@ -27,13 +27,14 @@ Defaut is set to true.}
 
 \item{running.controller}{The resuming pipeline running controller. Optional. Don't need to define by hand.}
 }
+\value{
+will return a complete mSet object with the whole processes finished
+}
 \description{
 This function performs feature extraction of user's raw MS data using
 the rawData object created using the ImportRawMSData function.
 }
 \examples{
-##' Load OptiLCMS package
-library(OptiLCMS)
 ##' Get raw spectra files
 DataFiles <- dir(system.file("mzData", package = "mtbls2"), full.names = TRUE,
                  recursive = TRUE)[c(10:12, 14:16)]
@@ -46,12 +47,12 @@ pd <- data.frame(sample_name = sub(basename(DataFiles), pattern = ".mzData",
 mSet <- ImportRawMSData(path = DataFiles, metadata = pd);
 
 ##' Perform spectra profiling
-mSet <- PerformPeakProfiling(mSet, Params = SetPeakParam(ppm = 5, 
+mSet <- PerformPeakProfiling(mSet, Params = SetPeakParam(ppm = 15, 
                                                          bw = 10, 
                                                          mzdiff = 0.001, 
                                                          max_peakwidth = 15, 
                                                          min_peakwidth = 10), 
-                                                         ncore = 1, 
+                                                         ncore = 2, 
                              plotSettings = SetPlotParam(Plot = TRUE))
 
 ##' Set peak annotation parameters

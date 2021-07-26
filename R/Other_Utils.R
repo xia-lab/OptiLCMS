@@ -32,7 +32,7 @@ GeneratePeakList <- function(userPath) {
     sample_data1 <- matrix(nrow = nrow(sample_data))
     
     
-    for (i in 1:length(unique(groups))) {
+    for (i in seq_along(unique(groups))) {
       columnnum <- unique(groups)[i] == groups
       sample_data0  <-
         subset.data.frame(sample_data, subset = TRUE, select = columnnum)
@@ -146,7 +146,7 @@ featureSUM <- function(MS_group, frtr) {
   # extract information
   df <- data.frame()
   
-  for (u in 1:length(MS_group)) {
+  for (u in seq_along(MS_group)) {
     ddf <- data.frame(MS_group[[u]]@rtime, MS_group[[u]]@intensity)
     df <- rbind(df, ddf)
   }
@@ -216,6 +216,7 @@ peakTableSUM <- function(peak_table) {
   }
 }
 
+#' @importFrom stats sd
 PeakGroupCV <- function(IntoLists, groupsInfo){
   allGroups <- names(groupsInfo)
   if(is.null(allGroups)){
@@ -259,9 +260,14 @@ PeakGroupCV <- function(IntoLists, groupsInfo){
   return(statsdf)
 }
 
+#' GetRGBColorGradient
+#' @param vals vals is the values vector to generate color gradient
+#' @import RColorBrewer
+#' @importFrom grDevices colorRampPalette
+#' @noRd
+#' @return will output a color values according to the input of values
 GetRGBColorGradient <- function(vals) {
-  library(RColorBrewer)
-  
+  #require(RColorBrewer)
   #seed.cols <- brewer.pal(3, "YlOrRd")
   #seed.cols <- brewer.pal(9, "Oranges")[c(2,5,7)]
   seed.cols <- c("#FCF5DF", "#FFEDA0", "#F03B20")
@@ -284,6 +290,13 @@ GetRGBColorGradient <- function(vals) {
   # note remove names
 }
 
+#' my.col2rgba
+#' @param cols cols
+#' @param alpha cols
+#' @importFrom grDevices col2rgb
+#' @return NA
+#' @noRd
+#' @examples NA
 my.col2rgba <- function(cols, alpha) {
   rgbcols <- col2rgb(cols)
   rgbcols <- rbind(rgbcols, alpha)
@@ -292,6 +305,7 @@ my.col2rgba <- function(cols, alpha) {
   })))
 }
 
+#' @importFrom stats dist
 GetDist3D <-function(mat, target=c(0,0,0)){
   dist.vec <- apply(mat, 2, function(x) dist(rbind(x, target)));
   return(dist.vec);
@@ -312,17 +326,17 @@ CachePathCorrection <- function(folderPath){
     tmp_rds <- readRDS(i);
     tmp_names <- names(tmp_rds);
     
-    if(class(tmp_rds)[1] == "mSet"){
+    if(is(tmp_rds,"mSet")){
       
       tmp_rds@rawOnDisk@processingData@files <- newfilepath;
       tmp_rds@rawInMemory@processingData@files <- newfilepath;
       tmp_rds@rawfiles <- newfilepath;
       
-    } else if (class(tmp_rds)[1] == "OnDiskMSnExp"){
+    } else if (is(tmp_rds,"OnDiskMSnExp")){
       
       tmp_rds@processingData@files <- newfilepath;
       
-    } else if(class(tmp_rds)[1] == "environment"){
+    } else if(is(tmp_rds,"environment")){
       tmp_rds[["mSet"]]@rawOnDisk@processingData@files <- 
         tmp_rds[["mSet"]]@rawInMemory@processingData@files <- 
         tmp_rds[["mSet"]]@rawfiles <- newfilepath;
@@ -388,7 +402,7 @@ FastRunningShow_auto <- function(fullUserPath){
   MessageOutput("No Empty scan found !", progress = 2, sleep = time_interval1);
   MessageOutput("Identifying regions of interest (ROI)...", progress = 2, sleep = time_interval1);
   MessageOutput("Identifying regions of potential contaminants", ecol = "", progress = 2, sleep = time_interval1);
-  for(i in 1:30){
+  for(i in seq_len(30)){
     MessageOutput(".", ecol = "", progress = 3, sleep = 0.5);
   }
   MessageOutput(" Done!", progress = 3, sleep = time_interval1);
