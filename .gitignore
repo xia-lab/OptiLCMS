@@ -1,12 +1,13 @@
 *~
 \#*\#
+*.Rproj
+OptiLCMS.Rproj
 .Rproj.user
 .Rhistory
 .RData
 .Ruserdata
-.OptiLCMS.Rproj
 .Rbuildignore
 *.o
 src/*.so
-OptiLCMS.Rproj
 src/*.o
+NEWS.md
