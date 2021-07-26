@@ -8,3 +8,5 @@ OptiLCMS.Rproj
 .Rbuildignore
 *.o
 src/*.so
+OptiLCMS.Rproj
+src/*.o
