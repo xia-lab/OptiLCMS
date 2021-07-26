@@ -5,6 +5,6 @@
 .RData
 .Ruserdata
 OptiLCMS.Rproj
+.Rbuildignore
 *.o
 src/*.so
-.Rbuildignore
