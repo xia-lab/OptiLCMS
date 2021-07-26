@@ -4,7 +4,7 @@
 .Rhistory
 .RData
 .Ruserdata
-OptiLCMS.Rproj
+.OptiLCMS.Rproj
 .Rbuildignore
 *.o
 src/*.so
