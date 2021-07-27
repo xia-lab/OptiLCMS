@@ -82,10 +82,10 @@ DataFiles <- dir(system.file("mzData", package = "mtbls2"),
                  full.names = TRUE, 
                  recursive = TRUE)
 # 2. Extract Regions of Interests (ROI)
-#    rt.idx is extraction percentage (10% here, default is 1/15) from RT dimension
+#    rt.idx is extraction percentage (1% here, default is 1/15) from RT dimension
 #    rmConts is used to define whether to remove potential contaminants 
 mSet <- PerformROIExtraction(datapath = DataFiles[10:11],
-                             rt.idx = 0.1, 
+                             rt.idx = 0.05, 
                              rmConts = FALSE);
 
 ```
@@ -98,10 +98,10 @@ Then the parameters for following steps will be optimzied automatically here by 
 ```{r DoE,eval=TRUE}
 ## DoE optimization for optimal parameters' combination
 # This step is used to optimize the parameters for 
-# following steps with DoE model
+# following steps with DoE model, please choose ncore > 1 for your actual practice
 best_params <- PerformParamsOptimization(mSet = mSet, 
                                          param = SetPeakParam(), 
-                                         ncore = 2);
+                                         ncore = 1);
 
 ```
 
@@ -325,12 +325,12 @@ plan <- InitializaPlan("raw_opt")
 
 ##' Define your plan
 plan <- running.plan(plan,
-                     mSet <- PerformROIExtraction(datapath = DataFiles[c(1:2)], rt.idx = 0.025,
+                     mSet <- PerformROIExtraction(datapath = DataFiles[c(1:2)], rt.idx = 0.05,
                                                   plot = FALSE, rmConts = FALSE,
                                                   running.controller = rc),
                      param_initial <- SetPeakParam(),
                      best_parameters <- PerformParamsOptimization(mSet = mSet, param_initial,
-                                                                  ncore = 2,
+                                                                  ncore = 1,
                                                                   running.controller = rc),
                      param <- best_parameters,
                      plotSettings1 <- SetPlotParam(Plot=FALSE),
@@ -360,12 +360,12 @@ Now, let's try to update the running plan and execute it!
 ```{r resumming2, eval=TRUE}
 ##' Re-define your plan with a change on mz_abs_add from 0.025 to 0.035
 plan <- running.plan(plan,
-                     mSet <- PerformROIExtraction(datapath = DataFiles[c(1:2)], rt.idx = 0.025,
+                     mSet <- PerformROIExtraction(datapath = DataFiles[c(1:2)], rt.idx = 0.05,
                                                   plot = FALSE, rmConts = FALSE,
                                                   running.controller = rc),
                      param_initial <- SetPeakParam(),
                      best_parameters <- PerformParamsOptimization(mSet = mSet, param_initial,
-                                                                  ncore = 2,
+                                                                  ncore = 1,
                                                                   running.controller = rc),
                      param <- best_parameters,
                      plotSettings1 <- SetPlotParam(Plot=FALSE),

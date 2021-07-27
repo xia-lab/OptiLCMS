@@ -164,11 +164,9 @@ PeakPicking_centWave_slave <- function(x, param){
  
   # load necessary C code for data processing
   # for raw data processing
-  if (is(x, "OnDiskMSnExp")){ 
-    
+  if (is(x, "OnDiskMSnExp")){
     scan.set <- MSnbase::spectra(x, BPPARAM = SerialParam());
     rt <- MSnbase::rtime(x);
-    
   }
   
   # for parameters optimization
@@ -247,6 +245,8 @@ PeakPicking_centWave_slave <- function(x, param){
   if (length(roiList) == 0) {
     if (.on.public.web & !.optimize_switch) {
       # Do nothing
+    } else if(.optimize_switch) {
+      # Do nothing
     } else {
       message("ROI searching under ", param$ppm, " ppm ... ", appendLF = FALSE)
     }
@@ -289,6 +289,8 @@ PeakPicking_centWave_slave <- function(x, param){
     #write.table(count_current_sample, file = "log_progress.txt",row.names = FALSE,col.names = FALSE)
     write.table(25 + count_current_sample*3/count_total_sample*25, file = "log_progress.txt",row.names = FALSE,col.names = FALSE)
     
+  } else if(.optimize_switch) {
+    # do nothing
   } else {
     message("Detecting chromatographic peaks in ", length(roiList),
             " regions of interest ...", appendLF = FALSE)
@@ -597,7 +599,12 @@ PeakPicking_centWave_slave <- function(x, param){
       nopeaks <- matrix(nrow = 0, ncol = length(basenames))
       colnames(nopeaks) <- c(basenames)
     }
-    message(" FAIL: none found!")
+    
+    if(.optimize_switch) {
+      # do nothing
+    } else {
+      message(" FAIL: none found!")
+    }
     return(nopeaks)
   }
   
@@ -618,6 +625,8 @@ PeakPicking_centWave_slave <- function(x, param){
     print_mes <- paste0(print_mes, print_mes_tmp)
     write.table(print_mes, file="metaboanalyst_spec_proc.txt",append = TRUE,row.names = FALSE,col.names = FALSE, quote = FALSE, eol = "\n");
     
+  } else if(.optimize_switch) {
+    # do nothing
   } else {
     message(" OK: ", nrow(pr), " found.")
   }
@@ -1722,7 +1731,7 @@ RT.Adjust_peakGroup <-
     if (ncol(rt) != length(subset))
       stop("Length of 'subset' and number of columns of the peak group ",
            "matrix do not match.")
-    ## Fix for issue #175
+   
     if (length(rt) == 0)
       stop("No peak groups found in the data for the provided settings")
     
@@ -1731,10 +1740,10 @@ RT.Adjust_peakGroup <-
       print_mes <- paste("Performing retention time correction using ", nrow(rt)," peak groups.");    
       write.table(print_mes,file="metaboanalyst_spec_proc.txt",append = TRUE,row.names = FALSE,col.names = FALSE, quote = FALSE, eol = "\n");
       
+    } else if(.optimize_switch) {
+      #Do nothing
     } else {
-      
       message("Performing retention time correction using ", nrow(rt)," peak groups.")
-      
     }
     
     ## Calculate the deviation of each peak group in each sample from its

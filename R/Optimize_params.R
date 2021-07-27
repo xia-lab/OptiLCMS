@@ -822,7 +822,8 @@ ExperimentsCluster_doe <-function(object, object_mslevel,params,
         object_mslevel=object_mslevel,
         isotopeIdentification = isotopeIdentification,
         BPPARAM = BPPARAM,
-        USE.NAMES = FALSE
+        USE.NAMES = FALSE,
+        singleCore = FALSE
       )
       
       response[value.index,]<-t(response0)
@@ -830,6 +831,7 @@ ExperimentsCluster_doe <-function(object, object_mslevel,params,
     
     parallel::stopCluster(cl)
   } else {
+    message("Processing .",appendLF = FALSE)
     response <-
       sapply(
         X = tasks,
@@ -838,9 +840,11 @@ ExperimentsCluster_doe <-function(object, object_mslevel,params,
         object = object,
         object_mslevel=object_mslevel,
         isotopeIdentification = isotopeIdentification,
-        BPPARAM = BPPARAM
+        BPPARAM = BPPARAM,
+        singleCore = TRUE
       )
     response <- t(response)
+    message(" OK, ",appendLF = FALSE)
   }
   
   colnames(response) <- c("exp", "num_peaks", "notLLOQP", "num_C13", "PPS","CV","RCS","GS","GaussianSI")
@@ -984,7 +988,7 @@ Statistic_doe <-function(object, object_mslevel, isotopeIdentification,
 #' License: GNU GPL (>= 2)
 
 SlaveCluster_doe <-function(task, Set_parameters, object, object_mslevel, 
-                            isotopeIdentification, BPPARAM = bpparam()) {
+                            isotopeIdentification, BPPARAM = bpparam(), singleCore = FALSE) {
 
   mSet <-
     calculateSet_doe(
@@ -994,10 +998,13 @@ SlaveCluster_doe <-function(task, Set_parameters, object, object_mslevel,
       task = task,
       BPPARAM = BPPARAM
     )
-  MessageOutput(paste("Finished", task,"/",length(Set_parameters),"in this round !"), SuppressWeb = TRUE)
+  if(singleCore){
+    #MessageOutput(paste("Finished", task,"/",length(Set_parameters),"in this round !"), SuppressWeb = TRUE)
+    message(".",appendLF = FALSE)
+  }
   
   if (!is(mSet, "character")){
-    MessageOutput("Peak Feature Analyzing...", SuppressWeb = TRUE)
+    #MessageOutput("Peak Feature Analyzing...", SuppressWeb = TRUE)
     
     #xset <- mSet[["xcmsSet"]]
     
@@ -1033,7 +1040,7 @@ SlaveCluster_doe <-function(task, Set_parameters, object, object_mslevel,
     names(result)[c(6,7,8,9)]<-c("CV","RCS","GS","GaussianSI")
     
     #result
-    MessageOutput("Peak Feature Analyzing Done !\n", SuppressWeb = TRUE)
+    #MessageOutput("Peak Feature Analyzing Done !\n", SuppressWeb = TRUE)
     
   } else{
     result<-c(task,0,0,0,0,0,0,0,0)

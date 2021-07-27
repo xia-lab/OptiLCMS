@@ -533,7 +533,6 @@ read.InMemMSd.data <- function(files,
   count.idx <- 0;
   
   for (f in files) {
-    MessageOutput(paste("Reading MS from",basename(f),"..."))
     
     filen <- match(f, files)
     filenums <- c(filenums, filen)
@@ -736,9 +735,7 @@ read.InMemMSd.data <- function(files,
       count.idx <- count.idx + 1;  
       write.table(1.0 + count.idx/length(files)*3, file = "log_progress.txt", row.names = FALSE,col.names = FALSE);
     }
-    
-    MessageOutput(paste0("Reading from ", basename(f), " finished successfully !"));
-    
+    MessageOutput(paste0("Import data: ",basename(f)," finished!"), ecol = "\n")
   }
   
   ## cache level 2 yet implemented
