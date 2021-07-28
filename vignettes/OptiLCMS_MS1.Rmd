@@ -351,7 +351,7 @@ plan <- running.plan(plan,
                                             filtIso =FALSE, filtAdducts = FALSE,
                                             missPercent = 1));
 ##' Run it!
-result <- ExecutePlan(plan);
+# result <- ExecutePlan(plan);
 
 ```
 
@@ -390,7 +390,7 @@ plan <- running.plan(plan,
                                             missPercent = 1));
 
 ##' Re-run it! Most steps will be resumed from cache and save your time!
-result <- ExecutePlan(plan)
+# result <- ExecutePlan(plan)
 ```
 
 
