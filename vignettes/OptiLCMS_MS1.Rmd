@@ -82,10 +82,10 @@ DataFiles <- dir(system.file("mzData", package = "mtbls2"),
                  full.names = TRUE, 
                  recursive = TRUE)
 # 2. Extract Regions of Interests (ROI)
-#    rt.idx is extraction percentage (1% here, default is 1/15) from RT dimension
+#    rt.idx is extraction percentage (3.5% here, default is 1/15) from RT dimension
 #    rmConts is used to define whether to remove potential contaminants 
 mSet <- PerformROIExtraction(datapath = DataFiles[10:11],
-                             rt.idx = 0.05, 
+                             rt.idx = 0.035, 
                              rmConts = FALSE);
 
 ```
