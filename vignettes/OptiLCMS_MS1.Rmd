@@ -403,3 +403,10 @@ plan <- running.plan(plan,
 3. Kuhl, C.; Tautenhahn, R.; Bottcher, C.; Larson, T.R.; Neumann, S. CAMERA: an integrated strategy for compound spectra extraction and annotation of liquid chromatography/mass spectrometry data sets. Anal Chem 2012, 84, 283-289, doi:10.1021/ac202450g. 
 
 4. Smith, C.A.; Want, E.J.; O'Maille, G.; Abagyan, R.; Siuzdak, G. XCMS: processing mass spectrometry data for metabolite profiling using nonlinear peak alignment, matching, and identification. Anal Chem 2006, 78, 779-787, doi:10.1021/ac051437y. 
+
+# SessionInfo
+
+```{r sessionInfo, eval=TRUE}
+sessionInfo()
+```
+
