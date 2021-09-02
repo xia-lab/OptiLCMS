@@ -167,16 +167,19 @@ PeakPicking_centWave_slave <- function(x, param){
   if (is(x, "OnDiskMSnExp")){
     scan.set <- MSnbase::spectra(x, BPPARAM = SerialParam());
     rt <- MSnbase::rtime(x);
+    filenamevalue <- basename(x@processingData@files)
   }
   
   # for parameters optimization
   if (is(x,"list")) {
     scan.set <- x;
     rt <- unlist(lapply(x,  MSnbase::rtime), use.names = FALSE);
+    filenamevalue <- NA;
   }
   
   mzs <- lapply(scan.set, MSnbase::mz)
   vals_per_spect <- lengths(mzs, FALSE)
+  
   
   #if (any(vals_per_spect == 0))
   #  mzs <- mzs[-which(vals_per_spect == 0)];
@@ -281,7 +284,7 @@ PeakPicking_centWave_slave <- function(x, param){
   
   if (.on.public.web & !.optimize_switch){
     
-    print_mes <- paste0("Detecting peaks in ", length(roiList)," regions of interest ...");    
+    print_mes <- paste0("Detecting peaks in ", length(roiList)," regions of interest of ", filenamevalue, " ...");    
     #write.table(print_mes,file="metaboanalyst_spec_proc.txt",append = TRUE,row.names = FALSE,col.names = FALSE, quote = FALSE, eol = " ");
     
     .SwapEnv$count_current_sample <- count_current_sample <- .SwapEnv$count_current_sample +1;
@@ -396,7 +399,8 @@ PeakPicking_centWave_slave <- function(x, param){
       next
     if (td[length(td)] == Nscantime) ## workaround, localMax fails otherwise
       wCoefs[nrow(wCoefs),] <- wCoefs[nrow(wCoefs) - 1, ] * 0.99
-    localMax <- MSW.getLocalMaximumCWT(wCoefs)
+    localMax <- MSW.getLocalMaximumCWT(wCoefs);
+    
     rL <- MSW.getRidge(localMax)
     wpeaks <- sapply(rL,
                      function(x) {
@@ -3199,7 +3203,10 @@ MSW.getRidge <-  function(localMax, iInit=ncol(localMax), step=-1, iFinal=1, min
         if (is.null(status.k)) status.k <- gapTh +1
         ##
         if (status.k > gapTh & scale.j >= 2) {
-          temp <- ridgeList[[as.character(ind.k)]]
+          temp <- ridgeList[[as.character(ind.k)]];
+          
+          if(length(temp)-status.k <= 0) next
+          
           orphanRidgeList <- c(orphanRidgeList, list(temp[seq_len(length(temp)-status.k)]))
           orphanRidgeName <- c(orphanRidgeName, paste(col.j + status.k + 1, ind.k, sep='_'))
           remove.j <- c(remove.j, as.character(ind.k))

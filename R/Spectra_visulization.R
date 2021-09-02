@@ -307,6 +307,7 @@ SetPlotParam <-
 #' @importFrom Cairo Cairo
 #' @importFrom ggrepel geom_text_repel
 #' @importFrom grid viewport
+#' @importFrom MSnbase filterMz
 #' @export
 #' @return will return a figure of EIC/XIC
 #' @examples 
@@ -396,7 +397,7 @@ PlotXIC <-
       c(mSet@peakfilling[["FeatureGroupTable"]]@listData[["mzmin"]][featureNum] - 0.2,
         mSet@peakfilling[["FeatureGroupTable"]]@listData[["mzmax"]][featureNum] + 0.2)
     
-    RawData <- filterMz(filterRt(raw_data, rtrange), mzrange)
+    RawData <- MSnbase::filterMz(MSnbase::filterRt(raw_data, rtrange), mzrange)
     
     title <-
       paste0(round(mSet@peakfilling[["FeatureGroupTable"]]@listData[["mzmed"]][[featureNum]], 4),
@@ -1005,7 +1006,7 @@ PlotSpectraPCA <-
       pca3d$loading$entrez <- paste0(round(mSet@peakfilling[["FeatureGroupTable"]]@listData$mzmed, 4), 
                                      "@", 
                                      round(mSet@peakfilling[["FeatureGroupTable"]]@listData$rtmed, 2));
-      save(coords0, file = "coords0_ori.rda")
+      
       dists <- GetDist3D(coords0);
       pca3d$loading$cols <- GetRGBColorGradient(dists);
       

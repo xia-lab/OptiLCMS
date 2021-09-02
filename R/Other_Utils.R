@@ -558,8 +558,8 @@ FastRunningShow_customized <- function(fullUserPath){
   
   setwd(fullUserPath);    
   
-  time_interval1 <- 0.80;
-  time_interval2 <- 2;
+  time_interval1 <- 0.10;
+  time_interval2 <- 1;
   # running to show the progress
   MessageOutput(paste0("Running Status -- Plan Initialized Successfully at: ", 
                          Sys.time(), 

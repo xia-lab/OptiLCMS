@@ -1248,9 +1248,7 @@ CentroidMSData <- function(InFolder, OutFolder = tempdir(), ncore = 1) {
         fileNM <- sub(pattern = "(.*)\\..*$", replacement = "\\1", basename(x));
         files.mzml <- paste0(OutPath,"/", fileNM, ".mzML");
         writeMSData(CMS, file = files.mzml);
-      }
-
-      })
+      }})
     
   } else {
     

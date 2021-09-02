@@ -1,6 +1,6 @@
 Package: OptiLCMS
 Title: Optimized LC-MS Spectra Processing
-Version: 0.99.3
+Version: 0.99.4
 Authors@R: c(
            person(given = "Zhiqiang",
            family = "Pang",
@@ -21,10 +21,10 @@ Authors@R: c(
 Description: A pipeline for users to do the LC-MS (Liquid chromatography–mass spectrometry) raw data processing with automatically optimized parameters. An automated 
              pipeline is implemented inside this page for users to avoid manaually optimized the parameters. More functions on MS/MS data processing is on the way.
 License: MIT + file LICENSE
-Depends: R (>= 4.0.0), methods, Biobase, BiocParallel (>= 1.8.0), stats, utils
+Depends: R (>= 4.0.0), methods, Biobase, BiocParallel (>= 1.8.0), stats, utils, MSnbase
 Imports: mzR (>= 2.22.0), lattice, RColorBrewer, plyr, RJSONIO, parallel, tools, grDevices, grid, graphics,
          RBGL, S4Vectors, ggplot2, graph, progress, rsm, Cairo, Hmisc, entropy, cluster, data.table,
-         scales, ggrepel, MSnbase
+         scales, ggrepel
 Suggests: knitr (>= 1.1.0), MALDIquant, MassSpecWavelet, mtbls2, rmarkdown, BiocStyle
 Enhances: XML
 VignetteBuilder: knitr

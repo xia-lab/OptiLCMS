@@ -154,23 +154,23 @@ PerformParamsOptimization <- function(mSet,
         
       } else {
         
-        if(!is.nan(p2$ppm) & !is.finite(p2$ppm) & !is.infinite(p2$ppm)){
+        if(!is.nan(p2$ppm) & !is.infinite(p2$ppm)){
           p2[["ppm"]]<-round(p2$ppm,2);
         } else {
           p2[["ppm"]] <- param[["ppm"]];
         }
-        if(!is.nan(p2$noise) & !is.finite(p2$noise) & !is.infinite(p2$noise)){
+        if(!is.nan(p2$noise) & !is.infinite(p2$noise)){
           p2[["noise"]]<-round(p2$noise,2);
         } else {
           p2[["noise"]] <- 100;
         }
-        if(!is.nan(p2$prefilter) & !is.finite(p2$prefilter) & 
+        if(!is.nan(p2$prefilter) & 
            !is.infinite(p2$prefilter)){
           p2[["prefilter"]]<-round(p2$prefilter,2);
         } else {
           p2[["prefilter"]] <- 3;
         }
-        if(!is.nan(p2$value_of_prefilter) & !is.finite(p2$value_of_prefilter) & 
+        if(!is.nan(p2$value_of_prefilter) & 
            !is.infinite(p2$value_of_prefilter)){
           p2[["value_of_prefilter"]]<-round(p2$value_of_prefilter,2);
         } else {
@@ -512,7 +512,7 @@ optimizxcms.doe.peakpicking <- function(object = NULL,
         index.set = index.set,
         useNoise = params[["noise"]]
       ), error = function(e) e)
-    
+
     if(is(mSet_OPT,"simpleError")){
       MessageOutput("Optimization Failed: Too few peaks in your data ! 
                     Will use default parameters for processing!","\n")
@@ -1067,12 +1067,12 @@ SlaveCluster_doe <-function(task, Set_parameters, object, object_mslevel,
 calculateSet_doe <- function(object, object_mslevel, Set_parameters, task = 1,
                              BPPARAM = bpparam()) {
   
-  if (length(Set_parameters) < 31){ # deal with the usual processing case
+  if (length(Set_parameters) < 32){ # deal with the usual processing case
     param <- updateRawSpectraParam(Set_parameters)
   } else { # deal with the optimization case, usaully 44 (33 each set)
     param <- updateRawSpectraParam(Set_parameters[[task]])
   }
-
+  
   mSet <- calculatePPKs(object, object_mslevel, param, BPPARAM = bpparam())
   
   mSet <- calculateGPRT(mSet, param)
@@ -2780,6 +2780,9 @@ filterPpmError <- function(approvedPeaks, useGap, varExpThresh,
   ppmObs <- approvedPeaks$meanPPM
   ppmObs <- unlist(lapply(strsplit(split = ";", x = as.character(ppmObs)),
                           function(x) {as.numeric(x)}))
+  
+  ## Only consider top 1/3 peaks because high quality signals alrady selected
+  ppmObs <- sort(ppmObs,decreasing = TRUE)[1:ceiling(length(ppmObs)/3)]
   
   ## 2019-06-19
   ## corner case when all error measurements are identical.

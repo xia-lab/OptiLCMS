@@ -1073,7 +1073,7 @@ ContaminatsRemoval <- function(raw_data, ms_list){
   
   k_count <- 0;
   
-  for(i in seq_len(300)){
+  for(i in seq_len(80)){
     
     mzrange <- c(top_mzs[i]-0.005, top_mzs[i]+0.005);
     RawData <- suppressWarnings(MSnbase::filterMz(raw_data, mzrange));

@@ -1,6 +1,17 @@
 # Setting .on.public.web (if on.public.web, the version number will be even, 
 # local package is odd)
 .on.public.web <- FALSE;
+# .on.public.web <- function() {
+#   if (file.exists("../../css/spectrum.min.css") |
+#       file.exists("/Users/xia/Dropbox/") |
+#       file.exists("/data/glassfish/projects/metaboanalyst")) {
+#     return(TRUE)
+#   } else {
+#     return(FALSE)
+#   }
+# }
+
+
 
 # Setting the global Variable to avoid notes in R CMD Check
 utils::globalVariables(c(".SwapEnv"))
