@@ -142,11 +142,17 @@ PerformPeakProfiling <-
       total_threads <- ncore
     }
     
-    if (.Platform$OS.type == "unix") {
-      register(bpstart(MulticoreParam(ceiling(total_threads))))
-    } else if (.Platform$OS.type == "windows") {
-      register(bpstart(SnowParam(ceiling(total_threads))))
-    }
+    #if (.Platform$OS.type == "unix") {
+    #  register(bpstart(MulticoreParam(ceiling(total_threads))))
+    #} else if (.Platform$OS.type == "windows") {
+    #  register(bpstart(SnowParam(ceiling(total_threads))))
+    #}
+    
+    if (.Platform$OS.type=="unix"){
+      bp <- MulticoreParam(ceiling(total_threads));
+    } else {
+      bp <- SnowParam(ceiling(total_threads));
+    };
     
     MessageOutput(
       mes = paste0(
@@ -170,7 +176,7 @@ PerformPeakProfiling <-
       
       mSet <-
         tryCatch(
-          PerformPeakPicking(mSet),
+          PerformPeakPicking(mSet, BPPARAM = bp),
           error = function(e) {
             e
           }
@@ -202,7 +208,7 @@ PerformPeakProfiling <-
           ecol = "\n",
           progress = 50
         )
-        stop("EXCEPTION POINT CODE: PU1")
+        stop("EXCEPTION POINT CODE: Peak Picking. Please adjust your parameters and try again.")
       }
 
     }
@@ -254,7 +260,7 @@ PerformPeakProfiling <-
           ecol = "\n",
           progress = 73
         )
-        stop("EXCEPTION POINT CODE: PU2")
+        stop("EXCEPTION POINT CODE: Peak Alignment. Please adjust your parameters and try again")
       }
     }
     
@@ -278,13 +284,13 @@ PerformPeakProfiling <-
       
       mSet <-
         tryCatch(
-          PerformPeakFiling (mSet),
+          PerformPeakFiling (mSet, BPPARAM = bp),
           error = function(e) {
             e
           }
         )
       
-      gc()
+      gc();
       
       if (.running.as.plan & !is(mSet,"simpleError")) {
         cache.save(mSet, paste0(function.name, "_c3"))
@@ -718,7 +724,11 @@ PerformPeakAnnotation <-
         if (is.na(sample[1]) || length(mSet@rawOnDisk@processingData@files) > 1) {
           # grouped peaktable within automatic selection or sub selection
           if (is.na(sample[1])) {
-            index <- seq_along(mSet@rawOnDisk@processingData@files)
+            if(mSet@params[["BlankSub"]]){
+              index <- seq_along(which(mSet@rawOnDisk@phenoData@data[["sample_group"]] != "BLANK"))
+            } else {
+              index <- seq_along(mSet@rawOnDisk@processingData@files)
+            }
           } else{
             index <- sample
           }
@@ -964,7 +974,11 @@ PerformPeakAnnotation <-
       if (nrow(mSet@peakAnnotation$groups) > 0) {
         ##multiple sample or grouped single sample
         if (is.na(mSet@peakAnnotation$AnnotateObject$sample[1])) {
-          index <- seq_along(mSet@rawOnDisk@processingData@files)
+          if(mSet@params[["BlankSub"]]){
+            index <- seq_along(which(mSet@rawOnDisk@phenoData@data[["sample_group"]] != "BLANK"))
+          } else {
+            index <- seq_along(mSet@rawOnDisk@processingData@files)
+          }
         } else{
           index <- mSet@peakAnnotation$AnnotateObject$sample
         }
@@ -1203,7 +1217,7 @@ PerformPeakAnnotation <-
       MessageOutput(
         mes = paste0("Found isotopes:", cnt),
         ecol = "\n",
-        progress = 96
+        progress = 95
       )
       
       mSet@peakAnnotation$AnnotateObject$isotopes <- isotope
@@ -1321,14 +1335,14 @@ PerformPeakAnnotation <-
           "!"
         ),
         ecol = "\n",
-        progress = 97
+        progress = 96
       )
       
       ## 5. Annotate adducts (and fragments) -----
       mSet@peakAnnotation$AnnotateObject$ruleset <- NULL;
       rules <- annotaParam$adducts;
       
-      if(rules == "NULL"){
+      if(rules[1] == "NULL"){
         rules <- NULL;
       }
       
@@ -1343,14 +1357,23 @@ PerformPeakAnnotation <-
       
       MessageOutput(mes = NULL,
                     ecol = "\n",
-                    progress = 98)
+                    progress = 97)
       
-      ## 6. Data Organization -----
+      ## 6. Mass Matching
+      if(.on.public.web){
+        mSet <- PerformMassMatching(mSet);
+      }
+      
+      ## 7. Data Organization -----
       camera_output <- getPeaklist(mSet)
 
-      sample_names <- pData(mSet@rawOnDisk)[[1]]
+      sample_names <- pData(mSet@rawOnDisk)[[1]];
+      if(mSet@params$BlankSub){
+        sample_names <- sample_names[mSet@rawOnDisk@phenoData@data[["sample_group"]] != "BLANK"]
+      }
       sample_names_ed <-
         gsub(".mzML|.mzData|.mzXML|.cdf|.CDF", "", sample_names)
+
 
       # Account for multiple groups
       length <- ncol(camera_output)
@@ -1358,6 +1381,9 @@ PerformPeakAnnotation <-
       camnames <- colnames(camera_output)
       groupNum <-
         length(unique(pData(mSet@rawOnDisk)[["sample_group"]]));
+      if(mSet@params$BlankSub & any(mSet@rawOnDisk@phenoData@data[["sample_group"]] == "BLANK")){
+        groupNum <- groupNum -1;
+      }
       start <- groupNum + 8
       camnames[start:end] <- sample_names_ed
       colnames(camera_output) <- camnames
@@ -1379,7 +1405,7 @@ PerformPeakAnnotation <-
           ") \nGoing to the final step..."
         ),
         ecol = "",
-        progress = 99
+        progress = 98
       )
       
       ## 0. Final Output -----
@@ -1397,7 +1423,6 @@ PerformPeakAnnotation <-
     if(.on.public.web){
       save(mSet, file = "mSet.rda");
     }
-    MessageOutput("Done!")
     
     return(mSet)
   }
@@ -1551,6 +1576,9 @@ FormatPeakList <-
     feats_digits <- round(feats_info, 5);
     
     group_info <- mSet@rawOnDisk@phenoData@data[["sample_group"]];
+    if(mSet@params$BlankSub & any(group_info == "BLANK")){
+      group_info <- group_info[group_info != "BLANK"]
+    }
     combo_info <- rbind(as.character(group_info), feats_digits);
     
     mzs_rd <-
@@ -1573,9 +1601,21 @@ FormatPeakList <-
     
     # remove features missing in over X% of samples per group
     # only valid for 2 group comparisons!!
-    ma_feats_miss <-
-      ma_feats[which(rowMeans(is.na(ma_feats[, (ma_feats[1, ] == as.character(unique(group_info[1])))]))
-                     | rowMeans(is.na(ma_feats[, (ma_feats[1, ] == as.character(unique(group_info[2])))])) < missPercent),];
+    # ma_feats_miss <-
+    #   ma_feats[which(rowMeans(is.na(ma_feats[, (ma_feats[1, ] == as.character(unique(group_info[1])))]))
+    #                  | rowMeans(is.na(ma_feats[, (ma_feats[1, ] == as.character(unique(group_info[2])))])) < missPercent),];
+    # 
+    
+    grps_tb <- table(group_info)
+    grps_info <- names(grps_tb[grps_tb > 2])
+    if(length(grps_info) > 1){
+      ma_feats_miss <-
+        ma_feats[which(rowMeans(is.na(ma_feats[, (ma_feats[1, ] == as.character(grps_info[1]))]))
+                       | rowMeans(is.na(ma_feats[, (ma_feats[1, ] == as.character(grps_info[2]))])) <= missPercent),];
+    } else {
+      ma_feats_miss <-
+        ma_feats[which(rowMeans(is.na(ma_feats[, (ma_feats[1, ] == as.character(grps_info[1]))])) <= missPercent),];
+    }
     
     mSet@dataSet <- ma_feats_miss;
     
@@ -1654,15 +1694,20 @@ FormatPeakList <-
     datam[, 6] <- missing_perc;
 
     mSet@peakAnnotation$peak_result_summary <- datam;
+    if(.on.public.web) {
+      mSet@peakAnnotation[["massMatching"]][["Compound"]][is.na(mSet@peakAnnotation[["massMatching"]][["Compound"]])] <- 
+        mSet@peakAnnotation[["massMatching"]][["Formula"]][is.na(mSet@peakAnnotation[["massMatching"]][["Formula"]])] <- 
+        "";
+      
+      mSet@peakAnnotation$camera_output <- 
+        cbind(camera_output, mSet@peakAnnotation[["massMatching"]]);
+      
+    } else {
+      mSet@peakAnnotation[["massMatching"]][["Compound"]][is.na(mSet@peakAnnotation[["massMatching"]][["Compound"]])] <- 
+        mSet@peakAnnotation[["massMatching"]][["Formula"]][is.na(mSet@peakAnnotation[["massMatching"]][["Formula"]])] <- 
+        '';
+    }
 
-    MessageOutput(
-      mes = paste0("\nEverything has been finished Successfully ! (",
-                   Sys.time(),
-                   ")\n"),
-      ecol = "",
-      progress = 100
-    );
-    
     ma_feats_miss[is.na(ma_feats_miss)] <- 0;
     ma_feats_miss[ma_feats_miss == ""] <- 0;
     mSet@dataSet <- ma_feats_miss;
@@ -1676,6 +1721,81 @@ FormatPeakList <-
     )
     
     if(.on.public.web){
+      # remove isotopes and adducts directly
+      if (annParams$polarity == "positive") {
+        camera_isotopes <-
+          camera_ma[grepl("\\[M\\]\\+", camera_ma$isotopes), ]
+        camera_adducts <-
+          camera_ma[grepl("\\[M\\+H\\]\\+", camera_ma$adduct), ]
+        camera_feats <-
+          camera_ma[(camera_ma$isotopes == "" &
+                       camera_ma$adduct == ""), ]
+        unique_feats <-
+          unique(rbind(camera_isotopes, camera_adducts, camera_feats))
+        
+      } else{
+        # negative polarity
+        camera_isotopes <-
+          camera_ma[grepl("\\[M\\]-", camera_ma$isotopes), ]
+        camera_adducts <-
+          camera_ma[grepl("\\[M-H\\]-", camera_ma$adduct), ]
+        camera_feats <-
+          camera_ma[(camera_ma$isotopes == "" &
+                       camera_ma$adduct == ""), ]
+        unique_feats <-
+          unique(rbind(camera_isotopes, camera_adducts, camera_feats))
+      }
+      
+      unique_feats <- unique_feats[order(unique_feats[, 1]), ];
+      
+      # adjust decimal places, feats_info contains all samples
+      feats_info <- unique_feats[, 7:end];
+      feats_digits <- round(feats_info, 5);
+      
+      group_info <- mSet@rawOnDisk@phenoData@data[["sample_group"]];
+      if(mSet@params$BlankSub & any(group_info == "BLANK")){
+        group_info <- group_info[group_info != "BLANK"]
+      }
+      combo_info <- rbind(as.character(group_info), feats_digits);
+      
+      mzs_rd <-
+        paste0(round(unique_feats[, 1], 4), "__", round(unique_feats[, 4], 2));
+      mzs <- data.frame(c("Label", mzs_rd), stringsAsFactors = FALSE);
+      
+      # ensure features are unique
+      mzs_unq <- mzs[duplicated(mzs), ];
+      
+      while (length(mzs_unq) > 0) {
+        mzs[duplicated(mzs), ] <-
+          sapply(mzs_unq, function(x)
+            paste0(x, sample(seq_len(999), 1, replace = FALSE)))
+        
+        mzs_unq <- mzs[duplicated(mzs), ]
+      };
+      
+      colnames(mzs) <- "Sample";
+      ma_feats <- cbind(mzs, combo_info);
+      
+      # remove features missing in over X% of samples per group
+      # only valid for 2 group comparisons!!
+      # ma_feats_miss <-
+      #   ma_feats[which(rowMeans(is.na(ma_feats[, (ma_feats[1, ] == as.character(unique(group_info[1])))]))
+      #                  | rowMeans(is.na(ma_feats[, (ma_feats[1, ] == as.character(unique(group_info[2])))])) < missPercent),];
+      # 
+      
+      grps_tb <- table(group_info)
+      grps_info <- names(grps_tb[grps_tb > 2])
+      if(length(grps_info) > 1){
+        ma_feats_miss <-
+          ma_feats[which(rowMeans(is.na(ma_feats[, (ma_feats[1, ] == as.character(grps_info[1]))]))
+                         | rowMeans(is.na(ma_feats[, (ma_feats[1, ] == as.character(grps_info[2]))])) <= missPercent),];
+      } else {
+        ma_feats_miss <-
+          ma_feats[which(rowMeans(is.na(ma_feats[, (ma_feats[1, ] == as.character(grps_info[1]))])) <= missPercent),];
+      }
+      
+      write.csv(ma_feats_miss, file = "metaboanalyst_input_clean.csv", row.names = F, quote = F)
+      # save the rda
       save(mSet, file = "mSet.rda");
     }
     
@@ -1733,10 +1853,21 @@ Export.PeakTable <- function(mSet = NULL, path = getwd()){
   if(is.null(ma_feats_miss)){
     stop("No PeakTable found! Please 'FormatPeakList' first !")
   }
-  
+  MessageOutput(
+    mes = paste0("Done!"),
+    ecol = "\n",
+    progress = 99
+  );
   fast.write.csv(ma_feats_miss,
                  paste0(path, "/metaboanalyst_input.csv"),
                  row.names = FALSE);
+  MessageOutput(
+    mes = paste0("\nEverything has been finished Successfully ! (",
+                 Sys.time(),
+                 ")\n"),
+    ecol = "",
+    progress = 100
+  );
 }
 
 #' @title Export.PeakSummary
@@ -1771,4 +1902,99 @@ Export.PeakSummary <- function(mSet = NULL, path = getwd()){
 }
 
 
+PerformMassMatching <- function(mSet = NA) {
+  if(!.on.public.web) {
+    message("PerformMassMatching is not supported for local version now!")
+    return(0)
+  }
+  
+  MessageOutput(mes = "Performing mass matching to HMDB database...", 
+                ecol = "")
+  libPath <- system.file('hmdb/hmdb_all.rds', package = "OptiLCMS",
+                         lib.loc=.libPaths());
+  hmdb <- readRDS(file = libPath);
+  hmdb <- hmdb[!is.na(hmdb$mono_weight),]
+  ### running matching
+  res <- sapply(seq(nrow(mSet@peakAnnotation[["AnnotateObject"]][["groupInfo"]])),
+         FUN = function(x) {
+           thismz0 <- mSet@peakAnnotation[["AnnotateObject"]][["groupInfo"]][x,1];
+           thismz1 <- thismz2 <- thismz3 <- numeric();
+           isoAnnotated <- !is.null(mSet@peakAnnotation[["AnnotateObject"]][["isotopes"]][[x]])
+           addAnnotated <- !is.null(mSet@peakAnnotation[["AnnotateObject"]][["derivativeIons"]][[x]])
+           
+           if(isoAnnotated) {
+             chargeVal <- mSet@peakAnnotation[["AnnotateObject"]][["isotopes"]][[x]]$charge;
+             isoVal <- mSet@peakAnnotation[["AnnotateObject"]][["isotopes"]][[x]]$iso;
+             thismz1 <- thismz0*chargeVal - isoVal*1.007825;
+           }
+           
+           if(addAnnotated) {
+             addlists <- mSet@peakAnnotation[["AnnotateObject"]][["derivativeIons"]][[x]];
+             for(i in seq(addlists)){
+               thismz2 <- c(thismz2, addlists[[i]]$mass)
+             }
+           }
+           
+           if(!isoAnnotated & !addAnnotated){
+             if(mSet@peakAnnotation[["AnnotateObject"]][["polarity"]] == "negative"){
+               thismz3 <- thismz0 + 1.007825;
+             } else {
+               thismz3 <- thismz0 - 1.007825;
+             }
+           }
+           
+           thismz <- c(thismz1, thismz2, thismz3)
+           return(thismz)
+         })
+  ppmValue <- mSet@params$ppm
+  matchingRes <- lapply(res, FUN = function(x){
+    mRes <- numeric()
+    for(i in x){
+      iup <- i + i*ppmValue*1e-6;
+      idw <- i - i*ppmValue*1e-6;
+      mRes <- c(mRes, head(which(hmdb$mono_weight > idw & hmdb$mono_weight < iup),5))
+    }
+    
+    if(length(mRes) == 0){
+      iup <- i + i*ppmValue*2e-6;
+      idw <- i - i*ppmValue*2e-6;
+      mRes <- c(mRes, head(which(hmdb$mono_weight > idw & hmdb$mono_weight < iup), 5))
+    }
+    formulaList <- hmdb$formula[mRes];
+    compoundList <- hmdb$compound_name[mRes];
+    HMDBIDList <- hmdb$HMDB_ID[mRes];
+    corRes <- list()
+    for(f in unique(formulaList)){
+      corRes[[f]]$cmpd <- compoundList[formulaList == f]
+      corRes[[f]]$hmdb <- HMDBIDList[formulaList == f]
+    }
+    
+    MixRes <- list(compoundList = compoundList, formulaList = unique(formulaList), HMDBIDList = HMDBIDList)
+    return(list(corRes = corRes, MixRes = MixRes))
+  })
+  
+  MassMatchingTable <- data.frame()
+  for(i in seq(length(matchingRes))){
+    if(length(matchingRes[[i]]$MixRes$compoundList) == 0){
+      tmpTable <- data.frame(Compound = NA, Formula = NA, HMDBID = NA)
+    } else {
+      tmpTable <- data.frame(Compound = gsub("\t|\\s+", " ",paste0(matchingRes[[i]]$MixRes$compoundList, sep = "; ", collapse = "")), 
+                             Formula = gsub("\t|\\s+", " ",paste0(matchingRes[[i]]$MixRes$formulaList, sep = "; ", collapse = "")),
+                             HMDBID = gsub("\t|\\s+", " ",paste0(matchingRes[[i]]$MixRes$HMDBIDList, sep = "; ", collapse = "")))
+    }
+    
+    MassMatchingTable <- rbind(MassMatchingTable, tmpTable)
+  }
+  
+  matchCoreRes <- lapply(matchingRes, FUN = function(x){
+    x$corRes
+  })
+  mSet@peakAnnotation$massMatching <- MassMatchingTable;
+  mSet@peakAnnotation$Formula2Cmpd <- matchCoreRes;
+  ###
+  
+  MessageOutput(mes = "Done!", 
+                ecol = "\n")
+  return(mSet)
+}
 

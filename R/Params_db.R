@@ -48,6 +48,7 @@
 #' @param mz_abs_add PeakAnnotation parameters, (Only effective for website pipeline, for local package, OptiLCMS, please use SetAnnotationParam to define the annotation parameters).
 #' @param adducts PeakAnnotation parameters, (Only effective for website pipeline, for local package, OptiLCMS, please use SetAnnotationParam to define the annotation parameters).
 #' @param rmConts Logical, specify whether to exclude/remove the potential contaminations (the ones with RT range over 50% of the whole spetra).
+#' @param BlankSub Logical, to substract blanks samples or not
 #' @param criticalValue criticalValue for massifquant (supported later).
 #' @param consecMissedLimit consecMissedLimit for massifquant (supported later).
 #' @param unions unions for massifquant (supported later).
@@ -73,7 +74,7 @@ SetPeakParam <- function(platform = "general", Peak_method = "centWave", RT_meth
                          minFraction, minSamples, maxFeatures, mzCenterFun, integrate,# used for grouping
                          extra, span, smooth, family, fitgauss, # used for RT correction with peakgroup "loess"
                          polarity, perc_fwhm, mz_abs_iso, max_charge, max_iso, corr_eic_th, mz_abs_add, adducts, #used for annotation
-                         rmConts #used to control remove contamination or not
+                         rmConts, BlankSub #used to control remove contamination or not
                          ) {
   
   
@@ -207,7 +208,7 @@ SetPeakParam <- function(platform = "general", Peak_method = "centWave", RT_meth
     };
     ## Parameters for Grouping-Density Method Only
     if (missing(bw)){
-      peakParams$bw <- 30;
+      peakParams$bw <- 10;
     } else{
       peakParams$bw <- bw;
     };
@@ -2054,8 +2055,15 @@ SetPeakParam <- function(platform = "general", Peak_method = "centWave", RT_meth
   } else {
     peakParams$rmConts <- as.logical(rmConts);
   }
+  
+  # Set potential Contaminats removal (rmConts) or not
+  if(missing(BlankSub)){
+    peakParams$BlankSub <- TRUE;
+  } else {
+    peakParams$BlankSub <- as.logical(BlankSub);
+  }
     
-
+    
   #Output a table for display 
   if(.on.public.web){
     

@@ -295,8 +295,8 @@ PeakPicking_centWave_slave <- function(x, param){
   } else if(.optimize_switch) {
     # do nothing
   } else {
-    message("Detecting chromatographic peaks in ", length(roiList),
-            " regions of interest ...", appendLF = FALSE)
+    message("Detecting peaks in ", length(roiList),
+            " regions of interest of ", filenamevalue, " ...", appendLF = FALSE)
     
   }
   
@@ -1083,7 +1083,7 @@ PerformPeakGrouping<-function(mSet){
     .SwapEnv <<- new.env(parent = .GlobalEnv);
     .SwapEnv$.optimize_switch <- FALSE;
     .SwapEnv$count_current_sample <- 0;
-    .SwapEnv$count_total_sample <- 120; # maximum number for on.public.web
+    .SwapEnv$count_total_sample <- 200; # maximum number for on.public.web
     .SwapEnv$envir <- new.env();
   }
   
@@ -1142,6 +1142,17 @@ PerformPeakGrouping<-function(mSet){
   sampleGroupNames <- unique(sample_group)
   sampleGroupTable <- table(sample_group)
   nSampleGroups <- length(sampleGroupTable)
+  
+  # if BLANK Substraction has already been performed, filter out all blank features here
+  if(!is.null(mSet@peakRTcorrection[["BlankSubstracted"]])){
+    if(mSet@peakRTcorrection[["BlankSubstracted"]]){
+      peaks <- peaks[peaks[,"sample"] != 0,];
+      sample_group <- sample_group[sample_group != "BLANK"]
+      sampleGroupNames <- sampleGroupNames[sampleGroupNames != "BLANK"]
+      sampleGroupTable <- sampleGroupTable[-which(names(sampleGroupTable) == "BLANK")]
+      nSampleGroups <- length(sampleGroupTable)
+    }
+  }
   
   ## 2. Order peaks matrix by mz-------
   peaks <- peaks[order(peaks[, "mz"]), , drop = FALSE]
@@ -1286,6 +1297,9 @@ PerformPeakAlignment<-function(mSet){
   ## 1~4. Peak Grouping ---------
   mSet<-PerformPeakGrouping(mSet);
   
+  ## Insert blank substraction here
+  mSet <- PerformBlankSubstraction(mSet);
+  
   ## 5. Perform RT correction ---------
   mSet<-PerformRTcorrection(mSet)
   
@@ -1345,7 +1359,7 @@ PerformRTcorrection <- function(mSet){
   
   if (.on.public.web & !.optimize_switch){
     MessageOutput(mes = paste("Retention time correction is running."),
-                  ecol = "",
+                  ecol = "\n",
                   progress = 60)
   }
   
@@ -1356,10 +1370,8 @@ PerformRTcorrection <- function(mSet){
                     progress = NULL)
     }
     
-    mSet <- tryCatch(adjustRtime_obiwarp(mSet, param, msLevel = 1L), error = function(e){e})
-    
+    mSet <- tryCatch(adjustRtime_obiwarp(mSet, param, msLevel = 1L), error = function(e){e});
   } else {
-    
     if (!.optimize_switch){
       MessageOutput(mes = paste("PeakGroup -- loess is used for retention time correction."),
                     ecol = "",
@@ -1367,7 +1379,6 @@ PerformRTcorrection <- function(mSet){
     }
     
     mSet <- tryCatch(adjustRtime_peakGroup(mSet, param, msLevel = 1L), error = function(e){e});
-    
   }
   
   if (is(mSet,"simpleError") & !.optimize_switch){
@@ -1410,10 +1421,17 @@ adjustRtime_peakGroup <- function(mSet, param, msLevel = 1L) {
   # 1.1). Subset selection
   
   if (length(mSet@rawOnDisk) != 0){
-    subs <- seq_along(mSet@rawOnDisk@phenoData@data[["sample_name"]]);
-    specdata <- mSet@rawOnDisk;
-    Subset_QC <- which(mSet@rawOnDisk@phenoData@data[["sample_group"]]=="QC");
-    
+    if(param$BlankSub){
+      subs <- seq_along(mSet@rawOnDisk@phenoData@data[["sample_name"]]);
+      subs <- subs[mSet@rawOnDisk@phenoData@data[["sample_group"]] != "BLANK"]
+      specdata <- mSet@rawOnDisk;
+      Subset_QC <- which(mSet@rawOnDisk@phenoData@data[["sample_group"]]=="QC");
+    } else {
+      subs <- seq_along(mSet@rawOnDisk@phenoData@data[["sample_name"]]);
+      specdata <- mSet@rawOnDisk;
+      Subset_QC <- which(mSet@rawOnDisk@phenoData@data[["sample_group"]]=="QC");
+    }
+   
     if (length(Subset_QC) < 30){
       Subset <- integer(0);
     } else {
@@ -1476,17 +1494,42 @@ adjustRtime_peakGroup <- function(mSet, param, msLevel = 1L) {
   
   if (!.optimize_switch){
     MessageOutput(mes =paste("...."), "\n", 65)
-  }  
+  }
   
   # 2). RT adjustment-------
-  rtime_0 <- rtime(specdata)
+  if(param$BlankSub){
+    rtime_0 <- rtime(specdata)
+    
+    rtime0 <- split(rtime_0, fromFile(specdata))
+    tmp <- rtime0[subs]
+    rtime <- vector("list", length(fileNames(specdata)))
+    names(rtime) <- as.character(seq_along(rtime))
+    rtime[as.numeric(names(tmp))] <- tmp
+    rtime <- rtime[subs]
+    names(rtime) <- seq_along(rtime)
+    
+    peaks_1 <- peaks_0;
+    peaks_1[!(peaks_1[, "sample"] %in% subs), "sample"] <- 0;
+    #### "sample" == 0 means this samples are considered as blank and will be excluded for future!
+    j <- 1;
+    for(jj in unique(peaks_1[,"sample"])){
+      if(jj == 0) next;
+      peaks_1[peaks_1[,"sample"] == jj, "sample"] <- j;
+      j <- j + 1
+    }
+  } else {
+    rtime_0 <- rtime(specdata)
+    
+    tmp <- split(rtime_0, fromFile(specdata));
+    rtime <- vector("list", length(fileNames(specdata)));
+    names(rtime) <- as.character(seq_along(rtime));
+    rtime[as.numeric(names(tmp))] <- tmp;
+
+    peaks_1 <- peaks_0;
+  }
+
   
-  tmp <- split(rtime_0, fromFile(specdata))
-  rtime <- vector("list", length(fileNames(specdata)))
-  names(rtime) <- as.character(seq_along(rtime))
-  rtime[as.numeric(names(tmp))] <- tmp
-  
-  res <- RT.Adjust_peakGroup(peaks_0,
+  res <- RT.Adjust_peakGroup(peaks_1,
                              peakIndex = peakIndex_0$peakidx,
                              rtime = rtime,
                              minFraction = param$minFraction,
@@ -1497,6 +1540,7 @@ adjustRtime_peakGroup <- function(mSet, param, msLevel = 1L) {
                              peakGroupsMatrix = pkGrpMat,
                              subset = Subset,
                              subsetAdjust = param$subsetAdjust)
+
   
   if (!.optimize_switch){
     MessageOutput(mes ="Applying retention time adjustment to the identified chromatographic peaks ... ",
@@ -1504,9 +1548,24 @@ adjustRtime_peakGroup <- function(mSet, param, msLevel = 1L) {
                   66)
   }
   
-  fts <- .applyRtAdjToChromPeaks(mSet@peakpicking$chromPeaks,
-                                 rtraw = rtime,
-                                 rtadj = res)
+  if(param$BlankSub){
+    #names(rtime) <- names(res) <- subs;
+    #rtime0[subs] <- res;
+    
+    #ChromPeaks <- mSet@peakpicking$chromPeaks;
+    #ChromPeaks <- ChromPeaks[ChromPeaks[,"sample"] %in% subs,]
+    ChromPeaks <- peaks_1;
+    fts <- .applyRtAdjToChromPeaks(ChromPeaks,
+                                   rtraw = rtime,
+                                   rtadj = res);
+    fts <- fts[!mSet@peakpicking[["chromPeakData"]]@listData[["Bank2rm"]],]
+    mSet@peakRTcorrection$BlankSubstracted <- TRUE;
+  } else {
+    fts <- .applyRtAdjToChromPeaks(mSet@peakpicking$chromPeaks,
+                                   rtraw = rtime,
+                                   rtadj = res)
+    mSet@peakRTcorrection$BlankSubstracted <- FALSE;
+  }
   
   mSet@peakRTcorrection[["pkGrpMat_Raw"]] <- pkGrpMat;
   mSet@peakRTcorrection[["chromPeaks"]] <- fts;
@@ -1535,9 +1594,14 @@ adjustRtime_obiwarp <- function(mSet, param, msLevel = 1L) {
   ## contains spectra from other MS levels too, adjust all raw
   ## rts based on the difference between adjusted and raw rts.
   
-  
   if (length(mSet@rawOnDisk) != 0){
-    subs <- seq_along(mSet@rawOnDisk@phenoData@data[["sample_name"]]);
+    if (param$BlankSub) {
+      subs <- seq_along(mSet@rawOnDisk@phenoData@data[["sample_name"]]);
+      subs <-
+        subs[mSet@rawOnDisk@phenoData@data[["sample_group"]] != "BLANK"]
+    } else {
+      subs <- seq_along(mSet@rawOnDisk@phenoData@data[["sample_name"]]);
+    }
     specdata <- mSet@rawOnDisk;
     
     object_sub <- MSnbase::filterMsLevel(
@@ -1608,7 +1672,7 @@ adjustRtime_obiwarp <- function(mSet, param, msLevel = 1L) {
                    use.names = FALSE)
   names(res) <- sNames
   res <- res[featureNames(specdata)]
-  res;
+  #res;
   
   adjustedRtime_res <- unname(split(res, fromFile(specdata)));
   #mSet[["msFeatureData"]][["adjustedRT"]] <- adjustedRtime_res;
@@ -1622,6 +1686,22 @@ adjustRtime_obiwarp <- function(mSet, param, msLevel = 1L) {
   fts <- .applyRtAdjToChromPeaks(mSet@peakpicking$chromPeaks,
                                  rtraw = rtime,
                                  rtadj = adjustedRtime_res);
+  
+  if(param$BlankSub){
+    fts[!(fts[, "sample"] %in% subs), "sample"] <- 0;
+    #### "sample" == 0 means this samples are considered as blank and will be excluded for future!
+    j <- 1;
+    for(jj in unique(fts[,"sample"])){
+      if(jj == 0) next;
+      fts[fts[,"sample"] == jj, "sample"] <- j;
+      j <- j + 1
+    }
+    fts <- fts[!mSet@peakpicking[["chromPeakData"]]@listData[["Bank2rm"]],];
+    adjustedRtime_res <- adjustedRtime_res[subs];
+    mSet@peakRTcorrection$BlankSubstracted <- TRUE;
+  } else {
+    mSet@peakRTcorrection$BlankSubstracted <- FALSE;
+  }
   
   mSet@peakRTcorrection[["chromPeaks"]] <- fts;
   mSet@peakRTcorrection[["adjustedRT"]] <- adjustedRtime_res;
@@ -1955,17 +2035,16 @@ mSet.obiwarp <- function(mSet, object, param) { ## Do not use the params defined
   objL <- objL[-centerSample]
   centerObject <- filterFile(object, file = centerSample)
   ## Now we can bplapply here!
-  res <- bplapply(objL, function(z, cntr, cntrPr, parms) {
+  res <- lapply(objL, function(z, cntr, cntrPr, parms) {
     
     message("Aligning ", basename(fileNames(z)), " against ",
-            basename(fileNames(cntr)), " ... ", appendLF = FALSE)
+            basename(fileNames(cntr)), " ... ", appendLF = TRUE)
     
     ## Get the profile matrix for the current file.
     suppressMessages(
       curP <- profMat(z, method = "bin", step = parms$binSize,
                       returnBreaks = TRUE)[[1]]
     )
-    
     
     ## ---------------------------------------
     ## 1)Check the scan times of both objects:
@@ -2116,7 +2195,7 @@ mSet.obiwarp <- function(mSet, object, param) { ## Do not use the params defined
 
     if (.on.public.web & !.optimize_switch){
       
-      write.table(print_mes,file="metaboanalyst_spec_proc.txt",append = TRUE,row.names = FALSE,col.names = FALSE, quote = FALSE, eol = "");
+      #write.table(print_mes,file="metaboanalyst_spec_proc.txt",append = TRUE,row.names = FALSE,col.names = FALSE, quote = FALSE, eol = "");
       #write.table(66.0, file = paste0(fullUserPath, "log_progress.txt"),row.names = FALSE,col.names = FALSE);
       
     }
@@ -2128,7 +2207,7 @@ mSet.obiwarp <- function(mSet, object, param) { ## Do not use the params defined
 
     if (.on.public.web & !.optimize_switch){
       
-      write.table(print_mes,file="metaboanalyst_spec_proc.txt",append = TRUE,row.names = FALSE,col.names = FALSE, quote = FALSE, eol = "");
+      #write.table(print_mes,file="metaboanalyst_spec_proc.txt",append = TRUE,row.names = FALSE,col.names = FALSE, quote = FALSE, eol = "");
       #write.table(66.0, file = paste0(fullUserPath, "log_progress.txt"),row.names = FALSE,col.names = FALSE);
       
     }
@@ -2153,8 +2232,8 @@ mSet.obiwarp <- function(mSet, object, param) { ## Do not use the params defined
                     "", 
                     NULL)
 
-      print_mes <- paste0("Aligning ", basename(fileNames(z)), " against ", basename(fileNames(cntr)), " ... OK\n");    
-      write.table(print_mes,file="metaboanalyst_spec_proc.txt",append = TRUE,row.names = FALSE,col.names = FALSE, quote = FALSE, eol = "");
+      #print_mes <- paste0("Aligning ", basename(fileNames(z)), " against ", basename(fileNames(cntr)), " ... OK\n");    
+      #write.table(print_mes,file="metaboanalyst_spec_proc.txt",append = TRUE,row.names = FALSE,col.names = FALSE, quote = FALSE, eol = "");
       #write.table(66.0, file = paste0(fullUserPath, "log_progress.txt"),row.names = FALSE,col.names = FALSE);
 
     }
@@ -2259,6 +2338,7 @@ PerformPeakFiling <- function(mSet, BPPARAM=bpparam()){
   ngroup <- length(mSet@peakgrouping);
   #tmp_pks <- mSet$msFeatureData$chromPeaks[, c("rtmin", "rtmax", "mzmin", "mzmax")];
   tmp_pks <- mSet@peakRTcorrection$chromPeaks[, c("rtmin", "rtmax", "mzmin", "mzmax")];
+  ### complete peak table should be kept here
   fdef <- mSet@peakgrouping[[ngroup]];
   
   pkArea <- do.call(rbind,
@@ -2310,7 +2390,41 @@ PerformPeakFiling <- function(mSet, BPPARAM=bpparam()){
                   mzmed = as.numeric(fdef$mzmed))
   
   if (length(mSet@rawOnDisk) != 0){
-    specdata <- mSet@rawOnDisk;
+    
+    if(is.null(param$BlankSub)){
+      param$BlankSub <- FALSE;
+    }
+    if(param$BlankSub){
+      specdata0 <- mSet@rawOnDisk;
+      blk2rms <- which(specdata0@phenoData@data[["sample_group"]] == "BLANK");
+      fdnew <- specdata0@featureData
+      fdnew@data <- fdnew@data[!(fdnew@data[["fileIdx"]] %in% blk2rms),];
+      #fdnew@data[["fileIdx"]] <- fdnew@data[["fileIdx"]] - length(blk2rms)
+      ii <- 1;
+      for(fii in unique(fdnew@data[["fileIdx"]])){
+        fdnew@data[["fileIdx"]][fdnew@data[["fileIdx"]] == fii] <- ii;
+        ii <- ii + 1
+      }
+      
+      pdnew <- specdata0@phenoData;
+      pdnew@data <- pdnew@data[-blk2rms,];
+      numfiles <- length(specdata0@experimentData@instrumentModel) - length(blk2rms);
+      
+      specdata <- new(
+        "OnDiskMSnExp",
+        processingData = new("MSnProcess",
+                             files = specdata0@processingData@files[-blk2rms]),
+        featureData = fdnew,
+        phenoData = pdnew,
+        experimentData = new("MIAPE",
+                             instrumentManufacturer = rep("a",numfiles),
+                             instrumentModel = rep("a",numfiles),
+                             ionSource = rep("a",numfiles),
+                             analyser = rep("a",numfiles),
+                             detectorType = rep("a",numfiles)))
+    } else {
+      specdata <- mSet@rawOnDisk;
+    }
   } else {
     specdata <- mSet@rawInMemory;
   }
@@ -2318,6 +2432,13 @@ PerformPeakFiling <- function(mSet, BPPARAM=bpparam()){
   fNames <- specdata@phenoData@data[["sample_name"]]
   #pks <- mSet$msFeatureData$chromPeaks
   pks <- mSet@peakRTcorrection[["chromPeaks"]]
+  
+  # if(!is.null(param$BlankSub)){
+  #   if(param$BlankSub){
+  #     fNames <- fNames[specdata@phenoData@data$sample_group != "BLANK"]
+  #     #pks <- pks[pks[,"sample"] !=0,]
+  #   }
+  # }
   
   pkGrpVal <-
     .feature_values(pks = pks, fts = mSet@peakgrouping[[ngroup]],
@@ -2568,8 +2689,26 @@ PerformPeakFiling <- function(mSet, BPPARAM=bpparam()){
   cpd[,] <- NA
   cpd$ms_level <- as.integer(1)
   cpd$is_filled <- TRUE
+  if(length(cpd$Bank2rm) > 0){
+    cpd$Bank2rm <- FALSE
+  }
   
-  newFd$chromPeakData <- rbind(mSet@peakpicking[["chromPeakData"]], cpd)
+  if(param$BlankSub){
+    incluVec <- mSet@peakpicking[["chromPeakData"]]@listData[["Bank2rm"]];
+    newFd$chromPeakData <- rbind(mSet@peakpicking[["chromPeakData"]][!incluVec,], cpd);
+    # newFd[["chromPeaks"]] <- rbind(mSet@peakRTcorrection[["chromPeaks"]][!incluVec,],
+    #                                res[, -ncol(res)]);
+    # also need to correct group peak idx
+    # rnms <- row.names(newFd[["chromPeaks"]]);
+    # oldidx <- as.numeric(gsub("^CP", "",rnms));
+    # newidx <- c(1:length(oldidx));
+    # fdef@listData[["peakidx"]] <- lapply(fdef@listData[["peakidx"]], function(x){
+    #   newidx[match(x, oldidx)]
+    # })
+  } else {
+    newFd$chromPeakData <- rbind(mSet@peakpicking[["chromPeakData"]], cpd)
+  }
+  
   rownames(newFd$chromPeakData) <- rownames(newFd$chromPeaks);
   
   mSet@peakfilling$msFeatureData <- newFd;
@@ -2583,6 +2722,125 @@ PerformPeakFiling <- function(mSet, BPPARAM=bpparam()){
   
   return(mSet)
 }
+
+#' @title PerformBlankSubstraction
+#' @description PerformBlankSubstraction
+#' @param mSet the mSet object generated by PerformPeakPicking function.
+#' @param BPPARAM parallel method used for data processing. Default is bpparam().
+#' @export
+#' @noRd
+#' @return will return an mSet object with peak gaps filled
+#' @author Zhiqiang Pang, Jeff Xia \email{jeff.xia@mcgill.ca}
+#' McGill University, Canada
+#' License: GNU GPL (>= 2)
+PerformBlankSubstraction <- function(mSet){
+  
+  if(!exists(".SwapEnv")){
+    .SwapEnv <<- new.env(parent = .GlobalEnv);
+    .SwapEnv$.optimize_switch <- FALSE;
+    .SwapEnv$count_current_sample <- 0;
+    .SwapEnv$count_total_sample <- 120; # maximum number for on.public.web
+    .SwapEnv$envir <- new.env();
+  }
+  
+  .optimize_switch <- .SwapEnv$.optimize_switch;
+  if(is.null(.optimize_switch)){
+    .optimize_switch <- FALSE;
+  }
+  
+  if(!mSet@params$BlankSub){
+    if(!.optimize_switch){
+      MessageOutput("Blank substraction will not be performed!", ecol = "\n")
+    }
+    return(mSet)
+  }
+  
+  if(!is(mSet@peakgrouping[[1]], "DFrame")){
+    stop("mSet object doesnot include peak grouping info! Please 'PerformPeakGrouping' first!")
+  }
+  dm <- mSet@peakgrouping[[1]]@listData
+  dm$peakidx <- NULL;
+  if(is.null(dm$BLANK)){
+    mSet@params[["BlankSub"]] <- FALSE;
+    MessageOutput("No blank sample included based on grouping info. Skipped!", ecol = "\n")
+    return(mSet)
+  }
+  chromPeaks <- as.data.frame(mSet@peakpicking[["chromPeaks"]]);
+  peakidx <- mSet@peakgrouping[[1]]@listData[["peakidx"]];
+  BlkPeak <- which(dm$BLANK != 0);
+  BlkSample <- which(mSet@rawOnDisk@phenoData@data[["sample_group"]] == "BLANK");
+  RegSample <- which(mSet@rawOnDisk@phenoData@data[["sample_group"]] != "BLANK");
+  res <- sapply(BlkPeak, FUN = function(x) {
+    idxs <- peakidx[[x]];
+    feattb <- chromPeaks[idxs,]; # feature table - feattb
+    blkinto <- mean(feattb$into[feattb$sample %in% BlkSample])
+    smlinto <- mean(feattb$into[!(feattb$sample %in% BlkSample)])
+    if(is.nan(smlinto)){return(NA)}
+    smlinto/blkinto
+  })
+  ## Estimating the threshold for filtering
+  sort_res <- sort(res, decreasing = T)
+  infectPoint <- bede(x= c(1:length(sort_res)), 
+       y = sort_res, 1)$iplast
+  if(!is.nan(infectPoint)){
+    blk_thresh <- round(sort_res[ceiling(infectPoint)],1)/5
+  } else {
+    blk_thresh <- round(sort_res[length(sort_res)*0.2]) # Keep top 20% FC (sample/blank) peaks
+  }
+  if(!is.numeric(blk_thresh)){
+    MessageOutput("No threshold can be evaluted for blank substraction, will use 10 !", ecol = "\n")
+    blk_thresh <- 10;
+  } else {
+    MessageOutput(paste0("Threshold for blank filtration has been estimated as ", blk_thresh, "..."), ecol = "\n")
+  }
+  
+  ## Generete Inclusion list --> T is keep, F is remove
+  InclusionVec <- vapply(peakidx, function(x){
+    feattb <- as.data.frame(chromPeaks[x,]); # feature table - feattb
+    blkinto <- mean(feattb$into[feattb$sample %in% BlkSample]);
+    smlinto <- mean(feattb$into[!(feattb$sample %in% BlkSample)]);
+    if(is.nan(smlinto)){
+      return(FALSE)
+    } else if (is.nan(blkinto)) {
+      return(TRUE)
+    } else if(smlinto/blkinto > blk_thresh){
+      return(TRUE)
+    } else {
+      return(FALSE)
+    }
+  }, FUN.VALUE = vector(length = 1))
+  
+  ## Exclude blank features
+  GroupingListData <- mSet@peakgrouping[[1]]@listData;
+  GroupingListData_new <- lapply(GroupingListData, FUN = function(x){
+    x[InclusionVec];
+  })
+  mSet@peakpicking[["chromPeakData"]]@listData$Bank2rm <- 
+    vector(mode = "logical", 
+           length = nrow(mSet@peakpicking[["chromPeakData"]]));
+  chrmpks2rm <- unlist(GroupingListData[["peakidx"]][!InclusionVec])
+  mSet@peakpicking[["chromPeakData"]]@listData$Bank2rm[chrmpks2rm] <- TRUE;
+  
+  leftBlks <- GroupingListData_new[["BLANK"]];
+  GroupingListData_new[["BLANK"]] <- NULL;
+  # Clean peakidx List
+  blankChromPeakIdx <- which(chromPeaks$sample %in% BlkSample)
+  peakidx_new <- lapply(GroupingListData_new[["peakidx"]], function(x){
+    x[!(x %in% blankChromPeakIdx)]
+  })
+  GroupingListData_new[["peakidx"]] <- peakidx_new;
+  
+  mSet@peakgrouping[[1]]@listData <- GroupingListData_new;
+  numFeat <- length(which(InclusionVec));
+  mSet@peakgrouping[[1]]@nrows <- numFeat
+  rownames(mSet@peakgrouping[[1]]) <- 
+    sprintf(paste0("FT", "%0", ceiling(log10(numFeat + 1L)), "d"),
+            seq(from = 1, length.out = numFeat))
+  MessageOutput("Blank features have been substracted successfully!", ecol = "\n")
+
+  return(mSet)
+}
+
 
 #' @title mSet2xcmsSet
 #' @description mSet2xcmsSet
@@ -2770,6 +3028,9 @@ updateRawSpectraParam <- function (Params){
   
   param$subsetAdjust <- "average";
   
+  # 4. Swith of Blank substraction
+  param$BlankSub <- Params$BlankSub; # testing...
+  
   # Finished !
   .optimize_switch <- .SwapEnv$.optimize_switch;
   if(is.null(.optimize_switch)){
@@ -2872,7 +3133,7 @@ adjustRtimeSubset <- function(rtraw, rtadj, subset,
   no_subset <- seq_len(length(rtraw))[-subset]
   for (i in no_subset) {
     message("Aligning sample number ", i, " against subset ... ",
-            appendLF = FALSE)
+            appendLF = TRUE)
     if (method == "previous") {
       i_adj <- .get_closest_index(i, subset, method = "previous")
       rtadj[[i]] <- .applyRtAdjustment(rtraw[[i]], rtraw[[i_adj]],
@@ -4294,7 +4555,7 @@ PeakPicking_prep <- function(object){
   
   ## (1) split the object per file from MSnExp.
   object_mslevel_i<-splitByFile(object = object, f = factor(c(seq_along(object@phenoData@data[["sample_name"]]))))
-  object_mslevel_o<-bplapply(object_mslevel_i, FUN = function(x){x@assayData})
+  object_mslevel_o<-bplapply(object_mslevel_i, FUN = function(x){x@assayData}, BPPARAM = MulticoreParam(4))
   
   if (.on.public.web){
     
@@ -4546,8 +4807,12 @@ groupval <- function(mSet, method = c("medret", "maxint"), value = "index", inte
   peakmat <- mSet@peakfilling$msFeatureData$chromPeaks;
   groupmat <- mSet@peakAnnotation$groupmat;  
   groupindex <- mSet@peakfilling$FeatureGroupTable$peakidx;
+  if(mSet@params[["BlankSub"]]){
+    sampnum <- seq(length = length(which(mSet@rawOnDisk@phenoData@data[["sample_group"]] != "BLANK")))
+  } else {
+    sampnum <- seq(length = length(rownames(mSet@rawOnDisk@phenoData)))
+  }
   
-  sampnum <- seq(length = length(rownames(mSet@rawOnDisk@phenoData)))
   retcol <- match("rt", colnames(peakmat))
   intcol <- match(intensity, colnames(peakmat))
   sampcol <- match("sample", colnames(peakmat))
@@ -4570,7 +4835,13 @@ groupval <- function(mSet, method = c("medret", "maxint"), value = "index", inte
     values <- peakmat[values,value]
     dim(values) <- c(length(groupindex), length(sampnum))
   }
-  colnames(values) <- rownames(mSet@rawOnDisk@phenoData)
+  
+  if(mSet@params[["BlankSub"]]){
+    colnames(values) <- rownames(mSet@rawOnDisk@phenoData)[
+      mSet@rawOnDisk@phenoData@data[["sample_group"]] != "BLANK"]
+  } else {
+    colnames(values) <- rownames(mSet@rawOnDisk@phenoData)
+  }
   rownames(values) <- paste(round(groupmat[,"mzmed"],1), round(groupmat[,"rtmed"]), sep = "/")
   
   values
@@ -4877,17 +5148,26 @@ getAllPeakEICs <- function(mSet, index=NULL){
     stop("Index length must equals number of peaks.\n")
   }
   
-  nfiles <- length(mSet@rawOnDisk@processingData@files)
+  allfiles <- mSet@rawOnDisk@processingData@files;
+  
+  if(mSet@params$BlankSub){
+    blkidx <- which(mSet@rawOnDisk@phenoData@data[["sample_group"]] != "BLANK")
+    nfiles <- length(blkidx)
+    allfiles <- allfiles[blkidx]
+  } else {
+    nfiles <- length(allfiles)
+  }
+  
   scantimes <- list()
   
   if(nfiles == 1){
     #Single sample experiment
-    if (file.exists(mSet@rawOnDisk@processingData@files[1])) {
+    if (file.exists(allfiles[1])) {
       
       mSet_splits <- mSet@rawOnDisk
       scantimes[[1]] <- scan_length <- sapply(mSet_splits, length)
       maxscans <- max(scan_length)
-      
+      mset <-list();
       #xraw <- xcmsRaw(filepaths(mSet$xcmsSet)[1],profstep=0)
       #maxscans <- length(xraw@scantime)
       #scantimes[[1]] <- xraw@scantime
@@ -4909,16 +5189,20 @@ getAllPeakEICs <- function(mSet, index=NULL){
     #na flag, stores if sample contains NA peaks
     na.flag <- 0;   maxscans <- 0;
     mSet_splits <- split(mSet@rawOnDisk,fromFile(mSet@rawOnDisk));
+    if(mSet@params$BlankSub){
+      blkidx <- which(mSet@rawOnDisk@phenoData@data[["sample_group"]] != "BLANK");
+      mSet_splits <- mSet_splits[blkidx];
+    }
     MessageOutput(".","",NULL)
     
-    if (file.exists(mSet@rawOnDisk@processingData@files[1])) { 
+    if (file.exists(allfiles[1])) { 
       
       scan_length <- sapply(mSet_splits, length)
       maxscans <- max(scan_length)
       MessageOutput(".","",NULL)
       
     } else {      
-      stop('Raw data file:',mSet@rawOnDisk@processingData@files[1],' not found ! \n');    
+      stop('Raw data file:',allfiles[1],' not found ! \n');    
     }
     
     #generate EIC Matrix
@@ -4928,7 +5212,7 @@ getAllPeakEICs <- function(mSet, index=NULL){
     
     #loop over all samples
     for (f in seq_len(nfiles)){
-      MessageOutput(paste("Detecting ",basename(mSet@rawOnDisk@processingData@files)[f]," ... "),"",NULL)
+      MessageOutput(paste("Detecting ",basename(allfiles)[f]," ... "),"",NULL)
 
       #which peaks should read from this sample    
       idx.peaks <- which(index == f);
@@ -4940,7 +5224,7 @@ getAllPeakEICs <- function(mSet, index=NULL){
       }
       
       #check if raw data file of sample f exists
-      if (file.exists(mSet@rawOnDisk@processingData@files[f])) {
+      if (file.exists(allfiles[f])) {
         
         #read sample        
         scantimes[[f]] <- scan_length[f];        
@@ -4954,7 +5238,7 @@ getAllPeakEICs <- function(mSet, index=NULL){
         EIC[idx.peaks,] <- getEIC4Peaks(mset, pdata, maxscans);
         
       } else {
-        stop('Raw data file:',mSet@rawOnDisk@processingData@files[f],' not found ! \n')
+        stop('Raw data file:',allfiles[f],' not found ! \n')
       }
     }
     
@@ -5190,6 +5474,7 @@ calcPC.hcs <- function(mSet, ajc=NULL,psg_list=NULL) {
     #end percent output
     
     index <- which(ajc[,4] == i)
+    if(length(index) > 200000) next;
     if(length(index) < 1){
       g <- ftM2graphNEL(matrix(nrow=0,ncol=2),V=as.character(pi),edgemode="undirected")
     }else{
@@ -5243,7 +5528,7 @@ findAdducts <- function(mSet, ppm=5, mzabs=0.015, multiplier=3, polarity=NULL, r
   npeaks.global <- 0;
   
   # get mz values from peaklist
-  imz    <- mSet@peakAnnotation$AnnotateObject$groupInfo[, "mz"];
+  imz <- mSet@peakAnnotation$AnnotateObject$groupInfo[, "mz"];
   
   #number of pseudo-spectra
   npspectra <- length(mSet@peakAnnotation$AnnotateObject$pspectra);
@@ -5260,7 +5545,11 @@ findAdducts <- function(mSet, ppm=5, mzabs=0.015, multiplier=3, polarity=NULL, r
   }else{
     ##multiple sample
     if(is.na(mSet@peakAnnotation$AnnotateObject$sample[1])){
-      index <- seq_along(mSet@rawOnDisk@processingData@files);
+      if(mSet@params[["BlankSub"]]){
+        index <- seq_along(which(mSet@rawOnDisk@phenoData@data[["sample_group"]] != "BLANK"))
+      } else {
+        index <- seq_along(mSet@rawOnDisk@processingData@files);
+      }
     }else{
       index <- mSet@peakAnnotation$AnnotateObject$sample;
     }
@@ -5347,7 +5636,7 @@ findAdducts <- function(mSet, ppm=5, mzabs=0.015, multiplier=3, polarity=NULL, r
         mSet@peakAnnotation$AnnotateObject$polarity <- polarity;
       }else stop("polarity mode unknown, please choose between positive and negative.")
       
-    }else if(length( mSet@peakAnnotation$AnnotateObject$polarity) > 0){
+    }else if(length(mSet@peakAnnotation$AnnotateObject$polarity) > 0){
       
       index <- which(pData(mSet@rawOnDisk)[[1]] == mSet@peakAnnotation$AnnotateObject$category)[1] + 
         mSet@peakAnnotation$AnnotateObject$sample-1;
@@ -5573,7 +5862,7 @@ findAdducts <- function(mSet, ppm=5, mzabs=0.015, multiplier=3, polarity=NULL, r
             massgrp <- massgrp + 1;
             old_massgrp <- hypothese[hyp, "massgrp"];
             annoGrp <- rbind(annoGrp, c(massgrp, hypothese[hyp, "mass"], 
-                                        sum(hypothese[ which(hypothese[, "massgrp"] == old_massgrp), "score"]), i) ) 
+                                        sum(hypothese[which(hypothese[, "massgrp"] == old_massgrp), "score"]), i) ) 
           }
           if(parent){
             annoID <- rbind(annoID, c(peakid, massgrp, hypothese[hyp, "ruleID"], ipeak[hypothese[hyp, "parent"]]))
@@ -6330,7 +6619,10 @@ annotateGrp <- function(ipeak, imz, rules, mzabs, devppm, isotopes, quasimolion,
   }
   
   ML <- massDiffMatrix(mz[naIdx], rules[rules.idx,]);
-  
+  if(nrow(ML) > 1500) {
+    #Avoid too time-consuming running
+    return(NULL)
+  }
   hypothese <- createHypothese(ML, rules[rules.idx, ], devppm, mzabs, naIdx);
   
   #create hypotheses
@@ -6636,14 +6928,14 @@ profMat <- function(object,method = "bin",step = 0.1,baselevel = NULL,
                                                           bmzrange.,
                                                           breturnBreaks) {
 
-    if (is(z, "MSnExp")) {
+    if (is(z, "MSnExp") && !is(z, "OnDiskMSnExp")) {
       sps <- z@assayData
     } else if (is(z, "OnDiskMSnExp")) {
       sps <- spectra(z, BPPARAM = SerialParam())
     } else {
       stop("Wrong Data provided!")
     }
-    
+
     mzs <- lapply(sps, mz)
     ## Fix for issue #301: got spectra with m/z being NA.
     if (any(is.na(unlist(mzs, use.names = FALSE)))) {
@@ -6806,6 +7098,84 @@ valueCount2ScanIndex <- function(valCount){
 naOmit <- function(x) {
   return (x[!is.na(x)]);
 }
+
+
+bede <- function (x, y, index) 
+{
+  EDE <- c()
+  BEDE <- c()
+  a <- c(x[1])
+  b <- c(x[length(x)])
+  nped <- c(length(x))
+  x2 <- x
+  y2 <- y
+  B = ede(x, y, index)
+  EDE <- c(EDE, B[1, 3])
+  BEDE <- c(BEDE, B[1, 3])
+  iplast = B[1, 3]
+  j <- 0
+  while (!(is.nan(B[1, 3]))) {
+    ifelse(B[1, 2] >= B[1, 1] + 3, {
+      j <- j + 1
+      x2 <- x2[B[1, 1]:B[1, 2]]
+      y2 <- y2[B[1, 1]:B[1, 2]]
+      B <- ede(x2, y2, index)
+      ifelse(!(is.nan(B[1, 3])), {
+        a = c(a, x2[B[1, 1]])
+        b = c(b, x2[B[1, 2]])
+        nped <- c(nped, length(x2))
+        EDE <- c(EDE, B[1, 3])
+        BEDE <- c(BEDE, B[1, 3])
+        iplast = B[1, 3]
+      }, {
+        break
+      })
+    }, {
+      break
+    })
+  }
+  iters = as.data.frame(cbind(nped, a, b, BEDE))
+  colnames(iters) = c("n", "a", "b", "EDE")
+  rownames(iters) = 1:length(nped)
+  out = list()
+  out[["iplast"]] = iplast
+  out[["iters"]] = iters
+  return(out)
+}
+
+ede <- function (x, y, index) 
+{
+  n = length(x)
+  if (index == 1) {
+    y = -y
+  }
+  ifelse(n >= 4, {
+    LF = y - lin2(x[1], y[1], x[n], y[n], x)
+    jf1 = which.min(LF)
+    xf1 = x[jf1]
+    jf2 = which.max(LF)
+    xf2 = x[jf2]
+    ifelse(jf2 < jf1, {
+      xfx <- NaN
+    }, {
+      xfx <- 0.5 * (xf1 + xf2)
+    })
+  }, {
+    jf1 = NaN
+    jf2 = NaN
+    xfx = NaN
+  })
+  out = matrix(c(jf1, jf2, xfx), nrow = 1, ncol = 3, byrow = TRUE)
+  rownames(out) = "EDE"
+  colnames(out) = c("j1", "j2", "chi")
+  return(out)
+}
+
+lin2 <- function (x1, y1, x2, y2, x) 
+{
+  y1 + (y2 - y1) * (x - x1)/(x2 - x1)
+}
+
 ####### ------------ ======== Bottom of this kit ========= ------------ ######\
 
 .getDataPath <- function() {

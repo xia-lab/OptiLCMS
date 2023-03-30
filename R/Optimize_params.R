@@ -91,7 +91,8 @@ PerformParamsOptimization <- function(mSet,
       method<-"DoE";
     };
     
-    MessageOutput("DoE Optimization Starting Now...", "\n", NULL)
+    MessageOutput(paste0("DoE Optimization Starting Now... (",
+                         Sys.time(),")"), "\n", NULL)
     
     if (.on.public.web){
       ncore <- 2;
@@ -112,14 +113,14 @@ PerformParamsOptimization <- function(mSet,
     ## Optimize the noise and prefilter indexes with AutoTuner
     if (param[["Peak_method"]] == "centWave"){
       MessageOutput("Evaluating Noise level...", "\n", NULL)
-
+      save(raw_data, file = "raw_data_noise.rda")
       p2 <- tryCatch(
         Noise_evaluate(raw_data),
         error = function(e) {
           e
         }
       )
-      
+      MessageOutput(paste0("ppm is estimated as : ", p2$ppm), "\n")
       if (is(p2,"simpleError")) {
         
           print_mes_tmp <-
@@ -301,10 +302,10 @@ optimize.xcms.doe <- function(raw_data, param, ncore = 8){
     ## Keep these Parameters
     Parameters$value_of_prefilter <- Parameters$value_of_prefilter;
     ## Parameters for peak picking
-    Parameters$max_peakwidth <- c(Parameters$max_peakwidth*0.5,
-                                  Parameters$max_peakwidth*2);
-    Parameters$min_peakwidth <- c((Parameters$min_peakwidth)*0.5,
-                                  (Parameters$min_peakwidth)*2);
+    Parameters$max_peakwidth <- c(Parameters$max_peakwidth*0.75,
+                                  Parameters$max_peakwidth*1.25);
+    Parameters$min_peakwidth <- c((Parameters$min_peakwidth)*0.75,
+                                  (Parameters$min_peakwidth)*1.25);
     #Parameters$ppm <- c(Parameters$ppm*0.5,Parameters$ppm*1.5)
     Parameters$mzdiff <- c(-Parameters$mzdiff*1.2, 
                            Parameters$mzdiff*1.2);
@@ -318,10 +319,10 @@ optimize.xcms.doe <- function(raw_data, param, ncore = 8){
       ## Keep these Parameters
       Parameters$value_of_prefilter <- Parameters$value_of_prefilter;
       ## Parameters for peak picking
-      Parameters$max_peakwidth <- c(Parameters$min_peakwidth*2,
-                                    Parameters$max_peakwidth*2)
-      Parameters$min_peakwidth <- c((Parameters$min_peakwidth)*0.5,
-                                    (Parameters$min_peakwidth)*2)
+      Parameters$max_peakwidth <- c(Parameters$max_peakwidth*0.75,
+                                    Parameters$max_peakwidth*1.25)
+      Parameters$min_peakwidth <- c((Parameters$min_peakwidth)*0.75,
+                                    (Parameters$min_peakwidth)*1.25)
       #Parameters$ppm <- c(1,Parameters$ppm*2);
       Parameters$mzdiff <- c(-Parameters$mzdiff*2, 
                              Parameters$mzdiff*2);
@@ -368,10 +369,16 @@ optimize.xcms.doe <- function(raw_data, param, ncore = 8){
   
   MessageOutput("Preparing Parameters for optimization finished !", "\n", NULL);
 
+  if (.Platform$OS.type=="unix"){
+    bp <- MulticoreParam(ncore);
+  } else {
+    bp <- SnowParam(ncore);
+  };
+  
   #### Start to Optimize !
   result <- optimizxcms.doe.peakpicking(object = raw_data, 
                                         params = Parameters, 
-                                        BPPARAM = bpparam(),
+                                        BPPARAM = bp,
                                         nSlaves = ncore, 
                                         subdir = NULL, 
                                         plot = FALSE);
@@ -446,7 +453,7 @@ optimizxcms.doe.peakpicking <- function(object = NULL,
         iterator = iterator
       )
     
-    MessageOutput(paste0("Done!"), "\n", NULL);
+    MessageOutput(paste0("100% |"), "\n", NULL);
     
     ### Normalize the PPS and CV in mSet_OPT
     PPS.set<-as.numeric(sapply(seq_len(nrow(mSet_OPT[["response"]])),
@@ -512,7 +519,7 @@ optimizxcms.doe.peakpicking <- function(object = NULL,
         index.set = index.set,
         useNoise = params[["noise"]]
       ), error = function(e) e)
-
+    
     if(is(mSet_OPT,"simpleError")){
       MessageOutput("Optimization Failed: Too few peaks in your data ! 
                     Will use default parameters for processing!","\n")
@@ -785,10 +792,8 @@ ExperimentsCluster_doe <-function(object, object_mslevel,params,
     pb <- progress_bar$new(format = "DoE Running [:bar] :percent Time left: :eta", total = nstep, clear = TRUE, width= 75)
     
     if (.on.public.web){
-      
       print_mes <- paste0("Finished: ");    
       write.table(print_mes,file="metaboanalyst_spec_proc.txt",append = TRUE ,row.names = FALSE,col.names = FALSE, quote = FALSE, eol = "");
-      
     }
     
     for (w in seq_len(nstep)){
@@ -800,7 +805,7 @@ ExperimentsCluster_doe <-function(object, object_mslevel,params,
         currentcount <- environment(count_tmp[["tick"]])[["private"]][["current"]];
         
         write.table((w/nstep*(iterator/4)*3.5+(iterator-1)*3.5+5), file = "log_progress.txt", row.names = FALSE,col.names = FALSE);
-        print_mes <- paste(round(w/nstep, digits=2)*100, "%");    
+        print_mes <- paste(round(w/(nstep+1), digits=2)*100, "%");    
         write.table(print_mes,file="metaboanalyst_spec_proc.txt",append = TRUE,row.names = FALSE,col.names = FALSE, quote = FALSE, eol = " | ");
         
       } else {
@@ -952,7 +957,8 @@ Statistic_doe <-function(object, object_mslevel, isotopeIdentification,
   mSet_OPT$PPS$GaussianSI <-
     calcGaussianS(mSet, object, useNoise = useNoise)
   
-  MessageOutput(paste0("Gaussian peak ratio (%): ", round(mSet_OPT$PPS$GaussianSI,3)*100, "."))
+  MessageOutput(paste0("Gaussian peak ratio (%): ", round(mSet_OPT$PPS$GaussianSI,3)*100, ""));
+  #MessageOutput(paste0("Total peak number is: ", as.numeric(mSet_OPT$PPS[5])));
   
   #save(mSet_OPT, file = paste0("mSet_",Sys.time(),"_780.rda"));
   ## Normalize the CV, RCS, GS, GaussianSI
@@ -963,7 +969,7 @@ Statistic_doe <-function(object, object_mslevel, isotopeIdentification,
   
   ## Calculate the QS for the best combination in current iterator!
   QCoE<-0.2*(normalized.CV)+0.4*(normalized.GS+normalized.RCS);
-  mSet_OPT$QS<-as.numeric(mSet_OPT$PPS[5])*QCoE*normalized.GaussianSI^2;
+  mSet_OPT$QS<-as.numeric(mSet_OPT$PPS[5])*QCoE*normalized.GaussianSI^1.5;
   
   mSet_OPT$OptiParams <- xcms_parameters;
   
@@ -1067,7 +1073,7 @@ SlaveCluster_doe <-function(task, Set_parameters, object, object_mslevel,
 calculateSet_doe <- function(object, object_mslevel, Set_parameters, task = 1,
                              BPPARAM = bpparam()) {
   
-  if (length(Set_parameters) < 32){ # deal with the usual processing case
+  if (length(Set_parameters) < 33){ # deal with the usual processing case
     param <- updateRawSpectraParam(Set_parameters)
   } else { # deal with the optimization case, usaully 44 (33 each set)
     param <- updateRawSpectraParam(Set_parameters[[task]])
@@ -1099,17 +1105,12 @@ calculatePPKs<-function(object, object_mslevel,param,
                         BPPARAM = bpparam(),msLevel = 1){
   
   if (param$Peak_method == "centWave" | param$Peak_method == "matchedFilter") {
-
     mSet <- try(PeakPicking_core(object, object_mslevel,
                                  param = param,
                                  msLevel = 1),
                 silent = TRUE)
-
-    
   } else {
-    
     stop("Other peak picking method cannot be supported for now !")
-    
   }
 }
 
@@ -1129,6 +1130,7 @@ calculateGPRT<-function (mSet,param){
   
   mSetTmp <- new("mSet");
   mSetTmp@params <- param;
+  mSetTmp@params$BlankSub <- FALSE;
   if(!is(mSet, "try-error")){
     mSetTmp@peakpicking <- mSet$msFeatureData;
     mSetTmp@rawInMemory <- mSet$inMemoryData;
@@ -1285,7 +1287,7 @@ calcRCS_GSValues<-function(mSet){
 #' License: GNU GPL (>= 2)
 
 calcGaussianS <-function(mSet, object, useNoise, BPPARAM = bpparam()){                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  
-  
+
   if (identical(useNoise, numeric(0))) {
     useNoise <- 0
   }
@@ -1311,7 +1313,7 @@ calcGaussianS <-function(mSet, object, useNoise, BPPARAM = bpparam()){
   ## select different platforms
   if (.Platform$OS.type == "unix") {
     
-    BPPARAM = MulticoreParam();
+    BPPARAM = MulticoreParam(2L);
 
     res <- bplapply(peakmat_set, extFUN, 
                     object = object,
@@ -1690,10 +1692,8 @@ Noise_evaluate <- function (raw_data) {
       colnames(peakMassSpectras) <- c("mz", "intensity", 
                                       "scan")
       peakMassSpectras <- data.frame(peakMassSpectras)
-      peakMassSpectras <- peakMassSpectras[order(peakMassSpectras$mz), 
-                                           ]
-      peakMassSpectras <- peakMassSpectras[peakMassSpectras$intensity > 
-                                             0, ]
+      peakMassSpectras <- peakMassSpectras[order(peakMassSpectras$mz), ]
+      peakMassSpectras <- peakMassSpectras[peakMassSpectras$intensity > 0, ]
       sortedAllEIC <- peakMassSpectras
       matchedMasses <- rle(diff(sortedAllEIC$mz) < 0.005)
       noiseAndPeaks <- filterPeaksfromNoise(matchedMasses)
@@ -1751,7 +1751,7 @@ Noise_evaluate <- function (raw_data) {
   
   eicParamEsts <- Reduce(rbind, totalEstimates)
   param <- list()
-  param$ppm <- weighted.mean(eicParamEsts$ppm, eicParamEsts$peakCount)
+  param$ppm <- round(weighted.mean(eicParamEsts$ppm, eicParamEsts$peakCount),1)
   param$noise <- min(eicParamEsts$noiseThreshold, na.rm = TRUE)
   param$value_of_prefilter <- min(eicParamEsts$prefilterI, 
                                   na.rm = TRUE)
@@ -2051,7 +2051,7 @@ findIsotopes.IPO <- function(mSet, checkPeakShape=c("none", "borderIntensity",
   samples <- max(peak_source[,"sample"])
   
   #start_sample
-  for(sample in seq_len(samples)) { 
+  for(sample in seq_len(samples)) {
     #only looking into peaks from current sample   
     speaks <- peak_source[peak_source[,"sample"]==sample,,drop=FALSE]
     split <- 250
@@ -2631,8 +2631,6 @@ estimateSNThresh <- function(no_match, sortedAllEIC, approvedPeaks) {
     
     scanIntervals[[peakID]] <- which(minScan:maxScan %in% c(lowerBound,
                                                             upperBound))
-    
-    
   }
   
   ## calculating all fixed noise values
@@ -2658,12 +2656,11 @@ estimateSNThresh <- function(no_match, sortedAllEIC, approvedPeaks) {
       fixedNoiseVar <- 0
     }
     
-    N <- length(fixedNoise)
-    
-    fixedNoiseList[[counter]] <- data.frame(fixedNoiseMean,fixedNoiseVar,N)
-    counter <- 1 + counter
+    N <- length(fixedNoise);
+    fixedNoiseList[[counter]] <- data.frame(fixedNoiseMean,fixedNoiseVar,N);
+    counter <- 1 + counter;
   }
-  fixedNoiseList <- Reduce(rbind, fixedNoiseList)
+  fixedNoiseList <- Reduce(rbind, fixedNoiseList);
   
   ## calculating the sd and mean for each group
   noiseIntDb <- list()
@@ -2671,11 +2668,8 @@ estimateSNThresh <- function(no_match, sortedAllEIC, approvedPeaks) {
   for(row in seq_along(scanIntervals)) {
     
     if(row == 1) {
-      
-      new <- TRUE
-      
+      new <- TRUE;
     } else {
-      
       new <- vapply(X = noiseIntDb, FUN = function(noiseDb) {
         if(!all(scanIntervals[[row]] == as.numeric(noiseDb[,c(1,2)]))) {
           return(TRUE)
@@ -2685,7 +2679,6 @@ estimateSNThresh <- function(no_match, sortedAllEIC, approvedPeaks) {
       }, FUN.VALUE = logical(1))
       new <- all(new)
     }
-    
     
     if(new) {
       ## add check to see if cur row has already been looked at
@@ -2714,14 +2707,12 @@ estimateSNThresh <- function(no_match, sortedAllEIC, approvedPeaks) {
                                           groupSd)
       counter <- counter + 1
     }
-    
   }
   
-  noiseIntDb <- Reduce(rbind, noiseIntDb)
-  noiseIntDb$key <- apply(noiseIntDb[,c(1,2)], 1, paste, collapse = " ")
+  noiseIntDb <- Reduce(rbind, noiseIntDb);
+  noiseIntDb$key <- apply(noiseIntDb[,c(1,2)], 1, paste, collapse = " ");
   rm(curStatDb, eX2, groupSd, groupVar, groupMean,
      curRow, fixedNoiseList)
-  
   
   SN <- list()
   counter <- 1
@@ -2795,6 +2786,7 @@ filterPpmError <- function(approvedPeaks, useGap, varExpThresh,
   #message("-------- Number of ppm value across bins: ", length(ppmObs))
   #set.seed(161);
   if(length(ppmObs) > 10000) {
+    set.seed(1141);
     ppmObs <- ppmObs[sample(x = seq_along(ppmObs), size = 5000)]
   }
   
@@ -2803,21 +2795,14 @@ filterPpmError <- function(approvedPeaks, useGap, varExpThresh,
     checkPpm <- length(ppmObs)/2
     subsample <- TRUE
     while(subsample) {
-      #set.seed(171);
+      
       origDist <- stats::density(ppmObs, bw = 1)$y
-      #set.seed(117); 
       newDist1 <-  stats::density(sample(ppmObs, checkPpm), bw = 1)$y
-      #set.seed(118); 
       newDist2 <-  stats::density(sample(ppmObs, checkPpm), bw = 1)$y
-      #set.seed(119); 
       newDist3 <-  stats::density(sample(ppmObs, checkPpm), bw = 1)$y
-      #set.seed(1110); 
       newDist4 <-  stats::density(sample(ppmObs, checkPpm), bw = 1)$y
-      #set.seed(1111); 
       newDist5 <-  stats::density(sample(ppmObs, checkPpm), bw = 1)$y
-      #set.seed(1112); 
       newDist6 <-  stats::density(sample(ppmObs, checkPpm), bw = 1)$y
-      #set.seed(1113); 
       newDist7 <-  stats::density(sample(ppmObs, checkPpm), bw = 1)$y
       
       klDistance <- list()
@@ -2835,51 +2820,69 @@ filterPpmError <- function(approvedPeaks, useGap, varExpThresh,
       }
       
     }
-    #set.seed(1141);
-    ppmObs <- sample(ppmObs, checkPpm)
-    #message("-------- Number of ppm value across bins after",
-    #        " KL Distance Filtering: ",
-    #        length(ppmObs))
     
+    ppmObs <- sample(ppmObs, checkPpm)
   }
   
+  # ppmEsts <- bplapply(c(1:500),
+  #                     FUN = ppmEstCore,
+  #                     ppmObs = ppmObs,
+  #                     useGap = useGap, BPPARAM = MulticoreParam(4))
+  # ppmEsts <- unlist(ppmEsts)
+  # # ppmEsts <- vapply(c(1:250), 
+  # #                      ppmEstCore, 
+  # #                      FUN.VALUE = vector(mode = "double", length = 1),
+  # #        ppmObs = ppmObs,
+  # #        useGap = useGap)
+  # 
+  # #save(ppmEsts, file = "ppmEsts.rda")
+  # ppmEsts <- sort(ppmEsts)[-c(1, 500)] # remove top extreme values
+  # ppmEst <- mean(ppmEsts) + sd(ppmEsts)*2 # increase to cover more 
   
-  ## 2019-04-09 added this here since it doesn't make sense to cluster too few
-  ## features
+  ppmEsts <- vapply(c(1:50),
+                    ppmEstCore,
+                    FUN.VALUE = vector(mode = "double", length = 1),
+                    ppmObs = ppmObs,
+                    useGap = useGap,
+                    varExpThresh = varExpThresh)
+  ppmEsts <- sort(ppmEsts)[-c(1, 50)] # remove top extreme values
+  ppmEst <- mean(ppmEsts) + sd(ppmEsts)*2 # increase to cover more
+  return(ppmEst)
+}
+
+
+ppmEstCore <- function(xx, ppmObs,useGap, varExpThresh) {
+  
   if(length(ppmObs) < 100) {
-    
+    #set.seed(xx)
     kmeansPPM <- kmeans(ppmObs, 1)
-    
-  } else if(useGap) {
-    
-    gapStat <- cluster::clusGap(x = as.matrix(ppmObs),
-                                FUNcluster = kmeans,
-                                K.max = 5,
-                                B = 7,
-                                verbose = FALSE)
-    
-    gapStat <- gapStat$Tab
-    gap <- diff(-gapStat[,3]) > 0
-    if(any(gap)) {
-      clusters <- max(which(gap)) + 1
-    } else {
-      clusters <- 1
-    }
-    
-    kmeansPPM <- kmeans(ppmObs, clusters)
-    
+  # } else if(useGap) {
+  #   set.seed(xx)
+  #   gapStat <- cluster::clusGap(x = as.matrix(ppmObs),
+  #                               FUNcluster = kmeans,
+  #                               K.max = 5,
+  #                               B = 7,
+  #                               verbose = FALSE)
+  #   
+  #   gapStat <- gapStat$Tab;
+  #   gap <- diff(-gapStat[,3]) > 0;
+  #   if(any(gap)) {
+  #     clusters <- max(which(gap)) + 1;
+  #   } else {
+  #     clusters <- 1;
+  #   }
+  #   set.seed(xx)
+  #   kmeansPPM <- kmeans(ppmObs, clusters);
   } else {
-    
-    
     ## estimating clustering based on hard coded 80% Vexp threshold
     clustCount <- 1
     varExp <- 0
     while(varExp < varExpThresh && clustCount < length(ppmObs)/2) {
+      #set.seed(xx)
       kmeansPPM <- kmeans(ppmObs, clustCount)
       varExp <- kmeansPPM$betweenss/kmeansPPM$totss
       clustCount <- clustCount + 1
     }
-    
   }
   
   ## cluster which contains smallest ppm values
@@ -2909,13 +2912,13 @@ filterPpmError <- function(approvedPeaks, useGap, varExpThresh,
   
   scoreSub <- which(OutlierScore > 1)
   
-  
   ppmEst <- max(ppmObs[scoreSub])
   maxX <- ppmEst
   ppmEst <- ppmEst + sd(ppmObs[scoreSub])*3
   
   return(ppmEst)
 }
+
 
 #' @importFrom stats smooth.spline
 peakwidth_est <- function(peak_vector,

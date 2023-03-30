@@ -31,7 +31,6 @@ GeneratePeakList <- function(userPath) {
   } else {
     sample_data1 <- matrix(nrow = nrow(sample_data))
     
-    
     for (i in seq_along(unique(groups))) {
       columnnum <- unique(groups)[i] == groups
       sample_data0  <-
@@ -56,17 +55,22 @@ GeneratePeakList <- function(userPath) {
   ann_data <- readRDS("annotated_peaklist.rds")
   
   ann_data <-
-    ann_data[, c(1, 4, ncol(ann_data) - 1, ncol(ann_data) - 2)]
+    ann_data[, c(1, 4, ncol(ann_data) - 4, ncol(ann_data) - 5, ncol(ann_data) -1 , ncol(ann_data)-2, ncol(ann_data))]
   ann_data[, 1] <- round(ann_data[, 1], 4)
   ann_data[, 2] <- round(ann_data[, 2], 2)
   
-  write.csv(
-    cbind(ann_data, sample_data_mean),
-    file = "peak_feature_summary.csv",
+  # write.csv(
+  #   cbind(ann_data, sample_data_mean),
+  #   file = "peak_feature_summary.csv",
+  #   row.names = FALSE,
+  #   quote = FALSE
+  # )
+  write.table(
+    cbind(ann_data, sample_data_mean), sep = "\t",
+    file = "peak_feature_summary.tsv",
     row.names = FALSE,
     quote = FALSE
   )
-  
   return (nrow(ann_data))
 }
 
@@ -382,32 +386,30 @@ FastRunningShow_auto <- function(fullUserPath){
   MessageOutput("QC_PREFB02.mzML", progress = 2, sleep = time_interval1);
   MessageOutput("Data Loading...", progress = 2, sleep = time_interval1);
   MessageOutput("Raw file import begin...", progress = 2, sleep = time_interval1);
-  MessageOutput("Reading MS from QC_PREFA02.mzML ...", progress = 2, sleep = time_interval1);
   MessageOutput("Importing QC_PREFA02.mzML:", progress = 2, ecol = "", sleep = time_interval1);
   for(i in seq(0,100,20)){
     MessageOutput(paste0(i,"% | "), progress = 2, ecol = "", sleep = 0.35);
   }
   MessageOutput(" Done!", progress = 2, sleep = time_interval1);
-  MessageOutput("Reading from QC_PREFA02.mzML finished successfully !", progress = 2, sleep = time_interval1);
+  MessageOutput("Importing QC_PREFA02.mzML finished!", progress = 2, sleep = time_interval1);
   
-  MessageOutput("Reading MS from QC_PREFB02.mzML ...", progress = 2, sleep = time_interval1);
   MessageOutput("Importing QC_PREFB02.mzML:", progress = 2, ecol = "", sleep = time_interval1);
   for(i in seq(0,100,20)){
     MessageOutput(paste0(i,"% | "), progress = 2, ecol = "", sleep = 0.35);
   }
   MessageOutput(" Done!", progress = 2, sleep = time_interval1);
-  MessageOutput("Reading from QC_PREFB02.mzML finished successfully !", progress = 2, sleep = time_interval1);
+  MessageOutput("Import data: QC_PREFB02.mzML finished!", progress = 2, sleep = time_interval1);
   MessageOutput("Data Loaded !", progress = 2, sleep = time_interval1);
   MessageOutput("Empty Scan detecting...", progress = 2, sleep = time_interval1);
   MessageOutput("No Empty scan found !", progress = 2, sleep = time_interval1);
   MessageOutput("Identifying regions of interest (ROI)...", progress = 2, sleep = time_interval1);
   MessageOutput("Identifying regions of potential contaminants", ecol = "", progress = 2, sleep = time_interval1);
-  for(i in seq_len(30)){
+  for(i in seq_len(8)){
     MessageOutput(".", ecol = "", progress = 3, sleep = 0.5);
   }
   MessageOutput(" Done!", progress = 3, sleep = time_interval1);
   
-  MessageOutput("300 potential contaminamts will not be used for parameters optimization !", progress = 3, sleep = time_interval1);
+  MessageOutput("80 potential contaminamts will not be used for parameters optimization !", progress = 3, sleep = time_interval1);
   MessageOutput("Going to the next step...", progress = 3, sleep = time_interval1);
   MessageOutput("MS data Preparing...", progress = 3, sleep = time_interval1);
   MessageOutput("MS Data ready !", progress = 3, sleep = time_interval1);
@@ -420,39 +422,66 @@ FastRunningShow_auto <- function(fullUserPath){
   ##################### 1
   MessageOutput("\nStep 1/6: Start to optimize parameters! ", progress = 4, sleep = time_interval1);
   MessageOutput("This step may take a long time...", progress = 4, sleep = time_interval1);
-  MessageOutput("DoE Optimization Starting Now...", progress = 4, sleep = time_interval1);
+  MessageOutput(paste0("DoE Optimization Starting Now...", Sys.time()), progress = 4, sleep = time_interval1);
   MessageOutput("Evaluating Noise level...", progress = 4, sleep = time_interval1);
+  MessageOutput("ppm is estimated as : 4", progress = 4, sleep = time_interval1);
   MessageOutput("Done!", progress = 5, sleep = time_interval1);
   MessageOutput("Preparing Parameters for optimization finished !", progress = 5, sleep = time_interval1);
   MessageOutput("Data Spliting Finished !", progress = 5, sleep = time_interval1);
   MessageOutput("Peak Preparing Begin...", progress = 5, sleep = time_interval1);
   MessageOutput("Peak Preparing Done !", progress = 5, sleep = time_interval1);
+  #
   MessageOutput("Round:1", progress = 5, sleep = time_interval1);
   MessageOutput("DoE Running Begin...", progress = 5, sleep = time_interval1);
   MessageOutput("Finished: ", ecol = "", progress = 5, sleep = time_interval1);
-  for(i in c(11,22,33,44,56,67,78,89,100)){
+  for(i in c(10,20,30,40,50,60,70,80,90,100)){
     MessageOutput(paste0(i,"% | "), progress = 5+i/50, ecol = "", sleep = 2);
   }
   MessageOutput("Done !", progress = 7, sleep = time_interval1);
   MessageOutput("Round 1 Finished !", progress = 7, sleep = time_interval1);
   MessageOutput("Model Parsing...", progress = 7, sleep = time_interval1);
-  MessageOutput("Gaussian peak ratio (%): 59.7.", progress = 7, sleep = time_interval1);
+  MessageOutput("Gaussian peak ratio (%): 60.1.", progress = 7, sleep = time_interval1);
   MessageOutput("Model Parsing Done !", progress = 8, sleep = time_interval1);
   
-  
+  #
   MessageOutput("\nRound:2", progress = 8, sleep = time_interval1);
   MessageOutput("DoE Running Begin...", progress = 8, sleep = time_interval1);
   MessageOutput("Finished: ", ecol = "", progress = 8, sleep = time_interval1);
-  for(i in c(11,22,33,44,56,67,78,89,100)){
+  for(i in c(10,20,30,40,50,60,70,80,90,100)){
     MessageOutput(paste0(i,"% | "), progress = 8+i/50, ecol = "", sleep = 2);
   }
   MessageOutput("Done !", progress = 10, sleep = time_interval1);
   MessageOutput("Round 2 Finished !", progress = 10, sleep = time_interval1);
   MessageOutput("Model Parsing...", progress = 10, sleep = time_interval1);
-  MessageOutput("Gaussian peak ratio (%): 61.5.", progress = 10, sleep = time_interval1);
+  MessageOutput("Gaussian peak ratio (%): 60.7.", progress = 10, sleep = time_interval1);
   MessageOutput("Model Parsing Done !", progress = 11, sleep = time_interval1);
+  #
+  MessageOutput("\nRound:3", progress = 11, sleep = time_interval1);
+  MessageOutput("DoE Running Begin...", progress = 11, sleep = time_interval1);
+  MessageOutput("Finished: ", ecol = "", progress = 11, sleep = time_interval1);
+  for(i in c(10,20,30,40,50,60,70,80,90,100)){
+    MessageOutput(paste0(i,"% | "), progress = 11+i/50, ecol = "", sleep = 2);
+  }
+  MessageOutput("Done !", progress = 14, sleep = time_interval1);
+  MessageOutput("Round 3 Finished !", progress = 14, sleep = time_interval1);
+  MessageOutput("Model Parsing...", progress = 14, sleep = time_interval1);
+  MessageOutput("Gaussian peak ratio (%): 68.6.", progress = 10, sleep = time_interval1);
+  MessageOutput("Model Parsing Done !", progress = 14, sleep = time_interval1);
+  #
+  MessageOutput("\nRound:4", progress = 14, sleep = time_interval1);
+  MessageOutput("DoE Running Begin...", progress = 14, sleep = time_interval1);
+  MessageOutput("Finished: ", ecol = "", progress = 15, sleep = time_interval1);
+  for(i in c(10,20,30,40,50,60,70,80,90,100)){
+    MessageOutput(paste0(i,"% | "), progress = 14+i/50, ecol = "", sleep = 2);
+  }
+  MessageOutput("Done !", progress = 16, sleep = time_interval1);
+  MessageOutput("Round 4 Finished !", progress = 16, sleep = time_interval1);
+  MessageOutput("Model Parsing...", progress = 16, sleep = time_interval1);
+  MessageOutput("Gaussian peak ratio (%): 61.6.", progress = 16, sleep = time_interval1);
+  MessageOutput("Model Parsing Done !", progress = 16, sleep = time_interval1);
   
-  MessageOutput("\nNo Increase Stopping !", progress = 15, sleep = time_interval1);
+  ##
+  MessageOutput("\nNo Increase Stopping !", progress = 16, sleep = time_interval1);
   MessageOutput(paste0("Step 1/6: Parameters Optimization Finished ! (", Sys.time(),")"), progress = 16, sleep = time_interval1);
   
   ##################### 1
@@ -477,25 +506,25 @@ FastRunningShow_auto <- function(fullUserPath){
   
   ##################### 3
   MessageOutput("\nStep 3/6: Started peak picking! This step will take some time...", progress = 22, sleep = time_interval1);
-  MessageOutput("Detecting peaks in 3942 regions of interest ... OK: 877 found.", progress = 25, sleep = time_interval1);
-  MessageOutput("Detecting peaks in 3968 regions of interest ... OK: 860 found.", progress = 28, sleep = time_interval1);
-  MessageOutput("Detecting peaks in 4200 regions of interest ... OK: 835 found.", progress = 31, sleep = time_interval1);
-  MessageOutput("Detecting peaks in 4239 regions of interest ... OK: 1121 found.", progress = 34, sleep = time_interval1);
-  MessageOutput("Detecting peaks in 4235 regions of interest ... OK: 962 found.", progress = 37, sleep = time_interval1);
-  MessageOutput("Detecting peaks in 4361 regions of interest ... OK: 1021 found.", progress = 40, sleep = time_interval1);
-  MessageOutput("Detecting peaks in 4462 regions of interest ... OK: 1118 found.", progress = 43, sleep = time_interval1);
-  MessageOutput("Detecting peaks in 4361 regions of interest ... OK: 1177 found.", progress = 46, sleep = time_interval1);
-  MessageOutput("Detecting peaks in 4330 regions of interest ... OK: 1086 found.", progress = 47, sleep = time_interval1);
-  MessageOutput("Detecting peaks in 4489 regions of interest ... OK: 1024 found.", progress = 50, sleep = time_interval1);
+  MessageOutput("Detecting peaks in 2819 regions of interest of HC-9X47O.mzML ... OK: 739 found.", progress = 25, sleep = time_interval1);
+  MessageOutput("Detecting peaks in 2924 regions of interest of CD-9WOBP.mzML ... OK: 797 found.", progress = 28, sleep = time_interval1);
+  MessageOutput("Detecting peaks in 3877 regions of interest of HC-AUP8B.mzML ... OK: 833 found.", progress = 31, sleep = time_interval1);
+  MessageOutput("Detecting peaks in 3420 regions of interest of CD-6KUCT.mzML ... OK: 1066 found.", progress = 34, sleep = time_interval1);
+  MessageOutput("Detecting peaks in 3809 regions of interest of HC-AMR37.mzML ... OK: 924 found.", progress = 37, sleep = time_interval1);
+  MessageOutput("Detecting peaks in 4139 regions of interest of HC-9SNJ4.mzML ... OK: 940 found.", progress = 40, sleep = time_interval1);
+  MessageOutput("Detecting peaks in 3935 regions of interest of QC_PREFA02.mzML ... OK: 1034 found.", progress = 43, sleep = time_interval1);
+  MessageOutput("Detecting peaks in 3827 regions of interest of CD-77FXR.mzML ... OK: 1130 found.", progress = 46, sleep = time_interval1);
+  MessageOutput("Detecting peaks in 3893 regions of interest of QC_PREFB02.mzML ... OK: 1048 found.", progress = 47, sleep = time_interval1);
+  MessageOutput("Detecting peaks in 4070 regions of interest of CD-9OS5Y.mzML ... OK: 995 found.", progress = 50, sleep = time_interval1);
   MessageOutput(paste0("Step 3/6: Peak picking finished ! (",Sys.time(),")"), progress = 50, sleep = time_interval1);
   ##################### 4
   MessageOutput("\nStep 4/6: Started peak alignment! This step is running...", progress = 51, sleep = time_interval1);
-  MessageOutput("Total of 2795 slices detected for processing... Done !", progress = 52, sleep = time_interval1);
+  MessageOutput("Total of 2803 slices detected for processing... Done !", progress = 52, sleep = time_interval1);
   MessageOutput("Going to the next step...", progress = 55, sleep = time_interval2);
   MessageOutput("Retention time correction is running.PeakGroup -- loess is used for retention time correction.....", progress = 60, sleep = time_interval2);
-  MessageOutput("Performing retention time correction using  174  peak groups.", progress = 61, sleep = time_interval2);
+  MessageOutput("Performing retention time correction using  165  peak groups.", progress = 61, sleep = time_interval2);
   MessageOutput("Applying retention time adjustment to the identified chromatographic peaks ... Done !", progress = 61, sleep = time_interval2);
-  MessageOutput("Total of 2795 slices detected for processing... Done !", progress = 65, sleep = time_interval2);
+  MessageOutput("Total of 2803 slices detected for processing... Done !", progress = 65, sleep = time_interval2);
   MessageOutput(paste0("Step 4/6: Peak alignment finished ! (",Sys.time(),")"), progress = 70, sleep = time_interval2);
   MessageOutput("Going to the next step...", progress = 73, sleep = time_interval2);
   ##################### 5
@@ -503,16 +532,16 @@ FastRunningShow_auto <- function(fullUserPath){
   MessageOutput("Starting peak filling!", progress = 75, sleep = time_interval1);
   MessageOutput("Defining peak areas for filling-in....OK", progress = 76, sleep = time_interval1);
   MessageOutput("Start integrating peak areas from original files...", progress = 77, sleep = time_interval1);
-  MessageOutput("Requesting 408 peaks from CD-6KUCT.mzML ... got 240.", progress = 78, sleep = time_interval1);
-  MessageOutput("Requesting 580 peaks from CD-9WOBP.mzML ... got 267.", progress = 78.5, sleep = time_interval1);
-  MessageOutput("Requesting 535 peaks from HC-9X47O.mzML ... got 299.", progress = 79, sleep = time_interval1);
-  MessageOutput("Requesting 507 peaks from HC-AUP8B.mzML ... got 314.", progress = 79, sleep = time_interval1);
-  MessageOutput("Requesting 367 peaks from CD-77FXR.mzML ... got 210.", progress = 80, sleep = time_interval1);
-  MessageOutput("Requesting 53 peaks from QC_PREFA02.mzML ... got 46.", progress = 81, sleep = time_interval1);
-  MessageOutput("Requesting 65 peaks from HC-AMR37.mzML ... got 58.", progress = 82, sleep = time_interval1);
-  MessageOutput("Requesting 486 peaks from QC_PREFB02.mzML ... got 296.", progress = 83, sleep = time_interval1);
-  MessageOutput("Requesting 479 peaks from HC-9SNJ4.mzML ... got 302.", progress = 84, sleep = time_interval1);
-  MessageOutput("Requesting 402 peaks from CD-9OS5Y.mzML ... got 264.", progress = 85, sleep = time_interval1);
+  MessageOutput("Requesting 385 peaks from CD-6KUCT.mzML ... got 205.", progress = 78, sleep = time_interval1);
+  MessageOutput("Requesting 564 peaks from CD-9WOBP.mzML ... got 214.", progress = 78.5, sleep = time_interval1);
+  MessageOutput("Requesting 472 peaks from HC-9X47O.mzML ... got 266.", progress = 79, sleep = time_interval1);
+  MessageOutput("Requesting 514 peaks from HC-AUP8B.mzML ... got 271.", progress = 79, sleep = time_interval1);
+  MessageOutput("Requesting 50 peaks from QC_PREFA02.mzML ... got 47.", progress = 80, sleep = time_interval1);
+  MessageOutput("Requesting 350 peaks from CD-77FXR.mzML ... got 195.", progress = 81, sleep = time_interval1);
+  MessageOutput("Requesting 39 peaks from HC-AMR37.mzML ... got 38.", progress = 82, sleep = time_interval1);
+  MessageOutput("Requesting 469 peaks from QC_PREFB02.mzML ... got 264.", progress = 83, sleep = time_interval1);
+  MessageOutput("Requesting 458 peaks from HC-9SNJ4.mzML ... got 365.", progress = 84, sleep = time_interval1);
+  MessageOutput("Requesting 374 peaks from CD-9OS5Y.mzML ... got 220.", progress = 85, sleep = time_interval1);
   MessageOutput(paste0("Step 5/6: Peak filing finished ! (",Sys.time(),")"), progress = 86, sleep = time_interval1);
   MessageOutput("Peak Profiling finished successfully !", progress = 87, sleep = time_interval1);
   MessageOutput("Begin to plotting figures...Done !", progress = 88, sleep = time_interval1);
@@ -524,25 +553,26 @@ FastRunningShow_auto <- function(fullUserPath){
   MessageOutput("Run isotope peak annotation..", progress = 90, sleep = time_interval1);
   MessageOutput("Found isotopes:113", progress =90, sleep = time_interval1);
   MessageOutput("Generating EIC's....", progress = 91, sleep = time_interval1);
-  MessageOutput("Detecting  CD-6KUCT.mzML  ... 67 peaks found!", progress = 91, sleep = time_interval1);
-  MessageOutput("Detecting  CD-77FXR.mzML  ... 60 peaks found!", progress = 92, sleep = time_interval1);
-  MessageOutput("Detecting  CD-9OS5Y.mzML  ... 152 peaks found!", progress = 92, sleep = time_interval1);
-  MessageOutput("Detecting  CD-9WOBP.mzML  ... 166 peaks found!", progress = 93, sleep = time_interval1);
-  MessageOutput("Detecting  HC-9SNJ4.mzML  ... 28 peaks found!", progress = 93, sleep = time_interval1);
-  MessageOutput("Detecting  HC-9X47O.mzML  ... 1 peaks found!", progress = 93, sleep = time_interval1);
-  MessageOutput("Detecting  HC-AMR37.mzML  ... 283 peaks found!", progress = 94, sleep = time_interval1);
-  MessageOutput("Detecting  HC-AUP8B.mzML  ... 16 peaks found!", progress = 94, sleep = time_interval1);
-  MessageOutput("Detecting  QC_PREFA02.mzML  ... 46 peaks found!", progress = 95, sleep = time_interval1);
-  MessageOutput("Detecting  QC_PREFB02.mzML  ... 137 peaks found!", progress = 95, sleep = time_interval1);
+  MessageOutput("Detecting  CD-6KUCT.mzML  ... 79 peaks found!", progress = 91, sleep = time_interval1);
+  MessageOutput("Detecting  CD-77FXR.mzML  ... 66 peaks found!", progress = 92, sleep = time_interval1);
+  MessageOutput("Detecting  CD-9OS5Y.mzML  ... 171 peaks found!", progress = 92, sleep = time_interval1);
+  MessageOutput("Detecting  CD-9WOBP.mzML  ... 80 peaks found!", progress = 93, sleep = time_interval1);
+  MessageOutput("Detecting  HC-9SNJ4.mzML  ... 23 peaks found!", progress = 93, sleep = time_interval1);
+  MessageOutput("Detecting  HC-9X47O.mzML  ... 0 peaks found!", progress = 93, sleep = time_interval1);
+  MessageOutput("Detecting  HC-AMR37.mzML  ... 285 peaks found!", progress = 94, sleep = time_interval1);
+  MessageOutput("Detecting  HC-AUP8B.mzML  ... 7 peaks found!", progress = 94, sleep = time_interval1);
+  MessageOutput("Detecting  QC_PREFA02.mzML  ... 37 peaks found!", progress = 95, sleep = time_interval1);
+  MessageOutput("Detecting  QC_PREFB02.mzML  ... 132 peaks found!", progress = 95, sleep = time_interval1);
   MessageOutput("Warning: Found NA peaks in selected sample.", progress = 95, sleep = time_interval1);
-  MessageOutput("Calculating peak correlations in 54 Groups...", progress = 96, sleep = time_interval1);
-  MessageOutput("Calculating graph cross linking in 54 Groups...", progress = 96, sleep = time_interval1);
-  MessageOutput("New number of ps-groups:  614", progress = 96, sleep = time_interval1);
-  MessageOutput("mSet has now 361 groups, instead of 54 !", progress = 97, sleep = time_interval1);
+  MessageOutput("Calculating peak correlations in 47 Groups...", progress = 96, sleep = time_interval1);
+  MessageOutput("Calculating graph cross linking in 47 Groups...", progress = 96, sleep = time_interval1);
+  MessageOutput("New number of ps-groups:  578", progress = 96, sleep = time_interval1);
+  MessageOutput("mSet has now 578 groups, instead of 47 !", progress = 97, sleep = time_interval1);
   MessageOutput("Generating peak matrix for peak annotation!", progress = 97, sleep = time_interval1);
   MessageOutput("Polarity is set in annotaParam: negative", progress = 98, sleep = time_interval1);
   MessageOutput("Ruleset could not read from object! Recalculating...", progress = 98, sleep = time_interval1);
-  MessageOutput("Calculating possible adducts in 614 Groups... ", progress = 99, sleep = time_interval1);
+  MessageOutput("Calculating possible adducts in 578 Groups... ", progress = 99, sleep = time_interval1);
+  MessageOutput("Performing mass matching to HMDB database...Done!", progress = 99, sleep = time_interval1);
   MessageOutput(paste0("Step 6/6: Successfully performed peak annotation! (",Sys.time(),")"), progress = 99, sleep = time_interval1);
   MessageOutput("Going to the final step...Done!", progress = 99, sleep = time_interval2);
   
@@ -558,7 +588,7 @@ FastRunningShow_customized <- function(fullUserPath){
   
   setwd(fullUserPath);    
   
-  time_interval1 <- 0.10;
+  time_interval1 <- 0.5;
   time_interval2 <- 1;
   # running to show the progress
   MessageOutput(paste0("Running Status -- Plan Initialized Successfully at: ", 
@@ -595,16 +625,16 @@ FastRunningShow_customized <- function(fullUserPath){
   MessageOutput("4 CPU Threads will be used for peak profiling !", progress = 21, sleep = time_interval1);
   ##################### 3
   MessageOutput("\nStep 3/6: Started peak picking! This step will take some time...", progress = 22, sleep = time_interval1);
-  MessageOutput("Detecting peaks in 5509 regions of interest ... OK: 1285 found.", progress = 25, sleep = time_interval1);
-  MessageOutput("Detecting peaks in 6009 regions of interest ... OK: 1327 found.", progress = 28, sleep = time_interval1);
-  MessageOutput("Detecting peaks in 5355 regions of interest ... OK: 1395 found.", progress = 31, sleep = time_interval1);
-  MessageOutput("Detecting peaks in 5767 regions of interest ... OK: 1810 found.", progress = 34, sleep = time_interval1);
-  MessageOutput("Detecting peaks in 5832 regions of interest ... OK: 1507 found.", progress = 37, sleep = time_interval1);
-  MessageOutput("Detecting peaks in 6273 regions of interest ... OK: 1586 found.", progress = 40, sleep = time_interval1);
-  MessageOutput("Detecting peaks in 6061 regions of interest ... OK: 1643 found.", progress = 43, sleep = time_interval1);
-  MessageOutput("Detecting peaks in 5926 regions of interest ... OK: 1805 found.", progress = 46, sleep = time_interval1);
-  MessageOutput("Detecting peaks in 6054 regions of interest ... OK: 1646 found.", progress = 47, sleep = time_interval1);
-  MessageOutput("Detecting peaks in 6299 regions of interest ... OK: 1608 found.", progress = 50, sleep = time_interval1);
+  MessageOutput("Detecting peaks in 5509 regions of interest of HC-9X47O.mzML ... OK: 1285 found.", progress = 25, sleep = time_interval1);
+  MessageOutput("Detecting peaks in 6009 regions of interest of HC-AUP8B.mzML ... OK: 1327 found.", progress = 28, sleep = time_interval1);
+  MessageOutput("Detecting peaks in 5355 regions of interest of CD-9WOBP.mzML ... OK: 1395 found.", progress = 31, sleep = time_interval1);
+  MessageOutput("Detecting peaks in 5767 regions of interest of CD-6KUCT.mzML ... OK: 1810 found.", progress = 34, sleep = time_interval1);
+  MessageOutput("Detecting peaks in 5832 regions of interest of HC-AMR37.mzML ... OK: 1507 found.", progress = 37, sleep = time_interval1);
+  MessageOutput("Detecting peaks in 6273 regions of interest of HC-9SNJ4.mzML ... OK: 1586 found.", progress = 40, sleep = time_interval1);
+  MessageOutput("Detecting peaks in 6061 regions of interest of QC_PREFA02.mzML ... OK: 1643 found.", progress = 43, sleep = time_interval1);
+  MessageOutput("Detecting peaks in 5926 regions of interest  of CD-77FXR.mzML ... OK: 1805 found.", progress = 46, sleep = time_interval1);
+  MessageOutput("Detecting peaks in 6054 regions of interest of QC_PREFB02.mzML ... OK: 1646 found.", progress = 47, sleep = time_interval1);
+  MessageOutput("Detecting peaks in 6299 regions of interest of CD-9OS5Y.mzML ... OK: 1608 found.", progress = 50, sleep = time_interval1);
   MessageOutput(paste0("Step 3/6: Peak picking finished ! (",Sys.time(),")"), progress = 50, sleep = time_interval1);
   ##################### 4
   MessageOutput("\nStep 4/6: Started peak alignment! This step is running...", progress = 51, sleep = time_interval1);
@@ -661,6 +691,7 @@ FastRunningShow_customized <- function(fullUserPath){
   MessageOutput("Polarity is set in annotaParam: negative", progress = 98, sleep = time_interval1);
   MessageOutput("Ruleset could not read from object! Recalculating...", progress = 98, sleep = time_interval1);
   MessageOutput("Calculating possible adducts in 736 Groups... ", progress = 99, sleep = time_interval1);
+  MessageOutput("Performing mass matching to HMDB database...Done!", progress = 99, sleep = time_interval1);
   MessageOutput(paste0("Step 6/6: Successfully performed peak annotation! (",Sys.time(),")"), progress = 99, sleep = time_interval1);
   MessageOutput("Going to the final step...Done!", progress = 99, sleep = time_interval2);
   

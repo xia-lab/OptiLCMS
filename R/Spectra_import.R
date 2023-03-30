@@ -332,8 +332,8 @@ ImportRawMSData <-
         
         MessageOutput("Plotting BPIS and TICS.")
         # Plotting functions to see entire chromatogram
-        bpis <- chromatogram(raw_data_filt, aggregationFun = "max")
-        tics <- chromatogram(raw_data_filt, aggregationFun = "sum")
+        bpis <- chromatogram(raw_data_filt, aggregationFun = "max", BPPARAM = MulticoreParam(4))
+        tics <- chromatogram(raw_data_filt, aggregationFun = "sum", BPPARAM = MulticoreParam(4))
         groupInfo <-as.factor(pd$sample_group);
         groupNum <- nlevels(groupInfo)
         
@@ -1109,7 +1109,7 @@ UpdateRawfiles <- function(mSet = NULL, filesIncluded = NULL){
     
     # file format check
     exts <- tools::file_ext(filesIncluded_full);
-    extsIdx <- exts %in% c("mzML","mzXML","mzml","mzxml","mzData", "mzdata");
+    extsIdx <- exts %in% c("mzML","mzXML","mzml","mzxml","mzData", "mzdata", "CDF", "cdf");
     if(!any(extsIdx)){
       stop("No valid format files provided ! Only files with extension of \"mzML\", \"mzml\", \"mzXML\", \"mzxml\", \"mzData\" and \"mzdata\" are supported!")
     }
@@ -1262,7 +1262,7 @@ CentroidMSData <- function(InFolder, OutFolder = tempdir(), ncore = 1) {
       }
       
     },
-    BPPARAM = bpparam())
+    BPPARAM = MulticoreParam(4))
     
   }
   

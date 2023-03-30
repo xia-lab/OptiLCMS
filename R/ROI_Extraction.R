@@ -631,7 +631,7 @@ ssm_trim <- function(raw_data, ms_list, rt.idx){
                            spectra_abundance_set=spectra_abundance_set,
                            spectra_mz_set=spectra_mz_set,
                            bins.boundary=bins.boundary,
-                           BPPARAM = bpparam())
+                           BPPARAM = MulticoreParam(4L))
   
   MessageOutput("MS Data ready !", "\n", NULL);
   
@@ -827,6 +827,10 @@ mz.trim_specific<-function(raw_data, ms_list, mz, mzdiff=100){
     stop("'mzdiff' must be provided for mz_specific mode as a numeric value!")
   }
   
+  if(length(mz) == 0){
+    return(raw_data)
+  }
+  
   if (mz[1] == 0 | mzdiff==0){
     stop("'mz' or 'mzdiff' cannot be zero!")
   }
@@ -839,6 +843,7 @@ mz.trim_specific<-function(raw_data, ms_list, mz, mzdiff=100){
     
     for (w in seq_along(ms_list)){
       pb$tick();
+      if(is.null(raw_data@assayData[[names(ms_list)[w]]])){next}
       xn<-unlist(sapply(mz.pos,FUN=function(x){which((abs(x-raw_data@assayData[[names(ms_list)[w]]]@mz)/(x)*1000000)<=mzdiff)}));
       
       raw_data@assayData[[names(ms_list)[w]]]@mz<-raw_data@assayData[[names(ms_list)[w]]]@mz[xn];
@@ -861,6 +866,7 @@ mz.trim_specific<-function(raw_data, ms_list, mz, mzdiff=100){
     
     for (w in seq_along(ms_list)){
       pb$tick();
+      if(is.null(raw_data@assayData[[names(ms_list)[w]]])){next}
       xn<-unlist(sapply(abs(mz.neg),FUN=function(x){which((abs(x-raw_data@assayData[[names(ms_list)[w]]]@mz)/(x)*1000000)<=mzdiff)}));
       
       if (!identical(xn, numeric(0))){
@@ -872,7 +878,7 @@ mz.trim_specific<-function(raw_data, ms_list, mz, mzdiff=100){
     }
     
     for (w in seq_along(ms_list)){
-      
+      if(is.null(raw_data@assayData[[names(ms_list)[w]]])){next}
       if (identical(raw_data@assayData[[names(ms_list)[w]]]@mz,numeric(0))){
         raw_data@assayData[[names(ms_list)[w]]]@mz<-as.double();
         raw_data@assayData[[names(ms_list)[w]]]@intensity<-as.double();
@@ -1039,7 +1045,7 @@ plot.MS_3D<-function(object) {
   # if (.on.public.web){load_lattice()};
   # 
   dd <- as(object, "data.frame")
-  
+  dd$rt <- dd$rt*60;
   ms <- NULL ## get rid of 'no visible global function definition' note
   par.set <- list(box.3d = list(lwd=.2))
   
@@ -1054,7 +1060,7 @@ plot.MS_3D<-function(object) {
         zoom = 1, 
         par.settings = par.set,
         axis.line = list(col = "transparent"),
-        xlab="M/Z", ylab="Retention time", zlab=NULL)
+        xlab="m/z", ylab="Retention time (sec)", zlab=NULL)
   
 }
 
