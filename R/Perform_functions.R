@@ -108,7 +108,7 @@ PerformPeakProfiling <-
     
     .optimize_switch <- .SwapEnv$.optimize_switch <- FALSE;
     
-    if(.on.public.web){
+    if(.on.public.web()){
       ### Update parameters' style
       write.table(
         unlist(Params),
@@ -132,7 +132,7 @@ PerformPeakProfiling <-
                   ecol = NULL,
                   progress = 25)
     
-    if (.on.public.web) {
+    if (.on.public.web()) {
       # load_biocparallel()
       total_threads <- 4
       
@@ -196,7 +196,7 @@ PerformPeakProfiling <-
     
     .SwapEnv$envir$mSet <- mSet;
     
-    if (.on.public.web) {
+    if (.on.public.web()) {
       if (!is(mSet, "mSet")) {
         MessageOutput(
           mes =  paste0(
@@ -247,7 +247,7 @@ PerformPeakProfiling <-
       marker_record("peak_profiling_c2")
     }
     
-    if (.on.public.web) {
+    if (.on.public.web()) {
 
       if (is(mSet, "simpleError")) {
         MessageOutput(
@@ -328,7 +328,7 @@ PerformPeakProfiling <-
       progress = 88
     )
 
-    if(.on.public.web){
+    if(.on.public.web()){
       save(mSet, file = "mSet.rda");
     }
     
@@ -371,7 +371,7 @@ PerformPeakProfiling <-
         )
         
         ### 2. PCA plotting -----
-        # if (.on.public.web) {
+        # if (.on.public.web()) {
         #   load_ggplot()
         # }
         
@@ -466,7 +466,7 @@ SetAnnotationParam <-
     annParams <- list()
     peakParams <- NULL;
     
-    if (.on.public.web) {
+    if (.on.public.web()) {
       if(file.exists("params.rda")){
         load("params.rda")
       } else {
@@ -547,7 +547,7 @@ PerformPeakAnnotation <-
     )
     
     if(length(mSet@rawOnDisk) == 0){
-      if(.on.public.web){
+      if(.on.public.web()){
         MessageOutput("ERROR: No MS data imported, please import the MS data with 'ImportRawMSData' first !", NULL, NULL)
       } else {
         stop("No MS data Imported, please import the MS data with 'ImportRawMSData' first !")
@@ -555,7 +555,7 @@ PerformPeakAnnotation <-
     }
     
     if(is.null(mSet@peakfilling$FeatureGroupTable)){
-      if(.on.public.web){
+      if(.on.public.web()){
         MessageOutput("ERROR: No features found for annotation, please do the \"ImportRawMSData\", \"PerformPeakProfiling\", first before annotation !");
         stop();
       } else {
@@ -563,7 +563,7 @@ PerformPeakAnnotation <-
       }
     }
     
-    # if (.on.public.web) {
+    # if (.on.public.web()) {
     #   dyn.load(.getDynLoadPath());
     #   
     #   load_progress();
@@ -1360,7 +1360,7 @@ PerformPeakAnnotation <-
                     progress = 97)
       
       ## 6. Mass Matching
-      if(.on.public.web){
+      if(.on.public.web()){
         mSet <- PerformMassMatching(mSet);
       }
       
@@ -1420,7 +1420,7 @@ PerformPeakAnnotation <-
       marker_record("peak_annotation_c1");
     }
     
-    if(.on.public.web){
+    if(.on.public.web()){
       save(mSet, file = "mSet.rda");
     }
     
@@ -1486,7 +1486,7 @@ FormatPeakList <-
     }
     
     if(length(mSet@rawOnDisk) == 0){
-      if(.on.public.web){
+      if(.on.public.web()){
         MessageOutput("ERROR: No MS data imported, please import the MS data with 'ImportRawMSData' first !", NULL, NULL)
       } else {
         stop("No MS data Imported, please import the MS data with 'ImportRawMSData' first !")
@@ -1694,7 +1694,7 @@ FormatPeakList <-
     datam[, 6] <- missing_perc;
 
     mSet@peakAnnotation$peak_result_summary <- datam;
-    if(.on.public.web) {
+    if(.on.public.web()) {
       mSet@peakAnnotation[["massMatching"]][["Compound"]][is.na(mSet@peakAnnotation[["massMatching"]][["Compound"]])] <- 
         mSet@peakAnnotation[["massMatching"]][["Formula"]][is.na(mSet@peakAnnotation[["massMatching"]][["Formula"]])] <- 
         "";
@@ -1720,7 +1720,7 @@ FormatPeakList <-
       9
     )
     
-    if(.on.public.web){
+    if(.on.public.web()){
       # remove isotopes and adducts directly
       if (annParams$polarity == "positive") {
         camera_isotopes <-
@@ -1903,7 +1903,7 @@ Export.PeakSummary <- function(mSet = NULL, path = getwd()){
 
 
 PerformMassMatching <- function(mSet = NA) {
-  if(!.on.public.web) {
+  if(!.on.public.web()) {
     message("PerformMassMatching is not supported for local version now!")
     return(0)
   }

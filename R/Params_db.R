@@ -86,7 +86,7 @@ SetPeakParam <- function(platform = "general", Peak_method = "centWave", RT_meth
     .SwapEnv$envir <- new.env();
   }
   
-  if (.on.public.web & missing(platform) & missing(Peak_method) & file.exists("params.rda")){
+  if (.on.public.web() & missing(platform) & missing(Peak_method) & file.exists("params.rda")){
     #marker_record(paste0("operators","_operators_1"));
     load("params.rda");
     
@@ -2065,7 +2065,7 @@ SetPeakParam <- function(platform = "general", Peak_method = "centWave", RT_meth
     
     
   #Output a table for display 
-  if(.on.public.web){
+  if(.on.public.web()){
     
     if(file.exists("params.rda")){
       file.rename("params.rda", "params_last.rda")

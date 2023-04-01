@@ -111,7 +111,7 @@ PerformROIExtraction <-
     
     datapath <- normalizePath(datapath);
     
-    if(!.on.public.web){
+    if(!.on.public.web()){
       #Local R package running
       files <- Path2Files(path = datapath);
       files <- unlist(sapply(files, tools::file_path_as_absolute));
@@ -161,7 +161,7 @@ PerformROIExtraction <-
     if (c1) {
       #Select first at least 2 QC data for optimization
       
-      if (.on.public.web) {
+      if (.on.public.web()) {
         #TODO: need to configure with the online pipeline
         mSet <- NULL;
         load("mSet.rda");
@@ -373,7 +373,7 @@ PerformROIExtraction <-
           # include the 90% RT range
         }
         
-        if(.on.public.web){
+        if(.on.public.web()){
           rmConts <- FALSE;
           peakParams <- NULL;
           tmp_mes <- try(suppressWarnings(load("params.rda")),silent = TRUE);
@@ -386,7 +386,7 @@ PerformROIExtraction <-
           if(is(tmp_mes,"try-error") | rmConts){
             raw_data <- ContaminatsRemoval(raw_data, ms_list);
             raw_data <- .emptyscan.remove(raw_data, ms_list);
-          } else if (.on.public.web) {
+          } else if (.on.public.web()) {
             
             if(exists("peakParams")){
               if(peakParams[["rmConts"]]){
@@ -474,7 +474,7 @@ PerformROIExtraction <-
       if (plot == TRUE) {
         MessageOutput("Chromatogram Plotting Begin...",ecol = "\n",NULL);
         
-        # if (.on.public.web) {
+        # if (.on.public.web()) {
         #   load_RColorBrewer();
         # } 
         
@@ -502,7 +502,7 @@ PerformROIExtraction <-
 
     mSet@rawInMemory <- trimed_MSnExp;
     
-    if(.on.public.web){
+    if(.on.public.web()){
       save(mSet, file = "mSet.rda");
     }
     
@@ -1042,7 +1042,7 @@ PerformMSDataOutput<-function(raw_data){
 #' @noRd
 plot.MS_3D<-function(object) {
   
-  # if (.on.public.web){load_lattice()};
+  # if (.on.public.web()){load_lattice()};
   # 
   dd <- as(object, "data.frame")
   dd$rt <- dd$rt*60;

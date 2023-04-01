@@ -30,7 +30,7 @@ PerformPeakPicking<-function(mSet, BPPARAM = bpparam()){
   if(missing(mSet) & file.exists("mSet.rda")){
     load("mSet.rda")
   } else if(missing(mSet) & !file.exists("mSet.rda")){
-    if(.on.public.web){
+    if(.on.public.web()){
       MessageOutput("ERROR: mSet is missing !", NULL, NULL);
       stop();
     } else {
@@ -55,7 +55,7 @@ PerformPeakPicking<-function(mSet, BPPARAM = bpparam()){
   param <- mSet@params;
   
   if(length(object) == 0){
-    if(.on.public.web){
+    if(.on.public.web()){
       MessageOutput("ERROR: No MS data imported, please import the MS data with 'ImportRawMSData' first !", NULL, NULL)
     } else {
       stop("No MS data Imported, please import the MS data with 'ImportRawMSData' first !")
@@ -246,7 +246,7 @@ PeakPicking_centWave_slave <- function(x, param){
   ## If no ROIs are supplied then search for them.
   roiList <- list()
   if (length(roiList) == 0) {
-    if (.on.public.web & !.optimize_switch) {
+    if (.on.public.web() & !.optimize_switch) {
       # Do nothing
     } else if(.optimize_switch) {
       # Do nothing
@@ -282,7 +282,7 @@ PeakPicking_centWave_slave <- function(x, param){
   ## print('\n Detecting chromatographic peaks ... \n % finished: ')
   ## lp <- -1
   
-  if (.on.public.web & !.optimize_switch){
+  if (.on.public.web() & !.optimize_switch){
     
     print_mes <- paste0("Detecting peaks in ", length(roiList)," regions of interest of ", filenamevalue, " ...");    
     #write.table(print_mes,file="metaboanalyst_spec_proc.txt",append = TRUE,row.names = FALSE,col.names = FALSE, quote = FALSE, eol = " ");
@@ -624,7 +624,7 @@ PeakPicking_centWave_slave <- function(x, param){
   pr <- p[uindex, , drop = FALSE]
   
   
-  if (.on.public.web & !.optimize_switch){
+  if (.on.public.web() & !.optimize_switch){
     print_mes_tmp <- paste0(" OK: ", nrow(pr), " found.");    
     print_mes <- paste0(print_mes, print_mes_tmp)
     write.table(print_mes, file="metaboanalyst_spec_proc.txt",append = TRUE,row.names = FALSE,col.names = FALSE, quote = FALSE, eol = "\n");
@@ -650,7 +650,7 @@ PeakPicking_centWave_slave <- function(x, param){
 #'
 PeakPicking_Massifquant_slave <- function(x, param){
   
-  # if(.on.public.web){
+  # if(.on.public.web()){
   #   dyn.load(.getDynLoadPath());
   # }
   # load necessary C code for data processing
@@ -723,7 +723,7 @@ PeakPicking_Massifquant_slave <- function(x, param){
   if (!exists(mzCenterFun, mode="function"))
     stop(" >", mzCenterFun, "< not defined !")
   
-  if(.on.public.web){
+  if(.on.public.web()){
     
     print_mes_tmp <- paste0("Detecting mass traces at ", ppm, "ppm ... ");    
     #write.table(print_mes,file="metaboanalyst_spec_proc.txt",append = TRUE,row.names = FALSE,col.names = FALSE, quote = FALSE, eol = " ");
@@ -843,7 +843,7 @@ PeakPicking_Massifquant_slave <- function(x, param){
       .optimize_switch <- FALSE;
     }
     
-    if(.on.public.web & !.optimize_switch){
+    if(.on.public.web() & !.optimize_switch){
       
       print_mes_tmp2 <- paste0(" OK: ", dim(featlist)[1], " Peaks found.");
       print_mes <- paste0(print_mes_tmp,print_mes_tmp2);
@@ -875,7 +875,7 @@ PeakPicking_Massifquant_slave <- function(x, param){
 #'
 PeakPicking_MatchedFilter_slave <- function(x,param){
   
-  # if(.on.public.web){
+  # if(.on.public.web()){
   #   dyn.load(.getDynLoadPath());
   # }
   
@@ -1071,7 +1071,7 @@ PerformPeakGrouping<-function(mSet){
   if(missing(mSet) & file.exists("mSet.rda")){
     load("mSet.rda")
   } else if(missing(mSet) & !file.exists("mSet.rda")){
-    if(.on.public.web){
+    if(.on.public.web()){
       MessageOutput("ERROR: mSet is missing !", NULL, NULL);
       stop();
     } else {
@@ -1097,7 +1097,7 @@ PerformPeakGrouping<-function(mSet){
   ## 1. Verify & Extract Information-------
   
   if(length(mSet@rawOnDisk) == 0 & length(mSet@rawInMemory) == 0){
-    if(.on.public.web){
+    if(.on.public.web()){
       MessageOutput("ERROR: No MS data imported, please import the MS data with 'ImportRawMSData' first !", NULL, NULL)
     } else {
       stop("No MS data Imported, please import the MS data with 'ImportRawMSData' first !")
@@ -1324,7 +1324,7 @@ PerformRTcorrection <- function(mSet){
   if(missing(mSet) & file.exists("mSet.rda")){
     load("mSet.rda")
   } else if(missing(mSet) & !file.exists("mSet.rda")){
-    if(.on.public.web){
+    if(.on.public.web()){
       MessageOutput("ERROR: mSet is missing !", NULL, NULL);
       stop();
     } else {
@@ -1335,7 +1335,7 @@ PerformRTcorrection <- function(mSet){
   #TODO: add a function to verify the param in mSet
   
   if(length(mSet@rawOnDisk) == 0 & length(mSet@rawInMemory) == 0){
-    if(.on.public.web){
+    if(.on.public.web()){
       MessageOutput("ERROR: No MS data imported, please import the MS data with 'ImportRawMSData' first !", NULL, NULL)
     } else {
       stop("No MS data Imported, please import the MS data with 'ImportRawMSData' first !")
@@ -1343,7 +1343,7 @@ PerformRTcorrection <- function(mSet){
   }
   
   if(length(mSet@peakgrouping) == 0){
-    if(.on.public.web){
+    if(.on.public.web()){
       MessageOutput("ERROR: No grouped peaks found, please \"PerformPeakGrouping\" first !", NULL, NULL)
     } else {
       stop("No grouped peaks found, please \"PerformPeakGrouping\" first !")
@@ -1357,7 +1357,7 @@ PerformRTcorrection <- function(mSet){
     .optimize_switch <- FALSE;
   }
   
-  if (.on.public.web & !.optimize_switch){
+  if (.on.public.web() & !.optimize_switch){
     MessageOutput(mes = paste("Retention time correction is running."),
                   ecol = "\n",
                   progress = 60)
@@ -1400,7 +1400,7 @@ PerformRTcorrection <- function(mSet){
     )
   }
   # 
-  # if(.on.public.web){
+  # if(.on.public.web()){
   #   save(mSet, file = "mSet.rda");
   # }
   # 
@@ -1819,7 +1819,7 @@ RT.Adjust_peakGroup <-
     if (length(rt) == 0)
       stop("No peak groups found in the data for the provided settings")
     
-    if (.on.public.web & !.optimize_switch){
+    if (.on.public.web() & !.optimize_switch){
       
       print_mes <- paste("Performing retention time correction using ", nrow(rt)," peak groups.");    
       write.table(print_mes,file="metaboanalyst_spec_proc.txt",append = TRUE,row.names = FALSE,col.names = FALSE, quote = FALSE, eol = "\n");
@@ -2006,7 +2006,7 @@ mSet.obiwarp <- function(mSet, object, param) { ## Do not use the params defined
   
   centerSample <- floor(median(seq_len(nSamples)));
   
-  if (.on.public.web & !.optimize_switch){
+  if (.on.public.web() & !.optimize_switch){
     
     print_mes <- paste0("Sample number ", centerSample, " used as center sample.\n");    
     write.table(print_mes,file="metaboanalyst_spec_proc.txt",append = TRUE,row.names = FALSE,col.names = FALSE, quote = FALSE, eol = "");
@@ -2062,7 +2062,7 @@ mSet.obiwarp <- function(mSet, object, param) { ## Do not use the params defined
                       "", NULL)
       } 
 
-      if (.on.public.web & !.optimize_switch){
+      if (.on.public.web() & !.optimize_switch){
         
         print_mes <- paste0("Found gaps in scan times of the center sample: cut ", "scantime-vector at ", scantime1[mst1]," seconds.");    
         write.table(print_mes,file="metaboanalyst_spec_proc.txt",append = TRUE,row.names = FALSE,col.names = FALSE, quote = FALSE, eol = "");
@@ -2086,7 +2086,7 @@ mSet.obiwarp <- function(mSet, object, param) { ## Do not use the params defined
                       "", NULL)
       } 
 
-      if (.on.public.web & !.optimize_switch){
+      if (.on.public.web() & !.optimize_switch){
         
         print_mes <- paste0("Found gaps in scan time of file ", basename(fileNames(z)), ": cut scantime-vector at ", scantime2[mst2]," seconds.");    
         write.table(print_mes,file="metaboanalyst_spec_proc.txt",append = TRUE,row.names = FALSE,col.names = FALSE, quote = FALSE, eol = "");
@@ -2193,7 +2193,7 @@ mSet.obiwarp <- function(mSet, object, param) { ## Do not use the params defined
            basename(fileNames(cntr)), " and ", basename(fileNames(z)),
            " do not match!")
 
-    if (.on.public.web & !.optimize_switch){
+    if (.on.public.web() & !.optimize_switch){
       
       #write.table(print_mes,file="metaboanalyst_spec_proc.txt",append = TRUE,row.names = FALSE,col.names = FALSE, quote = FALSE, eol = "");
       #write.table(66.0, file = paste0(fullUserPath, "log_progress.txt"),row.names = FALSE,col.names = FALSE);
@@ -2205,7 +2205,7 @@ mSet.obiwarp <- function(mSet, object, param) { ## Do not use the params defined
     rtadj <- R_set_obiwarp (valscantime1, scantime1, mzvals, mzs, cntrPr, valscantime2, scantime2, curP, parms);
 
 
-    if (.on.public.web & !.optimize_switch){
+    if (.on.public.web() & !.optimize_switch){
       
       #write.table(print_mes,file="metaboanalyst_spec_proc.txt",append = TRUE,row.names = FALSE,col.names = FALSE, quote = FALSE, eol = "");
       #write.table(66.0, file = paste0(fullUserPath, "log_progress.txt"),row.names = FALSE,col.names = FALSE);
@@ -2226,7 +2226,7 @@ mSet.obiwarp <- function(mSet, object, param) { ## Do not use the params defined
     
     MessageOutput("OK", "\n", NULL)
     
-    if (.on.public.web & !.optimize_switch){
+    if (.on.public.web() & !.optimize_switch){
 
       MessageOutput(paste0("Aligning ", basename(fileNames(z)), " against ", basename(fileNames(cntr)), " ... OK\n"), 
                     "", 
@@ -2274,7 +2274,7 @@ PerformPeakFiling <- function(mSet, BPPARAM=bpparam()){
   if(missing(mSet) & file.exists("mSet.rda")){
     load("mSet.rda")
   } else if(missing(mSet) & !file.exists("mSet.rda")){
-    if(.on.public.web){
+    if(.on.public.web()){
       MessageOutput("ERROR: mSet is missing !", NULL, NULL);
       stop();
     } else {
@@ -2298,7 +2298,7 @@ PerformPeakFiling <- function(mSet, BPPARAM=bpparam()){
   param <- mSet@params;
   
   if(length(mSet@rawOnDisk) == 0 & length(mSet@rawInMemory) == 0){
-    if(.on.public.web){
+    if(.on.public.web()){
       MessageOutput("ERROR: No MS data imported, please import the MS data with 'ImportRawMSData' first !", NULL, NULL);
       stop();
     } else {
@@ -2307,7 +2307,7 @@ PerformPeakFiling <- function(mSet, BPPARAM=bpparam()){
   }
   
   if(length(mSet@peakRTcorrection) == 0){
-    if(.on.public.web){
+    if(.on.public.web()){
       MessageOutput("ERROR: No Retention Time Correction results found. Please \"PerformRTcorrection\" or \"PerformPeakAlignment\" first !");
       stop();
     } else {
@@ -2468,7 +2468,7 @@ PerformPeakFiling <- function(mSet, BPPARAM=bpparam()){
     mSet@peakfilling[["FeatureGroupTable"]] <-
       mSet@peakgrouping[[length(mSet@peakgrouping)]];
     
-    if(.on.public.web & !.optimize_switch){
+    if(.on.public.web() & !.optimize_switch){
       save(mSet, file = "mSet.rda");
     }
     
@@ -2655,7 +2655,7 @@ PerformPeakFiling <- function(mSet, BPPARAM=bpparam()){
               "peaks! Consider increasing 'expandMz' and 'expandRt'.");
     }
     
-    if(.on.public.web & !.optimize_switch){
+    if(.on.public.web() & !.optimize_switch){
       save(mSet, file = "mSet.rda");
     }
     
@@ -2714,7 +2714,7 @@ PerformPeakFiling <- function(mSet, BPPARAM=bpparam()){
   mSet@peakfilling$msFeatureData <- newFd;
   mSet@peakfilling$FeatureGroupTable <- fdef;
 
-  if(.on.public.web & !.optimize_switch){
+  if(.on.public.web() & !.optimize_switch){
     save(mSet, file = "mSet.rda");
   }
   
@@ -3036,7 +3036,7 @@ updateRawSpectraParam <- function (Params){
   if(is.null(.optimize_switch)){
     .optimize_switch <- FALSE;
   }
-  if (.on.public.web & !.optimize_switch){
+  if (.on.public.web() & !.optimize_switch){
     MessageOutput(paste("Parameters for",param$Peak_method, "have been successfully parsed!"), "\n", NULL);
   }
   
@@ -4287,7 +4287,7 @@ GaussModel <- selfStart(~ h*exp(-(x-mu)^2/(2*sigma^2)), function(mCall, data, LH
   res[, "sample"] <- sample_idx
   res[, c("mzmin", "mzmax")] <- peakArea[, c("mzmin", "mzmax")]
   ## Load the data
-  if(!.on.public.web){
+  if(!.on.public.web()){
     MessageOutput(paste0("Requesting ", nrow(res), " peaks from ",basename(MSnbase::fileNames(object)), " ... "), "",NULL)
   }
   object <- filterRt(
@@ -4352,11 +4352,11 @@ GaussModel <- selfStart(~ h*exp(-(x-mu)^2/(2*sigma^2)), function(mCall, data, LH
     }
   }
   
-  if(!.on.public.web){
+  if(!.on.public.web()){
     MessageOutput(paste("got ", sum(!is.na(res[, "into"])), "."), "\n", NULL)  
   }
   
-  if(.on.public.web){
+  if(.on.public.web()){
     MessageOutput(paste0("Requesting ", nrow(res), " peaks from ",
                          basename(MSnbase::fileNames(object)), " ... ", "got ", 
                          sum(!is.na(res[, "into"])), ".\n"), "",NULL)
@@ -4557,7 +4557,7 @@ PeakPicking_prep <- function(object){
   object_mslevel_i<-splitByFile(object = object, f = factor(c(seq_along(object@phenoData@data[["sample_name"]]))))
   object_mslevel_o<-bplapply(object_mslevel_i, FUN = function(x){x@assayData}, BPPARAM = MulticoreParam(4))
   
-  if (.on.public.web){
+  if (.on.public.web()){
     
     print_mes <- "Data Spliting Finished ! \nPeak Preparing Begin...";    
     write.table(print_mes,file="metaboanalyst_spec_proc.txt",append = TRUE,row.names = FALSE,col.names = FALSE, quote = FALSE, eol = "\n");
@@ -4589,7 +4589,7 @@ PeakPicking_prep <- function(object){
     #}
   }
   
-  if (.on.public.web){
+  if (.on.public.web()){
     
     print_mes <- "Peak Preparing Done !";    
     write.table(print_mes,file="metaboanalyst_spec_proc.txt",append = TRUE,row.names = FALSE,col.names = FALSE, quote = FALSE, eol = "\n");
@@ -7186,7 +7186,7 @@ lin2 <- function (x1, y1, x2, y2, x)
   } else if (dir.exists("/media/zzggyy/disk/")) {
     path <-
       "/media/zzggyy/disk/MetaboAnalyst/target/MetaboAnalyst-5.18/resources/data/"
-  } else if (.on.public.web) {
+  } else if (.on.public.web()) {
     path <- "../../data/"
   }
   

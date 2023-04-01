@@ -31,15 +31,15 @@ PerformDataInspect <-
            dimension = "3D",
            res = 100) {
     
-    if(.on.public.web){
+    if(.on.public.web()){
       
       fullUserPath <- getwd();
       
       if (datapath == "null" | is.null(datapath)) {
-        if (.on.public.web & dir.exists("upload/QC")) {
+        if (.on.public.web() & dir.exists("upload/QC")) {
           datapath <- "/upload/QC"
           datapath <- paste0(fullUserPath, datapath)
-        } else if (.on.public.web) {
+        } else if (.on.public.web()) {
           datapath <- paste0("/upload/", list.files("upload", recursive = TRUE)[1])
           datapath <- paste0(fullUserPath, datapath)
         } else {
@@ -227,7 +227,7 @@ PerformDataInspect <-
         ".png"
       )
 
-    if(.on.public.web){
+    if(.on.public.web()){
       Cairo::Cairo(
         file = filename,
         unit = "in",
@@ -251,7 +251,7 @@ PerformDataInspect <-
       print(plot(M, aspect = 1, allTicks = FALSE, col.regions = c(cols, cols2)))
     }
     
-    if(.on.public.web){
+    if(.on.public.web()){
       dev.off()
     }
     
@@ -359,7 +359,7 @@ PlotXIC <-
     }
     
     # Load data results
-    if(.on.public.web){
+    if(.on.public.web()){
       load("mSet.rda")
     } else if(is.null(mSet)) {
       stop("mSet is missing!")
@@ -551,7 +551,7 @@ PlotXIC <-
       spanValue <- 0.55
     }
     print(paste0("EIC_", title, "_sample_", dpi, ".", format));
-    if (.on.public.web) {
+    if (.on.public.web()) {
       Cairo::Cairo(
         file = paste0("EIC_", title, "_sample_", dpi, ".", format),
         unit = "in",
@@ -617,7 +617,7 @@ PlotXIC <-
     
     print(s_image);
     
-    if (.on.public.web) {
+    if (.on.public.web()) {
       dev.off()
     }
     ## PLotting sample EIC finished -
@@ -664,7 +664,7 @@ PlotXIC <-
     }
     
     
-    if (.on.public.web) {
+    if (.on.public.web()) {
       Cairo::Cairo(
         file = paste0("EIC_", title, "_group_", dpi, ".", format),
         unit = "in",
@@ -732,7 +732,7 @@ PlotXIC <-
     #require(grid);
     print(g_image); print(pCV,vp=viewport(.3, .76, .24, 0.24));
     
-    if (.on.public.web) {
+    if (.on.public.web()) {
       dev.off()
     }
     ## PLotting group EIC finished --
@@ -769,7 +769,7 @@ PlotSpectraInsensityStistics <-
            dpi = 72,
            width = NA) {
     
-    if(is.null(mSet) & .on.public.web){
+    if(is.null(mSet) & .on.public.web()){
       load("mSet.rda");
     } else if(is.null(mSet)) {
       stop("mSet is missing!")
@@ -810,12 +810,12 @@ PlotSpectraInsensityStistics <-
         }
       )
     
-    if(!.on.public.web){
+    if(!.on.public.web()){
       oldpar <- par(no.readonly = TRUE);
       on.exit(par(oldpar));
     }
 
-    if (.on.public.web) {
+    if (.on.public.web()) {
       Cairo::Cairo(
         file = imgName,
         unit = "in",
@@ -859,7 +859,7 @@ PlotSpectraInsensityStistics <-
     #title(ylab=expression(log[2]~intensity), line=7.5, cex.lab=1.2)
     grid(nx = NA, ny = NULL)
     
-    if (.on.public.web) {
+    if (.on.public.web()) {
       dev.off()
     }
   }
@@ -897,7 +897,7 @@ PlotSpectraPCA <-
       load("mSet.rda")
     }
     
-    if (.on.public.web) {
+    if (.on.public.web()) {
       Cairo::Cairo(
         file = imgName,
         unit = "in",
@@ -954,7 +954,7 @@ PlotSpectraPCA <-
         progress = 65
       );
       
-      if (.on.public.web) {
+      if (.on.public.web()) {
         dev.off()
       }
       
@@ -980,7 +980,7 @@ PlotSpectraPCA <-
     df$group <- sample_idx;
     
     ## Handle to generate json file for PCA3D online
-    if(.on.public.web){
+    if(.on.public.web()){
       ## For score plot
       pca3d <- list();
       pca3d$score$axis <- c(xlabel, ylabel, zlabel);
@@ -1085,7 +1085,7 @@ PlotSpectraPCA <-
 
     print(p)
     
-    if (.on.public.web) {
+    if (.on.public.web()) {
       dev.off()
     }
   }
@@ -1118,7 +1118,7 @@ PlotSpectraRTadj <-
            dpi = 72,
            width = NA) {
     
-    if(is.null(mSet) & .on.public.web){
+    if(is.null(mSet) & .on.public.web()){
       load("mSet.rda")
     } else if(is.null(mSet)) {
       stop("mSet is missing!")
@@ -1162,7 +1162,7 @@ PlotSpectraRTadj <-
       specdata <-  mSet@rawOnDisk;
     }
     
-    if (.on.public.web) {
+    if (.on.public.web()) {
       Cairo::Cairo(
         file = imgName,
         unit = "in",
@@ -1269,7 +1269,7 @@ PlotSpectraRTadj <-
       col = group_colors
     )
     
-    if (.on.public.web) {
+    if (.on.public.web()) {
       dev.off()
     }
   }
@@ -1301,13 +1301,13 @@ PlotSpectraBPIadj <-
            dpi = 72,
            width = NA) {
     
-    if(is.null(mSet) & .on.public.web){
+    if(is.null(mSet) & .on.public.web()){
       load("mSet.rda")
     } else if(is.null(mSet)) {
       stop("mSet is missing!")
     }
     
-    if (.on.public.web) {
+    if (.on.public.web()) {
       Cairo::Cairo(
         file = imgName,
         unit = "in",
@@ -1416,7 +1416,7 @@ PlotSpectraBPIadj <-
       col = group_colors2
     )
     
-    if (.on.public.web) {
+    if (.on.public.web()) {
       dev.off()
     }
 }
@@ -1447,7 +1447,7 @@ plotMSfeature <- function(mSet = NULL,
                           width = NA) {
   
   if(is.null(mSet)){
-    if(.on.public.web){
+    if(.on.public.web()){
       load("mSet.rda")
     } else {
       stop("No mSet Object found !")
@@ -1479,7 +1479,7 @@ plotMSfeature <- function(mSet = NULL,
     title = paste0(round(peakdata[FeatureNM, 1], 4), "mz@", round(peakdata[FeatureNM, 4], 2), "s_", dpi, "_", width)
   }
   
-  if (.on.public.web) {
+  if (.on.public.web()) {
     Cairo::Cairo(
       file = paste0(title, ".", format),
       unit = "in",
@@ -1561,7 +1561,7 @@ plotMSfeature <- function(mSet = NULL,
   
   print(p1)
   
-  if (.on.public.web) {
+  if (.on.public.web()) {
     dev.off()
     return(paste0(title, ".", format))
   }
@@ -1594,7 +1594,7 @@ plotSingleTIC <- function(mSet = NULL,
                           format = "png") {
   
   if(is.null(mSet)){
-    if(.on.public.web){
+    if(.on.public.web()){
       load("mSet.rda");
     } else {
       stop("No mSet found !")
@@ -1610,7 +1610,7 @@ plotSingleTIC <- function(mSet = NULL,
   
   tics <- chromatogram(raw_data_filt, aggregationFun = "sum", MulticoreParam(4));
 
-  if (.on.public.web) {
+  if (.on.public.web()) {
     Cairo::Cairo(
       file = imagename,
       unit = "in",
@@ -1624,7 +1624,7 @@ plotSingleTIC <- function(mSet = NULL,
   
   plot(tics, col = "#0080FF", main = filename);
   
-  if (.on.public.web) {
+  if (.on.public.web()) {
     dev.off()
   }
 }
@@ -1654,13 +1654,13 @@ plotTICs <-function(mSet = NULL,
                    width = NA){
   tics <- NULL;
   #need to extract the plotting part from import function
-  if(is.null(mSet) & !.on.public.web){
+  if(is.null(mSet) & !.on.public.web()){
     load("mSet.rda")
     raw_data_filt <- mSet@rawOnDisk;
-  } else if(!.on.public.web & (is(mSet, "mSet"))) {
+  } else if(!.on.public.web() & (is(mSet, "mSet"))) {
     raw_data_filt <- mSet@rawOnDisk;
     tics <- chromatogram(raw_data_filt, aggregationFun = "sum", MulticoreParam(4))
-  } else if(.on.public.web) {
+  } else if(.on.public.web()) {
     load("raw_data_filt.rda");
     load("tics.rda");
   } else if(is.null(mSet)) {
@@ -1684,7 +1684,7 @@ plotTICs <-function(mSet = NULL,
   }
   
   names(group_colors) <- levels(groupInfo)
-  if (.on.public.web) {
+  if (.on.public.web()) {
     Cairo::Cairo(
       file = imgName,
       unit = "in",
@@ -1704,7 +1704,7 @@ plotTICs <-function(mSet = NULL,
     col = group_colors
   )
   
-  if (.on.public.web) {
+  if (.on.public.web()) {
     dev.off()
   }
 
@@ -1735,13 +1735,13 @@ plotBPIs <-function(mSet = NULL,
                     width = NA){
   bpis <- NULL;
   #need to extract the plotting part from import function
-  if(is.null(mSet) & !.on.public.web){
+  if(is.null(mSet) & !.on.public.web()){
     load("mSet.rda")
     raw_data_filt <- mSet@rawOnDisk;
-  } else if(!.on.public.web & (is(mSet, "mSet"))) {
+  } else if(!.on.public.web() & (is(mSet, "mSet"))) {
     raw_data_filt <- mSet@rawOnDisk;
     bpis <- chromatogram(raw_data_filt, aggregationFun = "max", MulticoreParam(4))
-  } else if(.on.public.web) {
+  } else if(.on.public.web()) {
     load("raw_data_filt.rda");
     load("bpis.rda");
   } else if(is.null(mSet)) {
@@ -1765,7 +1765,7 @@ plotBPIs <-function(mSet = NULL,
   }
   
   names(group_colors) <- levels(groupInfo)
-  if (.on.public.web) {
+  if (.on.public.web()) {
     Cairo::Cairo(
       file = imgName,
       unit = "in",
@@ -1785,7 +1785,7 @@ plotBPIs <-function(mSet = NULL,
     col = group_colors
   )
   
-  if (.on.public.web) {
+  if (.on.public.web()) {
     dev.off()
   }
 }

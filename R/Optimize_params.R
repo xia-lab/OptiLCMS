@@ -94,7 +94,7 @@ PerformParamsOptimization <- function(mSet,
     MessageOutput(paste0("DoE Optimization Starting Now... (",
                          Sys.time(),")"), "\n", NULL)
     
-    if (.on.public.web){
+    if (.on.public.web()){
       ncore <- 2;
     } else if (missing(ncore)){
       ncore <- ceiling(detectCores()*2/3);
@@ -227,7 +227,7 @@ PerformParamsOptimization <- function(mSet,
     marker_record("others_c1");
   }
   
-  if (.on.public.web){
+  if (.on.public.web()){
     MessageOutput(NULL, NULL, 20.00);
     
     if (is(p1,"simpleError")) {
@@ -262,7 +262,7 @@ PerformParamsOptimization <- function(mSet,
   
   best_params <- p1;
   
-  if(.on.public.web) {
+  if(.on.public.web()) {
     save(best_params, file = "best_params.rda");
     return(best_params);
   } else {
@@ -576,7 +576,7 @@ optimizxcms.doe.peakpicking <- function(object = NULL,
         #best_settings$result <- target_value
         history$best_settings <- best_settings
         
-        if(!.on.public.web){
+        if(!.on.public.web()){
           message("best parameter settings:")
           cat(paste(rbind(paste(names(xcms_parameters), sep="", ": "), 
                               paste(xcms_parameters, sep="", "\n")), sep=""))
@@ -726,14 +726,14 @@ ExperimentsCluster_doe <-function(object, object_mslevel,params,
     MessageOutput("If there is some unexpected bugs, please reduce the 'core' as 1.\n")
   }
   
-  if (.on.public.web){
+  if (.on.public.web()){
     nSlaves <- 2;
   }
   
   # Parallel or single core
   if(nSlaves > 1) {
     
-    if (.on.public.web){
+    if (.on.public.web()){
       nstepby <- 5;
       nstep<-ceiling(length(tasks)/nstepby);
       
@@ -791,14 +791,14 @@ ExperimentsCluster_doe <-function(object, object_mslevel,params,
     # Setting progress bar and start the running loop
     pb <- progress_bar$new(format = "DoE Running [:bar] :percent Time left: :eta", total = nstep, clear = TRUE, width= 75)
     
-    if (.on.public.web){
+    if (.on.public.web()){
       print_mes <- paste0("Finished: ");    
       write.table(print_mes,file="metaboanalyst_spec_proc.txt",append = TRUE ,row.names = FALSE,col.names = FALSE, quote = FALSE, eol = "");
     }
     
     for (w in seq_len(nstep)){
       
-      if (.on.public.web){
+      if (.on.public.web()){
         
         count_tmp <- pb$tick();
         totalcount <- formals(count_tmp[["initialize"]])[["total"]];
@@ -932,7 +932,7 @@ Statistic_doe <-function(object, object_mslevel, isotopeIdentification,
     
     mSet_OPT$OptiParams <- xcms_parameters;
     
-    if (.on.public.web){
+    if (.on.public.web()){
       print_mes <- paste0("Model Parsing Done !\n");    
       write.table(print_mes,file="metaboanalyst_spec_proc.txt",append = TRUE, row.names = FALSE,col.names = FALSE, quote = FALSE, eol = "\n");
     } else {

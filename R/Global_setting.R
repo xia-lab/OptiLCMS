@@ -1,15 +1,13 @@
-# Setting .on.public.web (if on.public.web, the version number will be even, 
+# Setting .on.public.web() (if on.public.web, the version number will be even, 
 # local package is odd)
-.on.public.web <- FALSE;
-# .on.public.web <- function() {
-#   if (file.exists("../../css/spectrum.min.css") |
-#       file.exists("/Users/xia/Dropbox/") |
-#       file.exists("/data/glassfish/projects/metaboanalyst")) {
-#     return(TRUE)
-#   } else {
-#     return(FALSE)
-#   }
-# }
+#.on.public.web() <- FALSE;
+.on.public.web <- function() {
+  if (exists("metaboanalyst_env")) {
+    return(TRUE)
+  } else {
+    return(FALSE)
+  }
+}
 
 
 
@@ -123,7 +121,7 @@ MessageOutput <- function(mes = NULL,
                           SuppressWeb = FALSE, 
                           sleep = 0) {
   if (!is.null(mes)) {
-    if (.on.public.web & !SuppressWeb) {
+    if (.on.public.web() & !SuppressWeb) {
       # write down message
       write.table(
         mes,
@@ -146,7 +144,7 @@ MessageOutput <- function(mes = NULL,
   }
   
   # write down progress
-  if (.on.public.web & !is.null(progress)) {
+  if (.on.public.web() & !is.null(progress)) {
     progress <- as.numeric(progress)
     
     write.table(

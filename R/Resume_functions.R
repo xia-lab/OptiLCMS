@@ -13,7 +13,7 @@
 
 InitializaPlan <- function(type = "raw_ms"){
   
-  if(.on.public.web){
+  if(.on.public.web()){
     tmp_cache_path <- getwd();
   }else {
     tmp_cache_path <- tempdir();
@@ -32,7 +32,7 @@ InitializaPlan <- function(type = "raw_ms"){
   
   temp.path <- paste0(tmp_cache_path, "/specTemp/");
   
-  if(dir.exists(temp.path) & !.on.public.web){
+  if(dir.exists(temp.path) & !.on.public.web()){
     unlink(temp.path, recursive = TRUE, force = TRUE);
   }
   
@@ -381,7 +381,7 @@ ExecutePlan <- function(plan=NULL){
     mSetInfo <- tryCatch(perform.plan(new_command_set), error = function(e){e});
     
     if (is(mSetInfo,"simpleError")){
-      if(.on.public.web){
+      if(.on.public.web()){
         print_mes <- paste0("<font color=\"red\">","\nERROR:",mSetInfo$message,"</font>");
         write.table(print_mes,file="metaboanalyst_spec_proc.txt",append = TRUE,row.names = FALSE,col.names = FALSE, quote = FALSE, eol = "\n");
       } else {
@@ -459,7 +459,7 @@ recording_identifier <- function(plan) {
 #' @noRd
 FilesInclusion_identifier <- function(plan) {
   
-  if(.on.public.web){
+  if(.on.public.web()){
     
     envOld <- mSet <- NULL;
     
@@ -719,7 +719,7 @@ controller.modifier <- function(new_command_set, last_command_set, plan){
     }
     
     # web version special case to identify the rmConts has been changed or not
-    if(.on.public.web){
+    if(.on.public.web()){
       # load params.rda and params_last.rda and do a comparison
       peakParams <- NULL;
       load("params_last.rda");
@@ -888,7 +888,7 @@ controller.modifier <- function(new_command_set, last_command_set, plan){
     plan@running.controller@peak_profiling[4] <- TRUE;
   }
 
-  if(.on.public.web){
+  if(.on.public.web()){
     
     # load params.rda and params_last.rda and do a comparison
     peakParams <- NULL;
@@ -979,7 +979,7 @@ controller.modifier <- function(new_command_set, last_command_set, plan){
   
   ChangedArugsArray <- c(ChangedArugsArray, NewArugsArray, RmArugsArray);
   
-  if(.on.public.web){
+  if(.on.public.web()){
     # load params.rda and envir.rds and do a comparison
     # TODO: need to configure with the web and profiling
     

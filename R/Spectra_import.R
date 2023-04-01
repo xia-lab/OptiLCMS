@@ -87,13 +87,13 @@ ImportRawMSData <-
            running.controller = NULL) {
     
     #Initialize a new mSet if missing
-    if(missing(mSet) & !.on.public.web){
+    if(missing(mSet) & !.on.public.web()){
       message("No initialized mSet found, will initialize one automatically !")
       mSet <- new("mSet")
-    } else if(is.null(mSet) & !.on.public.web){
+    } else if(is.null(mSet) & !.on.public.web()){
       message("Not a real initialized mSet found, will re-initialize one automatically !")
       mSet <- new("mSet")
-    } else if(.on.public.web & file.exists("mSet.rda")) {
+    } else if(.on.public.web() & file.exists("mSet.rda")) {
       load("mSet.rda")
     } else {
       message("Something wierd happened, don't worry. We will re-initialize one automatically !")
@@ -124,7 +124,7 @@ ImportRawMSData <-
     start.time <- Sys.time()
     
     ## Deal with the different file path cases
-    if(.on.public.web && !dir.exists(path)){
+    if(.on.public.web() && !dir.exists(path)){
       path <- "/home/glassfish/projects/MetaboDemoRawData/upload/"
     }
     
@@ -202,7 +202,7 @@ ImportRawMSData <-
         sclass <- substr(sclass, i, max(nchar(sclass)))
       }
       
-      if (.on.public.web &
+      if (.on.public.web() &
           unique(sclass)[1] == "upload" &
           length(unique(sclass)) == 1) {
         sclass <- rep("Unknown", length(sclass))
@@ -363,13 +363,13 @@ ImportRawMSData <-
                 plotSettings$format,
                 sep = "")
         
-        if(.on.public.web){
+        if(.on.public.web()){
           save(raw_data_filt, file = "raw_data_filt.rda");
           save(tics, file = "tics.rda");
           save(bpis, file = "bpis.rda");
         }
         
-        if (.on.public.web) {
+        if (.on.public.web()) {
           Cairo::Cairo(
             file = bpis_name,
             unit = "in",
@@ -389,7 +389,7 @@ ImportRawMSData <-
           col = group_colors
         )
         
-        if (.on.public.web) {
+        if (.on.public.web()) {
           dev.off()
           
           Cairo::Cairo(
@@ -411,7 +411,7 @@ ImportRawMSData <-
           col = group_colors
         )
         
-        if (.on.public.web) {
+        if (.on.public.web()) {
           dev.off()
         }
         
@@ -451,7 +451,7 @@ ImportRawMSData <-
     
     .SwapEnv$.optimize_switch <- FALSE;
     
-    if(.on.public.web){
+    if(.on.public.web()){
       save(mSet, file = "mSet.rda");
     }
     
@@ -562,7 +562,7 @@ read.InMemMSd.data <- function(files,
       if (length(spidx) == 0)
         stop("No MS1 spectra in file: ",basename(f))
       
-      if (.on.public.web){   
+      if (.on.public.web()){   
         print_mes <- paste0("Importing ",basename(f),":");    
         write.table(print_mes,file="metaboanalyst_spec_proc.txt",append = TRUE,row.names = FALSE,col.names = FALSE, quote = FALSE, eol = " ");
       } else {
@@ -577,7 +577,7 @@ read.InMemMSd.data <- function(files,
 
         for (i in seq_along(spidx)){
           
-          if (!.on.public.web){   
+          if (!.on.public.web()){   
             pb$tick();
           } else {  
             if (round(i/length(spidx),digits = 4)*100 - k_count > -0.2){
@@ -624,7 +624,7 @@ read.InMemMSd.data <- function(files,
      
       for (i in seq_along(spidx)) {
         
-        if (!.on.public.web){   
+        if (!.on.public.web()){   
           pb$tick();
         } else {  
           if (round(i/length(spidx),digits = 4)*100 - k_count > -0.2){
@@ -728,7 +728,7 @@ read.InMemMSd.data <- function(files,
     mzR::close(msdata)
     rm(msdata);
     
-    if (.on.public.web){ 
+    if (.on.public.web()){ 
       print_mes <- paste0("Done!");    
       write.table(print_mes,file="metaboanalyst_spec_proc.txt",append = TRUE,row.names = FALSE,col.names = FALSE, quote = FALSE, eol = "\n");
       
@@ -849,7 +849,7 @@ read.OnDiskMS.data <- function(files,
   
   for (f in files) {
     
-    if (.on.public.web){
+    if (.on.public.web()){
       
       print_mes <- paste(basename(f),"import done!");    
       write.table(print_mes,file="metaboanalyst_spec_proc.txt",append = TRUE,row.names = FALSE,col.names = FALSE, quote = FALSE, eol = "\n");
@@ -1000,7 +1000,7 @@ read.OnDiskMS.data <- function(files,
     stop(c("None of your spectra contains MS signal at MS level: ", msLevel., "! Please check your data !"))
   }
   
-  if (.on.public.web){
+  if (.on.public.web()){
     write.table("Raw file initialized Successfully!",file="metaboanalyst_spec_proc.txt",append = TRUE,row.names = FALSE,col.names = FALSE, quote = FALSE, eol = "\n");
   }
   
@@ -1085,7 +1085,7 @@ UpdateRawfiles <- function(mSet = NULL, filesIncluded = NULL){
     mSet <- new("mSet");
   }
   
-  if(.on.public.web){
+  if(.on.public.web()){
     
     if(!dir.exists("upload/")){
       filesList <- list.files("/home/glassfish/projects/MetaboDemoRawData/upload/", recursive = TRUE, full.names = TRUE);
@@ -1143,7 +1143,7 @@ UpdateRawfiles <- function(mSet = NULL, filesIncluded = NULL){
   
   mSet@rawfiles <- filesIncluded;
   
-  if(.on.public.web){
+  if(.on.public.web()){
     save(mSet, file = "mSet.rda");
   }
   
@@ -1296,7 +1296,7 @@ Path2Files <- function(path, centroid = TRUE){
     } else if(file.exists(Pathname)) {
       SingleFile <- TRUE;
     } else {
-      if(.on.public.web){
+      if(.on.public.web()){
         SingleFolder <- TRUE;
         Pathname <- "/home/glassfish/projects/MetaboDemoRawData/upload"
       } else {
