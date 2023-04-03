@@ -11,3 +11,4 @@ OptiLCMS.Rproj
 src/*.so
 src/*.o
 NEWS.md
+*.dll
