@@ -46,7 +46,8 @@ SetPeakParam(
   corr_eic_th,
   mz_abs_add,
   adducts,
-  rmConts
+  rmConts,
+  BlankSub
 )
 }
 \arguments{
@@ -140,6 +141,8 @@ need to change.}
 \item{adducts}{PeakAnnotation parameters, (Only effective for website pipeline, for local package, OptiLCMS, please use SetAnnotationParam to define the annotation parameters).}
 
 \item{rmConts}{Logical, specify whether to exclude/remove the potential contaminations (the ones with RT range over 50\% of the whole spetra).}
+
+\item{BlankSub}{Logical, to substract blanks samples or not}
 }
 \value{
 will return a peak processing parameters' set
