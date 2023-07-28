@@ -1,14 +1,25 @@
+CXX_STD = CXX14
+
 MQOBJECTS=massifquant/xcms_massifquant.o massifquant/TrMgr.o massifquant/Tracker.o massifquant/SegProc.o massifquant/DataKeeper.o massifquant/OpOverload.o
 
 OBIOBJECTS=obiwarp/mat.o obiwarp/vec.o obiwarp/xcms_dynprog.o obiwarp/xcms_lmat.o xcms_obiwarp.o
 
-XCMSOBJECTS=mzROI.o util.o xcms_binners.o
+XCMSOBJECTS=mzROI.o util.o xcms_binners.o fastMatch.o init.o
 
-INITOBJECT=init.o
+SQLITOBJECTS = sqlite/sqlite3.o
 
-OBJECTS= $(MQOBJECTS) $(OBIOBJECTS) $(XCMSOBJECTS) $(BATCHOBJECTS) $(INITOBJECT)
+PENSEOBJECTS = pense/robust_scale_location.o pense/rho.o pense/rcpp_parse_config.o pense/r_utilities.o pense/r_robust_utils.o pense/r_pense_regression.o pense/r_mesten_regression.o pense/r_interface_utils.o pense/r_interface.o pense/r_enpy.o pense/r_en_regression.o pense/enpy_psc.o pense/enpy_initest.o
 
-all: clean $(SHLIB)
+OPTMSOBJECTS = utilities.o sqlite_utilities.o optim_ultra.o lowess.o hclust_ultrafast.o dda_utilities.o spectrumConsensus.o SWATH_DIA_Deconv.o RcppExports.o PerformDIAProcess.o PerformDDAProcess.o DetectPeaks.o DecoSpectra.o linear_regression.o spectra_searching.o export_interfece.o
 
-clean:
-	rm -f $(OBJECTS)
+ENTROBJECTS = entropy.o CleanSpectrum.o SpectralEntropy.o
+
+OBJECTS= $(MQOBJECTS) $(OBIOBJECTS) $(XCMSOBJECTS) $(BATCHOBJECTS) $(SQLITOBJECTS) $(PENSEOBJECTS) $(OPTMSOBJECTS) $(ENTROBJECTS)
+
+PKG_CXXFLAGS= -fstrict-aliasing -fopenmp
+PKG_LIBS = $(LAPACK_LIBS) $(BLAS_LIBS) $(FLIBS) -fopenmp
+
+.PHONY: all
+
+all: $(SHLIB)
+
