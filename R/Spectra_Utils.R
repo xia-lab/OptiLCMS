@@ -257,7 +257,7 @@ PeakPicking_centWave_slave <- function(x, param){
     withRestarts(
       tryCatch({
         tmp <- capture.output(roiList <-
-                                findmzROI (mz, int, scanindex, scanrange, scantime, param,
+                                findmzROIR (mz, int, scanindex, scanrange, scantime, param,
                                            minCentroids))
       },
       error = function(e) {
@@ -297,13 +297,11 @@ PeakPicking_centWave_slave <- function(x, param){
   } else {
     message("Detecting peaks in ", length(roiList),
             " regions of interest of ", filenamevalue, " ...", appendLF = FALSE)
-    
   }
   
   roiScales = NULL;
  
   for (f in seq_len(lf)) {
-    
     feat <- roiList[[f]]
     N <- feat$scmax - feat$scmin + 1
     peaks <- peakinfo <- NULL
@@ -314,7 +312,7 @@ PeakPicking_centWave_slave <- function(x, param){
     sr <- c(max(scanrange[1], scrange[1] - max(noiserange)),
             min(scanrange[2], scrange[2] + max(noiserange)))
     
-    eic <- getEIC (mz, int, scanindex, mzrange, sr)
+    eic <- getEICR (mz, int, scanindex, mzrange, sr)
     
     ## eic <- rawEIC(object,mzrange=mzrange,scanrange=sr)
     d <- eic$intensity;
@@ -325,7 +323,7 @@ PeakPicking_centWave_slave <- function(x, param){
     mzROI.EIC <- list(scan=eic$scan[idxs], intensity=eic$intensity[idxs]);
     ## mzROI.EIC <- rawEIC(object,mzrange=mzrange,scanrange=scrange)
     
-    omz <- getMZ (mz, int, scanindex, mzrange, scrange, scantime);
+    omz <- getMZR(mz, int, scanindex, mzrange, scrange, scantime);
     
     ## omz <- rawMZ(object,mzrange=mzrange,scanrange=scrange)
     if (all(omz == 0)) {
@@ -350,7 +348,7 @@ PeakPicking_centWave_slave <- function(x, param){
       ## in case of very long mass trace use full scan range
       ## for baseline detection
       
-      noised <- getEIC(mz, int, scanindex, mzrange, scanrange)$intensity
+      noised <- getEICR(mz, int, scanindex, mzrange, scanrange)$intensity
       
       ## noised <- rawEIC(object,mzrange=mzrange,scanrange=scanrange)$intensity
     } else {
@@ -368,12 +366,12 @@ PeakPicking_centWave_slave <- function(x, param){
     firstBaselineCheck = TRUE
     ## any continuous data above 1st baseline ?
     if (firstBaselineCheck &
-        !continuousPtsAboveThreshold(fd, threshold = noise,
+        !continuousPtsAboveThresholdR(fd, threshold = noise,
                                      num = minPtsAboveBaseLine)){
       # save(firstBaselineCheck, file = paste0("sss_",Sys.time(),".rda"))
       next
     }
-      
+    
     ## 2nd baseline estimate using not-peak-range
     lnoise <- getLocalNoiseEstimate(d, td, ftd, noiserange, Nscantime,
                                     threshold = noise,
@@ -506,7 +504,6 @@ PeakPicking_centWave_slave <- function(x, param){
         }
       }  ##for
     } ## if
-    
     ##  postprocessing
     if (!is.null(peaks)) {
       colnames(peaks) <- c(basenames, verbosenames)
@@ -515,7 +512,7 @@ PeakPicking_centWave_slave <- function(x, param){
       for (p in seq_len(dim(peaks)[1])) {
         ## find minima (peak boundaries), assign rt and intensity values
         if (param$integrate == 1) {
-          lm <- descendMin(wCoefs[, peakinfo[p, "scaleNr"]],
+          lm <- descendMinR(wCoefs[, peakinfo[p, "scaleNr"]],
                            istart = peakinfo[p, "scpos"])
           gap <- all(d[lm[1]:lm[2]] == 0) # looks like we got stuck in a gap right in the middle of the peak
           if ((lm[1] == lm[2]) || gap)   # fall-back
@@ -620,7 +617,7 @@ PeakPicking_centWave_slave <- function(x, param){
   
   uorder <- order(p[, "into"], decreasing = TRUE)
   pm <- as.matrix(p[,c("mzmin", "mzmax", "rtmin", "rtmax"), drop = FALSE])
-  uindex <- rectUnique(pm, uorder, param$mzdiff, ydiff = -0.00001) ## allow adjacent peaks
+  uindex <- rectUniqueR(pm, uorder, param$mzdiff, ydiff = -0.00001) ## allow adjacent peaks
   pr <- p[uindex, , drop = FALSE]
   
   
@@ -834,7 +831,7 @@ PeakPicking_Massifquant_slave <- function(x, param){
     uorder <- order(p[, "into"], decreasing = TRUE)
     pm <- as.matrix(p[, c("mzmin", "mzmax", "rtmin", "rtmax"),
                       drop = FALSE])
-    uindex <- rectUnique(pm, uorder, mzdiff, ydiff = -0.00001) ## allow adjacent peaks;
+    uindex <- rectUniqueR(pm, uorder, mzdiff, ydiff = -0.00001) ## allow adjacent peaks;
     featlist <- p[uindex, , drop = FALSE]
     #message(" ", dim(featlist)[1]," Peaks.");
     
@@ -914,7 +911,7 @@ PeakPicking_MatchedFilter_slave <- function(x,param){
   
   
   ## 2. Binning the data.
-  ## Create and translate settings for binYonX
+  ## Create and translate settings for binYonXR
   
   toIdx <- cumsum(valsPerSpect)
   fromIdx <- c(1L, toIdx[-length(toIdx)] + 1L)
@@ -925,10 +922,10 @@ PeakPicking_MatchedFilter_slave <- function(x,param){
   ## binSize <- (binToX - binFromX) / (length(mass) - 1)
   ## brks <- seq(binFromX - binSize/2, binToX + binSize/2, by = binSize)
   
-  brks <- breaks_on_nBins(fromX = binFromX, toX = binToX,
+  brks <- breaks_on_nBinsR(fromX = binFromX, toX = binToX,
                           nBins = length(mass), shiftByHalfBinSize = TRUE)
   
-  binRes <- binYonX(mz, int,
+  binRes <- binYonXR(mz, int,
                     breaks = brks,
                     fromIdx = fromIdx,
                     toIdx = toIdx,
@@ -983,7 +980,7 @@ PeakPicking_MatchedFilter_slave <- function(x,param){
   ## That's looping through the masses, i.e. rows of the profile matrix.
   for (i in seq(length = length(mass)-steps+1)) {
     ymat <- buf[bufidx[i:(i+steps-1)], , drop = FALSE]
-    ysums <- colMax(ymat)
+    ysums <- colMaxR(ymat)
     yfilt <- filtfft(ysums, filt)
     gmax <- max(yfilt)
     for (j in seq(length = max)) {
@@ -992,7 +989,7 @@ PeakPicking_MatchedFilter_slave <- function(x,param){
       ##noise <- mean(yfilt[yfilt >= 0])
       sn <- yfilt[maxy]/noise
       if (yfilt[maxy] > 0 && yfilt[maxy] > snthresh*noise && ysums[maxy] > 0) {
-        peakrange <- descendZero(yfilt, maxy)
+        peakrange <- DescendZeroR(yfilt, maxy)
         intmat <- ymat[, peakrange[1]:peakrange[2], drop = FALSE]
         mzmat <- matrix(mz[bufMax[bufidx[i:(i+steps-1)],
                                   peakrange[1]:peakrange[2]]],
@@ -1049,7 +1046,7 @@ PeakPicking_MatchedFilter_slave <- function(x,param){
   ## Select for each unique mzmin, mzmax, rtmin, rtmax the largest peak
   ## and report that.
   uorder <- order(rmat[, "into"], decreasing = TRUE)
-  uindex <- rectUnique(rmat[, c("mzmin", "mzmax", "rtmin", "rtmax"),
+  uindex <- rectUniqueR(rmat[, c("mzmin", "mzmax", "rtmin", "rtmax"),
                             drop = FALSE],
                        uorder, mzdiff)
   rmat <- rmat[uindex,,drop = FALSE]
@@ -1162,7 +1159,7 @@ PerformPeakGrouping<-function(mSet){
   ## 3. Define the mass slices and the index in the peaks matrix with an mz-------
   mass <- seq(peaks[1, "mz"], peaks[nrow(peaks), "mz"] + param$binSize,
               by = param$binSize / 2)
-  masspos <- findEqualGreaterM(peaks[, "mz"], mass)
+  masspos <- findEqualGreaterMR(peaks[, "mz"], mass)
   
   densFrom <- rtRange[1] - 3 * param$bw
   densTo <- rtRange[2] + 3 * param$bw
@@ -1207,7 +1204,7 @@ PerformPeakGrouping<-function(mSet){
                     drop = FALSE]))
     uorder <- order(-numsamp, res[, "npeaks"])
     
-    uindex <- rectUnique(
+    uindex <- rectUniqueR(
       as.matrix(res[, c("mzmin", "mzmax", "rtmin", "rtmax"),
                     drop = FALSE]), uorder)
     res <- res[uindex, , drop = FALSE]
@@ -1248,7 +1245,7 @@ Densitygrouping_slave <- function(x, bw, densFrom, densTo, densN, sampleGroups,
   res_idx <- list()
   while (deny[maxy <- which.max(deny)] > maxden / 20 && nrow(res_mat) <
          maxFeatures) {
-    grange <- descendMin(deny, maxy)
+    grange <- descendMinR(deny, maxy)
     deny[grange[1]:grange[2]] <- 0
     gidx <- which(x[,"rt"] >= den$x[grange[1]] &
                     x[,"rt"] <= den$x[grange[2]])
@@ -2202,7 +2199,7 @@ mSet.obiwarp <- function(mSet, object, param) { ## Do not use the params defined
     
 
     ## Done with preparatory stuff - now I can perform the alignment.
-    rtadj <- R_set_obiwarp (valscantime1, scantime1, mzvals, mzs, cntrPr, valscantime2, scantime2, curP, parms);
+    rtadj <- R_set_obiwarpR(valscantime1, scantime1, mzvals, mzs, cntrPr, valscantime2, scantime2, curP, parms);
 
 
     if (.on.public.web() & !.optimize_switch){
@@ -3207,7 +3204,7 @@ getLocalNoiseEstimate <- function(d, td, ftd, noiserange, Nscantime, threshold, 
     ## noiserange[2] is full d-range
     drange <- which(td %in% ftd)
     n1 <- d[-drange] ## region outside the detected ROI (wide)
-    n1.cp <- continuousPtsAboveThresholdIdx(n1, threshold=threshold,num=num) ## continousPtsAboveThreshold (probably peak) are subtracted from data for local noise estimation
+    n1.cp <- continuousPtsAboveThresholdIdxR(n1, threshold=threshold,num=num) ## continousPtsAboveThreshold (probably peak) are subtracted from data for local noise estimation
     n1 <- n1[!n1.cp]
     if (length(n1) > 1)  {
       baseline1 <- mean(n1)
@@ -3220,7 +3217,7 @@ getLocalNoiseEstimate <- function(d, td, ftd, noiserange, Nscantime, threshold, 
     d2 <- drange[length(drange)]
     nrange2 <- c(max(1,d1 - noiserange[1]) : d1, d2 : min(length(d),d2 + noiserange[1]))
     n2 <- d[nrange2] ## region outside the detected ROI (narrow)
-    n2.cp <- continuousPtsAboveThresholdIdx(n2, threshold=threshold,num=num) ## continousPtsAboveThreshold (probably peak) are subtracted from data for local noise estimation
+    n2.cp <- continuousPtsAboveThresholdIdxR(n2, threshold=threshold,num=num) ## continousPtsAboveThreshold (probably peak) are subtracted from data for local noise estimation
     n2 <- n2[!n2.cp]
     if (length(n2) > 1)  {
       baseline2 <- mean(n2)
@@ -5114,7 +5111,7 @@ addFragments <- function(hypothese, rules, mz){
       indexFrag <- which(fragments[, "parent"] == ruleID)
       
       while(length(massID) > 0){
-        result <- fastMatch(sortMZ[seq_len(orderMZ[massID[1],2]),1], mz[massID[1]] + 
+        result <- fastMatchR(sortMZ[seq_len(orderMZ[massID[1],2]),1], mz[massID[1]] + 
                               fragments[indexFrag, "massdiff"], tol=0.05)
         invisible(sapply(seq_len(orderMZ[massID[1],2]), function(x){
           if(!is.null(result[[x]])){
@@ -5248,7 +5245,7 @@ getAllPeakEICs <- function(mSet, index=NULL){
   }
   invisible(list(scantimes=scantimes,EIC=EIC)); 
 }
-fastMatch <- function(x,y,tol=0.001, symmetric=FALSE) {
+fastMatchR <- function(x,y,tol=0.001, symmetric=FALSE) {
   
   if (any(is.na(y)))
     stop("NA's are not allowed in y !\n")
@@ -5268,7 +5265,7 @@ fastMatch <- function(x,y,tol=0.001, symmetric=FALSE) {
   if (!is.integer(yidx)) 
     yidx <- as.integer(yidx)  
   
-  fm <- .Call("fastMatch", xs, ys, xidx, yidx, as.integer(length(x)), as.double(tol) , PACKAGE ='OptiLCMS' ) 
+  fm <- .Call("fastMatch", xs, ys, xidx, yidx, as.integer(length(x)), as.double(tol) , PACKAGE ='OptiLCMS') 
   fm2 <- vector("list", length=length(fm))
   #stop("!")
   if (symmetric){  
@@ -7003,7 +7000,7 @@ profMat <- function(object,method = "bin",step = 0.1,baselevel = NULL,
   shiftBy <- TRUE
   binFromX <- min(mass)
   binToX <- max(mass)
-  brks <- breaks_on_nBins(fromX = binFromX, toX = binToX,
+  brks <- breaks_on_nBinsR(fromX = binFromX, toX = binToX,
                           nBins = mlength, shiftByHalfBinSize = TRUE)
   
   ## for profIntLinM we have to use the old code.
@@ -7017,7 +7014,7 @@ profMat <- function(object,method = "bin",step = 0.1,baselevel = NULL,
                                         TRUE))
   } else {
     ## Binning the data.
-    binRes <- binYonX(mz, int,
+    binRes <- binYonXR(mz, int,
                       breaks = brks,
                       fromIdx = fromIdx,
                       toIdx = toIdx,

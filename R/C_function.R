@@ -7,7 +7,7 @@
 #'
 #' @docType package
 #' @name OptiLCMS
-#' @useDynLib OptiLCMS, .registration=TRUE, .fixes = "C_"
+#' @useDynLib OptiLCMS, .registration=TRUE
 NULL
 #> NULL
 
@@ -15,67 +15,45 @@ NULL
 
 ######## =-------- Call C by .C -------= ########
 
-#' continuousPtsAboveThreshold
+#' continuousPtsAboveThresholdR
 #' @noRd
 #' @references Smith, C.A. et al. 2006. {Analytical Chemistry}, 78, 779-787
-continuousPtsAboveThreshold <-
+continuousPtsAboveThresholdR <-
   function(y, threshold, num, istart = 1) {
-    if (!is.double(y))
+    if (!is.double(y)){
       y <- as.double(y)
+    }
 
-      if (.C(
-        C_continuousPtsAboveThreshold,
-        y,
-        as.integer(istart - 1),
-        length(y),
-        threshold = as.double(threshold),
-        num = as.integer(num),
-        n = integer(1)
-      )$n > 0)
-        TRUE
-      else
-        FALSE
+    n <- continuousPtsAboveThreshold(y, as.integer(istart - 1), 
+                                     length(y), 
+                                     threshold = as.double(threshold), 
+                                     num = as.integer(num));
+    if (n > 0) {
+      return(TRUE)
+    } else {
+      return(FALSE)
+    }
+}
 
-  }
-
-#' continuousPtsAboveThresholdIdx
+#' continuousPtsAboveThresholdIdxR
 #' @noRd
 #' @references Smith, C.A. et al. 2006. {Analytical Chemistry}, 78, 779-787
-continuousPtsAboveThresholdIdx <-
+continuousPtsAboveThresholdIdxR <-
   function(y, threshold, num, istart = 1) {
-    if (!is.double(y))
+    if (!is.double(y)){
       y <- as.double(y)
+    }
+    
+    as.logical(continuousPtsAboveThresholdIdx(y, as.integer(istart - 1), length(y), threshold = as.double(threshold), num = as.integer(num)))
+}
 
-      as.logical(
-        .C(
-          C_continuousPtsAboveThresholdIdx,
-          y,
-          as.integer(istart - 1),
-          length(y),
-          threshold = as.double(threshold),
-          num = as.integer(num),
-          n = integer(length(y))
-        )$n
-      )
-      
-  }
-
-#' descendMin
+#' descendMinR
 #' @noRd
 #' @references Smith, C.A. et al. 2006. {Analytical Chemistry}, 78, 779-787
-descendMin <- function(y, istart = which.max(y)) {
+descendMinR <- function(y, istart = which.max(y)) {
   if (!is.double(y))
     y <- as.double(y)
-
-    unlist(.C(
-      C_DescendMin,
-      y,
-      length(y),
-      as.integer(istart - 1),
-      ilower = integer(1),
-      iupper = integer(1)
-    )[4:5]) + 1
-
+  DescendMin(y, length(y), as.integer(istart - 1))+1
 }
 
 #' which.colMax
@@ -93,13 +71,7 @@ which.colMax <- function (x, na.rm = FALSE, dims = 1) {
   if (!is.double(x))
     x <- as.double(x)
 
-    z <- .C(C_WhichColMax,
-            x,
-            as.integer(n),
-            as.integer(prod(dn)),
-            integer(prod(dn)),
-            PACKAGE = "OptiLCMS")[[4]]
-
+  z <- WhichColMax(x, as.integer(n), as.integer(prod(dn)))
   if (length(dn) > 1) {
     dim(z) <- dn
     dimnames(z) <- dimnames(x)[-(seq_len(dims))]
@@ -109,31 +81,19 @@ which.colMax <- function (x, na.rm = FALSE, dims = 1) {
   z
 }
 
-#' descendZero
+
+#' DescendZeroR
 #' @noRd
 #' @references Smith, C.A. et al. 2006. {Analytical Chemistry}, 78, 779-787
-descendZero <- function(y, istart = which.max(y)) {
-  if (!is.double(y))
-    y <- as.double(y)
-
-    unlist(
-      .C(
-        C_DescendZero,
-        y,
-        length(y),
-        as.integer(istart - 1),
-        ilower = integer(1),
-        iupper = integer(1),
-        PACKAGE = "OptiLCMS"
-      )[4:5]
-    ) + 1
-
+DescendZeroR <- function(y, istart = which.max(y)){
+  if (!is.double(y)) y <- as.double(y)
+  DescendZero( y, length(y), as.integer(istart - 1))+1
 }
 
-#' colMax
+#' colMaxR
 #' @noRd
 #' @references Smith, C.A. et al. 2006. {Analytical Chemistry}, 78, 779-787
-colMax <- function (x, na.rm = FALSE, dims = 1) {
+colMaxR <- function (x, na.rm = FALSE, dims = 1) {
   if (is.data.frame(x))
     x <- as.matrix(x)
   if (!is.array(x) || length(dn <- dim(x)) < 2)
@@ -145,13 +105,8 @@ colMax <- function (x, na.rm = FALSE, dims = 1) {
   if (!is.double(x))
     x <- as.double(x)
 
-    z <- .C(C_ColMax,
-            x,
-            as.integer(n),
-            as.integer(prod(dn)),
-            double(prod(dn)),
-            PACKAGE = "OptiLCMS")[[4]]
-
+  z <- ColMax(x, as.integer(n), as.integer(prod(dn)))
+  
   if (length(dn) > 1) {
     dim(z) <- dn
     dimnames(z) <- dimnames(x)[-(seq_len(dims))]
@@ -161,10 +116,10 @@ colMax <- function (x, na.rm = FALSE, dims = 1) {
   z
 }
 
-#' rectUnique
+#' rectUniqueR
 #' @noRd
 #' @references Smith, C.A. et al. 2006. {Analytical Chemistry}, 78, 779-787
-rectUnique <-
+rectUniqueR <-
   function(m,
            order = seq(length = nrow(m)),
            xdiff = 0,
@@ -174,43 +129,26 @@ rectUnique <-
     if (!is.double(m))
       m <- as.double(m)
 
-      .C(
-        C_RectUnique,
-        m,
-        as.integer(order - 1),
-        nr,
-        nc,
-        as.double(xdiff),
-        as.double(ydiff),
-        logical(nrow(m))
-      )[[7]]
+    RectUnique(m, as.integer(order - 1), nr, nc, as.double(xdiff), as.double(ydiff)) == 1
+  }
 
-}
-
-#' findEqualGreaterM
+#' findEqualGreaterMR
 #' @noRd
 #' @references Smith, C.A. et al. 2006. {Analytical Chemistry}, 78, 779-787
-findEqualGreaterM <- function(x, values) {
+findEqualGreaterMR <- function(x, values) {
   if (!is.double(x))
     x <- as.double(x)
   if (!is.double(values))
     values <- as.double(values)
-
-    .C(C_FindEqualGreaterM,
-       x,
-       length(x),
-       values,
-       length(values),
-       index = integer(length(values)))$index + 1
-
+  FindEqualGreaterM(x, length(x), values, length(values)) + 1;
 }
 
 
 ######## = ------- Call C by .Call -----= #########
-#' R_set_obiwarp
+#' R_set_obiwarpR
 #' @noRd
 #' @references Smith, C.A. et al. 2006. {Analytical Chemistry}, 78, 779-787
-R_set_obiwarp <-
+R_set_obiwarpR <-
   function(valscantime1,
            scantime1,
            mzvals,
@@ -223,7 +161,7 @@ R_set_obiwarp <-
 
       rtadj <-
         .Call(
-          C_R_set_obiwarp,
+          R_set_obiwarp,
           valscantime1,
           scantime1,
           mzvals,
@@ -291,7 +229,7 @@ getEIC4Peaks <-
       massrange <- c(peaks[p, "mzmin"], peaks[p, "mzmax"])
 
         eic <- .Call(
-          C_getEIC,
+          getEIC,
           mset$env$mz,
           mset$env$intensity,
           as.integer(mset$scanindex),
@@ -308,10 +246,10 @@ getEIC4Peaks <-
     eics
   }
 
-#' breaks_on_nBins
+#' breaks_on_nBinsR
 #' @noRd
 #' @references Smith, C.A. et al. 2006. {Analytical Chemistry}, 78, 779-787
-breaks_on_nBins <-
+breaks_on_nBinsR <-
   function(fromX, toX, nBins, shiftByHalfBinSize = FALSE) {
     if (missing(fromX) | missing(toX) | missing(nBins))
       stop("'fromX', 'toX' and 'nBins' are required!")
@@ -327,7 +265,7 @@ breaks_on_nBins <-
       shiftIt <- 1L
     }
     
-      res <- .Call(C_breaks_on_nBins, fromX, toX, nBins, shiftIt,
+      res <- .Call(breaks_on_nBins, fromX, toX, nBins, shiftIt,
                    PACKAGE = "OptiLCMS")
     
     return(res)
@@ -354,7 +292,7 @@ imputeLinInterpol <-
       noInter <- 0L
       if (noInterpolAtEnds)
         noInter <- 1L
-        res <- .Call(C_impute_with_linear_interpolation,
+        res <- .Call(impute_with_linear_interpolation,
                      x,
                      noInter,
                      PACKAGE = "OptiLCMS")
@@ -370,7 +308,7 @@ imputeLinInterpol <-
       if (!is.integer(distance))
         distance <- as.integer(distance)
 
-        res <- .Call(C_impute_with_linear_interpolation_base,
+        res <- .Call(impute_with_linear_interpolation_base,
                      x,
                      baseValue,
                      distance,
@@ -380,10 +318,10 @@ imputeLinInterpol <-
     }
   }
 
-#' binYonX
+#' binYonXR
 #' @noRd
 #' @references Smith, C.A. et al. 2006. {Analytical Chemistry}, 78, 779-787
-binYonX <- function(x,
+binYonXR <- function(x,
                     y,
                     breaks,
                     nBins,
@@ -479,7 +417,7 @@ binYonX <- function(x,
     getX <- 1L
   if (length(toIdx) > 1) {
       .Call(
-        C_binYonX_multi,
+        binYonX_multi,
         x,
         y,
         breaks,
@@ -500,7 +438,7 @@ binYonX <- function(x,
   } else {
 
       .Call(
-        C_binYonX,
+        binYonX,
         x,
         y,
         breaks,
@@ -540,7 +478,7 @@ massifquantROIs <- function(mz,
 
   ROIs <-
       .Call(
-        C_massifquant,
+        massifquant,
         mz,
         int,
         scanindex,
@@ -562,10 +500,10 @@ massifquantROIs <- function(mz,
   
 }
 
-#' getEIC
+#' getEICR
 #' @noRd
 #' @references Smith, C.A. et al. 2006. {Analytical Chemistry}, 78, 779-787
-getEIC <-
+getEICR <-
   function(mz,
            int,
            scanindex,
@@ -573,7 +511,7 @@ getEIC <-
            scanrange) {
 
       noised <- .Call(
-        C_getEIC,
+        getEIC,
         mz,
         int,
         scanindex,
@@ -586,10 +524,10 @@ getEIC <-
     return(noised)
   }
 
-#' getMZ
+#' getMZR
 #' @noRd
 #' @references Smith, C.A. et al. 2006. {Analytical Chemistry}, 78, 779-787
-getMZ <- function(mz,
+getMZR <- function(mz,
                   int,
                   scanindex,
                   mzrange,
@@ -597,7 +535,7 @@ getMZ <- function(mz,
                   scantime) {
 
     omz <- .Call(
-      C_getMZ,
+      getMZ,
       mz,
       int,
       scanindex,
@@ -610,10 +548,10 @@ getMZ <- function(mz,
 }
 
 
-#' findmzROI
+#' findmzROIR
 #' @noRd
 #' @references Smith, C.A. et al. 2006. {Analytical Chemistry}, 78, 779-787
-findmzROI <- function(mz,
+findmzROIR <- function(mz,
                       int,
                       scanindex,
                       scanrange,
@@ -622,7 +560,7 @@ findmzROI <- function(mz,
                       minCentroids) {
 
     roiList <- .Call(
-      C_findmzROI,
+      findmzROI,
       mz,
       int,
       scanindex,

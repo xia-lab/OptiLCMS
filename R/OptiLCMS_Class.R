@@ -10,6 +10,7 @@
 }
 
 # Internal mSet Class for OptiLCMS
+# Internal mSet Class for OptiLCMS
 setClass("mSet",
          representation = representation(rawfiles = "character",
                                          rawOnDisk = "OnDiskMSnExp",
@@ -19,6 +20,8 @@ setClass("mSet",
                                          peakgrouping = "list",
                                          peakRTcorrection = "list",
                                          peakfilling = "list",
+                                         MSnData = "list",
+                                         MSnResults = "list",
                                          peakAnnotation = "list",
                                          dataSet = "data.frame",
                                          runningplan = "list",
@@ -33,6 +36,8 @@ setClass("mSet",
                                peakgrouping = vector("list"),
                                peakRTcorrection = vector("list"),
                                peakfilling = vector("list"),
+                               MSnData = vector("list"),
+                               MSnResults = vector("list"),
                                peakAnnotation = vector("list"),
                                dataSet = data.frame(),
                                runningplan = vector("list"),
@@ -42,6 +47,7 @@ setClass("mSet",
          validity = function(object) {
            return(TRUE)
          })
+
 
 ### Generic DataClass Defination----------
 

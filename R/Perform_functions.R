@@ -1439,8 +1439,8 @@ PerformPeakAnnotation <-
 #' @param filtAdducts Logical, filter out all adducts except `[M+H]`+ for
 #' positive ion more and `[M-H]`- for negative ion mode. By default it is set to false.
 #' @param missPercent Numeric, specify the threshold to remove features
-#' missing in X\% of samples. For instance, 0.5 specifies to remove features
-#' that are missing from 50\% of all samples per group. Method is only valid
+#' missing in X\\% of samples. For instance, 0.5 specifies to remove features
+#' that are missing from 50\\% of all samples per group. Method is only valid
 #' when there are two groups.
 #' @return will return a mSet object with all result table formatted
 #' @seealso \code{\link{ExecutePlan}} and \code{\link{PerformPeakProfiling}} for the whole pipeline.
