@@ -4,46 +4,13 @@
 #include <math.h>
 #include "R.h"
 #include "Rdefines.h"
+#include "binarySearch.h"
 
 struct idxStruct
 {
    int  from;
    int  to;
 };
-
-int lowerBound(double x,double *val,int first, int length){
-int half,mid; 
-  while (length > 0) {
-    half = length >> 1;
-    mid = first;
-    mid += half;
-    if ( val[mid] < x){
-      first = mid;
-      first ++;
-      length = length - half -1;
-    }
-    else length = half;
-  }
-  return(first);
-}
-
-int upperBound(double x,double *val,int first, int length){
-int half,mid;  
-  while (length > 0) {
-    half = length >> 1;
-    mid = first;
-    mid += half;
-    if (x < val[mid]){
-      length = half;
-    }
-    else {
-      first = mid;
-      first ++;
-      length = length - half -1;
-    }
-  }
-  return(first);
-}
 
 SEXP fastMatch(SEXP x, SEXP y, SEXP xidx, SEXP yidx, SEXP xolength, SEXP tol) {
     double *px, *py, dtol;
