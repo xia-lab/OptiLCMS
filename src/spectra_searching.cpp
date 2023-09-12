@@ -7,7 +7,7 @@
 using namespace Rcpp;
 using namespace std;
 
-List neutralLoss_matching(SqliteDriver &SQLiteObj, 
+List neutralLoss_matching_Live(SqliteDriver &SQLiteObj, 
                           vector<string> rules, vector<int> rule_dirs, vector<double> rule_ms,
                           double ppm2, double prec_exp,
                           NumericVector exp_mzs, NumericVector exp_ints){
@@ -189,6 +189,162 @@ List neutralLoss_matching(SqliteDriver &SQLiteObj,
 }
 
 
+
+List neutralLoss_matching(SqliteDriver &SQLiteObjNL, 
+                          vector<string> rules, vector<int> rule_dirs, vector<double> rule_ms,
+                          double ppm2, double prec_exp,
+                          NumericVector exp_mzs, NumericVector exp_ints){
+  List res;
+  
+  // predict neutral loss of experimental spectrum first
+  NumericVector nl_exp_mzs;
+  NumericVector nl_exp_ints;
+  for(int i=0; i<exp_mzs.size(); i++){
+    if((prec_exp - exp_mzs[i]) > 2){ // at least H2 is needed to be considered as a "neutral loss"
+      nl_exp_mzs.push_back(prec_exp - exp_mzs[i]);
+      nl_exp_ints.push_back(exp_ints[i]);
+    }
+  }
+  
+  // cout << "nl_exp_mzsv -> " << nl_exp_mzs << endl;
+  vector<int> IDs;
+  vector<double> scores;
+  vector<string> rulesVec;
+  
+  if(nl_exp_mzs.size() == 0){
+    res = List::create(Named("IDs") = IDs, 
+                       Named("Scores") = scores,
+                       Named("rules") = rulesVec);
+    return res;
+  }
+  
+  // extract and predict reference from database
+  // propagate with rules
+  int tmp_dir, x;
+  double diff_ms, tmp_mz, mass_error;
+  for(int r=0; r<rule_dirs.size(); r++){
+    tmp_dir = rule_dirs[r];
+    diff_ms = rule_ms[r];
+    if(tmp_dir == 0){
+      // + 1
+      tmp_mz = prec_exp + diff_ms;
+      mass_error = tmp_mz*ppm2*1e-6;
+      x = SQLiteObjNL.extractIDMS2_with_mzRange_entireDB(tmp_mz - mass_error, tmp_mz + mass_error);
+      if(x == 0){
+        warning("Database searching failed for m/z = " + std::to_string(tmp_mz) + " !\n");
+      }
+      vector<string> allMS2refs = SQLiteObjNL.getMS2PeaksVec();
+      vector<int> allIDs = SQLiteObjNL.getIDsVec();
+      if(allMS2refs.size() > 0){
+        double best_score = 0.2, tmp_score;
+        int best_id = -1;
+        for(int s=0; s<allMS2refs.size(); s++){
+          string ms2ref = allMS2refs[s];
+          NumericMatrix ref_spec_msms = ms2peak_parse(ms2ref);
+          NumericVector nl_ref_mzs = ref_spec_msms(_,0);
+          NumericVector nl_ref_ints = ref_spec_msms(_,1);
+          // calculate neutral loss similarity
+          if(nl_ref_mzs.size() > 1){
+            tmp_score = neutral_loss_similarity(nl_exp_mzs, nl_exp_ints, nl_ref_mzs, nl_ref_ints, ppm2);
+            if(tmp_score > best_score){
+              best_score = tmp_score;
+              best_id = allIDs[s];
+            }
+          }
+        }
+        if(best_id != -1){
+          // found a useful candidate to return
+          rulesVec.push_back(rules[r]);
+          scores.push_back(best_score);
+          IDs.push_back(best_id);
+        }
+      }
+      
+      // -1
+      tmp_mz = prec_exp - diff_ms;
+      mass_error = tmp_mz*ppm2*1e-6;
+      x = SQLiteObjNL.extractIDMS2_with_mzRange_entireDB(tmp_mz - mass_error, tmp_mz + mass_error);
+      if(x == 0){
+        warning("Database searching failed for m/z = " + std::to_string(tmp_mz) + " !\n");
+      }
+      allMS2refs = SQLiteObjNL.getMS2PeaksVec();
+      allIDs = SQLiteObjNL.getIDsVec();
+      if(allMS2refs.size() > 0){
+        double best_score = 0.2, tmp_score; // minimum score is 0.2
+        int best_id = -1;
+        for(int s=0; s<allMS2refs.size(); s++){
+          string ms2ref = allMS2refs[s];
+          NumericMatrix ref_spec_msms = ms2peak_parse(ms2ref);
+          NumericVector nl_ref_mzs = ref_spec_msms(_,0);
+          NumericVector nl_ref_ints = ref_spec_msms(_,1);
+          // calculate neutral loss similarity
+          if(nl_ref_mzs.size() > 1){
+            tmp_score = neutral_loss_similarity(nl_exp_mzs, nl_exp_ints, nl_ref_mzs, nl_ref_ints, ppm2);
+            if(tmp_score > best_score){
+              best_score = tmp_score;
+              best_id = allIDs[s];
+            }
+          }
+        }
+        if(best_id != -1){
+          // found a useful candidate to return
+          rulesVec.push_back(rules[r]);
+          scores.push_back(best_score);
+          IDs.push_back(best_id);
+        }
+      }
+      
+    } else {
+      
+      tmp_mz = prec_exp + diff_ms*tmp_dir;
+      mass_error = tmp_mz*ppm2*1e-6;
+      x = SQLiteObjNL.extractIDMS2_with_mzRange_entireDB(tmp_mz - mass_error, tmp_mz + mass_error);
+      if(x == 0){
+        warning("Database searching failed for m/z = " + std::to_string(tmp_mz) + " !\n");
+      }
+      vector<string> allMS2refs = SQLiteObjNL.getMS2PeaksVec();
+      vector<int> allIDs = SQLiteObjNL.getIDsVec();
+      if(allMS2refs.size() > 0){
+        double best_score = 0.2, tmp_score;
+        int best_id = -1;
+        for(int s=0; s<allMS2refs.size(); s++){
+          string ms2ref = allMS2refs[s];
+          NumericMatrix ref_spec_msms = ms2peak_parse(ms2ref);
+          NumericVector nl_ref_mzs = ref_spec_msms(_,0);
+          NumericVector nl_ref_ints = ref_spec_msms(_,1);
+          // calculate neutral loss similarity
+          if(nl_ref_mzs.size() > 1){
+            tmp_score = neutral_loss_similarity(nl_exp_mzs, nl_exp_ints, nl_ref_mzs, nl_ref_ints, ppm2);
+            if(tmp_score > best_score){
+              best_score = tmp_score;
+              best_id = allIDs[s];
+            }
+          }
+        }
+        if(best_id != -1){
+          // found a useful candidate to return
+          rulesVec.push_back(rules[r]);
+          scores.push_back(best_score);
+          IDs.push_back(best_id);
+        }
+      }
+    }
+  }
+  
+  
+  // Organize results a [List] with three vectors
+  // <1>. vector of ID <- database int | vector<int>;
+  // <2>. vector of score <- matching score (neutral loss matching : dot product) | vector<double>;
+  // <3>. vector of rules <- rules name | vector<string>;
+  res = List::create(Named("IDs") = IDs, 
+                     Named("Scores") = scores,
+                     Named("rules") = rulesVec);
+  return res;
+}
+
+
+
+
 // [[Rcpp::export]]
 List SpectraSearching(List ConsensusRes, 
                       IntegerVector idxs,
@@ -202,6 +358,7 @@ List SpectraSearching(List ConsensusRes,
                       std::string database_path = "",
                       bool use_rt = false,
                       bool enableNL = false,
+                      std::string NLdatabase_path = "",
                       bool useEntropy = false) {
   // idxs are the indexs number of all consensus results (0,1,2,...)
   // ion mode, int: 0 is negative; 1 is positive.
@@ -210,6 +367,12 @@ List SpectraSearching(List ConsensusRes,
   
   SqliteDriver SQLiteObj(database_path, "HMDB_experimental_PosDB", ion_mode);
   SQLiteObj.create_connection(database_path);
+  
+  SqliteDriver SQLiteObjNL(NLdatabase_path, "HMDB_experimental_PosDB", ion_mode);
+  
+  if(enableNL) {
+    SQLiteObjNL.create_connection(NLdatabase_path);
+  }
  
   IntegerVector ft_idxs = ConsensusRes[0];
   List all_Consensus_spec = ConsensusRes[1];
@@ -251,7 +414,7 @@ List SpectraSearching(List ConsensusRes,
     
     // Initialize vairiable
     vector<int> formula;
-    double mz_score, rt_score, msms_score, iso_score, all_score; // these four values are the similarity score of the four aspsect (initialization).
+    double mz_score, rt_score, msms_score, iso_score, all_score; // these four values are the similarity score of the four aspects (initialization).
     double mz_exponent, rt_exponent;
     
     // Prepare isotope identification data/variables
@@ -451,7 +614,7 @@ List SpectraSearching(List ConsensusRes,
           NumericMatrix conss_mtx_spec = current_conss_spec[k];
           NumericVector conss_mzs= conss_mtx_spec(_,0);
           NumericVector conss_ints= conss_mtx_spec(_,1);
-          List nl_list = neutralLoss_matching(SQLiteObj, 
+          List nl_list = neutralLoss_matching(SQLiteObjNL, 
                                               rules, rules_dir, rules_ms,
                                               ppm_ms2, mz_med, 
                                               conss_mzs, conss_ints);
@@ -481,7 +644,9 @@ List SpectraSearching(List ConsensusRes,
   }
   
   SQLiteObj.disconnectDB();
-  
+  if(enableNL){
+    SQLiteObjNL.disconnectDB();
+  }
   
   return SearchingRes;
 }
@@ -489,7 +654,12 @@ List SpectraSearching(List ConsensusRes,
 
 
 // [[Rcpp::export]]
-List annotation_export(List searching_res, int type = 0, int topN = 10, int ion_mode = 0, std::string database_path = "", bool lipidsClass = false){
+List annotation_export(List searching_res, 
+                       int type = 0, 
+                       int topN = 10, 
+                       int ion_mode = 0, 
+                       std::string database_path = "", 
+                       bool lipidsClass = false){
   /*
    *  searching_res, is a list returned by function, "SpectraSearching"
    *  type, integer of returned matching results; 

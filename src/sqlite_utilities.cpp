@@ -297,6 +297,8 @@ int SqliteDriver::extractIDMS2_with_mzRange_entireDB(double min_mz, double max_m
     } else {
       // something else
       cout << "Now something wierd happening [xx0289opas] --> " << res << endl;
+      // cout << "q.c_str() ==> " << q.c_str() << endl;
+      // cout << "&stmt ===> " << stmt << endl;
       return 0;
     }
   }

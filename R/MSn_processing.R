@@ -422,8 +422,8 @@ PerformDDADeconvolution <- function(mSet= NULL,
 
 #' PerformDIADeconvolution
 #'
-#' @param mSet 
-#' @param min_width 
+#' @param mSet mSet Object contains raw spectral data from *PerformMSnImport*
+#' @param min_width minimum peak width value, in seconds
 #' @param ppm2 
 #' @param sn 
 #' @param span 
@@ -572,19 +572,19 @@ PerformSpectrumConsenus <- function(mSet = NULL,
 
 #' PerformDBSearchingBatch
 #'
-#' @param mSet 
-#' @param ppm1 
-#' @param ppm2 
-#' @param rt_tol 
-#' @param database_path 
-#' @param use_rt 
-#' @param enableNL 
+#' @param mSet mSet Object contains raw spectral data after results consensus from *PerformSpectrumConsenus*
+#' @param ppm1 numeric, ppm value of m/z for precursours;
+#' @param ppm2 numeric, ppm value of m/z for ms/ms fragments matching;
+#' @param rt_tol numeric, retention time tolerance, in seconds. Only effective when use_rt is TRUE;
+#' @param database_path character, specify the path of database (.sqlite format);
+#' @param use_rt logical, to use retention time if TRUE;
+#' @param enableNL logical, to enable use Neutral Loss matching for unmatched features if TRUE;
+#' @param NLdatabase_path path of neutral loss database. Must be specified to a valid neutral loss database when enableNL is TRUE.
 #' @param ncores 
 #'
 #' @return mSet Object
 #' @export
 #'
-#' @examples to add
 PerformDBSearchingBatch <- function(mSet = NULL, 
                                     ppm1 = 5,
                                     ppm2 = 15,
@@ -592,6 +592,7 @@ PerformDBSearchingBatch <- function(mSet = NULL,
                                     database_path = "",
                                     use_rt = FALSE,
                                     enableNL = FALSE,
+                                    NLdatabase_path = NULL,
                                     ncores = 1,
                                     useEntropy = FALSE
                                     ){
@@ -631,7 +632,15 @@ PerformDBSearchingBatch <- function(mSet = NULL,
   if(!is.integer(ncores)){
     stop("\"ncores\" must be an integer!")
   }
-  
+  if(is.null(NLdatabase_path) & enableNL){
+    stop("'NLdatabase_path' must be specified because you are trying to use neutral loss database");
+  }
+  if(enableNL){
+    if(!file.exists(NLdatabase_path)) stop("Your neutral loss database does not exist!");
+    if(sub(pattern = "^(.*\\.|[^.]+)(?=[^.]*)", replacement = "", NLdatabase_path, perl = TRUE) != "sqlite"){
+      stop("Your neutral loss database is not a valid sqlite file!");
+    } 
+  }
   num_fts <- length(ConsensusRes[[1]]);
   seq_idx <- seq(0, num_fts-1);
   rt_ms1 <- mSet@MSnData[["scanrts_ms1"]];
@@ -660,6 +669,7 @@ PerformDBSearchingBatch <- function(mSet = NULL,
                             ion_mode = ionmode, 
                             database_path = database_path, 
                             enableNL = enableNL,
+                            NLdatabase_path = NLdatabase_path,
                             useEntropy = useEntropy)
   } else if (ncores > 1) {
     # perform parallel searching
@@ -674,14 +684,15 @@ PerformDBSearchingBatch <- function(mSet = NULL,
                         "ConsensusRes", "peak_matrix", 
                         "ppm1", "ppm2", "rt_tol", "rt_ms1", 
                         "scan_ms1", "ionmode", "database_path", 
-                        "enableNL", "useEntropy",
+                        "enableNL", "useEntropy", "NLdatabase_path",
                         "SpectraSearching"), envir = environment())
     res1 <- list()
     res1 <- parLapply(cl, 
                       1:ncores, 
                       function(x, ft_idx_grps, ConsensusRes, peak_matrix, 
                                ppm1, ppm2, rt_tol, rt_ms1, 
-                               scan_ms1, ionmode, database_path, enableNL, useEntropy){
+                               scan_ms1, ionmode, database_path, enableNL, 
+                               NLdatabase_path, useEntropy){
                         res0 <- SpectraSearching(ConsensusRes, 
                                                  ft_idx_grps[[x]], 
                                                  peak_matrix,
@@ -693,6 +704,7 @@ PerformDBSearchingBatch <- function(mSet = NULL,
                                                  ion_mode = ionmode, 
                                                  database_path = database_path, 
                                                  enableNL = enableNL,
+                                                 NLdatabase_path = NLdatabase_path,
                                                  useEntropy = useEntropy)
                         res0},
                       ft_idx_grps = ft_idx_grps,
@@ -706,6 +718,7 @@ PerformDBSearchingBatch <- function(mSet = NULL,
                       ionmode = ionmode,
                       database_path = database_path,
                       enableNL = enableNL,
+                      NLdatabase_path = NLdatabase_path,
                       useEntropy = useEntropy)
     stopCluster(cl)
     res <- list()
