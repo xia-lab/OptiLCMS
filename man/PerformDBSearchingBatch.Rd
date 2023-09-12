@@ -12,24 +12,27 @@ PerformDBSearchingBatch(
   database_path = "",
   use_rt = FALSE,
   enableNL = FALSE,
+  NLdatabase_path = NULL,
   ncores = 1,
   useEntropy = FALSE
 )
 }
 \arguments{
-\item{mSet}{}
+\item{mSet}{mSet Object contains raw spectral data after results consensus from \emph{PerformSpectrumConsenus}}
 
-\item{ppm1}{}
+\item{ppm1}{numeric, ppm value of m/z for precursours;}
 
-\item{ppm2}{}
+\item{ppm2}{numeric, ppm value of m/z for ms/ms fragments matching;}
 
-\item{rt_tol}{}
+\item{rt_tol}{numeric, retention time tolerance, in seconds. Only effective when use_rt is TRUE;}
 
-\item{database_path}{}
+\item{database_path}{character, specify the path of database (.sqlite format);}
 
-\item{use_rt}{}
+\item{use_rt}{logical, to use retention time if TRUE;}
 
-\item{enableNL}{}
+\item{enableNL}{logical, to enable use Neutral Loss matching for unmatched features if TRUE;}
+
+\item{NLdatabase_path}{path of neutral loss database. Must be specified to a valid neutral loss database when enableNL is TRUE.}
 
 \item{ncores}{}
 }
@@ -38,7 +41,4 @@ mSet Object
 }
 \description{
 PerformDBSearchingBatch
-}
-\examples{
-to add
 }

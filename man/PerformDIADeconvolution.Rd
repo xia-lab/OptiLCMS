@@ -15,9 +15,9 @@ PerformDIADeconvolution(
 )
 }
 \arguments{
-\item{mSet}{}
+\item{mSet}{mSet Object contains raw spectral data from \emph{PerformMSnImport}}
 
-\item{min_width}{}
+\item{min_width}{minimum peak width value, in seconds}
 
 \item{ppm2}{}
 
