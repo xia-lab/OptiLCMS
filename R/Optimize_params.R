@@ -927,8 +927,11 @@ Statistic_doe <-function(object, object_mslevel, isotopeIdentification,
                                             task = 1, BPPARAM = BPPARAM));
   
   if(!is(mSet, "mSet")){ # All params failed - avoid this corner case
+    Eset <- list()
+    Eset$RCS <- Eset$CV <- Eset$PPS <- 0;
+    
     mSet_OPT$QS <- 0;
-    mSet_OPT$PPS <- 0;
+    mSet_OPT$PPS <- Eset;
     
     mSet_OPT$OptiParams <- xcms_parameters;
     
