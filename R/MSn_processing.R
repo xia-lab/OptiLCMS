@@ -634,6 +634,8 @@ PerformDBSearchingBatch <- function(mSet = NULL,
   }
   if(is.null(NLdatabase_path) & enableNL){
     stop("'NLdatabase_path' must be specified because you are trying to use neutral loss database");
+  } else if(is.null(NLdatabase_path)) {
+    NLdatabase_path <- "";
   }
   if(enableNL){
     if(!file.exists(NLdatabase_path)) stop("Your neutral loss database does not exist!");
