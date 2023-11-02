@@ -469,7 +469,7 @@ vector<CharacterVector> SqliteDriver::convertID2alls(IntegerVector IDs){
     sqlite3_finalize(stmt);
     
     // find corresponding inchikeys from the table
-    q = "SELECT CompoundName,InchiKey,Formula, MS2Peaks FROM " + db_table + " WHERE ID == " + std::to_string(thisid); // Step 2: Update SQL query to get MS2Peaks
+    q = "SELECT CompoundName,InchiKey,Formula,MS2Peaks FROM " + db_table + " WHERE ID == " + std::to_string(thisid); // Step 2: Update SQL query to get MS2Peaks
     
     db_name = db_table.substr(0,db_table.size()-6);
     
