@@ -1205,11 +1205,11 @@ PerformFormulaGeneration <- function(mSet = NULL, ms_instr = NULL, halogen = FAL
   
   len_charge <- length(charge)
   
-  if (mSet_dda@MSnData[["acquisitionMode"]] == "DDA") {
+  if (mSet@MSnData[["acquisitionMode"]] == "DDA") {
     len_targeted_peaks <- nrow(mSet@MSnData[["peak_mtx"]])
   }
   
-  if (mSet_dda@MSnData[["acquisitionMode"]] == "DIA") {
+  if (mSet@MSnData[["acquisitionMode"]] == "DIA") {
     len_targeted_peaks <- length(mSet@MSnData[["peak_mtx"]])
   }
   
@@ -1230,7 +1230,7 @@ PerformFormulaGeneration <- function(mSet = NULL, ms_instr = NULL, halogen = FAL
   # generate the features_list
   features_list <- list()
   
-  if (mSet_dda@MSnData[["acquisitionMode"]] == "DDA") {
+  if (mSet@MSnData[["acquisitionMode"]] == "DDA") {
     # import all the concensus spectra
     if (len_charge == 1) {
       for(i in mSet@MSnResults[["Concensus_spec"]][[1]]) {
@@ -1280,7 +1280,7 @@ PerformFormulaGeneration <- function(mSet = NULL, ms_instr = NULL, halogen = FAL
   }
   
   
-  if (mSet_dda@MSnData[["acquisitionMode"]] == "DIA") {
+  if (mSet@MSnData[["acquisitionMode"]] == "DIA") {
     # import all the concensus spectra
     if (len_charge == 1) {
       for(i in mSet@MSnResults[["Concensus_spec"]][[1]]) {
@@ -1338,5 +1338,6 @@ PerformFormulaGeneration <- function(mSet = NULL, ms_instr = NULL, halogen = FAL
   
   # Retrieve the annotation result summary
   mSet@MSnResults[["FormulaPre"]] <-engine$get_summary()
+  #mSet@MSnResults[["FormulaPre"]] <-as.data.frame(do.call(rbind, engine$get_summary()))
   return(mSet)
 }
