@@ -1181,4 +1181,162 @@ FormatMSnAnnotation <- function(mSet = NULL,
   return(res_final)
 }
 
+#####if we have isotopic peaks, charge number, adduct type would be better
+#####mSet@MSnResults[["DBAnnoteRes"]][[2]][[1]][["Scores"]][1] 
+#mSet@MSnResults[["DBAnnoteRes"]][[position]][[1]][["Scores"]][1]
+######or we should only predict the features without annotation results/or features with low scores, set a parameters all_concensus_spec = FALSE/TRUE
+PerformFormulaGeneration <- function(mSet = NULL, ms_instr = NULL, halogen = FALSE, ppm = TRUE, ms1_tol = 5, ms2_tol = 10, charge = 1,
+                                    parallel = TRUE, ncore = 4,  timeout_secs = 600, batch_size = 1000, c_range = 100, h_range = 150, ms2_denoise = TRUE){
 
+  # Check if ms_instr is "qtof", "orbitrap" or "fticr"
+  if (!ms_instr %in% c("qtof", "orbitrap", "fticr")) {
+    stop("Error: ms_instr must be one of 'qtof', 'orbitrap', or 'fticr'")
+  }
+  
+  # Check if there is Concensus spectra
+  if (length(mSet@MSnResults[["Concensus_spec"]][[1]]) == 0) {
+    stop("Error: There is no Concensus spectra in the mSet object.")
+  }
+  
+  # Check the charge
+  if (!is.numeric(charge)) {
+    stop("'charge' must be a numeric value or numeric vector.")
+  }
+  
+  len_charge <- length(charge)
+  
+  if (mSet_dda@MSnData[["acquisitionMode"]] == "DDA") {
+    len_targeted_peaks <- nrow(mSet@MSnData[["peak_mtx"]])
+  }
+  
+  if (mSet_dda@MSnData[["acquisitionMode"]] == "DIA") {
+    len_targeted_peaks <- length(mSet@MSnData[["peak_mtx"]])
+  }
+  
+  if (len_charge != 1 && len_charge != len_targeted_peaks) {
+    stop(sprintf("'charge' should either be a single integer or a numeric vector of length %d.", len_targeted_peaks))
+  }
+  
+  ##importing data from mSet (with columns ‘mz’, ‘intensity’) containing an MS/MS spectrum 
+  ##Import the required Python modules
+  msbuddy <- reticulate::import("msbuddy")
+  base <- msbuddy$base
+  np <- reticulate::import("numpy")
+  
+  # Instantiate a Msbuddy object
+  config <- msbuddy$MsbuddyConfig(ms_instr= ms_instr, halogen=halogen, ppm = ppm, ms1_tol = ms1_tol, ms2_tol = ms2_tol, parallel = parallel, n_cpu = ncore, timeout_secs = timeout_secs, batch_size = batch_size, c_range = c(0, c_range), h_range = c(0, h_range), ms2_denoise = ms2_denoise)
+  engine <- msbuddy$Msbuddy(config)
+  
+  # generate the features_list
+  features_list <- list()
+  
+  if (mSet_dda@MSnData[["acquisitionMode"]] == "DDA") {
+    # import all the concensus spectra
+    if (len_charge == 1) {
+      for(i in mSet@MSnResults[["Concensus_spec"]][[1]]) {
+        
+        # get MS2 spectrum from the current mSet object
+        position <- which(mSet@MSnResults[["Concensus_spec"]][[1]] == i)
+        ms2_df <- mSet@MSnResults[["Concensus_spec"]][[2]][[position]][[1]]
+        colnames(ms2_df) <- c("mz", "intensity")
+        
+        # Create a Spectrum object for MS2
+        ms2_spec <- base$Spectrum(mz_array = np$array(ms2_df['mz']),
+                                  int_array = np$array(ms2_df['intensity']))
+        
+        # Create a MetaFeature object (assuming the other parameters remain constant for all files)
+        metafeature <- base$MetaFeature(identifier = i+1,
+                                        mz = mean(mSet@MSnData[["peak_mtx"]][i+1,1], mSet@MSnData[["peak_mtx"]][i+1,2]),
+                                        rt = mean(mSet@MSnData[["peak_mtx"]][i+1,3], mSet@MSnData[["peak_mtx"]][i+1,4]),
+                                        charge = charge,
+                                        ms2 = ms2_spec)
+        
+        # Append metafeature to the list
+        features_list <- c(features_list, list(metafeature))
+      }
+    } else{
+      for(i in mSet@MSnResults[["Concensus_spec"]][[1]]) {
+        
+        # get MS2 spectrum from the current mSet object
+        position <- which(mSet@MSnResults[["Concensus_spec"]][[1]] == i)
+        ms2_df <- mSet@MSnResults[["Concensus_spec"]][[2]][[position]][[1]]
+        colnames(ms2_df) <- c("mz", "intensity")
+        
+        # Create a Spectrum object for MS2
+        ms2_spec <- base$Spectrum(mz_array = np$array(ms2_df['mz']),
+                                  int_array = np$array(ms2_df['intensity']))
+        
+        # Create a MetaFeature object (assuming the other parameters remain constant for all files)
+        metafeature <- base$MetaFeature(identifier = i+1,
+                                        mz = mean(mSet@MSnData[["peak_mtx"]][i+1,1], mSet@MSnData[["peak_mtx"]][i+1,2]),
+                                        rt = mean(mSet@MSnData[["peak_mtx"]][i+1,3], mSet@MSnData[["peak_mtx"]][i+1,4]),
+                                        charge = charge[i+1],
+                                        ms2 = ms2_spec)
+        
+        # Append metafeature to the list
+        features_list <- c(features_list, list(metafeature))
+      }
+    }
+  }
+  
+  
+  if (mSet_dda@MSnData[["acquisitionMode"]] == "DIA") {
+    # import all the concensus spectra
+    if (len_charge == 1) {
+      for(i in mSet@MSnResults[["Concensus_spec"]][[1]]) {
+        
+        # get MS2 spectrum from the current mSet object
+        position <- which(mSet@MSnResults[["Concensus_spec"]][[1]] == i)
+        ms2_df <- mSet@MSnResults[["Concensus_spec"]][[2]][[position]][[1]]
+        colnames(ms2_df) <- c("mz", "intensity")
+        
+        # Create a Spectrum object for MS2
+        ms2_spec <- base$Spectrum(mz_array = np$array(ms2_df['mz']),
+                                  int_array = np$array(ms2_df['intensity']))
+        
+        # Create a MetaFeature object (assuming the other parameters remain constant for all files)
+        metafeature <- base$MetaFeature(identifier = i+1,
+                                        mz = mSet@MSnData[["peak_mtx"]][[i+1]][[1]],
+                                        rt = mSet@MSnData[["peak_mtx"]][[i+1]][[4]],
+                                        charge = charge,
+                                        ms2 = ms2_spec)
+        
+        # Append metafeature to the list
+        features_list <- c(features_list, list(metafeature))
+      }
+    } else{
+      for(i in mSet@MSnResults[["Concensus_spec"]][[1]]) {
+        
+        # get MS2 spectrum from the current mSet object
+        position <- which(mSet@MSnResults[["Concensus_spec"]][[1]] == i)
+        ms2_df <- mSet@MSnResults[["Concensus_spec"]][[2]][[position]][[1]]
+        colnames(ms2_df) <- c("mz", "intensity")
+        
+        # Create a Spectrum object for MS2
+        ms2_spec <- base$Spectrum(mz_array = np$array(ms2_df['mz']),
+                                  int_array = np$array(ms2_df['intensity']))
+        
+        # Create a MetaFeature object (assuming the other parameters remain constant for all files)
+        metafeature <- base$MetaFeature(identifier = i+1,
+                                        mz = mSet@MSnData[["peak_mtx"]][[i+1]][[1]],
+                                        rt = mSet@MSnData[["peak_mtx"]][[i+1]][[4]],
+                                        charge = charge[i+1],
+                                        ms2 = ms2_spec)
+        
+        # Append metafeature to the list
+        features_list <- c(features_list, list(metafeature))
+      }
+    }
+  }
+  
+  
+  # Add features_list the Msbuddy object
+  engine$add_data(features_list)
+  
+  # Annotate molecular formula
+  engine$annotate_formula()
+  
+  # Retrieve the annotation result summary
+  mSet@MSnResults[["FormulaPre"]] <-engine$get_summary()
+  return(mSet)
+}
