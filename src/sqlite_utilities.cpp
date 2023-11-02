@@ -434,9 +434,6 @@ int SqliteDriver::extractFMMS2_with_mzRange_entireDB(double min_mz, double max_m
 #include <vector>
 #include <iostream>
 
-// Assuming that 'db' is an already opened sqlite3* database connection
-// and 'stmt' is a sqlite3_stmt* statement declared in your SqliteDriver class
-
 struct MzIntensityPair {
     double mz;
     int intensity;
