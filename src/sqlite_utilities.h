@@ -71,6 +71,8 @@ public:
   CharacterVector convertID2Formulas(IntegerVector IDs);
   
   vector<CharacterVector> convertID2alls(IntegerVector IDs);
+
+  CharacterVector convertID2MS2Peaks(IntegerVector IDs);
   
   vector<CharacterVector> extractClasses(IntegerVector IDs);
   
