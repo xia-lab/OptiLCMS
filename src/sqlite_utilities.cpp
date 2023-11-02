@@ -428,99 +428,101 @@ int SqliteDriver::extractFMMS2_with_mzRange_entireDB(double min_mz, double max_m
   return 1;
 }
 
-vector<CharacterVector> SqliteDriver::convertID2alls(IntegerVector IDs){
-  vector<CharacterVector> allRes;
-  CharacterVector inchikey_res(IDs.size());
-  CharacterVector compound_res(IDs.size());
-  CharacterVector formula_res(IDs.size());
-  CharacterVector dbrecord_res(IDs.size());
-  CharacterVector ms2peaks_res(IDs.size()); // add the ms2peaks
-  
-  int thisid;
-  string q, q0, q1;
-  String db_name;
-  for(int i = 0; i<IDs.size(); i++){
-    thisid = IDs[i];
-    
-    // find specific table
-    q1 = "SELECT DB_Tables FROM Index_table WHERE Min_ID <= " + 
-      std::to_string(thisid) + " AND Max_ID >= " + std::to_string(thisid) + ";";
-    
-    bool done = false;
-    int res;
-    string db_table;
-    sqlite3_prepare(db, q1.c_str(), -1, &stmt, NULL);
-    while(!done){
-      res  = sqlite3_step (stmt);
-      // if the result returned
-      if(res == SQLITE_ROW){
-        // data found successfully
-        db_table = (char*) sqlite3_column_text(stmt, 0);
-      } else if(res == SQLITE_DONE) {
-        // all searching finished
-        done = true;
-        break;
-      } else {
-        // something else
-        cout << "Now something wierd happening [xx0395opas] --> " << res << endl;
-        return allRes;
-      }
-    }
-    sqlite3_finalize(stmt);
-    
-    // find corresponding inchikeys from the table
-    q = "SELECT CompoundName,InchiKey,Formula,MS2Peaks FROM " + db_table + " WHERE ID == " + std::to_string(thisid); // Step 2: Update SQL query to get MS2Peaks
-    
-    db_name = db_table.substr(0,db_table.size()-6);
-    
-    done = false;
-    
-    string inchikey_txt;
-    string compound_txt;
-    string formula_txt;
-    string ms2peaks_txt; // for MS2Peaks
-    sqlite3_prepare(db, q.c_str(), -1, &stmt, NULL);
-    while(!done){
-      res  = sqlite3_step (stmt);
-      // if the result returned
-      if(res == SQLITE_ROW){
-        // data found successfully
-        dbrecord_res[i] = db_name;
-        compound_txt = (char*) sqlite3_column_text(stmt, 0);
-        compound_res[i] = compound_txt;
-        inchikey_txt = (char*) sqlite3_column_text(stmt, 1);
-        inchikey_res[i] = inchikey_txt;
-        formula_txt = (char*) sqlite3_column_text(stmt, 2);
-        formula_res[i] = formula_txt;
-        ms2peaks_txt = (char*) sqlite3_column_text(stmt, 3); // Step 3: Extract MS2Peaks data
-        ms2peaks_res[i] = ms2peaks_txt;
-      } else if(res == SQLITE_DONE) {
-        // all searching finished
-        done = true;
-        break;
-      } else {
-        // something else
-        cout << "Now something wierd happening [xx0419opas] --> " << res << endl;
-        allRes.push_back(compound_res);
-        allRes.push_back(inchikey_res);
-        allRes.push_back(formula_res);
-        allRes.push_back(dbrecord_res);
-        allRes.push_back(ms2peaks_res); // Step 4: Add ms2peaks_res to allRes
-        sqlite3_finalize(stmt);
-        return allRes;
-      }
-    }
-    // finalize the statement (Destructor of the stmt)
-    sqlite3_finalize(stmt);
-    
-  }
-  allRes.push_back(compound_res);
-  allRes.push_back(inchikey_res);
-  allRes.push_back(formula_res);
-  allRes.push_back(dbrecord_res);
-  allRes.push_back(ms2peaks_res); // Step 4: Add ms2peaks_res to allRes
-  return allRes;
+#include <sqlite3.h>
+#include <string>
+#include <sstream>
+#include <vector>
+#include <iostream>
+
+// Assuming that 'db' is an already opened sqlite3* database connection
+// and 'stmt' is a sqlite3_stmt* statement declared in your SqliteDriver class
+
+struct MzIntensityPair {
+    double mz;
+    int intensity;
 };
+
+std::vector<MzIntensityPair> parseMS2Peaks(const std::string& ms2peaks_txt) {
+    std::vector<MzIntensityPair> peaks;
+    std::istringstream stream(ms2peaks_txt);
+    std::string pair;
+
+    while (std::getline(stream, pair, ' ')) {
+        std::istringstream pair_stream(pair);
+        std::string mz_str, intensity_str;
+        std::getline(pair_stream, mz_str, '\t');
+        std::getline(pair_stream, intensity_str);
+        MzIntensityPair mz_intensity = {std::stod(mz_str), std::stoi(intensity_str)};
+        peaks.push_back(mz_intensity);
+    }
+    return peaks;
+}
+
+vector<CharacterVector> SqliteDriver::convertID2alls(IntegerVector IDs) {
+    vector<CharacterVector> allRes;
+    CharacterVector inchikey_res(IDs.size());
+    CharacterVector compound_res(IDs.size());
+    CharacterVector formula_res(IDs.size());
+    CharacterVector dbrecord_res(IDs.size());
+    CharacterVector ms2peaks_res(IDs.size());
+
+    for (int i = 0; i < IDs.size(); ++i) {
+        int thisid = IDs[i];
+        std::string db_table;
+        std::string q1 = "SELECT DB_Tables FROM Index_table WHERE Min_ID <= " +
+                         std::to_string(thisid) + " AND Max_ID >= " + std::to_string(thisid) + ";";
+
+        if (sqlite3_prepare_v2(db, q1.c_str(), -1, &stmt, 0) != SQLITE_OK) {
+            std::cerr << "SQL error preparing statement: " << q1 << " Error: " << sqlite3_errmsg(db) << std::endl;
+            continue;  // Skip to the next ID
+        }
+
+        if (sqlite3_step(stmt) == SQLITE_ROW) {
+            db_table = reinterpret_cast<const char*>(sqlite3_column_text(stmt, 0));
+        } else {
+            std::cerr << "Failed to get DB_Table for ID: " << thisid << std::endl;
+            sqlite3_finalize(stmt);
+            continue;  // Skip to the next ID
+        }
+        sqlite3_finalize(stmt);
+
+        std::string q = "SELECT CompoundName, InchiKey, Formula, MS2Peaks FROM " + db_table + " WHERE ID = " + std::to_string(thisid) + ";";
+        if (sqlite3_prepare_v2(db, q.c_str(), -1, &stmt, 0) != SQLITE_OK) {
+            std::cerr << "SQL error preparing statement: " << q << " Error: " << sqlite3_errmsg(db) << std::endl;
+            continue;  // Skip to the next ID
+        }
+
+        if (sqlite3_step(stmt) == SQLITE_ROW) {
+            compound_res[i] = reinterpret_cast<const char*>(sqlite3_column_text(stmt, 0));
+            inchikey_res[i] = reinterpret_cast<const char*>(sqlite3_column_text(stmt, 1));
+            formula_res[i] = reinterpret_cast<const char*>(sqlite3_column_text(stmt, 2));
+            std::string ms2peaks_txt = reinterpret_cast<const char*>(sqlite3_column_text(stmt, 3));
+            std::vector<MzIntensityPair> ms2peaks = parseMS2Peaks(ms2peaks_txt);
+
+            std::ostringstream oss;
+            for (const auto& mip : ms2peaks) {
+                oss << mip.mz << ":" << mip.intensity << ";";
+            }
+            std::string peaks_str = oss.str();
+            if (!peaks_str.empty()) {
+                peaks_str.pop_back();  // Remove the trailing semicolon
+            }
+            ms2peaks_res[i] = peaks_str;
+        } else {
+            std::cerr << "No data found for ID: " << thisid << " in table: " << db_table << std::endl;
+        }
+        sqlite3_finalize(stmt);
+    }
+
+    allRes.push_back(compound_res);
+    allRes.push_back(inchikey_res);
+    allRes.push_back(formula_res);
+    allRes.push_back(dbrecord_res);
+    allRes.push_back(ms2peaks_res);
+
+    return allRes;
+}
+
 
 bool SqliteDriver::clsTableExsiting(){
   string qur = "SELECT EXISTS (SELECT name FROM sqlite_master WHERE name='Lipids_classification');";
