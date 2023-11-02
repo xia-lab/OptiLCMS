@@ -835,6 +835,60 @@ vector<double> SqliteDriver::getRTVec(){
   return rt_vec;
 }
 
+CharacterVector SqliteDriver::convertID2MS2Peaks(IntegerVector IDs){
+  CharacterVector ms2peaks_res(IDs.size());
+  
+  int thisid;
+  string q, q0, q1;
+  for(int i = 0; i<IDs.size(); i++){
+    thisid = IDs[i];
+    
+    // find specific table
+    q1 = "SELECT DB_Tables FROM Index_table WHERE Min_ID <= " + 
+      std::to_string(thisid) + " AND Max_ID >= " + std::to_string(thisid) + ";";
+    
+    bool done = false;
+    int res;
+    string db_table;
+    sqlite3_prepare(db, q1.c_str(), -1, &stmt, NULL);
+    while(!done){
+      res  = sqlite3_step (stmt);
+      if(res == SQLITE_ROW){
+        db_table = (char*) sqlite3_column_text(stmt, 0);
+      } else if(res == SQLITE_DONE) {
+        done = true;
+        break;
+      } else {
+        cout << "Now something weird happening [xx0395opas] --> " << res << endl;
+        return ms2peaks_res;
+      }
+    }
+    sqlite3_finalize(stmt);
+    
+    // find corresponding MS2Peaks from the table
+    q = "SELECT MS2Peaks FROM " + db_table + " WHERE ID == " + std::to_string(thisid);
+    
+    done = false;
+    
+    string ms2peaks_txt;
+    sqlite3_prepare(db, q.c_str(), -1, &stmt, NULL);
+    while(!done){
+      res  = sqlite3_step (stmt);
+      if(res == SQLITE_ROW){
+        ms2peaks_txt = (char*) sqlite3_column_text(stmt, 0);
+        ms2peaks_res[i] = ms2peaks_txt;
+      } else if(res == SQLITE_DONE) {
+        done = true;
+        break;
+      } else {
+        cout << "Now something weird happening [xx0419opas] --> " << res << endl;
+        return ms2peaks_res;
+      }
+    }
+    sqlite3_finalize(stmt);
+  }
+  return ms2peaks_res;
+};
 
 // // [[Rcpp::export]]
 // double test_SQLite_fun(int x) {
