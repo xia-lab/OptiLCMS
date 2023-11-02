@@ -434,6 +434,7 @@ vector<CharacterVector> SqliteDriver::convertID2alls(IntegerVector IDs){
   CharacterVector compound_res(IDs.size());
   CharacterVector formula_res(IDs.size());
   CharacterVector dbrecord_res(IDs.size());
+  CharacterVector ms2peaks_res(IDs.size()); // add the ms2peaks
   
   int thisid;
   string q, q0, q1;
@@ -468,7 +469,7 @@ vector<CharacterVector> SqliteDriver::convertID2alls(IntegerVector IDs){
     sqlite3_finalize(stmt);
     
     // find corresponding inchikeys from the table
-    q = "SELECT CompoundName,InchiKey,Formula FROM " + db_table + " WHERE ID == " + std::to_string(thisid);
+    q = "SELECT CompoundName,InchiKey,Formula, MS2Peaks FROM " + db_table + " WHERE ID == " + std::to_string(thisid); // Step 2: Update SQL query to get MS2Peaks
     
     db_name = db_table.substr(0,db_table.size()-6);
     
@@ -477,6 +478,7 @@ vector<CharacterVector> SqliteDriver::convertID2alls(IntegerVector IDs){
     string inchikey_txt;
     string compound_txt;
     string formula_txt;
+    string ms2peaks_txt; // for MS2Peaks
     sqlite3_prepare(db, q.c_str(), -1, &stmt, NULL);
     while(!done){
       res  = sqlite3_step (stmt);
@@ -490,6 +492,8 @@ vector<CharacterVector> SqliteDriver::convertID2alls(IntegerVector IDs){
         inchikey_res[i] = inchikey_txt;
         formula_txt = (char*) sqlite3_column_text(stmt, 2);
         formula_res[i] = formula_txt;
+        ms2peaks_txt = (char*) sqlite3_column_text(stmt, 3); // Step 3: Extract MS2Peaks data
+        ms2peaks_res[i] = ms2peaks_txt;
       } else if(res == SQLITE_DONE) {
         // all searching finished
         done = true;
@@ -501,6 +505,7 @@ vector<CharacterVector> SqliteDriver::convertID2alls(IntegerVector IDs){
         allRes.push_back(inchikey_res);
         allRes.push_back(formula_res);
         allRes.push_back(dbrecord_res);
+        allRes.push_back(ms2peaks_res); // Step 4: Add ms2peaks_res to allRes
         sqlite3_finalize(stmt);
         return allRes;
       }
@@ -513,6 +518,7 @@ vector<CharacterVector> SqliteDriver::convertID2alls(IntegerVector IDs){
   allRes.push_back(inchikey_res);
   allRes.push_back(formula_res);
   allRes.push_back(dbrecord_res);
+  allRes.push_back(ms2peaks_res); // Step 4: Add ms2peaks_res to allRes
   return allRes;
 };
 
