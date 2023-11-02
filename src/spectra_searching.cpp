@@ -762,7 +762,6 @@ List annotation_export(List searching_res,
 
       if(type == 0){
         vector<CharacterVector> allResNMs = SQLiteObj.convertID2alls(allIDs_sub);
-        Rcout << "Size of allResNMs: " << allResNMs.size() << std::endl;
 
         List res_tmp;
         if(lipidsClass){
@@ -789,8 +788,6 @@ List annotation_export(List searching_res,
                                  _["Scores"] = allScore_sub,
                                  _["Dot_Similarity"] = allDots_sub);
         }
-        Rcout << "MS2Peaks data size: " << as<NumericVector>(res_tmp["MS2Peaks"]).size() << std::endl;
-
         this_res[s] = res_tmp;
       } else if(type == 1){
         //cout << "allIDs_sub -> " << allIDs_sub << endl;
