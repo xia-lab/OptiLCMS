@@ -1474,7 +1474,8 @@ PerformMirrorPlotting <- function(mSet = NULL, plot_directory = "mirror_plot",
         # Perform mirror plotting
         compound_name <- mSet@MSnResults[["DBAnnoteRes"]][[i]][[1]][["Compounds"]][[j]]
         score <- round(mSet@MSnResults[["DBAnnoteRes"]][[i]][[1]][["Scores"]][[j]], 2)
-        title <- paste0(mz, "__", rt, ": ", compound_name, " ", score)
+        database <- mSet@MSnResults[["DBAnnoteRes"]][[i]][[1]][["Database"]][[j]]
+        title <- paste0(mz, "__", rt, ": ", compound_name, " ", score, " ", database)        
         MirrorPlotting(spec.top.m, spec.bottom.m, title= title, 
                        cutoff_relative = cutoff_relative, 
                        xlim = xlim, show_plot = display_plot)
