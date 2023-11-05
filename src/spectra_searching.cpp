@@ -772,7 +772,7 @@ List annotation_export(List searching_res,
                                  _["InchiKeys"] = allResNMs[1],
                                  _["Formula"] = allResNMs[2],
                                  _["Database"] = allResNMs[3],
-                                 _["MS2Pekas"] = allResNMs[4],
+                                 _["MS2Pekas"] = allResNMs[4], // Include MS2Peaks here
                                  _["Scores"] = allScore_sub,    
                                  _["Dot_Similarity"] = allDots_sub,
                                  _["Super_Class"] = lipidList[0],
@@ -784,7 +784,7 @@ List annotation_export(List searching_res,
                                  _["InchiKeys"] = allResNMs[1],
                                  _["Formula"] = allResNMs[2],
                                  _["Database"] = allResNMs[3],
-                                 _["MS2Pekas"] = allResNMs[4],
+                                 _["MS2Pekas"] = allResNMs[4], // Include MS2Peaks here
                                  _["Scores"] = allScore_sub,
                                  _["Dot_Similarity"] = allDots_sub);
         }
