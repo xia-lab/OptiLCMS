@@ -1341,3 +1341,150 @@ PerformFormulaGeneration <- function(mSet = NULL, ms_instr = NULL, halogen = FAL
   #mSet@MSnResults[["FormulaPre"]] <-as.data.frame(do.call(rbind, engine$get_summary()))
   return(mSet)
 }
+
+
+
+# Function to parse the MS2Peaks string into a two-column matrix
+parse_ms2peaks <- function(ms2peaks_str) {
+  # Split the string into lines
+  lines <- strsplit(ms2peaks_str, "\n")[[1]]
+  # Split each line into mz and intensity, and convert to numeric
+  # need to determine mz and intensity values are separated by " " or "\t", because there are two types in the sqlite database
+  if (grepl("[ ]", lines[1])) {
+    peaks <- lapply(lines, function(line) {
+      numeric_line <- as.numeric(strsplit(trimws(line), " ")[[1]])
+      return(numeric_line)
+    })
+  }
+  if (grepl("[\t]", lines[1])) {
+    peaks <- lapply(lines, function(line) {
+      numeric_line <- as.numeric(strsplit(trimws(line), "\t")[[1]])
+      return(numeric_line)
+    })
+  }
+  # Combine all the peaks into a matrix
+  peaks_matrix <- do.call(rbind, peaks)
+  return(peaks_matrix)
+}
+
+
+
+## normalize the spectrum
+normalize_spectrum <- function(spec, xlim, cutoff_relative){
+  ##xlim: mz range
+  ##cutoff_relative: relative noise cutoff
+  tmp <- data.frame(mz = spec[, 1], intensity = spec[, 2])
+  tmp$normalized <- round((tmp$intensity/max(tmp$intensity)) * 100)
+  tmp <- subset(tmp, tmp$mz >= xlim[1] & tmp$mz <= xlim[2])
+  subset(tmp, tmp$normalized >= cutoff_relative)
+}
+
+
+MirrorPlotting <- function(spec.top, spec.bottom, title= NULL, 
+                           cutoff_relative = 5,
+                           xlim = c(50, 1200), show_plot = FALSE){
+  
+  if (ncol(spec.top) != 2 | ncol(spec.bottom) != 2){
+    stop("Both spec.top and spec.bottom should have 2 columns for mz and intensity.")
+  }
+  
+  top <- normalize_spectrum(spec.top, xlim, cutoff_relative)
+  bottom <- normalize_spectrum(spec.bottom, xlim, cutoff_relative)
+  
+  # Plotting with ggplot2
+  top_plot <- data.frame(mz = top$mz, intensity = top$normalized)
+  bottom_plot <- data.frame(mz = bottom$mz, intensity = -bottom$normalized)
+  library(ggplot2)
+  p <- ggplot2::ggplot() +
+    geom_segment(data=top_plot, aes(x = mz, xend = mz, y = 0, yend = intensity), color = "blue") +
+    geom_segment(data=bottom_plot, aes(x = mz, xend = mz, y = 0, yend = intensity), color = "red") +
+    labs(title = title,
+         y = "Relative Intensity (%)", x = "m/z") +
+    theme_minimal()
+  
+  if (show_plot) {
+    print(p)
+  }
+  
+  #return(similarity_score)
+  #  return(list(similarity_score = similarity_score, plot = p))
+}
+
+
+
+##folder:mirror_plot
+##subfolder: mz__rt
+##file name: mz__rt_1
+##title: mz__rt_1, mz, rt, compound name, score
+
+
+## to be done
+##mark the matched MS2 fragments on the figure with a star or something
+##mark some mz values
+##cutoff_relative or cutoff_absolute
+PerformMirrorPlotting <- function(mSet = NULL, plot_directory = "mirror_plot", 
+                                  cutoff_relative = 5,
+                                  xlim = c(50, 1200), display_plot = FALSE,
+                                  width = 8, height = 6, dpi = 300) {
+  ##if object is mSet, plot all of the mirror plot
+  ##if specify an ID or which annotation result, only plot and display one mirror plot
+  
+  # Create the main directory if it doesn't exist
+  if (!dir.exists(plot_directory)) {
+    dir.create(plot_directory)
+  }
+  
+  # Iterate over each 'spec.top'
+  spec.top.list <- mSet@MSnResults[["Concensus_spec"]][[2]]
+  
+  for (i in seq_along(spec.top.list)) {
+    spec.top.m <- spec.top.list[[i]][[1]]
+    ##spec.top.m <- parse_ms2peaks(spec.top)
+    
+    # Check if there are corresponding 'spec.bottom' spectra
+    if (i <= length(mSet@MSnResults[["DBAnnoteRes"]]) && !is.null(mSet@MSnResults[["DBAnnoteRes"]][[i]])) {
+      
+      # Extract spec.bottom spectra
+      spec.bottom.list <- mSet@MSnResults[["DBAnnoteRes"]][[i]][[1]][["MS2Pekas"]]
+      
+      ## for title and file name
+      if (mSet@MSnData[["acquisitionMode"]] == "DIA") {
+        mz <- mSet@MSnData[["peak_mtx"]][[mSet@MSnResults[["Concensus_spec"]][[1]][[i]]+1]][[1]]
+        rt <- mSet@MSnData[["peak_mtx"]][[mSet@MSnResults[["Concensus_spec"]][[1]][[i]]+1]][[4]]
+      }
+      if (mSet@MSnData[["acquisitionMode"]] == "DDA") {
+        mz = mean(mSet@MSnData[["peak_mtx"]][mSet@MSnResults[["Concensus_spec"]][[1]][[i]]+1,1], mSet@MSnData[["peak_mtx"]][mSet@MSnResults[["Concensus_spec"]][[1]][[i]]+1,2])
+        rt = mean(mSet@MSnData[["peak_mtx"]][mSet@MSnResults[["Concensus_spec"]][[1]][[i]]+1,3], mSet@MSnData[["peak_mtx"]][mSet@MSnResults[["Concensus_spec"]][[1]][[i]]+1,4])
+      }
+      
+      # Create sub-directory for this ID
+      # use mz__rt would be better
+      sub_dir <- file.path(plot_directory, as.character(paste0(mz, "__", rt)))
+      if (!dir.exists(sub_dir)) {
+        dir.create(sub_dir)
+      }
+      
+      # Loop through each spec.bottom
+      for (j in seq_along(spec.bottom.list)) {
+        spec.bottom <- spec.bottom.list[[j]]
+        
+        # Parse strings to numeric matrix
+        spec.bottom.m <- parse_ms2peaks(spec.bottom)
+        
+        # Perform mirror plotting
+        compound_name <- mSet@MSnResults[["DBAnnoteRes"]][[i]][[1]][["Compounds"]][[j]]
+        score <- round(mSet@MSnResults[["DBAnnoteRes"]][[i]][[1]][["Scores"]][[j]], 2)
+        title <- paste0(mz, "__", rt, ": ", compound_name, " ", score)
+        MirrorPlotting(spec.top.m, spec.bottom.m, title= title, 
+                       cutoff_relative = cutoff_relative, 
+                       xlim = xlim, show_plot = display_plot)
+        
+        # Construct the plot file name
+        plot_filename <- paste0(sub_dir, "/", as.character(paste0(mz, "__", rt)), "_", j, ".png")
+        
+        # Save the plot
+        ggsave(plot_filename, plot = last_plot(), width = 8, height = 6, dpi = 300)
+      }
+    }
+  }
+}
