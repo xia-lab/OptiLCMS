@@ -1377,6 +1377,8 @@ parse_ms2peaks <- function(ms2peaks_str) {
 }
 
 
+
+
 ## normalize the spectrum
 normalize_spectrum <- function(spec, xlim, cutoff_relative){
   ##xlim: mz range
@@ -1388,13 +1390,16 @@ normalize_spectrum <- function(spec, xlim, cutoff_relative){
 }
 
 
-MirrorPlotting <- function(spec.top, spec.bottom, title= NULL, 
+MirrorPlotting <- function(spec.top, spec.bottom, title= NULL, subtitle = NULL,
                            cutoff_relative = 5,
                            xlim = c(50, 1200), show_plot = FALSE){
   
-  if (ncol(spec.top) != 2 | ncol(spec.bottom) != 2){
-    stop("Both spec.top and spec.bottom should have 2 columns for mz and intensity.")
+  if (is.null(spec.top) || is.null(spec.bottom)) {
+    stop("spec.top and spec.bottom cannot be NULL.")
   }
+  #if (ncol(spec.top) != 2 | ncol(spec.bottom) != 2){
+  #  stop("Both spec.top and spec.bottom should have 2 columns for mz and intensity.")
+  #}
   
   top <- normalize_spectrum(spec.top, xlim, cutoff_relative)
   bottom <- normalize_spectrum(spec.bottom, xlim, cutoff_relative)
@@ -1406,7 +1411,7 @@ MirrorPlotting <- function(spec.top, spec.bottom, title= NULL,
   p <- ggplot2::ggplot() +
     geom_segment(data=top_plot, aes(x = mz, xend = mz, y = 0, yend = intensity), color = "blue") +
     geom_segment(data=bottom_plot, aes(x = mz, xend = mz, y = 0, yend = intensity), color = "red") +
-    labs(title = title,
+    labs(title = title, subtitle = subtitle,
          y = "Relative Intensity (%)", x = "m/z") +
     theme_minimal()
   
@@ -1423,7 +1428,7 @@ MirrorPlotting <- function(spec.top, spec.bottom, title= NULL,
 ##folder:mirror_plot
 ##subfolder: mz__rt
 ##file name: mz__rt_1
-##title: mz__rt_1, mz, rt, compound name, score
+##title: mz__rt_1, compound name, score
 
 
 ## to be done
@@ -1483,8 +1488,9 @@ PerformMirrorPlotting <- function(mSet = NULL, plot_directory = "mirror_plot",
         compound_name <- mSet@MSnResults[["DBAnnoteRes"]][[i]][[1]][["Compounds"]][[j]]
         score <- round(mSet@MSnResults[["DBAnnoteRes"]][[i]][[1]][["Scores"]][[j]], 2)
         database <- mSet@MSnResults[["DBAnnoteRes"]][[i]][[1]][["Database"]][[j]]
-        title <- paste0(mz, "__", rt, ": ", compound_name, " ", score, " ", database)        
-        MirrorPlotting(spec.top.m, spec.bottom.m, title= title, 
+        title <- paste0(mz, "__", rt)
+        subtitle <- paste0(compound_name, "\n", score, "\n", database)
+        MirrorPlotting(spec.top.m, spec.bottom.m, title= title, subtitle = subtitle,
                        cutoff_relative = cutoff_relative, 
                        xlim = xlim, show_plot = display_plot)
         
@@ -1497,3 +1503,4 @@ PerformMirrorPlotting <- function(mSet = NULL, plot_directory = "mirror_plot",
     }
   }
 }
+
