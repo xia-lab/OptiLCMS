@@ -1479,11 +1479,11 @@ MirrorPlotting <- function(spec.top, spec.bottom, ppm = 25, title= NULL, subtitl
 ##folder:mirror_plot
 ##subfolder: mz__rt
 ##file name: mz__rt_1
-##title: mz__rt_1, compound name, score
-
+##title: mz__rt
+##subtitle:compound name, score, database
+##matched MS2 fragments on the figure are marked
 
 ## to be done
-##mark the matched MS2 fragments on the figure with a star or something
 ##mark some mz values
 ##cutoff_relative or cutoff_absolute
 PerformMirrorPlotting <- function(mSet = NULL, plot_directory = "mirror_plot", 
@@ -1492,6 +1492,36 @@ PerformMirrorPlotting <- function(mSet = NULL, plot_directory = "mirror_plot",
                                   width = 8, height = 6, dpi = 300) {
   ##if object is mSet, plot all of the mirror plot
   ##if specify an ID or which annotation result, only plot and display one mirror plot
+  
+  
+  # Retrieve the DBAnnoteRes list
+  dbAnnoteResList <- mSet@MSnResults[["DBAnnoteRes"]]
+  
+  if (is.null(dbAnnoteResList)) {
+    stop("Process mSet with PerformResultsExport function (if you want to plot mirror plot, set type as 0L).")
+  }
+  
+  # Initialize a flag to track if any non-NULL is found
+  allNull <- TRUE
+  
+  # Loop through the list to check for non-NULL content
+  for (i in seq_along(dbAnnoteResList)) {
+    # Access the first element and then the MS2Pekas of each sublist
+    ms2Pekas <- dbAnnoteResList[[i]][[1]][["MS2Pekas"]]
+    
+    # Check if MS2Pekas is not NULL
+    if (!is.null(ms2Pekas)) {
+      allNull <- FALSE
+      #cat(sprintf("Non-NULL content found in sublist %d, stopping the check.\n", i))
+      break # Stop the loop if non-NULL is found
+    }
+  }
+  
+  # If allNull is TRUE, it means all sublists had NULL in MS2Pekas
+  if (allNull) {
+    stop("Process mSet with PerformResultsExport function with the type set as 0L, then run PerformMirrorPlotting).")
+  }
+  
   
   # Create the main directory if it doesn't exist
   if (!dir.exists(plot_directory)) {
@@ -1506,10 +1536,10 @@ PerformMirrorPlotting <- function(mSet = NULL, plot_directory = "mirror_plot",
     ##spec.top.m <- parse_ms2peaks(spec.top)
     
     # Check if there are corresponding 'spec.bottom' spectra
-    if (i <= length(mSet@MSnResults[["DBAnnoteRes"]]) && !is.null(mSet@MSnResults[["DBAnnoteRes"]][[i]])) {
+    if (i <= length(dbAnnoteResList) && !is.null(dbAnnoteResList[[i]])) {
       
       # Extract spec.bottom spectra
-      spec.bottom.list <- mSet@MSnResults[["DBAnnoteRes"]][[i]][[1]][["MS2Pekas"]]
+      spec.bottom.list <- dbAnnoteResList[[i]][[1]][["MS2Pekas"]]
       
       ## for title and file name
       if (mSet@MSnData[["acquisitionMode"]] == "DIA") {
@@ -1536,9 +1566,9 @@ PerformMirrorPlotting <- function(mSet = NULL, plot_directory = "mirror_plot",
         spec.bottom.m <- parse_ms2peaks(spec.bottom)
         
         # Perform mirror plotting
-        compound_name <- mSet@MSnResults[["DBAnnoteRes"]][[i]][[1]][["Compounds"]][[j]]
-        score <- round(mSet@MSnResults[["DBAnnoteRes"]][[i]][[1]][["Scores"]][[j]], 2)
-        database <- mSet@MSnResults[["DBAnnoteRes"]][[i]][[1]][["Database"]][[j]]
+        compound_name <- dbAnnoteResList[[i]][[1]][["Compounds"]][[j]]
+        score <- round(dbAnnoteResList[[i]][[1]][["Scores"]][[j]], 2)
+        database <- dbAnnoteResList[[i]][[1]][["Database"]][[j]]
         title <- paste0(mz, "__", rt)
         subtitle <- paste0(compound_name, "\n", score, "\n", database)
         MirrorPlotting(spec.top.m, spec.bottom.m, ppm = ppm,title= title, subtitle = subtitle,
@@ -1554,5 +1584,3 @@ PerformMirrorPlotting <- function(mSet = NULL, plot_directory = "mirror_plot",
     }
   }
 }
-
-
