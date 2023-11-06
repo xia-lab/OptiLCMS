@@ -1348,25 +1348,29 @@ PerformFormulaGeneration <- function(mSet = NULL, ms_instr = NULL, halogen = FAL
 parse_ms2peaks <- function(ms2peaks_str) {
   # Split the string into lines
   lines <- strsplit(ms2peaks_str, "\n")[[1]]
+  
   # Split each line into mz and intensity, and convert to numeric
-  # need to determine mz and intensity values are separated by " " or "\t", because there are two types in the sqlite database
-  if (grepl("[ ]", lines[1])) {
-    peaks <- lapply(lines, function(line) {
-      numeric_line <- as.numeric(strsplit(trimws(line), " ")[[1]])
-      return(numeric_line)
-    })
-  }
-  if (grepl("[\t]", lines[1])) {
-    peaks <- lapply(lines, function(line) {
-      numeric_line <- as.numeric(strsplit(trimws(line), "\t")[[1]])
-      return(numeric_line)
-    })
-  }
-  # Combine all the peaks into a matrix
-  peaks_matrix <- do.call(rbind, peaks)
+  # need to determine mz and intensity values are separated by " " or "\t", because there are two types in the sqlite database even in one entry
+  # Process each line individually to handle different delimiters
+  peaks <- lapply(lines, function(line) {
+    # Determine delimiter by checking for tabs or spaces
+    delimiter <- ifelse(grepl("\t", line), "\t", " ")
+    # Split the line using the determined delimiter and convert to numeric
+    numeric_line <- as.numeric(strsplit(trimws(line), delimiter)[[1]])
+    return(numeric_line)
+  })
+  
+  # Combine all the peaks into a matrix, handling potential uneven lengths by padding with NA
+  max_length <- max(sapply(peaks, length))
+  peaks_matrix <- do.call(rbind, lapply(peaks, function(x) {
+    c(x, rep(NA, max_length - length(x)))
+  }))
+  
+  # Remove rows that contain NAs (which may have been due to empty or incorrect format lines)
+  peaks_matrix <- peaks_matrix[!apply(is.na(peaks_matrix), 1, any), ]
+  
   return(peaks_matrix)
 }
-
 
 
 ## normalize the spectrum
