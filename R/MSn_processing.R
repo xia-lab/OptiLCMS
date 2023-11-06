@@ -1380,48 +1380,99 @@ parse_ms2peaks <- function(ms2peaks_str) {
 
 
 ## normalize the spectrum
-normalize_spectrum <- function(spec, xlim, cutoff_relative){
-  ##xlim: mz range
+normalize_spectrum <- function(spec, cutoff_relative){
   ##cutoff_relative: relative noise cutoff
   tmp <- data.frame(mz = spec[, 1], intensity = spec[, 2])
   tmp$normalized <- round((tmp$intensity/max(tmp$intensity)) * 100)
-  tmp <- subset(tmp, tmp$mz >= xlim[1] & tmp$mz <= xlim[2])
   subset(tmp, tmp$normalized >= cutoff_relative)
 }
 
+# Calculate the ppm difference
+ppm_diff <- function(mz1, mz2, ppm) {
+  abs(mz1 - mz2) / mz2 * 1e6 <= ppm
+}
 
-MirrorPlotting <- function(spec.top, spec.bottom, title= NULL, subtitle = NULL,
+# Find matching m/z values within the ppm tolerance
+find_matches <- function(top_mz, bottom_mz, ppm) {
+  matched <- vector("list", length(top_mz))
+  for (i in seq_along(top_mz)) {
+    matched[[i]] <- which(ppm_diff(top_mz[i], bottom_mz, ppm))
+  }
+  matched
+}
+
+
+MirrorPlotting <- function(spec.top, spec.bottom, ppm = 25, title= NULL, subtitle = NULL,
                            cutoff_relative = 5,
-                           xlim = c(50, 1200), show_plot = FALSE){
+                           show_plot = TRUE) {
   
   if (is.null(spec.top) || is.null(spec.bottom)) {
     stop("spec.top and spec.bottom cannot be NULL.")
   }
-  #if (ncol(spec.top) != 2 | ncol(spec.bottom) != 2){
-  #  stop("Both spec.top and spec.bottom should have 2 columns for mz and intensity.")
-  #}
   
-  top <- normalize_spectrum(spec.top, xlim, cutoff_relative)
-  bottom <- normalize_spectrum(spec.bottom, xlim, cutoff_relative)
+  top <- normalize_spectrum(spec.top, cutoff_relative)
+  bottom <- normalize_spectrum(spec.bottom, cutoff_relative)
   
+  ### Calculate the ppm difference
+  ##ppm_diff <- function(mz1, mz2) {
+  ##  abs(mz1 - mz2) / mz2 * 1e6
+  ##}
+  ##
+  ### Find matching m/z values within the ppm tolerance
+  ##matches <- which(sapply(top$mz, function(mz_top) {
+  ##  sapply(bottom$mz, function(mz_bottom) {
+  ##    ppm_diff(mz_top, mz_bottom) <= ppm
+  ##  }) %>% any
+  ##}))
+  
+  matches <- find_matches(top$mz, bottom$mz, ppm)
+  
+  # Add an additional column for plotting stars
+  library(dplyr)
+  top$star_intensity <- ifelse(matches %in% 1:nrow(bottom), top$normalized + 5, NA)
+  #top$star_intensity <- ifelse(1:nrow(top) %in% matches, top$normalized + 5, NA)
+
   # Plotting with ggplot2
-  top_plot <- data.frame(mz = top$mz, intensity = top$normalized)
-  bottom_plot <- data.frame(mz = bottom$mz, intensity = -bottom$normalized)
   library(ggplot2)
-  p <- ggplot2::ggplot() +
-    geom_segment(data=top_plot, aes(x = mz, xend = mz, y = 0, yend = intensity), color = "blue") +
-    geom_segment(data=bottom_plot, aes(x = mz, xend = mz, y = 0, yend = intensity), color = "red") +
-    labs(title = title, subtitle = subtitle,
-         y = "Relative Intensity (%)", x = "m/z") +
-    theme_minimal()
+  
+  ## determine the x axis range
+  range_top <- range(top$mz, na.rm = TRUE)
+  range_bottom <- range(bottom$mz, na.rm = TRUE)
+  # The actual limits will be the minimum of the combined ranges and the maximum of the combined ranges
+  x_axis_limits <- range(c(range_top, range_bottom), na.rm = TRUE)
+  ## modify the range if it's too narrow
+  if (x_axis_limits[2] - x_axis_limits[1] <= 50) {
+    mean_x_axis_limits <- mean(x_axis_limits)
+    x_axis_limits <- c(mean_x_axis_limits-25, mean_x_axis_limits+25)
+  }
+  
+  # Check if there are any non-NA values in star_intensity
+  if (any(!is.na(top$star_intensity))) {
+    p <- ggplot() +
+      geom_segment(data=top, aes(x = mz, xend = mz, y = 0, yend = normalized), color = "blue") +
+      geom_segment(data=bottom, aes(x = mz, xend = mz, y = 0, yend = -normalized), color = "red") +
+      geom_point(data=top, aes(x = mz, y = star_intensity), shape=18, color="red", size=3, na.rm = TRUE) +
+      labs(title = title, subtitle = subtitle, y = "Relative Intensity (%)", x = "m/z") +
+      theme_minimal() +
+      xlim(x_axis_limits) +
+      ylim(-105, 105)
+  }else{
+    p <- ggplot() +
+      geom_segment(data=top, aes(x = mz, xend = mz, y = 0, yend = normalized), color = "blue") +
+      geom_segment(data=bottom, aes(x = mz, xend = mz, y = 0, yend = -normalized), color = "red") +
+      labs(title = title, subtitle = subtitle, y = "Relative Intensity (%)", x = "m/z") +
+      theme_minimal() +
+      xlim(x_axis_limits) +
+      ylim(-105, 105)
+  }
   
   if (show_plot) {
     print(p)
   }
   
-  #return(similarity_score)
-  #  return(list(similarity_score = similarity_score, plot = p))
+  return(p)
 }
+
 
 
 
@@ -1436,8 +1487,8 @@ MirrorPlotting <- function(spec.top, spec.bottom, title= NULL, subtitle = NULL,
 ##mark some mz values
 ##cutoff_relative or cutoff_absolute
 PerformMirrorPlotting <- function(mSet = NULL, plot_directory = "mirror_plot", 
-                                  cutoff_relative = 5,
-                                  xlim = c(50, 1200), display_plot = FALSE,
+                                  cutoff_relative = 5, ppm = 25,
+                                  display_plot = FALSE,
                                   width = 8, height = 6, dpi = 300) {
   ##if object is mSet, plot all of the mirror plot
   ##if specify an ID or which annotation result, only plot and display one mirror plot
@@ -1490,9 +1541,9 @@ PerformMirrorPlotting <- function(mSet = NULL, plot_directory = "mirror_plot",
         database <- mSet@MSnResults[["DBAnnoteRes"]][[i]][[1]][["Database"]][[j]]
         title <- paste0(mz, "__", rt)
         subtitle <- paste0(compound_name, "\n", score, "\n", database)
-        MirrorPlotting(spec.top.m, spec.bottom.m, title= title, subtitle = subtitle,
+        MirrorPlotting(spec.top.m, spec.bottom.m, ppm = ppm,title= title, subtitle = subtitle,
                        cutoff_relative = cutoff_relative, 
-                       xlim = xlim, show_plot = display_plot)
+                       show_plot = display_plot)
         
         # Construct the plot file name
         plot_filename <- paste0(sub_dir, "/", as.character(paste0(mz, "__", rt)), "_", j, ".png")
@@ -1503,4 +1554,5 @@ PerformMirrorPlotting <- function(mSet = NULL, plot_directory = "mirror_plot",
     }
   }
 }
+
 
