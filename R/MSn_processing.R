@@ -918,6 +918,7 @@ FormatMSnAnnotation <- function(mSet = NULL,
     colnames(peak_mtx) <- c("mzmin", "mzmax", "rtmin", "rtmax")
   } else {
     peak_mtx <- mSet@MSnData[["peak_mtx"]]
+    colnames(peak_mtx) <- c("mzmin", "mzmax", "rtmin", "rtmax")
   }
   peak_idx <- mSet@MSnResults[["Concensus_spec"]][[1]]
   peak_mtx_identified <- peak_mtx[peak_idx+1,]
