@@ -1369,6 +1369,10 @@ parse_ms2peaks <- function(ms2peaks_str) {
   # Remove rows that contain NAs (which may have been due to empty or incorrect format lines)
   peaks_matrix <- peaks_matrix[!apply(is.na(peaks_matrix), 1, any), ]
   
+  # Ensure the result is a matrix with two columns
+  if (length(peaks_matrix) == 2) {
+    peaks_matrix <- matrix(peaks_matrix, nrow = 1)  # Convert single row vector to a matrix
+  }
   return(peaks_matrix)
 }
 
