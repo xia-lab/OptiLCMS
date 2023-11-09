@@ -1491,10 +1491,6 @@ PerformMirrorPlotting <- function(mSet = NULL, plot_directory = "mirror_plot",
                                   cutoff_relative = 5, ppm = 25,
                                   display_plot = FALSE,
                                   width = 8, height = 6, dpi = 300) {
-  ##if object is mSet, plot all of the mirror plot
-  ##if specify an ID or which annotation result, only plot and display one mirror plot
-  
-  
   # Retrieve the DBAnnoteRes list
   dbAnnoteResList <- mSet@MSnResults[["DBAnnoteRes"]]
   
@@ -1502,6 +1498,7 @@ PerformMirrorPlotting <- function(mSet = NULL, plot_directory = "mirror_plot",
     stop("Process mSet with PerformResultsExport function (if you want to plot mirror plot, set type as 0L).")
   }
   
+  # determine if all dbAnnoteResList is null
   # Initialize a flag to track if any non-NULL is found
   allNull <- TRUE
   
@@ -1523,7 +1520,6 @@ PerformMirrorPlotting <- function(mSet = NULL, plot_directory = "mirror_plot",
     stop("Process mSet with PerformResultsExport function with the type set as 0L, then run PerformMirrorPlotting).")
   }
   
-  
   # Create the main directory if it doesn't exist
   if (!dir.exists(plot_directory)) {
     dir.create(plot_directory)
@@ -1537,7 +1533,7 @@ PerformMirrorPlotting <- function(mSet = NULL, plot_directory = "mirror_plot",
     ##spec.top.m <- parse_ms2peaks(spec.top)
     
     # Check if there are corresponding 'spec.bottom' spectra
-    if (i <= length(dbAnnoteResList) && !is.null(dbAnnoteResList[[i]])) {
+    if (i <= length(dbAnnoteResList) && !is.null(dbAnnoteResList[[i]]) && length(dbAnnoteResList[[i]][[1]][["MS2Pekas"]]) != 0) {
       
       # Extract spec.bottom spectra
       spec.bottom.list <- dbAnnoteResList[[i]][[1]][["MS2Pekas"]]
