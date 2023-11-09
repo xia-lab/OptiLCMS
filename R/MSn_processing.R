@@ -1338,8 +1338,32 @@ PerformFormulaGeneration <- function(mSet = NULL, ms_instr = NULL, halogen = FAL
   engine$annotate_formula()
   
   # Retrieve the annotation result summary
-  mSet@MSnResults[["FormulaPre"]] <-engine$get_summary()
-  #mSet@MSnResults[["FormulaPre"]] <-as.data.frame(do.call(rbind, engine$get_summary()))
+  formula_result <-engine$get_summary()
+  #formula_result <-as.data.frame(do.call(rbind, engine$get_summary()))
+
+  # Function to replace NULL with NA and unlist
+  prepare_row <- function(x) {
+    x[sapply(x, is.null)] <- NA  # Replace NULL with NA
+    unlist(x)  # Unlist the sublist into a vector
+  }
+  
+  # Apply the function to each sublist and combine them into a data frame
+  formula_result <- do.call(rbind, lapply(formula_result, prepare_row))
+  
+  # Convert the result into a data frame
+  formula_result <- as.data.frame(formula_result, stringsAsFactors = FALSE)
+  
+  # Convert factors to characters if there are any
+  formula_result[] <- lapply(formula_result, function(x) {
+    if (is.factor(x)) as.character(x) else x
+  })
+  
+  # Convert columns that should be numeric
+  formula_result$identifier <- as.numeric(formula_result$identifier)
+  formula_result$mz <- as.double(formula_result$mz)
+  formula_result$rt <- as.double(formula_result$rt)
+  formula_result$estimated_fdr <- as.double(formula_result$estimated_fdr)
+  mSet@MSnResults[["FormulaPre"]] <- formula_result
   return(mSet)
 }
 
