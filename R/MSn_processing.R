@@ -1472,6 +1472,10 @@ MirrorPlotting <- function(spec.top, spec.bottom, ppm = 25, title= NULL, subtitl
   }
   
   # Check if there are any non-NA values in star_intensity
+  #could add a layer for structure 
+  #inchikey <- "IKGXIBQEEMLURG-NVPNHPEKSA-N"
+  #compound <- ChemmineR::pubchemInchikey2sdf(inchikey)
+  #plot(compound$sdf_set)
   if (any(!is.na(top$star_intensity))) {
     p <- ggplot() +
       geom_segment(data=top, aes(x = mz, xend = mz, y = 0, yend = normalized), color = "blue") +
