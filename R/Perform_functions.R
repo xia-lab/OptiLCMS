@@ -1998,3 +1998,139 @@ PerformMassMatching <- function(mSet = NA) {
   return(mSet)
 }
 
+
+
+##run asari process in R
+##need to install asari lirary first
+##then, need to replace two files 
+run_process <- function(parameters, args, sample_class = NULL) {
+  # main process function
+  ##list_input_files <- asari$workflow$read_project_dir(args$input)
+  if (class(parameters$mz_tolerance_ppm) != "integer") {
+    parameters$mz_tolerance_ppm <- as.integer(round(parameters$mz_tolerance_ppm))
+  }
+  if (class(parameters$min_intensity_threshold) != "integer") {
+    parameters$min_intensity_threshold <- as.integer(round(parameters$min_intensity_threshold))
+  }
+  if (class(parameters$min_peak_height) != "integer") {
+    parameters$min_peak_height <- as.integer(round(parameters$min_peak_height))
+  }
+  if (class(parameters$min_timepoints) != "integer") {
+    parameters$min_timepoints <- as.integer(round(parameters$min_timepoints))
+  }
+  if (class(parameters$signal_noise_ratio) != "integer") {
+    parameters$signal_noise_ratio <- as.integer(round(parameters$signal_noise_ratio))
+  }
+  if (class(parameters$wlen) != "integer") {
+    parameters$wlen <- as.integer(round(parameters$wlen))
+  }
+  
+  list_input_files <- list.files(args$input, full.names = TRUE, recursive = TRUE, pattern = ".mzML")
+  if(length(list_input_files) == 0) {
+    cat("No valid mzML files are found in the input directory :(\n")
+  } else {
+    if(args$autoheight){
+      tryCatch({
+        parameters[['min_peak_height']] <- asari$analyze$estimate_min_peak_height(list_input_files)
+      }, error = function(err) {
+        cat(paste("Problems with input files:", err$message, "Back to default min_peak_height.\n"))
+      })
+    }
+    parameters[['min_prominence_threshold']] <- as.integer(0.33 * parameters[['min_peak_height']])
+    ##process project
+    result <- process_project(list_input_files, parameters)
+  }
+  
+  if (!is.null(sample_class)) {
+    sample_class <- read.csv(sample_class_path)
+    rownames(sample_class) <- sample_class[,1]
+    peak_table <- result[["feature_tables"]][["preferred_table"]][,c(1,12:ncol(result[["feature_tables"]][["preferred_table"]]))]
+    nrow <- nrow(peak_table)
+    for (i in (2:ncol(peak_table))) {
+      peak_table[nrow+1,i] <- sample_class[colnames(peak_table)[i],2]
+    }
+    peak_table <- rbind(peak_table[nrow(peak_table),], peak_table[-nrow(peak_table),])
+    peak_table[1,1] <- "class"
+    result$peak_table <- peak_table 
+  }
+  return(result)
+}
+
+## main function of run_process
+process_project <- function(list_input_files, parameters) {
+  
+  sample_registry <- asari$workflow$register_samples(list_input_files)
+  
+  if (parameters['database_mode'] == 'auto') {
+    if (length(list_input_files) <= parameters['project_sample_number_small']) {
+      parameters['database_mode'] <- 'memory'
+    } else {
+      parameters['database_mode'] <- 'ondisk'
+    }
+  }
+  
+  time_stamp <- format(Sys.time(), "%m%d%H%M%S")
+  parameters['time_stamp'] <- gsub("","",time_stamp)
+  #asari$workflow$create_export_folders(parameters, time_stamp)
+  
+  shared_dict <- asari$workflow$batch_EIC_from_samples_(sample_registry, parameters)
+  
+  for (sid in names(sample_registry)) {
+    sam <- sample_registry[[sid]]
+    temp <- shared_dict[[sid]]
+    names(temp) <- c('status:mzml_parsing', 'status:eic', 'data_location', 'max_scan_number', 'list_scan_numbers', 'list_retention_time', 'track_mzs', 'number_anchor_mz_pairs', 'anchor_mz_pairs', 'sample_data')
+    sam <- c(sam, temp)
+    sam['name'] <- gsub(".mzML", "", basename(sam[["input_file"]]))
+    sample_registry[[sid]] <- sam
+  }
+  ##choose and change the reference sample based on the number_anchor_mz_pairs
+  ##parameters$reference_sample_id <- get_reference_sample_id(parameters, sample_registry)
+  parameters$reference <- get_reference_sample_id(parameters, sample_registry)
+  
+
+  
+  
+  EE <- asari$experiment$ext_Experiment(sample_registry, parameters)
+  ##asari$experiment$ext_Experiment$process_all()
+  result <- list()
+  result <- EE$process_all()
+  result <- EE$export_all(anno=parameters["anno"])
+  
+  if (!parameters[["pickle"]] & parameters[["database_mode"]] != 'memory') {
+    remove_intermediate_pickles(parameters)
+  }
+  result$feature_tables$full_table <- py_to_r(result$feature_tables$full_table)
+  result$feature_tables$preferred_table <- py_to_r(result$feature_tables$preferred_table)
+  if (!is.null(result$feature_tables$targeted_table)) {
+    result$feature_tables$targeted_table <- py_to_r(result$feature_tables$targeted_table)
+    }
+  result$feature_tables$unique_compound_table <- py_to_r(result$feature_tables$unique_compound_table)
+  
+  return(result)
+}
+
+## get the reference sample id from all the samples based on the number_anchor_mz_pairs
+get_reference_sample_id <- function(parameters, sample_registry) {
+  if(!is.null(parameters$reference)){
+    for (k in names(sample_registry)){
+      v <- sample_registry[[k]]
+      if(basename(parameters$reference) == basename(v$input_file)){
+        return(parameters$reference)
+      }
+    }
+  } else if(length(sample_registry) > 0) {
+    L <- lapply(names(sample_registry), function(k) 
+      c(sample_registry[[k]]$number_anchor_mz_pairs, k)
+    )
+    L <- do.call(rbind, L)
+    L <- L[order(L[,1], decreasing = TRUE), ]
+    ref <- sample_registry[[L[1, 2]]]
+    #parameters$reference <- ref$name
+    ##parameters$reference <- ref$sample_id
+    #parameters$reference <- ref$input_file
+    cat("\n    The reference sample is:\n    ||* ", ref$name, " *||\n")
+    cat("Max reference retention time is ", max(ref$list_retention_time), 
+        " at scan number ", ref$max_scan_number, ".\n")
+  }
+  return(paste0(ref$name, ".mzML"))
+}

@@ -663,7 +663,7 @@ List annotation_export(List searching_res,
   /*
    *  searching_res, is a list returned by function, "SpectraSearching"
    *  type, integer of returned matching results; 
-   *    0, return all; [compound name, inchikey, formula]
+   *    0, return all; [compound name, inchikey, formula, MS2Peaks]
    *    1, compound name; 
    *    2, compound formula; 
    *    3, InChiKeys;
@@ -762,7 +762,7 @@ List annotation_export(List searching_res,
 
       if(type == 0){
         vector<CharacterVector> allResNMs = SQLiteObj.convertID2alls(allIDs_sub);
-        
+
         List res_tmp;
         if(lipidsClass){
           // extract lipid class information of all IDs
@@ -772,6 +772,7 @@ List annotation_export(List searching_res,
                                  _["InchiKeys"] = allResNMs[1],
                                  _["Formula"] = allResNMs[2],
                                  _["Database"] = allResNMs[3],
+                                 _["MS2Pekas"] = allResNMs[4], // Include MS2Peaks here
                                  _["Scores"] = allScore_sub,    
                                  _["Dot_Similarity"] = allDots_sub,
                                  _["Super_Class"] = lipidList[0],
@@ -783,6 +784,7 @@ List annotation_export(List searching_res,
                                  _["InchiKeys"] = allResNMs[1],
                                  _["Formula"] = allResNMs[2],
                                  _["Database"] = allResNMs[3],
+                                 _["MS2Pekas"] = allResNMs[4], // Include MS2Peaks here
                                  _["Scores"] = allScore_sub,
                                  _["Dot_Similarity"] = allDots_sub);
         }

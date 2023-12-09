@@ -428,20 +428,48 @@ int SqliteDriver::extractFMMS2_with_mzRange_entireDB(double min_mz, double max_m
   return 1;
 }
 
+#include <sqlite3.h>
+#include <string>
+#include <sstream>
+#include <vector>
+#include <iostream>
+
+struct MzIntensityPair {
+    double mz;
+    int intensity;
+};
+
+std::vector<MzIntensityPair> parseMS2Peaks(const std::string& ms2peaks_txt) {
+    std::vector<MzIntensityPair> peaks;
+    std::istringstream stream(ms2peaks_txt);
+    std::string pair;
+
+    while (std::getline(stream, pair, ' ')) {
+        std::istringstream pair_stream(pair);
+        std::string mz_str, intensity_str;
+        std::getline(pair_stream, mz_str, '\t');
+        std::getline(pair_stream, intensity_str);
+        MzIntensityPair mz_intensity = {std::stod(mz_str), std::stoi(intensity_str)};
+        peaks.push_back(mz_intensity);
+    }
+    return peaks;
+}
+
 vector<CharacterVector> SqliteDriver::convertID2alls(IntegerVector IDs){
   vector<CharacterVector> allRes;
   CharacterVector inchikey_res(IDs.size());
   CharacterVector compound_res(IDs.size());
   CharacterVector formula_res(IDs.size());
   CharacterVector dbrecord_res(IDs.size());
+  CharacterVector ms2peaks_res(IDs.size());  // New vector for MS2Peaks
   
   int thisid;
-  string q, q0, q1;
+  string q, q1;
   String db_name;
   for(int i = 0; i<IDs.size(); i++){
     thisid = IDs[i];
     
-    // find specific table
+    // Find specific table
     q1 = "SELECT DB_Tables FROM Index_table WHERE Min_ID <= " + 
       std::to_string(thisid) + " AND Max_ID >= " + std::to_string(thisid) + ";";
     
@@ -450,39 +478,30 @@ vector<CharacterVector> SqliteDriver::convertID2alls(IntegerVector IDs){
     string db_table;
     sqlite3_prepare(db, q1.c_str(), -1, &stmt, NULL);
     while(!done){
-      res  = sqlite3_step (stmt);
-      // if the result returned
+      res  = sqlite3_step(stmt);
       if(res == SQLITE_ROW){
-        // data found successfully
         db_table = (char*) sqlite3_column_text(stmt, 0);
       } else if(res == SQLITE_DONE) {
-        // all searching finished
         done = true;
         break;
       } else {
-        // something else
-        cout << "Now something wierd happening [xx0395opas] --> " << res << endl;
+        cout << "Error occurred during table selection." << endl;
         return allRes;
       }
     }
     sqlite3_finalize(stmt);
     
-    // find corresponding inchikeys from the table
-    q = "SELECT CompoundName,InchiKey,Formula FROM " + db_table + " WHERE ID == " + std::to_string(thisid);
+    // Find corresponding record from the table including MS2Peaks
+    q = "SELECT CompoundName, InchiKey, Formula, MS2Peaks FROM " + db_table + " WHERE ID == " + std::to_string(thisid);
     
-    db_name = db_table.substr(0,db_table.size()-6);
+    db_name = db_table.substr(0, db_table.size()-6);
     
     done = false;
-    
-    string inchikey_txt;
-    string compound_txt;
-    string formula_txt;
+    string compound_txt, inchikey_txt, formula_txt, ms2peaks_txt;
     sqlite3_prepare(db, q.c_str(), -1, &stmt, NULL);
     while(!done){
-      res  = sqlite3_step (stmt);
-      // if the result returned
+      res  = sqlite3_step(stmt);
       if(res == SQLITE_ROW){
-        // data found successfully
         dbrecord_res[i] = db_name;
         compound_txt = (char*) sqlite3_column_text(stmt, 0);
         compound_res[i] = compound_txt;
@@ -490,29 +509,24 @@ vector<CharacterVector> SqliteDriver::convertID2alls(IntegerVector IDs){
         inchikey_res[i] = inchikey_txt;
         formula_txt = (char*) sqlite3_column_text(stmt, 2);
         formula_res[i] = formula_txt;
+        ms2peaks_txt = (char*) sqlite3_column_text(stmt, 3);
+        ms2peaks_res[i] = ms2peaks_txt;
       } else if(res == SQLITE_DONE) {
-        // all searching finished
         done = true;
         break;
       } else {
-        // something else
-        cout << "Now something wierd happening [xx0419opas] --> " << res << endl;
-        allRes.push_back(compound_res);
-        allRes.push_back(inchikey_res);
-        allRes.push_back(formula_res);
-        allRes.push_back(dbrecord_res);
-        sqlite3_finalize(stmt);
+        cout << "Error occurred during data retrieval." << endl;
         return allRes;
       }
     }
-    // finalize the statement (Destructor of the stmt)
     sqlite3_finalize(stmt);
-    
   }
+
   allRes.push_back(compound_res);
   allRes.push_back(inchikey_res);
   allRes.push_back(formula_res);
   allRes.push_back(dbrecord_res);
+  allRes.push_back(ms2peaks_res);  // Include MS2Peaks in the results
   return allRes;
 };
 
@@ -835,6 +849,60 @@ vector<double> SqliteDriver::getRTVec(){
   return rt_vec;
 }
 
+CharacterVector SqliteDriver::convertID2MS2Peaks(IntegerVector IDs){
+  CharacterVector ms2peaks_res(IDs.size());
+  
+  int thisid;
+  string q, q0, q1;
+  for(int i = 0; i<IDs.size(); i++){
+    thisid = IDs[i];
+    
+    // find specific table
+    q1 = "SELECT DB_Tables FROM Index_table WHERE Min_ID <= " + 
+      std::to_string(thisid) + " AND Max_ID >= " + std::to_string(thisid) + ";";
+    
+    bool done = false;
+    int res;
+    string db_table;
+    sqlite3_prepare(db, q1.c_str(), -1, &stmt, NULL);
+    while(!done){
+      res  = sqlite3_step (stmt);
+      if(res == SQLITE_ROW){
+        db_table = (char*) sqlite3_column_text(stmt, 0);
+      } else if(res == SQLITE_DONE) {
+        done = true;
+        break;
+      } else {
+        cout << "Now something weird happening [xx0395opas] --> " << res << endl;
+        return ms2peaks_res;
+      }
+    }
+    sqlite3_finalize(stmt);
+    
+    // find corresponding MS2Peaks from the table
+    q = "SELECT MS2Peaks FROM " + db_table + " WHERE ID == " + std::to_string(thisid);
+    
+    done = false;
+    
+    string ms2peaks_txt;
+    sqlite3_prepare(db, q.c_str(), -1, &stmt, NULL);
+    while(!done){
+      res  = sqlite3_step (stmt);
+      if(res == SQLITE_ROW){
+        ms2peaks_txt = (char*) sqlite3_column_text(stmt, 0);
+        ms2peaks_res[i] = ms2peaks_txt;
+      } else if(res == SQLITE_DONE) {
+        done = true;
+        break;
+      } else {
+        cout << "Now something weird happening [xx0419opas] --> " << res << endl;
+        return ms2peaks_res;
+      }
+    }
+    sqlite3_finalize(stmt);
+  }
+  return ms2peaks_res;
+};
 
 // // [[Rcpp::export]]
 // double test_SQLite_fun(int x) {

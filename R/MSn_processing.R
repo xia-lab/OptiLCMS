@@ -918,6 +918,7 @@ FormatMSnAnnotation <- function(mSet = NULL,
     colnames(peak_mtx) <- c("mzmin", "mzmax", "rtmin", "rtmax")
   } else {
     peak_mtx <- mSet@MSnData[["peak_mtx"]]
+    colnames(peak_mtx) <- c("mzmin", "mzmax", "rtmin", "rtmax")
   }
   peak_idx <- mSet@MSnResults[["Concensus_spec"]][[1]]
   peak_mtx_identified <- peak_mtx[peak_idx+1,]
@@ -1181,4 +1182,430 @@ FormatMSnAnnotation <- function(mSet = NULL,
   return(res_final)
 }
 
+#####if we have isotopic peaks, charge number, adduct type would be better
+#####mSet@MSnResults[["DBAnnoteRes"]][[2]][[1]][["Scores"]][1] 
+#mSet@MSnResults[["DBAnnoteRes"]][[position]][[1]][["Scores"]][1]
+######or we should only predict the features without annotation results/or features with low scores, set a parameters all_concensus_spec = FALSE/TRUE
+PerformFormulaGeneration <- function(mSet = NULL, ms_instr = NULL, halogen = FALSE, ppm = TRUE, ms1_tol = 5, ms2_tol = 10, charge = 1,
+                                    parallel = TRUE, ncore = 4,  timeout_secs = 600, batch_size = 1000, c_range = 100, h_range = 150, ms2_denoise = TRUE){
 
+  # Check if ms_instr is "qtof", "orbitrap" or "fticr"
+  if (!ms_instr %in% c("qtof", "orbitrap", "fticr")) {
+    stop("Error: ms_instr must be one of 'qtof', 'orbitrap', or 'fticr'")
+  }
+  
+  # Check if there is Concensus spectra
+  if (length(mSet@MSnResults[["Concensus_spec"]][[1]]) == 0) {
+    stop("Error: There is no Concensus spectra in the mSet object.")
+  }
+  
+  # Check the charge
+  if (!is.numeric(charge)) {
+    stop("'charge' must be a numeric value or numeric vector.")
+  }
+  
+  len_charge <- length(charge)
+  
+  if (mSet@MSnData[["acquisitionMode"]] == "DDA") {
+    len_targeted_peaks <- nrow(mSet@MSnData[["peak_mtx"]])
+  }
+  
+  if (mSet@MSnData[["acquisitionMode"]] == "DIA") {
+    len_targeted_peaks <- length(mSet@MSnData[["peak_mtx"]])
+  }
+  
+  if (len_charge != 1 && len_charge != len_targeted_peaks) {
+    stop(sprintf("'charge' should either be a single integer or a numeric vector of length %d.", len_targeted_peaks))
+  }
+  
+  ##importing data from mSet (with columns ‘mz’, ‘intensity’) containing an MS/MS spectrum 
+  ##Import the required Python modules
+  msbuddy <- reticulate::import("msbuddy")
+  base <- msbuddy$base
+  np <- reticulate::import("numpy")
+  
+  # Instantiate a Msbuddy object
+  config <- msbuddy$MsbuddyConfig(ms_instr= ms_instr, halogen=halogen, ppm = ppm, ms1_tol = ms1_tol, ms2_tol = ms2_tol, parallel = parallel, n_cpu = ncore, timeout_secs = timeout_secs, batch_size = batch_size, c_range = c(0, c_range), h_range = c(0, h_range), ms2_denoise = ms2_denoise)
+  engine <- msbuddy$Msbuddy(config)
+  
+  # generate the features_list
+  features_list <- list()
+  
+  if (mSet@MSnData[["acquisitionMode"]] == "DDA") {
+    # import all the concensus spectra
+    if (len_charge == 1) {
+      for(i in mSet@MSnResults[["Concensus_spec"]][[1]]) {
+        
+        # get MS2 spectrum from the current mSet object
+        position <- which(mSet@MSnResults[["Concensus_spec"]][[1]] == i)
+        ms2_df <- mSet@MSnResults[["Concensus_spec"]][[2]][[position]][[1]]
+        colnames(ms2_df) <- c("mz", "intensity")
+        
+        # Create a Spectrum object for MS2
+        ms2_spec <- base$Spectrum(mz_array = np$array(ms2_df['mz']),
+                                  int_array = np$array(ms2_df['intensity']))
+        
+        # Create a MetaFeature object (assuming the other parameters remain constant for all files)
+        metafeature <- base$MetaFeature(identifier = i+1,
+                                        mz = mean(mSet@MSnData[["peak_mtx"]][i+1,1], mSet@MSnData[["peak_mtx"]][i+1,2]),
+                                        rt = mean(mSet@MSnData[["peak_mtx"]][i+1,3], mSet@MSnData[["peak_mtx"]][i+1,4]),
+                                        charge = charge,
+                                        ms2 = ms2_spec)
+        
+        # Append metafeature to the list
+        features_list <- c(features_list, list(metafeature))
+      }
+    } else{
+      for(i in mSet@MSnResults[["Concensus_spec"]][[1]]) {
+        
+        # get MS2 spectrum from the current mSet object
+        position <- which(mSet@MSnResults[["Concensus_spec"]][[1]] == i)
+        ms2_df <- mSet@MSnResults[["Concensus_spec"]][[2]][[position]][[1]]
+        colnames(ms2_df) <- c("mz", "intensity")
+        
+        # Create a Spectrum object for MS2
+        ms2_spec <- base$Spectrum(mz_array = np$array(ms2_df['mz']),
+                                  int_array = np$array(ms2_df['intensity']))
+        
+        # Create a MetaFeature object (assuming the other parameters remain constant for all files)
+        metafeature <- base$MetaFeature(identifier = i+1,
+                                        mz = mean(mSet@MSnData[["peak_mtx"]][i+1,1], mSet@MSnData[["peak_mtx"]][i+1,2]),
+                                        rt = mean(mSet@MSnData[["peak_mtx"]][i+1,3], mSet@MSnData[["peak_mtx"]][i+1,4]),
+                                        charge = charge[i+1],
+                                        ms2 = ms2_spec)
+        
+        # Append metafeature to the list
+        features_list <- c(features_list, list(metafeature))
+      }
+    }
+  }
+  
+  
+  if (mSet@MSnData[["acquisitionMode"]] == "DIA") {
+    # import all the concensus spectra
+    if (len_charge == 1) {
+      for(i in mSet@MSnResults[["Concensus_spec"]][[1]]) {
+        
+        # get MS2 spectrum from the current mSet object
+        position <- which(mSet@MSnResults[["Concensus_spec"]][[1]] == i)
+        ms2_df <- mSet@MSnResults[["Concensus_spec"]][[2]][[position]][[1]]
+        colnames(ms2_df) <- c("mz", "intensity")
+        
+        # Create a Spectrum object for MS2
+        ms2_spec <- base$Spectrum(mz_array = np$array(ms2_df['mz']),
+                                  int_array = np$array(ms2_df['intensity']))
+        
+        # Create a MetaFeature object (assuming the other parameters remain constant for all files)
+        metafeature <- base$MetaFeature(identifier = i+1,
+                                        mz = mSet@MSnData[["peak_mtx"]][[i+1]][[1]],
+                                        rt = mSet@MSnData[["peak_mtx"]][[i+1]][[4]],
+                                        charge = charge,
+                                        ms2 = ms2_spec)
+        
+        # Append metafeature to the list
+        features_list <- c(features_list, list(metafeature))
+      }
+    } else{
+      for(i in mSet@MSnResults[["Concensus_spec"]][[1]]) {
+        
+        # get MS2 spectrum from the current mSet object
+        position <- which(mSet@MSnResults[["Concensus_spec"]][[1]] == i)
+        ms2_df <- mSet@MSnResults[["Concensus_spec"]][[2]][[position]][[1]]
+        colnames(ms2_df) <- c("mz", "intensity")
+        
+        # Create a Spectrum object for MS2
+        ms2_spec <- base$Spectrum(mz_array = np$array(ms2_df['mz']),
+                                  int_array = np$array(ms2_df['intensity']))
+        
+        # Create a MetaFeature object (assuming the other parameters remain constant for all files)
+        metafeature <- base$MetaFeature(identifier = i+1,
+                                        mz = mSet@MSnData[["peak_mtx"]][[i+1]][[1]],
+                                        rt = mSet@MSnData[["peak_mtx"]][[i+1]][[4]],
+                                        charge = charge[i+1],
+                                        ms2 = ms2_spec)
+        
+        # Append metafeature to the list
+        features_list <- c(features_list, list(metafeature))
+      }
+    }
+  }
+  
+  
+  # Add features_list the Msbuddy object
+  engine$add_data(features_list)
+  
+  # Annotate molecular formula
+  engine$annotate_formula()
+  
+  # Retrieve the annotation result summary
+  formula_result <-engine$get_summary()
+  #formula_result <-as.data.frame(do.call(rbind, engine$get_summary()))
+
+  # Function to replace NULL with NA and unlist
+  prepare_row <- function(x) {
+    x[sapply(x, is.null)] <- NA  # Replace NULL with NA
+    unlist(x)  # Unlist the sublist into a vector
+  }
+  
+  # Apply the function to each sublist and combine them into a data frame
+  formula_result <- do.call(rbind, lapply(formula_result, prepare_row))
+  
+  # Convert the result into a data frame
+  formula_result <- as.data.frame(formula_result, stringsAsFactors = FALSE)
+  
+  # Convert factors to characters if there are any
+  formula_result[] <- lapply(formula_result, function(x) {
+    if (is.factor(x)) as.character(x) else x
+  })
+  
+  # Convert columns that should be numeric
+  formula_result$identifier <- as.numeric(formula_result$identifier)
+  formula_result$mz <- as.double(formula_result$mz)
+  formula_result$rt <- as.double(formula_result$rt)
+  formula_result$estimated_fdr <- as.double(formula_result$estimated_fdr)
+  mSet@MSnResults[["FormulaPre"]] <- formula_result
+  return(mSet)
+}
+
+
+
+# Function to parse the MS2Peaks string into a two-column matrix
+parse_ms2peaks <- function(ms2peaks_str) {
+  # Split the string into lines
+  lines <- strsplit(ms2peaks_str, "\n")[[1]]
+  
+  # Split each line into mz and intensity, and convert to numeric
+  # need to determine mz and intensity values are separated by " " or "\t", because there are two types in the sqlite database even in one entry
+  # Process each line individually to handle different delimiters
+  peaks <- lapply(lines, function(line) {
+    # Determine delimiter by checking for tabs or spaces
+    delimiter <- ifelse(grepl("\t", line), "\t", " ")
+    # Split the line using the determined delimiter and convert to numeric
+    numeric_line <- as.numeric(strsplit(trimws(line), delimiter)[[1]])
+    return(numeric_line)
+  })
+  
+  # Combine all the peaks into a matrix, handling potential uneven lengths by padding with NA
+  max_length <- max(sapply(peaks, length))
+  peaks_matrix <- do.call(rbind, lapply(peaks, function(x) {
+    c(x, rep(NA, max_length - length(x)))
+  }))
+  
+  # Remove rows that contain NAs (which may have been due to empty or incorrect format lines)
+  peaks_matrix <- peaks_matrix[!apply(is.na(peaks_matrix), 1, any), ]
+  
+  # Ensure the result is a matrix with two columns
+  if (length(peaks_matrix) == 2) {
+    peaks_matrix <- matrix(peaks_matrix, nrow = 1)  # Convert single row vector to a matrix
+  }
+  return(peaks_matrix)
+}
+
+
+
+
+## normalize the spectrum
+normalize_spectrum <- function(spec, cutoff_relative){
+  ##cutoff_relative: relative noise cutoff
+  tmp <- data.frame(mz = spec[, 1], intensity = spec[, 2])
+  tmp$normalized <- round((tmp$intensity/max(tmp$intensity)) * 100)
+  subset(tmp, tmp$normalized >= cutoff_relative)
+}
+
+# Calculate the ppm difference
+ppm_diff <- function(mz1, mz2, ppm) {
+  abs(mz1 - mz2) / mz2 * 1e6 <= ppm
+}
+
+# Find matching m/z values within the ppm tolerance
+find_matches <- function(top_mz, bottom_mz, ppm) {
+  matched <- vector("list", length(top_mz))
+  for (i in seq_along(top_mz)) {
+    matched[[i]] <- which(ppm_diff(top_mz[i], bottom_mz, ppm))
+  }
+  matched
+}
+
+
+MirrorPlotting <- function(spec.top, spec.bottom, ppm = 25, title= NULL, subtitle = NULL,
+                           cutoff_relative = 5,
+                           show_plot = TRUE) {
+  
+  if (is.null(spec.top) || is.null(spec.bottom)) {
+    stop("spec.top and spec.bottom cannot be NULL.")
+  }
+  
+  top <- normalize_spectrum(spec.top, cutoff_relative)
+  bottom <- normalize_spectrum(spec.bottom, cutoff_relative)
+  
+  ### Calculate the ppm difference
+  ##ppm_diff <- function(mz1, mz2) {
+  ##  abs(mz1 - mz2) / mz2 * 1e6
+  ##}
+  ##
+  ### Find matching m/z values within the ppm tolerance
+  ##matches <- which(sapply(top$mz, function(mz_top) {
+  ##  sapply(bottom$mz, function(mz_bottom) {
+  ##    ppm_diff(mz_top, mz_bottom) <= ppm
+  ##  }) %>% any
+  ##}))
+  
+  matches <- find_matches(top$mz, bottom$mz, ppm)
+  
+  # Add an additional column for plotting stars
+  library(dplyr)
+  top$star_intensity <- ifelse(matches %in% 1:nrow(bottom), top$normalized + 5, NA)
+  #top$star_intensity <- ifelse(1:nrow(top) %in% matches, top$normalized + 5, NA)
+
+  # Plotting with ggplot2
+  library(ggplot2)
+  
+  ## determine the x axis range
+  range_top <- range(top$mz, na.rm = TRUE)
+  range_bottom <- range(bottom$mz, na.rm = TRUE)
+  # The actual limits will be the minimum of the combined ranges and the maximum of the combined ranges
+  x_axis_limits <- range(c(range_top, range_bottom), na.rm = TRUE)
+  ## modify the range if it's too narrow
+  if (x_axis_limits[2] - x_axis_limits[1] <= 50) {
+    mean_x_axis_limits <- mean(x_axis_limits)
+    x_axis_limits <- c(mean_x_axis_limits-25, mean_x_axis_limits+25)
+  }
+  
+  # Check if there are any non-NA values in star_intensity
+  #could add a layer for structure 
+  #inchikey <- "IKGXIBQEEMLURG-NVPNHPEKSA-N"
+  #compound <- ChemmineR::pubchemInchikey2sdf(inchikey)
+  #plot(compound$sdf_set)
+  if (any(!is.na(top$star_intensity))) {
+    p <- ggplot() +
+      geom_segment(data=top, aes(x = mz, xend = mz, y = 0, yend = normalized), color = "blue") +
+      geom_segment(data=bottom, aes(x = mz, xend = mz, y = 0, yend = -normalized), color = "red") +
+      geom_point(data=top, aes(x = mz, y = star_intensity), shape=18, color="red", size=3, na.rm = TRUE) +
+      labs(title = title, subtitle = subtitle, y = "Relative Intensity (%)", x = "m/z") +
+      theme_minimal() +
+      xlim(x_axis_limits) +
+      ylim(-105, 105)
+  }else{
+    p <- ggplot() +
+      geom_segment(data=top, aes(x = mz, xend = mz, y = 0, yend = normalized), color = "blue") +
+      geom_segment(data=bottom, aes(x = mz, xend = mz, y = 0, yend = -normalized), color = "red") +
+      labs(title = title, subtitle = subtitle, y = "Relative Intensity (%)", x = "m/z") +
+      theme_minimal() +
+      xlim(x_axis_limits) +
+      ylim(-105, 105)
+  }
+  
+  if (show_plot) {
+    print(p)
+  }
+  
+  return(p)
+}
+
+
+
+
+##folder:mirror_plot
+##subfolder: mz__rt
+##file name: mz__rt_1
+##title: mz__rt
+##subtitle:compound name, score, database
+##matched MS2 fragments on the figure are marked
+
+## to be done
+##mark some mz values
+##cutoff_relative or cutoff_absolute
+PerformMirrorPlotting <- function(mSet = NULL, plot_directory = "mirror_plot", 
+                                  cutoff_relative = 5, ppm = 25,
+                                  display_plot = FALSE,
+                                  width = 8, height = 6, dpi = 300) {
+  # Retrieve the DBAnnoteRes list
+  dbAnnoteResList <- mSet@MSnResults[["DBAnnoteRes"]]
+  
+  if (is.null(dbAnnoteResList)) {
+    stop("Process mSet with PerformResultsExport function (if you want to plot mirror plot, set type as 0L).")
+  }
+  
+  # determine if all dbAnnoteResList is null
+  # Initialize a flag to track if any non-NULL is found
+  allNull <- TRUE
+  
+  # Loop through the list to check for non-NULL content
+  for (i in seq_along(dbAnnoteResList)) {
+    # Access the first element and then the MS2Pekas of each sublist
+    ms2Pekas <- dbAnnoteResList[[i]][[1]][["MS2Pekas"]]
+    
+    # Check if MS2Pekas is not NULL
+    if (!is.null(ms2Pekas)) {
+      allNull <- FALSE
+      #cat(sprintf("Non-NULL content found in sublist %d, stopping the check.\n", i))
+      break # Stop the loop if non-NULL is found
+    }
+  }
+  
+  # If allNull is TRUE, it means all sublists had NULL in MS2Pekas
+  if (allNull) {
+    stop("Process mSet with PerformResultsExport function with the type set as 0L, then run PerformMirrorPlotting).")
+  }
+  
+  # Create the main directory if it doesn't exist
+  if (!dir.exists(plot_directory)) {
+    dir.create(plot_directory)
+  }
+  
+  # Iterate over each 'spec.top'
+  spec.top.list <- mSet@MSnResults[["Concensus_spec"]][[2]]
+  
+  for (i in seq_along(spec.top.list)) {
+    spec.top.m <- spec.top.list[[i]][[1]]
+    ##spec.top.m <- parse_ms2peaks(spec.top)
+    
+    # Check if there are corresponding 'spec.bottom' spectra
+    if (i <= length(dbAnnoteResList) && !is.null(dbAnnoteResList[[i]]) && length(dbAnnoteResList[[i]][[1]][["MS2Pekas"]]) != 0) {
+      
+      # Extract spec.bottom spectra
+      spec.bottom.list <- dbAnnoteResList[[i]][[1]][["MS2Pekas"]]
+      
+      ## for title and file name
+      if (mSet@MSnData[["acquisitionMode"]] == "DIA") {
+        mz <- mSet@MSnData[["peak_mtx"]][[mSet@MSnResults[["Concensus_spec"]][[1]][[i]]+1]][[1]]
+        rt <- mSet@MSnData[["peak_mtx"]][[mSet@MSnResults[["Concensus_spec"]][[1]][[i]]+1]][[4]]
+      }
+      if (mSet@MSnData[["acquisitionMode"]] == "DDA") {
+        mz = mean(mSet@MSnData[["peak_mtx"]][mSet@MSnResults[["Concensus_spec"]][[1]][[i]]+1,1], mSet@MSnData[["peak_mtx"]][mSet@MSnResults[["Concensus_spec"]][[1]][[i]]+1,2])
+        rt = mean(mSet@MSnData[["peak_mtx"]][mSet@MSnResults[["Concensus_spec"]][[1]][[i]]+1,3], mSet@MSnData[["peak_mtx"]][mSet@MSnResults[["Concensus_spec"]][[1]][[i]]+1,4])
+      }
+      
+      # Create sub-directory for this ID
+      # use mz__rt would be better
+      sub_dir <- file.path(plot_directory, as.character(paste0(mz, "__", rt)))
+      if (!dir.exists(sub_dir)) {
+        dir.create(sub_dir)
+      }
+      
+      # Loop through each spec.bottom
+      for (j in seq_along(spec.bottom.list)) {
+        spec.bottom <- spec.bottom.list[[j]]
+        
+        # Parse strings to numeric matrix
+        spec.bottom.m <- parse_ms2peaks(spec.bottom)
+        
+        # Perform mirror plotting
+        compound_name <- dbAnnoteResList[[i]][[1]][["Compounds"]][[j]]
+        score <- round(dbAnnoteResList[[i]][[1]][["Scores"]][[j]], 2)
+        database <- dbAnnoteResList[[i]][[1]][["Database"]][[j]]
+        title <- paste0(mz, "__", rt)
+        subtitle <- paste0(compound_name, "\n", score, "\n", database)
+        MirrorPlotting(spec.top.m, spec.bottom.m, ppm = ppm,title= title, subtitle = subtitle,
+                       cutoff_relative = cutoff_relative, 
+                       show_plot = display_plot)
+        
+        # Construct the plot file name
+        plot_filename <- paste0(sub_dir, "/", as.character(paste0(mz, "__", rt)), "_", j, ".png")
+        
+        # Save the plot
+        ggsave(plot_filename, plot = last_plot(), width = 8, height = 6, dpi = 300)
+      }
+    }
+  }
+}
