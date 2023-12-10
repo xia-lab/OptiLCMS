@@ -428,33 +428,6 @@ int SqliteDriver::extractFMMS2_with_mzRange_entireDB(double min_mz, double max_m
   return 1;
 }
 
-#include <sqlite3.h>
-#include <string>
-#include <sstream>
-#include <vector>
-#include <iostream>
-
-struct MzIntensityPair {
-    double mz;
-    int intensity;
-};
-
-std::vector<MzIntensityPair> parseMS2Peaks(const std::string& ms2peaks_txt) {
-    std::vector<MzIntensityPair> peaks;
-    std::istringstream stream(ms2peaks_txt);
-    std::string pair;
-
-    while (std::getline(stream, pair, ' ')) {
-        std::istringstream pair_stream(pair);
-        std::string mz_str, intensity_str;
-        std::getline(pair_stream, mz_str, '\t');
-        std::getline(pair_stream, intensity_str);
-        MzIntensityPair mz_intensity = {std::stod(mz_str), std::stoi(intensity_str)};
-        peaks.push_back(mz_intensity);
-    }
-    return peaks;
-}
-
 vector<CharacterVector> SqliteDriver::convertID2alls(IntegerVector IDs){
   vector<CharacterVector> allRes;
   CharacterVector inchikey_res(IDs.size());
