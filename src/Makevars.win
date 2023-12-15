@@ -16,8 +16,8 @@ ENTROBJECTS = entropy.o CleanSpectrum.o SpectralEntropy.o
 
 OBJECTS= $(MQOBJECTS) $(OBIOBJECTS) $(XCMSOBJECTS) $(BATCHOBJECTS) $(SQLITOBJECTS) $(PENSEOBJECTS) $(OPTMSOBJECTS) $(ENTROBJECTS)
 
-PKG_CXXFLAGS= -fstrict-aliasing -fopenmp
-PKG_LIBS = $(LAPACK_LIBS) $(BLAS_LIBS) $(FLIBS) -fopenmp
+PKG_CXXFLAGS= -fstrict-aliasing
+PKG_LIBS = $(LAPACK_LIBS) $(BLAS_LIBS) $(FLIBS)
 
 all: $(SHLIB)
 
