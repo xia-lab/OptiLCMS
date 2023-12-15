@@ -24,6 +24,8 @@ private:
   vector<string> FMs_vec;
   vector<string> MS2Peaks_vec;
   vector<string> cmpds_vec;
+  vector<string> smiles_vec;
+  vector<string> inchikeys_vec;
   vector<double> precmz_vec;
   vector<double> rt_vec;
 
@@ -64,6 +66,8 @@ public:
   
   int extractFMMS2_with_mzRange_entireDB(double min_mz, double max_mz);
   
+  int extractALLMS2_with_mzRange(double min_mz, double max_mz);
+  
   CharacterVector convertID2InChiKeys(IntegerVector IDs);
   
   CharacterVector convertID2CMPDNMs(IntegerVector IDs);
@@ -91,6 +95,10 @@ public:
   vector<double> getRTVec();
   
   vector<string> getCMPDsVec();
+  
+  vector<string> getSimlesVec();
+  
+  vector<string> getInchikeysVec();
   
 };
 

@@ -12,6 +12,8 @@ SqliteDriver::SqliteDriver(String dbase, string db_tb, int ion_mode = 0){
   vector<string> FMs_vec;
   vector<string> MS2Peaks_vec;
   vector<string> cmpds_vec;
+  vector<string> smiles_vec;
+  vector<string> inchikeys_vec;
   vector<double> precmz_vec;
   vector<double> rt_vec;
 
@@ -368,7 +370,7 @@ int SqliteDriver::extractIDMS2_with_mzRange_expDB(double min_mz, double max_mz){
   return 1;
 }
 
-// This function is used to extract two columns table [Formula + MS2Peak]
+// This function is used to extract two columns table [Formula + MS2Peak] from entire database
 int SqliteDriver::extractFMMS2_with_mzRange_entireDB(double min_mz, double max_mz){
   // Initiate result vector
   vector<int> res_ID;
@@ -427,6 +429,89 @@ int SqliteDriver::extractFMMS2_with_mzRange_entireDB(double min_mz, double max_m
   rt_vec = res_rts;
   return 1;
 }
+
+
+// This function is used to extract two columns table [Formula + MS2Peak] from a certain db
+int SqliteDriver::extractALLMS2_with_mzRange(double min_mz, double max_mz){
+  // Initiate result vector
+  vector<int> res_ID;
+  vector<string> res_FM;
+  vector<string> res_MS2Peaks;
+  vector<string> res_CMPDNMs;
+  vector<string> res_Smiles;
+  vector<string> res_Inchikeys;
+  vector<double> res_precMZ;
+  vector<double> res_rts;
+  
+  string q = "";
+  q = q + "SELECT CompoundName, ID, PrecursorMZ, Formula, RetentionTime, MS2Peaks, Smiles, InchiKey FROM " + db_table + 
+    " WHERE PrecursorMZ > " + std::to_string(min_mz) +
+      " AND PrecursorMZ < " + std::to_string(max_mz);
+  
+  if(db_table == "all"){
+    q = "";
+    for(string db_str : all_DB){
+      q = q + "SELECT CompoundName, ID, PrecursorMZ, Formula, RetentionTime, MS2Peaks, Smiles, InchiKey FROM " + db_str +
+        " WHERE PrecursorMZ > " + std::to_string(min_mz) +
+        " AND PrecursorMZ < " + std::to_string(max_mz);
+      if(db_str != all_DB[all_DB.size()-1]){
+        q = q + " union ";
+      }
+    }
+  }
+
+  // run the core to get all results with a while loop
+  bool done = false;
+  int res, ID;
+  string ms2peak, FM, cmpdNM, smiles, inchikeys;
+  double prec_mz, rt_value;
+  sqlite3_prepare(db, q.c_str(), -1, &stmt, NULL);
+  while(!done){
+    res  = sqlite3_step (stmt);
+    // if the result returned
+    if(res == SQLITE_ROW){
+      // data found successfully
+      cmpdNM = (char*) sqlite3_column_text(stmt, 0);
+      ID = sqlite3_column_int(stmt, 1);
+      prec_mz = sqlite3_column_double(stmt, 2);
+      FM = (char*) sqlite3_column_text(stmt, 3);
+      rt_value = sqlite3_column_double(stmt, 4);
+      ms2peak = (char*) sqlite3_column_text(stmt, 5);
+      smiles = (char*) sqlite3_column_text(stmt, 6);
+      inchikeys = (char*) sqlite3_column_text(stmt, 7);
+      
+      res_CMPDNMs.push_back(cmpdNM);
+      res_ID.push_back(ID);
+      res_rts.push_back(rt_value);
+      res_precMZ.push_back(prec_mz);
+      res_FM.push_back(FM);
+      res_MS2Peaks.push_back(ms2peak);
+      res_Smiles.push_back(smiles);
+      res_Inchikeys.push_back(inchikeys);
+    } else if(res == SQLITE_DONE) {
+      // all searching finished
+      done = true;
+      break;
+    } else {
+      // something else
+      cout << "Now something wierd happening [xx0346opas] --> " << res << endl;
+      return 0;
+    }
+  }
+  // finalize the statement (Destructor of the stmt)
+  sqlite3_finalize(stmt);
+  
+  cmpds_vec = res_CMPDNMs;
+  IDs_vec = res_ID;
+  FMs_vec = res_FM;
+  MS2Peaks_vec = res_MS2Peaks;
+  precmz_vec = res_precMZ;
+  rt_vec = res_rts;
+  smiles_vec = res_Smiles;
+  inchikeys_vec = res_Inchikeys;
+  return 1;
+}
+
 
 vector<CharacterVector> SqliteDriver::convertID2alls(IntegerVector IDs){
   vector<CharacterVector> allRes;
@@ -489,6 +574,12 @@ vector<CharacterVector> SqliteDriver::convertID2alls(IntegerVector IDs){
         break;
       } else {
         cout << "Error occurred during data retrieval." << endl;
+        allRes.push_back(compound_res);
+        allRes.push_back(inchikey_res);
+        allRes.push_back(formula_res);
+        allRes.push_back(dbrecord_res);
+        allRes.push_back(ms2peaks_res);
+        sqlite3_finalize(stmt);
         return allRes;
       }
     }
@@ -812,6 +903,14 @@ vector<string> SqliteDriver::getMS2PeaksVec(){
 
 vector<string> SqliteDriver::getCMPDsVec(){
   return cmpds_vec;
+}
+
+vector<string> SqliteDriver::getSimlesVec(){
+  return smiles_vec;
+}
+
+vector<string> SqliteDriver::getInchikeysVec(){
+  return inchikeys_vec;
 }
 
 vector<double> SqliteDriver::getPrecMZVec(){

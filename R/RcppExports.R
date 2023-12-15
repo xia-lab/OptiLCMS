@@ -95,6 +95,10 @@ SpectraSearching <- function(ConsensusRes, idxs, peak_matrix, ppm_ms1, ppm_ms2, 
     .Call(`_OptiLCMS_SpectraSearching`, ConsensusRes, idxs, peak_matrix, ppm_ms1, ppm_ms2, rt_tol, rt_ms1, scan_ms1, ion_mode, database_path, use_rt, enableNL, NLdatabase_path, useEntropy)
 }
 
+SpectraSearchingSingle <- function(ConsensusRes, idxs, peak_matrix, ppm_ms1, ppm_ms2, ion_mode, database_path = "", database_table = "all", enableNL = FALSE, NLdatabase_path = "", useEntropy = FALSE) {
+    .Call(`_OptiLCMS_SpectraSearchingSingle`, ConsensusRes, idxs, peak_matrix, ppm_ms1, ppm_ms2, ion_mode, database_path, database_table, enableNL, NLdatabase_path, useEntropy)
+}
+
 annotation_export <- function(searching_res, type = 0L, topN = 10L, ion_mode = 0L, database_path = "", lipidsClass = FALSE) {
     .Call(`_OptiLCMS_annotation_export`, searching_res, type, topN, ion_mode, database_path, lipidsClass)
 }

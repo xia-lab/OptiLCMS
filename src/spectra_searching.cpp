@@ -651,6 +651,203 @@ List SpectraSearching(List ConsensusRes,
   return SearchingRes;
 }
 
+// [[Rcpp::export]]
+List SpectraSearchingSingle(List ConsensusRes, 
+                      IntegerVector idxs,
+                      NumericMatrix peak_matrix,
+                      double ppm_ms1,
+                      double ppm_ms2,
+                      int ion_mode,
+                      std::string database_path = "",
+                      std::string database_table = "all",
+                      bool enableNL = false,
+                      std::string NLdatabase_path = "",
+                      bool useEntropy = false) {
+  // idxs are the indexs number of all consensus results (0,1,2,...)
+  // ion mode, int: 0 is negative; 1 is positive.
+  
+  List SearchingRes(idxs.size());
+  
+  SqliteDriver SQLiteObj(database_path, database_table, ion_mode);
+  SQLiteObj.create_connection(database_path);
+  
+  SqliteDriver SQLiteObjNL(NLdatabase_path, database_table, ion_mode);
+  
+  if(enableNL) {
+    SQLiteObjNL.create_connection(NLdatabase_path);
+  }
+  
+  IntegerVector ft_idxs = ConsensusRes[0];
+  List all_Consensus_spec = ConsensusRes[1];
+  
+  int searching_size = idxs.size();
+  
+  double mz_max, mz_min, mz_med;
+  int this_idx, spec_idx;
+  for(int i=0; i<searching_size; i++) {
+    this_idx = ft_idxs[idxs[i]];
+    spec_idx = idxs[i];
+
+    mz_min = peak_matrix(this_idx, 0);
+    mz_min = mz_min - mz_min*ppm_ms1*1e-6;
+    mz_max = peak_matrix(this_idx, 1);
+
+    mz_max = mz_max + mz_max*ppm_ms1*1e-6;
+    mz_med = (mz_min + mz_max)/2.0;
+
+    int x;
+    x = SQLiteObj.extractALLMS2_with_mzRange(mz_min, mz_max);
+    
+    if(x == 0){
+      warning("Database searching failed for m/z = " + std::to_string(mz_min) + " !\n");
+    }
+    vector<string> allCMPDNMs = SQLiteObj.getCMPDsVec();
+    vector<string> allMS2refs = SQLiteObj.getMS2PeaksVec();
+    vector<string> allFormula = SQLiteObj.getFMs();
+    vector<string> allSilmes = SQLiteObj.getSimlesVec();
+    vector<string> allInchiKeys = SQLiteObj.getInchikeysVec();
+    vector<double> allPrecMZs = SQLiteObj.getPrecMZVec();
+    vector<double> allRTs = SQLiteObj.getRTVec();
+    vector<int> allIDs = SQLiteObj.getIDsVec();
+    
+    //cout << mz_min << " <- mz_min -- | Found ---> " << allMS2refs.size() << " | allFormula -> " << allFormula.size() << endl;
+    //cout << "mz_med --> " << mz_med << endl;
+    
+    // Initialize vairiable
+    double mz_score, msms_score, all_score; // these four values are the similarity score of the four aspects (initialization).
+    double mz_exponent;
+
+    List current_conss_spec = all_Consensus_spec[spec_idx];
+    //cout << "current_conss_spec size ->" << current_conss_spec.size() << endl;
+    //current_conss_spec size is the number of isomerics size
+    List score_list(current_conss_spec.size());
+    List dot_list(current_conss_spec.size());
+    List neutral_loss_list(current_conss_spec.size());
+    for(int k=0; k<current_conss_spec.size(); k++){
+      NumericVector score_vec(allMS2refs.size());
+      NumericVector dot_vec(allMS2refs.size());
+      score_list[k] = score_vec;
+      dot_list[k] = dot_vec;
+      neutral_loss_list[k] = List();
+    }
+    
+    // vector<double> score_vec(allMS2refs.size()); // this vector is used to store the similarity values of all matching results from DB
+    for(int s=0; s<allMS2refs.size(); s++){
+      // calculate scores (scoring) within this for-loop
+      
+      // 1). mz_score
+      mz_exponent = -0.5*(pow((allPrecMZs[s] - mz_med)/(mz_med*ppm_ms1*1e-6), 2));
+      mz_score = std::exp(mz_exponent);
+      
+      // 2). ms/ms score -> allMS2refs
+      // prepare consensus spectrum of current "spec_idx"
+      string tmp_msms = allMS2refs[s];
+      NumericMatrix ref_msms_spec = ms2peak_parse(tmp_msms);
+      NumericVector reff_mzs= ref_msms_spec(_,0);
+      NumericVector reff_intss= ref_msms_spec(_,1);
+      double sim_dot = 0, matched_ratio = 0;
+      
+      for(int l=0; l<current_conss_spec.size(); l++) { // different isomerics
+        NumericMatrix conss_mtx_spec = current_conss_spec[l];
+        NumericVector conss_mzs= conss_mtx_spec(_,0);
+        NumericVector conss_ints= conss_mtx_spec(_,1);
+        NumericVector all_mzs4dot = clone(conss_mzs);
+        for(double m : reff_mzs){
+          if(is_true(all(abs(m-conss_mzs)/conss_mzs > ppm_ms2*1e-6))){
+            all_mzs4dot.push_back(m);
+          }
+        }
+        all_mzs4dot.sort();
+        NumericVector ints_exp(all_mzs4dot.size());
+        NumericVector ints_ref(all_mzs4dot.size());
+        int tmp_ix1, tmp_ix2, matched_count = 0;
+        
+        for(int n=0; n<all_mzs4dot.size();n++){
+          tmp_ix1 = whichTrue1(abs(all_mzs4dot[n]-conss_mzs)/conss_mzs < ppm_ms2*1e-6);
+          tmp_ix2 = whichTrue1(abs(all_mzs4dot[n]-reff_mzs)/reff_mzs < ppm_ms2*1e-6);
+          if(tmp_ix1 != -1){
+            ints_exp[n] = conss_ints[tmp_ix1];
+          }
+          if(tmp_ix2 != -1){
+            ints_ref[n] = reff_intss[tmp_ix2];
+          }
+          if((ints_exp[n] != 0) & (ints_ref[n] != 0)) {
+            matched_count++;
+          }
+        }
+        ints_ref = ints_ref/max(ints_ref);
+
+        if(useEntropy) {
+          sim_dot = entropy(conss_mtx_spec, ref_msms_spec);
+        } else {
+          sim_dot = dot(ints_exp, ints_ref, true);
+        }
+        
+        matched_ratio = (double)matched_count/(double)conss_mzs.size();
+        //cout << "sim dot is --> " << sim_dot << " | matched_ratio--> " << matched_ratio << endl;
+        
+        // similarity score
+        msms_score = (sim_dot + matched_ratio)/2.0;
+        all_score = (msms_score + mz_score)/2*100;
+        
+        NumericVector tmp_vec = score_list[l];
+        tmp_vec[s] = all_score;
+        score_list[l] = tmp_vec;
+        
+        NumericVector tmp_vex = dot_list[l];
+        tmp_vex[s] = sim_dot;
+        dot_list[l] = tmp_vex;
+        
+      }
+    }
+    
+    // process to see if neutral loss matching is needed
+    if(enableNL){
+      //cout << this_idx << " <- this_idx | i -> " << i << endl;
+      for(int k=0; k<neutral_loss_list.size();k++){
+        NumericVector tmp_vec = score_list[k];
+        if((max(tmp_vec)<=10) | (tmp_vec.size() == 0)) {
+          // run neutral loss matching and return results into "neutral_loss_list[l];" (l == k)
+          // cout << "RUN NL --> Now max score is --> " << max(tmp_vec) << endl;
+          // cout << "tmp_vec --> " << tmp_vec << " | k--> " << k << endl;
+          // here we only use all rules by default
+          vector<string> rules = getAll_rules_name();
+          vector<int> rules_dir = getAll_dir_change();
+          vector<double> rules_ms = getAll_ms_change();
+          NumericMatrix conss_mtx_spec = current_conss_spec[k];
+          NumericVector conss_mzs= conss_mtx_spec(_,0);
+          NumericVector conss_ints= conss_mtx_spec(_,1);
+          List nl_list = neutralLoss_matching(SQLiteObjNL, 
+                                              rules, rules_dir, rules_ms,
+                                              ppm_ms2, mz_med, 
+                                              conss_mzs, conss_ints);
+          neutral_loss_list[k] = nl_list;
+        }
+      }
+    }
+    
+    List search_res_sub = List::create(Named("IDs") = allIDs, 
+                                       Named("Scores") = score_list,
+                                       Named("dot_product") = dot_list,
+                                       Named("Neutral_loss") = neutral_loss_list,
+                                       Named("Compounds") = allCMPDNMs,
+                                       Named("Formulas") = allFormula,
+                                       Named("SMILEs") = allSilmes,
+                                       Named("InchiKeys") = allInchiKeys,
+                                       Named("Precursors") = allPrecMZs);
+    
+    SearchingRes[i] = search_res_sub;
+  }
+  
+  SQLiteObj.disconnectDB();
+  if(enableNL){
+    SQLiteObjNL.disconnectDB();
+  }
+  
+  return SearchingRes;
+}
+
+
 
 
 // [[Rcpp::export]]

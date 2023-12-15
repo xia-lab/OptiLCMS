@@ -1241,9 +1241,12 @@ find_matches <- function(top_mz, bottom_mz, ppm) {
 }
 
 
-MirrorPlotting <- function(spec.top, spec.bottom, ppm = 25, title= NULL, subtitle = NULL,
-                           cutoff_relative = 5,
-                           show_plot = TRUE) {
+MirrorPlotting <- function(spec.top, 
+                           spec.bottom, 
+                           ppm = 25, 
+                           title= NULL, 
+                           subtitle = NULL,
+                           cutoff_relative = 5) {
   
   if (is.null(spec.top) || is.null(spec.bottom)) {
     stop("spec.top and spec.bottom cannot be NULL.")
@@ -1309,30 +1312,36 @@ MirrorPlotting <- function(spec.top, spec.bottom, ppm = 25, title= NULL, subtitl
       ylim(-105, 105)
   }
   
-  if (show_plot) {
-    print(p)
-  }
-  
   return(p)
 }
 
 
 
 
-##folder:mirror_plot
-##subfolder: mz__rt
-##file name: mz__rt_1
-##title: mz__rt
-##subtitle:compound name, score, database
-##matched MS2 fragments on the figure are marked
-
 ## to be done
 ##mark some mz values
 ##cutoff_relative or cutoff_absolute
-PerformMirrorPlotting <- function(mSet = NULL, plot_directory = "mirror_plot", 
-                                  cutoff_relative = 5, ppm = 25,
+#' PerformMirrorPlotting
+#'
+#' @param mSet mSet
+#' @param cutoff_relative cutoff value for relative intensity
+#' @param ppm ppm of mz of msms fragment
+#' @param display_plot display mirror plot or not, TRUE or FALSE, default is FALSE
+#' @param width width of the image, default is 8
+#' @param height height of the image, default is 6
+#' @param dpi dpi value, default is 300
+#' @param interactive to make figure interactive, default is FALSE. TRUE or FALSE.
+#' @export
+#'
+PerformMirrorPlotting <- function(mSet = NULL, 
+                                  cutoff_relative = 5, 
+                                  ppm = 25,
                                   display_plot = FALSE,
-                                  width = 8, height = 6, dpi = 300) {
+                                  width = 8, 
+                                  height = 6, 
+                                  dpi = 300,
+                                  format = "png", 
+                                  interactive = FALSE) {
   # Retrieve the DBAnnoteRes list
   dbAnnoteResList <- mSet@MSnResults[["DBAnnoteRes"]]
   
@@ -1362,11 +1371,6 @@ PerformMirrorPlotting <- function(mSet = NULL, plot_directory = "mirror_plot",
     stop("Process mSet with PerformResultsExport function with the type set as 0L, then run PerformMirrorPlotting).")
   }
   
-  # Create the main directory if it doesn't exist
-  if (!dir.exists(plot_directory)) {
-    dir.create(plot_directory)
-  }
-  
   # Iterate over each 'spec.top'
   spec.top.list <- mSet@MSnResults[["Concensus_spec"]][[2]]
   
@@ -1390,13 +1394,7 @@ PerformMirrorPlotting <- function(mSet = NULL, plot_directory = "mirror_plot",
         rt = mean(mSet@MSnData[["peak_mtx"]][mSet@MSnResults[["Concensus_spec"]][[1]][[i]]+1,3], mSet@MSnData[["peak_mtx"]][mSet@MSnResults[["Concensus_spec"]][[1]][[i]]+1,4])
       }
       
-      # Create sub-directory for this ID
-      # use mz__rt would be better
-      sub_dir <- file.path(plot_directory, as.character(paste0(mz, "__", rt)))
-      if (!dir.exists(sub_dir)) {
-        dir.create(sub_dir)
-      }
-      
+
       # Loop through each spec.bottom
       for (j in seq_along(spec.bottom.list)) {
         spec.bottom <- spec.bottom.list[[j]]
@@ -1410,15 +1408,27 @@ PerformMirrorPlotting <- function(mSet = NULL, plot_directory = "mirror_plot",
         database <- dbAnnoteResList[[i]][[1]][["Database"]][[j]]
         title <- paste0(mz, "__", rt)
         subtitle <- paste0(compound_name, "\n", score, "\n", database)
-        MirrorPlotting(spec.top.m, spec.bottom.m, ppm = ppm,title= title, subtitle = subtitle,
-                       cutoff_relative = cutoff_relative, 
-                       show_plot = display_plot)
+        p1 <- MirrorPlotting(spec.top.m, 
+                             spec.bottom.m, 
+                             ppm = ppm,
+                             title= title, 
+                             subtitle = subtitle,
+                             cutoff_relative = cutoff_relative)
         
         # Construct the plot file name
         plot_filename <- paste0(sub_dir, "/", as.character(paste0(mz, "__", rt)), "_", j, ".png")
         
-        # Save the plot
-        ggsave(plot_filename, plot = last_plot(), width = 8, height = 6, dpi = 300)
+        # Save the plot with Cairo
+        # ggsave(plot_filename, plot = last_plot(), width = width, height = height, dpi = dpi)
+        if(display_plot){
+          print(p1)
+        } else {
+          Cairo::Cairo(
+            file = paste0("mirrorplot_", mz, "_", rt, "_", dpi, "_", j, ".", format),
+            unit = "in", dpi = dpi, width = width, height = height, type = format, bg = "white")
+          print(p1)
+          dev.off()
+        }
       }
     }
   }
