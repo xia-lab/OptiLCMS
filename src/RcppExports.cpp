@@ -216,6 +216,27 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
+// SpectraSearchingBatch
+List SpectraSearchingBatch(List ConsensusRes, IntegerVector idxs, NumericMatrix peak_matrix, double ppm_ms1, double ppm_ms2, int ion_mode, std::string database_path, std::string database_table, bool enableNL, std::string NLdatabase_path, bool useEntropy);
+RcppExport SEXP _OptiLCMS_SpectraSearchingBatch(SEXP ConsensusResSEXP, SEXP idxsSEXP, SEXP peak_matrixSEXP, SEXP ppm_ms1SEXP, SEXP ppm_ms2SEXP, SEXP ion_modeSEXP, SEXP database_pathSEXP, SEXP database_tableSEXP, SEXP enableNLSEXP, SEXP NLdatabase_pathSEXP, SEXP useEntropySEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< List >::type ConsensusRes(ConsensusResSEXP);
+    Rcpp::traits::input_parameter< IntegerVector >::type idxs(idxsSEXP);
+    Rcpp::traits::input_parameter< NumericMatrix >::type peak_matrix(peak_matrixSEXP);
+    Rcpp::traits::input_parameter< double >::type ppm_ms1(ppm_ms1SEXP);
+    Rcpp::traits::input_parameter< double >::type ppm_ms2(ppm_ms2SEXP);
+    Rcpp::traits::input_parameter< int >::type ion_mode(ion_modeSEXP);
+    Rcpp::traits::input_parameter< std::string >::type database_path(database_pathSEXP);
+    Rcpp::traits::input_parameter< std::string >::type database_table(database_tableSEXP);
+    Rcpp::traits::input_parameter< bool >::type enableNL(enableNLSEXP);
+    Rcpp::traits::input_parameter< std::string >::type NLdatabase_path(NLdatabase_pathSEXP);
+    Rcpp::traits::input_parameter< bool >::type useEntropy(useEntropySEXP);
+    rcpp_result_gen = Rcpp::wrap(SpectraSearchingBatch(ConsensusRes, idxs, peak_matrix, ppm_ms1, ppm_ms2, ion_mode, database_path, database_table, enableNL, NLdatabase_path, useEntropy));
+    return rcpp_result_gen;
+END_RCPP
+}
 // annotation_export
 List annotation_export(List searching_res, int type, int topN, int ion_mode, std::string database_path, bool lipidsClass);
 RcppExport SEXP _OptiLCMS_annotation_export(SEXP searching_resSEXP, SEXP typeSEXP, SEXP topNSEXP, SEXP ion_modeSEXP, SEXP database_pathSEXP, SEXP lipidsClassSEXP) {
@@ -387,6 +408,7 @@ static const R_CallMethodDef CallEntries[] = {
     {"_OptiLCMS_PerformDIADeco", (DL_FUNC) &_OptiLCMS_PerformDIADeco, 11},
     {"_OptiLCMS_SpectraSearching", (DL_FUNC) &_OptiLCMS_SpectraSearching, 14},
     {"_OptiLCMS_SpectraSearchingSingle", (DL_FUNC) &_OptiLCMS_SpectraSearchingSingle, 11},
+    {"_OptiLCMS_SpectraSearchingBatch", (DL_FUNC) &_OptiLCMS_SpectraSearchingBatch, 11},
     {"_OptiLCMS_annotation_export", (DL_FUNC) &_OptiLCMS_annotation_export, 6},
     {"_OptiLCMS_SpectrumConsensus", (DL_FUNC) &_OptiLCMS_SpectrumConsensus, 9},
     {"_OptiLCMS_DescendZero", (DL_FUNC) &_OptiLCMS_DescendZero, 3},
