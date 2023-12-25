@@ -1168,7 +1168,7 @@ UpdateRawfiles <- function(mSet = NULL, filesIncluded = NULL){
 CentroidCheck <- function(filename) {
   # fileh <- MSnbase:::.openMSfile(filename)
   fileh <- mzR::openMSfile(filename, backend = NULL)
-  allSpect <- mzR::peaks(fileh, seq_len(10))
+  allSpect <- mzR::peaks(fileh, seq_len(50))
   
   nValues <- base::lengths(allSpect, use.names = FALSE) / 2
 
@@ -1526,4 +1526,66 @@ SpectraClean <- function(rawData, exIdx = NULL){
   
 }
 
+DetectMS2Design <- function(msfile = "NA"){
+  
+  if(msfile == "NA"){
+    stop("MS data file is missing!")
+  } else if(!file.exists(msfile)){
+    stop("MS data file does not exist!")
+  }
+  msdata <- mzR::openMSfile(msfile, backend = NULL)
+  fullhd <- mzR::header(msdata)
+  
+  targetmzs <- fullhd$isolationWindowTargetMZ
+  mzsloffst <- fullhd$isolationWindowLowerOffset
+  mzsupffst <- fullhd$isolationWindowUpperOffset
+  
+  if(all(is.na(mzsloffst)) | all(is.na(mzsupffst)) | all(is.na(targetmzs))){
+    ms1idx <- which(fullhd$msLevel == 1)
+    
+    lgnms1 <- ms1idx[1:2]
+    lgnvec<- length(c(lgnms1[1]:lgnms1[2]))
 
+    design_df2 <- design_df <- 
+      data.frame(mz_low = double(length = lgnvec-2),
+                 mz_up = double(length = lgnvec-2))
+
+    
+    gc()
+    mzR::close(msdata)
+    rm(msdata);
+    return(design_df)
+  }
+  
+  idx_set <- !is.na(targetmzs)
+  targetmzs <- targetmzs[idx_set]
+  mzsloffst <- mzsloffst[idx_set]
+  mzsupffst <- mzsupffst[idx_set]
+  
+  mz1st <- targetmzs[!is.na(targetmzs)][1]
+  
+  idx_lst <- which(mz1st == targetmzs)[2]-1
+  design_df0 <- design_df2 <- design_df <- 
+    data.frame(mz_low = double(length = idx_lst),
+               mz_up = double(length = idx_lst))
+  
+  for(i in 1:idx_lst){
+    design_df[i, ]<- c((targetmzs[i] - mzsloffst[i]), 
+                       (targetmzs[i] + mzsupffst[i]))
+  }
+  
+  for(j in (idx_lst+1):(idx_lst*2)){
+    design_df2[j-idx_lst, ]<- c((targetmzs[j] - mzsloffst[j]), 
+                        (targetmzs[j] + mzsupffst[j]))
+  }
+  
+  gc()
+  mzR::close(msdata)
+  rm(msdata);
+  
+  if(all(design_df == design_df2)){
+    return(design_df)
+  } else {
+    return(design_df0)
+  }
+}
