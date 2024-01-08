@@ -233,6 +233,18 @@ ImportRawMSData <-
       stop("No correct sample/sclass found!")
     }
     
+    # remove all MS2 files when doing MS1 data processing
+    if(any(sclass=="MS2")){
+      ms2_idx <- (sclass=="MS2");
+      sclass <- sclass[!ms2_idx]
+      snames <- snames[!ms2_idx]
+      file_ms1_idx <- vapply(files, FUN = function(x){
+        res <- vapply(snames, function(y){grepl(y, x)}, FUN.VALUE = logical(1L))
+        any(res)
+      }, FUN.VALUE = logical(1L))
+      files <- files[file_ms1_idx]
+    }
+    
     pd <- data.frame(
       sample_name = snames,
       sample_group = sclass,
@@ -1090,7 +1102,7 @@ UpdateRawfiles <- function(mSet = NULL, filesIncluded = NULL){
     if(!dir.exists("upload/")){
       filesList <- list.files("/home/glassfish/projects/MetaboDemoRawData/upload/", recursive = TRUE, full.names = TRUE);
     } else {
-      filesList <- list.files(recursive = TRUE);
+      filesList <- list.files("upload/", recursive = TRUE, full.names = TRUE);
     }
     
     filesListBaseNMs <- basename(filesList);

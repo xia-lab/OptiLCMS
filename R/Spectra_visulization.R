@@ -865,6 +865,10 @@ PlotSpectraInsensityStistics <-
   }
 
 
+
+
+
+
 #' @title PlotSpectraPCA
 #' @description This function is used to plot the PCA of all spectra
 #' @param mSet mSet object, usually generated after the peakannotaion finished here.

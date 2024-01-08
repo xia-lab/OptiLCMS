@@ -1862,7 +1862,7 @@ Export.PeakTable <- function(mSet = NULL, path = getwd()){
                  paste0(path, "/metaboanalyst_input.csv"),
                  row.names = FALSE);
   MessageOutput(
-    mes = paste0("\nEverything has been finished Successfully ! (",
+    mes = paste0("\nEverything for MS1 spectra has been finished successfully ! (",
                  Sys.time(),
                  ")\n"),
     ecol = "",
@@ -2133,4 +2133,802 @@ get_reference_sample_id <- function(parameters, sample_registry) {
         " at scan number ", ref$max_scan_number, ".\n")
   }
   return(paste0(ref$name, ".mzML"))
+}
+
+PerformAsariResultsFormating <- function(minFrac = 0.7){
+  
+  alfs <- list.files(".", pattern = "results_metabo_asari_res")
+  alfs_idx <- as.numeric(gsub("results_metabo_asari_res_","",alfs))
+  result_folder <- alfs[which.max(alfs_idx)];
+
+  # generate metaboanalyst table
+  load("mSet.rda")
+  load("params.rda")
+  mSet@params <- updateRawSpectraParam (peakParams);
+  ftable <- read.csv(paste0(result_folder, "/preferred_Feature_table.tsv"), sep = "\t")
+  features <- paste0(ftable$mz, "__", ftable$rtime)
+  ftable1 <- ftable[,c(12:ncol(ftable))]
+  allSamples <- colnames(ftable1)
+  allGroups <- 
+    vapply(allSamples, FUN = function(x){
+      idx <- which(mSet@rawOnDisk@phenoData@data[["sample_name"]] == x)
+      mSet@rawOnDisk@phenoData@data[["sample_group"]][idx]
+      }, character(1L))
+  ftable2 <- t(data.frame(Groups = allGroups))
+  ftable3 <- data.frame(Samples = c("Groups", features))
+  ftable0 <- rbind(ftable2, ftable1)
+  ftable0 <- cbind(ftable3, ftable0)
+  rownames(ftable0) <- NULL;
+  mSet@dataSet <- ftable0;
+  write.csv(ftable0, file = "metaboanalyst_input.csv", row.names = F, quote = F)
+  
+  # generate peak_feature_summary
+  ftab_annotation <- read.csv(paste0(result_folder, "/Feature_annotation.tsv"), sep = "\t")
+  idx_num <- ftable$id_number
+  idx_row <- vapply(idx_num, FUN = function(x){
+    which(ftab_annotation[,1] == x)[1]
+  }, FUN.VALUE = integer(1L))
+  ftab_annotation <- ftab_annotation[idx_row, ]
+  
+  annots <- strsplit(ftab_annotation[,6], ",")
+  adds <- vapply(annots, function(x){
+    if(length(x) == 0){
+      return("")
+    } else {
+      return(x[2])
+    }
+  }, FUN.VALUE = character(1L))
+  isos <- vapply(annots, function(x){
+    if(length(x) == 0){
+      return("")
+    } else {
+      return(x[1])
+    }
+  }, FUN.VALUE = character(1L))
+  #all_annots <- rjson::fromJSON(file = paste0(result_folder, "/Annotated_empiricalCompounds.json"))
+  
+  all_recrds <- ftab_annotation$matched_DB_records
+  all_forumus <- sapply(all_recrds, function(x){
+    res <- strsplit(x, "\\), \\(")
+    if(length(res[[1]]) == 0){
+      return("")
+    } else {
+      res <- gsub("\\(|\\)", "", res[[1]])
+      res2 <- vapply(res, FUN = function(y){
+        strsplit(strsplit(y, "'")[[1]][2], "_")[[1]][1]
+      }, character(1L), USE.NAMES = F)
+      if(length(res2) == 1){
+        res2 <- paste0(res2, ";")
+      } else {
+        res2 <- paste0(res2, collapse = "; ")
+      }
+      return(res2)
+    }
+  })
+  
+  all_cmpds <- ftab_annotation$matched_DB_shorts
+  all_cmpd <- sapply(all_cmpds, function(x){
+    res <- strsplit(x, "\\), \\(")
+    if(length(res[[1]]) == 0){
+      return("")
+    } else {
+      res <- gsub("\\(|\\)", "", res[[1]])
+      res2 <- lapply(res, FUN = function(y){
+        w <- strsplit(y, ";")[[1]]
+        strsplit(w, "\\$")
+      })
+      
+      res2_done <- vapply(res2, function(nn){
+        if(length(nn)==1){
+          nn[[1]][2]
+        } else {
+          res2x <- vector(mode = "character", length = length(nn))
+          for(kk in 1:length(nn)){
+            res2x[kk] <- nn[[kk]][2]
+          }
+          return(paste0(res2x, collapse = "; "))
+        }
+      }, FUN.VALUE = character(1L))
+      
+      if(length(res2_done) == 1){
+        res2_done <- paste0(res2_done, ";")
+      } else {
+        res2_done <- paste0(res2_done, collapse = "; ")
+      }
+      return(res2_done)
+    }
+  })
+  all_hmdb <- sapply(all_cmpds, function(x){
+    res <- strsplit(x, "\\), \\(")
+    if(length(res[[1]]) == 0){
+      return("")
+    } else {
+      res <- gsub("\\(|\\)", "", res[[1]])
+      res2 <- lapply(res, FUN = function(y){
+        w <- strsplit(y, ";")[[1]]
+        strsplit(w, "\\$")
+      })
+      
+      res2_done <- vapply(res2, function(nn){
+        if(length(nn)==1){
+          nn[[1]][1]
+        } else {
+          res2x <- vector(mode = "character", length = length(nn))
+          for(kk in 1:length(nn)){
+            res2x[kk] <- nn[[kk]][1]
+          }
+          return(paste0(res2x, collapse = "; "))
+        }
+      }, FUN.VALUE = character(1L))
+      
+      if(length(res2_done) == 1){
+        res2_done <- paste0(res2_done, ";")
+      } else {
+        res2_done <- paste0(res2_done, collapse = "; ")
+      }
+      return(res2_done)
+    }
+  })
+  
+  Formula2Cmpd_list <- lapply(1:length(all_recrds), function(x){
+    res <- list()
+    if(ftab_annotation$matched_DB_records[x] == ""){
+      return(res)
+    }
+    
+    fms <- ftab_annotation$matched_DB_records[x]
+    res <- strsplit(fms, "\\), \\(")
+    res <- gsub("\\(|\\)", "", res[[1]])
+    res2 <- vapply(res, FUN = function(y){
+      strsplit(strsplit(y, "'")[[1]][2], "_")[[1]][1]
+    }, character(1L), USE.NAMES = F)
+    res2_ori <- res2
+    res2 <- unique(res2)
+    res <- rep(list(list(cmpd = vector(mode = "character"),
+                    hmdb = vector(mode = "character"))), length(res2))
+    
+    names(res) <- res2
+    
+    this_cmpd <- ftab_annotation$matched_DB_shorts[x]
+    #cmpd
+    resx <- strsplit(this_cmpd, "\\), \\(")
+    if(length(resx[[1]]) == 0){
+      
+    } else {
+      resx <- gsub("\\(|\\)", "", resx[[1]])
+      res2cmpd <- lapply(resx, FUN = function(y){
+        w <- strsplit(y, ";")[[1]]
+        strsplit(w, "\\$")
+      })
+      
+      res2_done <- lapply(res2cmpd, function(nn){
+        if(length(nn)==1){
+          nn[[1]][2]
+        } else {
+          res2x <- vector(mode = "character", length = length(nn))
+          for(kk in 1:length(nn)){
+            res2x[kk] <- nn[[kk]][2]
+          }
+          return(res2x)
+        }
+      })
+      
+      for(nn in 1:length(res2_done)){
+        res[[res2_ori[nn]]][["cmpd"]] <- unique(c(res[[res2_ori[nn]]][["cmpd"]], res2_done[[nn]]))
+      }
+    }
+    #hmdb
+    resy <- strsplit(this_cmpd, "\\), \\(")
+    if(length(resy[[1]]) == 0){
+      
+    } else {
+      resy <- gsub("\\(|\\)", "", resy[[1]])
+      res2hmdb <- lapply(resy, FUN = function(y){
+        w <- strsplit(y, ";")[[1]]
+        strsplit(w, "\\$")
+      })
+      
+      res2_done <- lapply(res2hmdb, function(nn){
+        if(length(nn)==1){
+          nn[[1]][1]
+        } else {
+          res2x <- vector(mode = "character", length = length(nn))
+          for(kk in 1:length(nn)){
+            res2x[kk] <- nn[[kk]][1]
+          }
+          return(res2x)
+        }
+      })
+      
+      for(nn in 1:length(res2_done)){
+        res[[res2_ori[nn]]][["hmdb"]] <- unique(c(res[[res2_ori[nn]]][["hmdb"]], res2_done[[nn]]))
+      }
+    }
+    
+    return(res)
+  })
+  
+  mSet@peakAnnotation[["Formula2Cmpd"]] <- Formula2Cmpd_list
+
+  # peak_feature_summary
+  LogNorm<-function(x, min.val){
+    log10((x + sqrt(x^2 + min.val^2))/2)
+  }
+  CalCV<- function(x){
+    x <- as.numeric(x)
+    sd(x)/mean(x)
+  }
+  ftable1 -> data
+  allGroups -> groups
+  
+  min.val <- min(abs(data[data!=0]))/10;
+  data<-apply(data, 2, LogNorm, min.val);
+  
+  sample_data_log <- data;
+  cvs <- round(apply(data, 1,FUN = CalCV),4)*100
+  lvls <- groups[groups != "QC"];
+  sample_data_log <- sample_data_log[,groups != "QC"];
+  groups <- as.factor(lvls);
+  
+  ttest_res <- PerformFastUnivTests(t(sample_data_log), as.factor(groups))
+  pvals <- ttest_res[,2]
+  pfdr <-p.adjust(pvals, method = "fdr")
+  pvals <- signif(pvals, 8)
+  pfdr <- round(signif(pfdr, 8), 8)
+  
+  pvals[is.nan(pvals)] = 1
+  pfdr[is.nan(pfdr)] = 1
+  
+  my.dat <- data.frame(mz = ftab_annotation$mz,
+                            rt = ftab_annotation$rtime,
+                            adduct = adds,
+                            isotopes = isos,
+                            Formula = all_forumus,
+                            Compound = all_cmpd,
+                            HMDBID = all_hmdb,
+                            intenVale = ftable$peak_area,
+                            pvals = pvals,
+                            pfdr = pfdr,
+                            cvs = cvs)
+  
+  HMDBIDs <- my.dat$HMDBID
+  HMDBIDs[HMDBIDs==""] <- NA
+  mSet@peakAnnotation[["massMatching"]] <- data.frame(Compound = my.dat$Compound, 
+                                                      Formula = my.dat$Formula, 
+                                                      HMDBID = HMDBIDs)
+  
+  write.table(my.dat, sep = "\t",
+              file = "peak_feature_summary.tsv",
+              row.names = FALSE,
+              quote = FALSE);
+  write.csv(my.dat, 
+            file = "peak_feature_summary.csv", 
+            quote = TRUE, 
+            row.names = FALSE);
+  
+  FeatureOrder <- order(pvals)
+  qs::qsave(mSet@peakAnnotation[["Formula2Cmpd"]][FeatureOrder], 
+            file = "formula2cmpd.qs")
+  
+  # camera_output
+  camera_output_df <- data.frame(mz = ftable$mz, 
+                                 mzmin = ftable$mz-10*ftable$mz*1e-6,
+                                 mzmax = ftable$mz+10*ftable$mz*1e-6,
+                                 rt = ftable$rtime,
+                                 rtmin = ftable$rtime_left_base,
+                                 rtmax = ftable$rtime_right_base,
+                                 ftable1,
+                                 isotopes = my.dat$isotopes,
+                                 adduct = my.dat$adduct,
+                                 pcgroup = 1,
+                                 Compound = my.dat$Compound, 
+                                 Formula = my.dat$Formula, 
+                                 HMDBID = HMDBIDs)
+  
+  
+  mSet@peakAnnotation[["camera_output"]] <- camera_output_df
+  
+  # generate peak_result_summary
+  mzrange <- vapply(allSamples, FUN = function(x){
+    ftab_annotation$mz -> mzs;
+    idx <- which(colnames(ftable1) == x)
+    min_mz <- round(min(mzs[ftable1[,idx] != 0]), 4)
+    max_mz <- round(max(mzs[ftable1[,idx] != 0]), 4)
+    paste0(min_mz, "~", max_mz)
+  }, FUN.VALUE = character(1L));
+  
+  rtrange <- vapply(allSamples, FUN = function(x){
+    ftab_annotation$rtime -> rts;
+    idx <- which(colnames(ftable1) == x)
+    min_rt <- round(min(rts[ftable1[,idx] != 0]), 2)
+    max_rt <- round(max(rts[ftable1[,idx] != 0]), 2)
+    paste0(min_rt, "~", max_rt)
+  }, FUN.VALUE = character(1L))
+  
+  peak_num <- vapply(allSamples, FUN = function(x){
+    idx <- which(colnames(ftable1) == x)
+    length(which(ftable1[,idx] != 0))
+  }, FUN.VALUE = integer(1L))
+  
+  peak_ratio_missing <- vapply(allSamples, FUN = function(x){
+    idx <- which(colnames(ftable1) == x)
+    round(1-length(which(ftable1[,idx] != 0))/nrow(ftable1),4)*100
+  }, FUN.VALUE = double(1L))
+  
+  datam <- data.frame(samples = allSamples,
+                      groups = allGroups,
+                      rtrange = rtrange,
+                      mzrange = mzrange,
+                      peak_num = peak_num,
+                      missing = peak_ratio_missing)
+  
+  mSet@peakAnnotation[["peak_result_summary"]] <- as.matrix(datam)
+  
+  write.table(
+    datam,
+    file = paste0("peak_result_summary.txt"),
+    row.names = FALSE,
+    col.names = FALSE,
+    quote = FALSE
+  );
+  save(mSet, file = "mSet.rda")
+  
+  # Generate PCA figure
+  imgName <- "PCA.png";
+  dpi = 72;
+  width = 8;
+  format = "png"
+  if (.on.public.web()) {
+    Cairo::Cairo(
+      file = imgName,
+      unit = "in",
+      dpi = dpi,
+      width = width,
+      height = width * 0.80,
+      type = format,
+      bg = "white"
+    )
+  }
+  
+  sample_idx <- allGroups;
+  
+  if(any(sample_idx == "BLANK")){
+    sample_idx <- sample_idx[sample_idx != "BLANK"]
+  }
+  
+  feature_value0 <- ftable1;
+  rownames(feature_value0) <- features
+  feature_value <- feature_value0
+  feature_value[is.na(feature_value)] <- 0;
+  
+  int.mat <- as.matrix(feature_value)
+  rowNms <- rownames(int.mat);
+  colNms <- colnames(int.mat);
+  int.mat <- t(apply(int.mat, 1, function(x) .replace.by.lod(as.numeric(x))));
+  rownames(int.mat) <- rowNms;
+  colnames(int.mat) <- colNms; 
+  feature_value <- int.mat;
+  feature_value[feature_value==0] <- 1;
+  
+  pca_feats <- log10(feature_value);
+  
+  if (nrow(feature_value) < 2) {
+    MessageOutput(
+      mes =  paste0(
+        "<font color=\"red\">",
+        "\nERROR: No enough peaks detected, please adjust your parameters or use other Peak/Alignment method",
+        "</font>"
+      ),
+      ecol = "\n",
+      progress = 65
+    );
+    
+    if (.on.public.web()) {
+      dev.off()
+    }
+    
+    return(NULL)
+  }
+  
+  pca_feats[is.na(pca_feats)] <- 0;
+  df0 <- na.omit(pca_feats);
+  df1 <- df0[is.finite(rowSums(df0)),];
+  df <- t(df1);
+  
+  mSet_pca <- prcomp(df, center = TRUE, scale = FALSE);
+  sum.pca <- summary(mSet_pca);
+  var.pca <-
+    sum.pca$importance[2,]; # variance explained by each PCA
+  
+  xlabel <- paste("PC1", "(", round(100 * var.pca[1], 1), "%)");
+  ylabel <- paste("PC2", "(", round(100 * var.pca[2], 1), "%)");
+  zlabel <- paste("PC3", "(", round(100 * var.pca[3], 1), "%)");
+  # using ggplot2
+  df <- as.data.frame(mSet_pca$x);
+  df$group <- sample_idx;
+  
+  ## Handle to generate json file for PCA3D online
+  if(.on.public.web()){
+    ## For score plot
+    pca3d <- list();
+    pca3d$score$axis <- c(xlabel, ylabel, zlabel);
+    xyz0 <- df[,seq_len(3)];
+    colnames(xyz0) <- rownames(xyz0) <- NULL;
+    pca3d$score$xyz <- data.frame(t(xyz0));
+    colnames(pca3d$score$xyz) <- NULL;
+    pca3d$score$name <- rownames(df);
+    pca3d$score$facA <- df$group;
+    
+    if(length(unique(df$group)) < 9){
+      col.fun <-
+        grDevices::colorRampPalette(RColorBrewer::brewer.pal(length(unique(df$group)), "Set1"));
+    } else {
+      col.fun <-
+        grDevices::colorRampPalette(RColorBrewer::brewer.pal(length(unique(df$group)), "Set3"));
+    }
+    
+    pca3d$score$colors <- col.fun(length(unique(df$group)));
+    
+    ## For loading plot
+    
+    pca3d$loading$axis <- paste("Loading ", seq_len(3), sep="");
+    coords0 <- coords <- data.frame(t(signif(mSet_pca$rotation[,seq_len(3)], 5)));
+    colnames(coords) <- NULL; 
+    pca3d$loading$xyz <- coords;
+    pca3d$loading$name <- rownames(mSet_pca$rotation);
+    pca3d$loading$entrez <- paste0(gsub("__", "@", features));
+    
+    dists <- GetDist3D(coords0);
+    pca3d$loading$cols <- GetRGBColorGradient(dists);
+    
+    pca3d$cls =  df$group;
+    
+    # json.obj <- RJSONIO::toJSON(pca3d, .na='null');
+    # sink("spectra_3d_loading.json");
+    # cat(json.obj);
+    # sink();
+    qs::qsave(pca3d$score, "score3d.qs");
+    qs::qsave(pca3d$loading, "loading3d.qs");
+    fileNm <- paste0("spectra_3d_loading.json");
+    
+    my.json.scatter(fileNm, T);
+    
+  }
+  
+  if (nrow(df) < 30) {
+    if (length(unique(sample_idx)) > 9) {
+      col.fun <-
+        grDevices::colorRampPalette(RColorBrewer::brewer.pal(12, "Set3"));
+      
+      p <-
+        ggplot2::ggplot(df, aes_string(
+          x = "PC1",
+          y = "PC2",
+          color = "group",
+          label = "row.names(df)"
+        )) +
+        geom_text_repel(force = 1.5) + 
+        geom_point(size = 5,  fill = col.fun(length(unique(sample_idx)))) + 
+        theme(axis.text = element_text(size = 12))
+      
+    } else{
+      p <-
+        ggplot2::ggplot(df, aes_string(
+          x = "PC1",
+          y = "PC2",
+          color = "group",
+          label = "row.names(df)"
+        )) +
+        geom_text_repel(force = 1.5) + 
+        geom_point(size = 5) + 
+        scale_color_brewer(palette = "Set1") + 
+        theme(axis.text = element_text(size = 12))
+    }
+    
+  } else {
+    if (length(unique(sample_idx)) > 9) {
+      p <-
+        ggplot2::ggplot(df, aes(x = "PC1",
+                                       y = "PC2",
+                                       color = "group")) + geom_point(size = 5)
+      
+    } else{
+      p <-
+        ggplot2::ggplot(df, aes(x = "PC1",
+                                       y = "PC2",
+                                       color = "group")) + geom_point(size = 5) + scale_color_brewer(palette = "Set1");
+    }
+  }
+  
+  p <-
+    p + xlab(xlabel) + ylab(ylabel) + theme_bw() + theme(axis.title = element_text(size = 12));
+  
+  print(p)
+  
+  if (.on.public.web()) {
+    dev.off()
+  }
+  
+  # process peak intensity
+  sample_idx <- mSet@rawOnDisk@phenoData@data[["sample_group"]];
+  
+  sample_num <-
+    mSet@rawOnDisk@phenoData@data[["sample_name"]];
+  
+  sample_num <- sample_num[sample_idx!="MS2"]
+  sample_idx <- sample_idx[sample_idx!="MS2"]
+  
+  if (length(unique(sample_idx)) > 9) {
+    col.fun <-
+      grDevices::colorRampPalette(RColorBrewer::brewer.pal(12, "Set3"))
+    group_colors <- col.fun(length(unique(sample_idx)))
+    
+  } else{
+    group_colors <-
+      paste0(RColorBrewer::brewer.pal(9, "Set1")[seq_along(unique(sample_idx))], "60")
+  }
+  
+  ftable1[ftable1 == 0] <- 1
+  ints <- lapply(sample_num, function(x){
+    log2(ftable1[,x])
+  })
+    
+  
+  if(any(sample_idx == "BLANK")){
+    ints <- ints[names(ints) != 0];
+    sample_num <- sample_num[sample_idx != "BLANK"]
+  }
+  
+  names(ints) <- as.character(sample_num)
+  
+  sample_idx <- as.factor(sample_idx)
+  group_colors <-
+    sapply(
+      seq(length(levels(sample_idx))),
+      FUN = function(x) {
+        rep(group_colors[x], length(sample_idx[sample_idx == levels(sample_idx)[x]]))
+      }
+    )
+  
+  if(!.on.public.web()){
+    oldpar <- par(no.readonly = TRUE);
+    on.exit(par(oldpar));
+  }
+  imgName <- "Peak_Intensity.png"
+  if (.on.public.web()) {
+    Cairo::Cairo(
+      file = imgName,
+      unit = "in",
+      dpi = dpi,
+      width = width,
+      height = length(sample_num) * 0.65 * (width/8),
+      type = format,
+      bg = "white"
+    )
+  }
+  
+  #op <- 
+  par(mar = c(3.5, 10, 4, 1.5), xaxt = "s")
+  
+  sampleNMs <- names(ints);
+  len_nms <- nchar(sampleNMs);
+  if(any(len_nms > 15)){
+    names(ints) <- 
+      unname(unlist(sapply(sampleNMs, function(x){
+        LEN_x <- nchar(x);
+        if(LEN_x > 15){
+          substring(x, LEN_x-14,LEN_x)
+        } else {
+          x
+        }
+      })))
+  }
+  
+  boxplot(
+    ints,
+    varwidth = TRUE,
+    col = as.character(unlist(group_colors)),
+    ylab = "",
+    horizontal = TRUE,
+    las = 2,
+    main = expression(log[2] ~ intensity),
+    cex.lab = 0.8,
+    cex.main = 1.25
+  )
+  
+  #title(ylab=expression(log[2]~intensity), line=7.5, cex.lab=1.2)
+  grid(nx = NA, ny = NULL)
+  
+  if (.on.public.web()) {
+    dev.off()
+  }
+  
+  # restore the mSet Obj for other tasks
+  save(mSet, file = "mSet.rda")
+  MessageOutput(
+    mes =  paste0(
+      "<font color=\"blue\">",
+      "\nRaw spectral data processing has been finished completely!",
+      "</font>"
+    ),
+    ecol = "\n",
+    progress = 100
+  );
+  
+  
+}
+
+PerformFastUnivTests <- function(data, cls, var.equal=TRUE){
+  if(!exists("mem.univ")){
+    require("memoise");
+    mem.univ <<- memoise(.perform.fast.univ.tests);
+  }
+  return(mem.univ(data, cls, var.equal));
+}
+
+.perform.fast.univ.tests <- function(data, cls, var.equal=TRUE){
+  
+  print("Performing fast univariate tests ....");
+  # note, feature in rows for gene expression
+  data <- t(as.matrix(data));
+  if(length(levels(cls)) > 2){
+    res <- try(rowcolFt(data, cls, var.equal = var.equal));
+  }else{
+    res <- try(rowcoltt(data, cls, FALSE, 1L, FALSE));
+  }  
+  
+  if(class(res) == "try-error") {
+    res <- cbind(NA, NA);
+  }else{
+    # res <- cbind(res$statistic, res$p.value);
+    # make sure row names are kept
+    res <- res[, c("statistic", "p.value")];
+  }
+  
+  return(res);
+}
+
+rowcolFt =  function(x, fac, var.equal, which = 1L) {
+  
+  if(!(which %in% c(1L, 2L)))
+    stop(sQuote("which"), " must be 1L or 2L.")
+  
+  if(which==2L)
+    x = t(x)
+  
+  if (typeof(x) == "integer")
+    x[] <- as.numeric(x)
+  
+  sqr = function(x) x*x
+  
+  stopifnot(length(fac)==ncol(x), is.factor(fac), is.matrix(x))
+  x   <- x[,!is.na(fac), drop=FALSE]
+  fac <- fac[!is.na(fac)]
+  
+  ## Number of levels (groups)
+  k <- nlevels(fac)
+  
+  ## xm: a nrow(x) x nlevels(fac) matrix with the means of each factor
+  ## level
+  xm <- matrix(
+    sapply(levels(fac), function(fl) rowMeans(x[,which(fac==fl), drop=FALSE])),
+    nrow = nrow(x),
+    ncol = nlevels(fac))
+  
+  ## x1: a matrix of group means, with as many rows as x, columns correspond to groups 
+  x1 <- xm[,fac, drop=FALSE]
+  
+  ## degree of freedom 1
+  dff    <- k - 1
+  
+  if(var.equal){
+    ## x0: a matrix of same size as x with overall means
+    x0 <- matrix(rowMeans(x), ncol=ncol(x), nrow=nrow(x))
+    
+    ## degree of freedom 2
+    dfr    <- ncol(x) - dff - 1
+    
+    ## mean sum of squares
+    mssf   <- rowSums(sqr(x1 - x0)) / dff
+    mssr   <- rowSums(sqr( x - x1)) / dfr
+    
+    ## F statistic
+    fstat  <- mssf/mssr
+    
+  } else{
+    
+    ## a nrow(x) x nlevels(fac) matrix with the group size  of each factor
+    ## level
+    ni <- t(matrix(tapply(fac,fac,length),ncol=nrow(x),nrow=k))
+    
+    ## wi: a nrow(x) x nlevels(fac) matrix with the variance * group size of each factor
+    ## level
+    sss <- sqr(x-x1)
+    x5 <- matrix(
+      sapply(levels(fac), function(fl) rowSums(sss[,which(fac==fl), drop=FALSE])),
+      nrow = nrow(sss),
+      ncol = nlevels(fac))          
+    wi <- ni*(ni-1) /x5
+    
+    ## u : Sum of wi
+    u  <- rowSums(wi)
+    
+    ## F statistic
+    MR <- rowSums(sqr((1 - wi/u)) * 1/(ni-1))*1/(sqr(k)-1)
+    fsno <- 1/dff * rowSums(sqr(xm - rowSums(wi*xm)/u) * wi)
+    fsdeno <- 1+ 2* (k-2)*MR
+    fstat <- fsno/fsdeno
+    
+    ## degree of freedom 2: Vector with length nrow(x)
+    dfr <- 1/(3 * MR)
+    
+  }
+  
+  res = data.frame(statistic = fstat,
+                   p.value   = pf(fstat, dff, dfr, lower.tail=FALSE),
+                   row.names = rownames(x))
+  
+  attr(res, "df") = c(dff=dff, dfr=dfr)
+  return(res)
+}
+
+rowcoltt =  function(x, fac, tstatOnly, which, na.rm) {
+  
+  #if(.on.public.web){
+  #  dyn.load(.getDynLoadPath());
+  #}
+  
+  if (!missing(tstatOnly) && (!is.logical(tstatOnly) || is.na(tstatOnly)))
+    stop(sQuote("tstatOnly"), " must be TRUE or FALSE.")
+  
+  f = checkfac(fac)
+  if ((f$nrgrp > 2) || (f$nrgrp <= 0))
+    stop("Number of groups is ", f$nrgrp, ", but must be >0 and <=2 for 'rowttests'.")
+  
+  if (typeof(x) == "integer")
+    x[] <- as.numeric(x)
+  
+  #cc = .Call("rowcolttests", x, f$fac, f$nrgrp, which-1L, na.rm)
+  cc = XiaLabCppLib::rowcolttestsR(x, f$fac, f$nrgrp, which-1L, na.rm)
+  
+  res = data.frame(statistic = cc$statistic,
+                   dm        = cc$dm,
+                   row.names = dimnames(x)[[which]])
+  
+  if (!tstatOnly)
+    res = cbind(res, p.value = 2*pt(abs(res$statistic), cc$df, lower.tail=FALSE))
+  
+  attr(res, "df") = cc$df    
+  return(res)
+}
+
+checkfac = function(fac) {
+  
+  if(is.numeric(fac)) {
+    nrgrp = as.integer(max(fac, na.rm=TRUE)+1)
+    fac   = as.integer(fac)
+  }
+  ## this must precede the factor test
+  if(is.character(fac))
+    fac = factor(fac)
+  
+  if (is.factor(fac)) {
+    nrgrp = nlevels(fac)
+    fac   = as.integer(as.integer(fac)-1)
+  } 
+  if(!is.integer(fac))
+    stop("'fac' must be factor, character, numeric, or integer.")
+  
+  if(any(fac<0, na.rm=TRUE))
+    stop("'fac' must not be negative.")
+  
+  return(list(fac=fac, nrgrp=nrgrp))
+}
+
+jobFinished <- function(){
+  MessageOutput(
+    mes = paste0('<b>Everything of this LC-MS/MS dataset has been completed successfully! </b>\n\n'),
+      ecol = '',
+      progress = 200
+    )
 }

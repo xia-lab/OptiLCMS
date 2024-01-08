@@ -458,8 +458,34 @@ int SqliteDriver::extractALLMS2_with_mzRange(double min_mz, double max_mz){
         q = q + " union ";
       }
     }
-  }
+  } else if(db_table.find("mcst_") != std::string::npos){
+    string db_table0 = db_table;
+    vector<string> custmozed_dbs;
+    size_t pos = 0;
+    std::string subdb;
+    string delimiter = "\t";
+    string token;
+    while ((pos = db_table0.find(delimiter)) != std::string::npos) {
+      token = db_table0.substr(0, pos);
+      //std::cout << token << std::endl;
+      if(token!="mcst_"){
+        custmozed_dbs.push_back(token);
+      }
+      db_table0.erase(0, pos + delimiter.length());
+    }
 
+    q = "";
+    all_DB = custmozed_dbs;
+    for(string db_str : all_DB){
+      q = q + "SELECT CompoundName, ID, PrecursorMZ, Formula, RetentionTime, MS2Peaks, Smiles, InchiKey FROM " + db_str +
+        " WHERE PrecursorMZ > " + std::to_string(min_mz) +
+        " AND PrecursorMZ < " + std::to_string(max_mz);
+      if(db_str != all_DB[all_DB.size()-1]){
+        q = q + " union ";
+      }
+    }
+  }
+  
   // run the core to get all results with a while loop
   bool done = false;
   int res, ID;

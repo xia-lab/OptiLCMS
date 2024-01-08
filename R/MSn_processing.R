@@ -119,10 +119,23 @@ PerformMSnImport <- function(mSet = NULL,
       peak_mtx <- matrix();
     }
   } else {
-    if(!is.null(mSet)){
+    if(!is.null(mSet) & !is.null(mSet@peakAnnotation[["groupmat"]])){
       peak_mtx <- dia_feature_preparation(mSet@peakAnnotation[["groupmat"]],
                                           mSet@peakfilling[["msFeatureData"]][["chromPeaks"]],
                                           mSet@peakfilling[["FeatureGroupTable"]]@listData[["peakidx"]])
+    } else if(!is.null(mSet) & !is.null(mSet@peakAnnotation[["camera_output"]])) {
+      targetFeatures <- mSet@peakAnnotation[["camera_output"]];
+      targetFeatures <- targetFeatures[,c("mzmin", "mzmax", "rtmin", "rtmax")]
+      peak_mtx <- lapply(1:nrow(targetFeatures), function(x){
+        mz_min <- targetFeatures[x,1];
+        mz_max <- targetFeatures[x,2];
+        mz_med <- mean(c(mz_min, mz_max));
+        rt_min <- targetFeatures[x,3];
+        rt_max <- targetFeatures[x,4];
+        rt_med <- mean(c(rt_min, rt_max));
+        baseline_val <- 0.5;
+        c(mz_med, mz_min, mz_max, rt_med, rt_min, rt_max, baseline_val)
+      })
     } else if(!is.null(targetFeatures)) {
       peak_mtx <- lapply(1:nrow(targetFeatures), function(x){
         mz_min <- targetFeatures[x,1];

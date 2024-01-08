@@ -153,6 +153,14 @@ MessageOutput <- function(mes = NULL,
       row.names = FALSE,
       col.names = FALSE
     )
+    
+    write.table(
+      progress/2,
+      file = "log_progress2.txt",
+      row.names = FALSE,
+      col.names = FALSE
+    )
+    
   }
   
   Sys.sleep(sleep);
