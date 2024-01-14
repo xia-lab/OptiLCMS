@@ -2189,6 +2189,7 @@ PerformAsariResultsFormating <- function(minFrac = 0.7){
   
   all_recrds <- ftab_annotation$matched_DB_records
   all_forumus <- sapply(all_recrds, function(x){
+    if(is.na(x)){return("")}
     res <- strsplit(x, "\\), \\(")
     if(length(res[[1]]) == 0){
       return("")
@@ -2208,6 +2209,7 @@ PerformAsariResultsFormating <- function(minFrac = 0.7){
   
   all_cmpds <- ftab_annotation$matched_DB_shorts
   all_cmpd <- sapply(all_cmpds, function(x){
+    if(is.na(x)){return("")}
     res <- strsplit(x, "\\), \\(")
     if(length(res[[1]]) == 0){
       return("")
@@ -2239,6 +2241,7 @@ PerformAsariResultsFormating <- function(minFrac = 0.7){
     }
   })
   all_hmdb <- sapply(all_cmpds, function(x){
+    if(is.na(x)){return("")}
     res <- strsplit(x, "\\), \\(")
     if(length(res[[1]]) == 0){
       return("")
@@ -2269,6 +2272,8 @@ PerformAsariResultsFormating <- function(minFrac = 0.7){
       return(res2_done)
     }
   })
+  
+  ftab_annotation$matched_DB_records[is.na(ftab_annotation$matched_DB_records)] <- ""
   
   Formula2Cmpd_list <- lapply(1:length(all_recrds), function(x){
     res <- list()
