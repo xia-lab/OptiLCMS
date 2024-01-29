@@ -327,7 +327,7 @@ PerformDDADeconvolution <- function(mSet= NULL,
     DecRes <- list()
     DecRes <- lapply(seq(col1), 
                      function(x, ls_orches, winSize, ppm1, ppm2, sn, filt, 
-                              intensity_thresh, ionmode, db_path, decoOn){
+                              intensity_thresh, ionmode, db_path, decoOn, useEntropy){
                        x1 <- ls_orches[[1]][x];
                        x2 <- ls_orches[[3]][[ls_orches[[2]][x]]];
                        if(any(x2 == 1)){showOutput = TRUE} else{showOutput = FALSE}
@@ -351,7 +351,7 @@ PerformDDADeconvolution <- function(mSet= NULL,
                                              ppm1, ppm2,
                                              sn, filt, intensity_thresh,
                                              ionmode, db_path,
-                                             decoOn,
+                                             decoOn,useEntropy,
                                              showOutput, thread_int, fileName);
                        res},
                      ls_orches = ls_orches,
@@ -363,7 +363,8 @@ PerformDDADeconvolution <- function(mSet= NULL,
                      intensity_thresh = intensity_thresh,
                      ionmode = ion_mode,
                      db_path = database_path,
-                     decoOn = decoOn)
+                     decoOn = decoOn,
+                     useEntropy = useEntropy)
   }
 
   
@@ -1264,7 +1265,7 @@ MirrorPlotting <- function(spec.top,
   if (is.null(spec.top) || is.null(spec.bottom)) {
     stop("spec.top and spec.bottom cannot be NULL.")
   }
-  
+  #save(spec.top, spec.bottom, ppm, title, subtitle, cutoff_relative, file = "MirrorPlotting__results.rda")
   top <- normalize_spectrum(spec.top, cutoff_relative)
   bottom <- normalize_spectrum(spec.bottom, cutoff_relative)
   
@@ -1310,7 +1311,7 @@ MirrorPlotting <- function(spec.top,
     p <- ggplot() +
       geom_segment(data=top, aes(x = mz, xend = mz, y = 0, yend = normalized), color = "blue") +
       geom_segment(data=bottom, aes(x = mz, xend = mz, y = 0, yend = -normalized), color = "red") +
-      geom_point(data=top, aes(x = mz, y = star_intensity), shape=18, color="red", size=3, na.rm = TRUE) +
+      geom_point(data=top, aes(x = mz, y = star_intensity), shape=18, color="red", size=2, na.rm = TRUE) +
       labs(title = title, subtitle = subtitle, y = "Relative Intensity (%)", x = "m/z") +
       theme_minimal() +
       xlim(x_axis_limits) +
