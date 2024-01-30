@@ -325,7 +325,7 @@ PerformDDADeconvolution <- function(mSet= NULL,
   } else {
     
     DecRes <- list()
-    DecRes <- lapply(seq(col1), 
+    DecRes <- lapply(seq(col1),
                      function(x, ls_orches, winSize, ppm1, ppm2, sn, filt, 
                               intensity_thresh, ionmode, db_path, decoOn, useEntropy){
                        x1 <- ls_orches[[1]][x];

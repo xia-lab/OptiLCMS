@@ -120,8 +120,10 @@ private:
         tf_rt_min = peak_matrix(i,2);
         tf_rt_max = peak_matrix(i,3);
         prec_idxs.clear();
-        for(int j = 0; j < precursors_mzs.size(); j++){
-          if((precursors_mzs[j] < tf_mz_min) | (precursors_mzs[j] > tf_mz_max)){
+        
+        NumericVector allMzs_vals = precursors_mzs(_,0);
+        for(int j = 0; j < allMzs_vals.size(); j++){
+          if((allMzs_vals[j] < tf_mz_min) | (allMzs_vals[j] > tf_mz_max)){
             continue;
           }
           if((scanrt_ms2[j] > tf_rt_min) & (scanrt_ms2[j] < tf_rt_max)){
@@ -284,8 +286,9 @@ private:
         tf_rt_min = peak_matrix(i,2);
         tf_rt_max = peak_matrix(i,3);
         prec_idxs.clear();
-        for(int j = 0; j < precursors_mzs.size(); j++){
-          if((precursors_mzs[j] < tf_mz_min) | (precursors_mzs[j] > tf_mz_max)){
+        NumericVector allMzs_vals = precursors_mzs(_,0);
+        for(int j = 0; j < allMzs_vals.size(); j++){
+          if((allMzs_vals[j] < tf_mz_min) | (allMzs_vals[j] > tf_mz_max)){
             continue;
           }
           if((scanrt_ms2[j] > tf_rt_min) & (scanrt_ms2[j] < tf_rt_max)){
@@ -432,8 +435,9 @@ private:
         tf_rt_min = peak_matrix(i,2);
         tf_rt_max = peak_matrix(i,3);
         prec_idxs.clear();
-        for(int j = 0; j < precursors_mzs.size(); j++){
-          if((precursors_mzs[j] < tf_mz_min) | (precursors_mzs[j] > tf_mz_max)){
+        NumericVector allMzs_vals = precursors_mzs(_,0);
+        for(int j = 0; j < allMzs_vals.size(); j++){
+          if((allMzs_vals[j] < tf_mz_min) | (allMzs_vals[j] > tf_mz_max)){
             continue;
           }
           if((scanrt_ms2[j] > tf_rt_min) & (scanrt_ms2[j] < tf_rt_max)){
@@ -1496,6 +1500,7 @@ private:
         prec_int_vec[g] = prec_int[gpidx];
         spectList[g] = scan_ms2[gpidx];
       }
+      
       NumericMatrix nmtx = spectrumMerging(prec_int_vec, spectList, ppm_ms2);
       Spectra_res[cc] = List::create(nmtx);
       Indicator_res[cc] = intv0; // a fixed value, include only a "4" here;
@@ -2680,6 +2685,7 @@ public:
       if(showOutput){
         cout << "No convoluted MS2 peaks found, skipped deconvolution" << endl;
       }
+      MS2listSummarize_noDeco();
     } else {
       findContaminationList();
       List decoSpecRes = performDeco();

@@ -32,6 +32,7 @@ List PerformDDA_main(NumericMatrix pm,
   List res;
   
   // if no results, return an empty list
+  
   if(resList.size() == 0){
     List rs, ri;
     IntegerVector intf;
