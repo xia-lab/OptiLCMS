@@ -356,6 +356,7 @@ List SpectraSearching(List ConsensusRes,
                       List scan_ms1,
                       int ion_mode,
                       std::string database_path = "",
+                      std::string database_table = "all",
                       bool use_rt = false,
                       bool enableNL = false,
                       std::string NLdatabase_path = "",
@@ -365,10 +366,10 @@ List SpectraSearching(List ConsensusRes,
   
   List SearchingRes(idxs.size());
   
-  SqliteDriver SQLiteObj(database_path, "HMDB_experimental_PosDB", ion_mode);
+  SqliteDriver SQLiteObj(database_path, database_table, ion_mode);
   SQLiteObj.create_connection(database_path);
   
-  SqliteDriver SQLiteObjNL(NLdatabase_path, "HMDB_experimental_PosDB", ion_mode);
+  SqliteDriver SQLiteObjNL(NLdatabase_path, database_table, ion_mode);
   
   if(enableNL) {
     SQLiteObjNL.create_connection(NLdatabase_path);

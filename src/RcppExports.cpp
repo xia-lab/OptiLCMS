@@ -172,8 +172,8 @@ BEGIN_RCPP
 END_RCPP
 }
 // SpectraSearching
-List SpectraSearching(List ConsensusRes, IntegerVector idxs, NumericMatrix peak_matrix, double ppm_ms1, double ppm_ms2, double rt_tol, List rt_ms1, List scan_ms1, int ion_mode, std::string database_path, bool use_rt, bool enableNL, std::string NLdatabase_path, bool useEntropy);
-RcppExport SEXP _OptiLCMS_SpectraSearching(SEXP ConsensusResSEXP, SEXP idxsSEXP, SEXP peak_matrixSEXP, SEXP ppm_ms1SEXP, SEXP ppm_ms2SEXP, SEXP rt_tolSEXP, SEXP rt_ms1SEXP, SEXP scan_ms1SEXP, SEXP ion_modeSEXP, SEXP database_pathSEXP, SEXP use_rtSEXP, SEXP enableNLSEXP, SEXP NLdatabase_pathSEXP, SEXP useEntropySEXP) {
+List SpectraSearching(List ConsensusRes, IntegerVector idxs, NumericMatrix peak_matrix, double ppm_ms1, double ppm_ms2, double rt_tol, List rt_ms1, List scan_ms1, int ion_mode, std::string database_path, std::string database_table, bool use_rt, bool enableNL, std::string NLdatabase_path, bool useEntropy);
+RcppExport SEXP _OptiLCMS_SpectraSearching(SEXP ConsensusResSEXP, SEXP idxsSEXP, SEXP peak_matrixSEXP, SEXP ppm_ms1SEXP, SEXP ppm_ms2SEXP, SEXP rt_tolSEXP, SEXP rt_ms1SEXP, SEXP scan_ms1SEXP, SEXP ion_modeSEXP, SEXP database_pathSEXP, SEXP database_tableSEXP, SEXP use_rtSEXP, SEXP enableNLSEXP, SEXP NLdatabase_pathSEXP, SEXP useEntropySEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -187,11 +187,12 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< List >::type scan_ms1(scan_ms1SEXP);
     Rcpp::traits::input_parameter< int >::type ion_mode(ion_modeSEXP);
     Rcpp::traits::input_parameter< std::string >::type database_path(database_pathSEXP);
+    Rcpp::traits::input_parameter< std::string >::type database_table(database_tableSEXP);
     Rcpp::traits::input_parameter< bool >::type use_rt(use_rtSEXP);
     Rcpp::traits::input_parameter< bool >::type enableNL(enableNLSEXP);
     Rcpp::traits::input_parameter< std::string >::type NLdatabase_path(NLdatabase_pathSEXP);
     Rcpp::traits::input_parameter< bool >::type useEntropy(useEntropySEXP);
-    rcpp_result_gen = Rcpp::wrap(SpectraSearching(ConsensusRes, idxs, peak_matrix, ppm_ms1, ppm_ms2, rt_tol, rt_ms1, scan_ms1, ion_mode, database_path, use_rt, enableNL, NLdatabase_path, useEntropy));
+    rcpp_result_gen = Rcpp::wrap(SpectraSearching(ConsensusRes, idxs, peak_matrix, ppm_ms1, ppm_ms2, rt_tol, rt_ms1, scan_ms1, ion_mode, database_path, database_table, use_rt, enableNL, NLdatabase_path, useEntropy));
     return rcpp_result_gen;
 END_RCPP
 }
@@ -406,7 +407,7 @@ static const R_CallMethodDef CallEntries[] = {
     {"_OptiLCMS_r_calculate_entropy_similarity", (DL_FUNC) &_OptiLCMS_r_calculate_entropy_similarity, 9},
     {"_OptiLCMS_PerformDDADeco", (DL_FUNC) &_OptiLCMS_PerformDDADeco, 19},
     {"_OptiLCMS_PerformDIADeco", (DL_FUNC) &_OptiLCMS_PerformDIADeco, 11},
-    {"_OptiLCMS_SpectraSearching", (DL_FUNC) &_OptiLCMS_SpectraSearching, 14},
+    {"_OptiLCMS_SpectraSearching", (DL_FUNC) &_OptiLCMS_SpectraSearching, 15},
     {"_OptiLCMS_SpectraSearchingSingle", (DL_FUNC) &_OptiLCMS_SpectraSearchingSingle, 11},
     {"_OptiLCMS_SpectraSearchingBatch", (DL_FUNC) &_OptiLCMS_SpectraSearchingBatch, 11},
     {"_OptiLCMS_annotation_export", (DL_FUNC) &_OptiLCMS_annotation_export, 6},

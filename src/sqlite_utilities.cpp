@@ -226,15 +226,50 @@ int SqliteDriver::extractIDMS2_with_mzrtRange(double min_mz, double max_mz, doub
 vector<int> SqliteDriver::extractIDs_with_mzRange_entireDB(double min_mz, double max_mz){
   // Initiate result vector
   vector<int> res_ID;
+  
   string q = "";
-  for(string db_str : all_DB){
-    q = q + "SELECT ID FROM " + db_str +
-      " WHERE PrecursorMZ > " + std::to_string(min_mz) + 
-      " AND PrecursorMZ < " + std::to_string(max_mz);
-    if(db_str != all_DB[all_DB.size()-1]){
-      q = q + " union ";
+  q = q + "SELECT ID FROM " + db_table + 
+    " WHERE PrecursorMZ > " + std::to_string(min_mz) +
+    " AND PrecursorMZ < " + std::to_string(max_mz);
+  
+  if(db_table == "all"){
+    q = "";
+    for(string db_str : all_DB){
+      q = q + "SELECT ID FROM " + db_str +
+        " WHERE PrecursorMZ > " + std::to_string(min_mz) +
+        " AND PrecursorMZ < " + std::to_string(max_mz);
+      if(db_str != all_DB[all_DB.size()-1]){
+        q = q + " union ";
+      }
+    }
+  } else if(db_table.find("mcst_") != std::string::npos){
+    string db_table0 = db_table;
+    vector<string> custmozed_dbs;
+    size_t pos = 0;
+    std::string subdb;
+    string delimiter = "\t";
+    string token;
+    while ((pos = db_table0.find(delimiter)) != std::string::npos) {
+      token = db_table0.substr(0, pos);
+      //std::cout << token << std::endl;
+      if(token!="mcst_"){
+        custmozed_dbs.push_back(token);
+      }
+      db_table0.erase(0, pos + delimiter.length());
+    }
+    
+    q = "";
+    all_DB = custmozed_dbs;
+    for(string db_str : all_DB){
+      q = q + "SELECT ID FROM " + db_str +
+        " WHERE PrecursorMZ > " + std::to_string(min_mz) +
+        " AND PrecursorMZ < " + std::to_string(max_mz);
+      if(db_str != all_DB[all_DB.size()-1]){
+        q = q + " union ";
+      }
     }
   }
+  
   
   // run the core to get all results with a while loop
   bool done = false;
@@ -267,17 +302,50 @@ int SqliteDriver::extractIDMS2_with_mzRange_entireDB(double min_mz, double max_m
   // Initiate result vector
   vector<int> res_ID;
   vector<string> res_MS2Peaks;
+
   string q = "";
+  q = q + "SELECT ID, MS2Peaks FROM " + db_table + 
+    " WHERE PrecursorMZ > " + std::to_string(min_mz) +
+    " AND PrecursorMZ < " + std::to_string(max_mz);
   
-  for(string db_str : all_DB){
-    q = q + "SELECT ID, MS2Peaks FROM " + db_str +
-      " WHERE PrecursorMZ > " + std::to_string(min_mz) +
-      " AND PrecursorMZ < " + std::to_string(max_mz);
-    if(db_str != all_DB[all_DB.size()-1]){
-      q = q + " union ";
+  if(db_table == "all"){
+    q = "";
+    for(string db_str : all_DB){
+      q = q + "SELECT ID, MS2Peaks FROM " + db_str +
+        " WHERE PrecursorMZ > " + std::to_string(min_mz) +
+        " AND PrecursorMZ < " + std::to_string(max_mz);
+      if(db_str != all_DB[all_DB.size()-1]){
+        q = q + " union ";
+      }
+    }
+  } else if(db_table.find("mcst_") != std::string::npos){
+    string db_table0 = db_table;
+    vector<string> custmozed_dbs;
+    size_t pos = 0;
+    std::string subdb;
+    string delimiter = "\t";
+    string token;
+    while ((pos = db_table0.find(delimiter)) != std::string::npos) {
+      token = db_table0.substr(0, pos);
+      //std::cout << token << std::endl;
+      if(token!="mcst_"){
+        custmozed_dbs.push_back(token);
+      }
+      db_table0.erase(0, pos + delimiter.length());
+    }
+    
+    q = "";
+    all_DB = custmozed_dbs;
+    for(string db_str : all_DB){
+      q = q + "SELECT ID, MS2Peaks FROM " + db_str +
+        " WHERE PrecursorMZ > " + std::to_string(min_mz) +
+        " AND PrecursorMZ < " + std::to_string(max_mz);
+      if(db_str != all_DB[all_DB.size()-1]){
+        q = q + " union ";
+      }
     }
   }
-
+  
   // run the core to get all results with a while loop
   bool done = false;
   int res, ID;
@@ -378,16 +446,51 @@ int SqliteDriver::extractFMMS2_with_mzRange_entireDB(double min_mz, double max_m
   vector<string> res_MS2Peaks;
   vector<double> res_precMZ;
   vector<double> res_rts;
+
   string q = "";
-  for(string db_str : all_DB){
-    q = q + "SELECT ID, PrecursorMZ, Formula, RetentionTime, MS2Peaks FROM " + db_str +
-      " WHERE PrecursorMZ > " + std::to_string(min_mz) +
-      " AND PrecursorMZ < " + std::to_string(max_mz);
-    if(db_str != all_DB[all_DB.size()-1]){
-      q = q + " union ";
+  q = q + "SELECT ID, PrecursorMZ, Formula, RetentionTime, MS2Peaks FROM " + db_table + 
+    " WHERE PrecursorMZ > " + std::to_string(min_mz) +
+    " AND PrecursorMZ < " + std::to_string(max_mz);
+  
+  if(db_table == "all"){
+    q = "";
+    for(string db_str : all_DB){
+      q = q + "SELECT ID, PrecursorMZ, Formula, RetentionTime, MS2Peaks FROM " + db_str +
+        " WHERE PrecursorMZ > " + std::to_string(min_mz) +
+        " AND PrecursorMZ < " + std::to_string(max_mz);
+      if(db_str != all_DB[all_DB.size()-1]){
+        q = q + " union ";
+      }
+    }
+  } else if(db_table.find("mcst_") != std::string::npos){
+    string db_table0 = db_table;
+    vector<string> custmozed_dbs;
+    size_t pos = 0;
+    std::string subdb;
+    string delimiter = "\t";
+    string token;
+    while ((pos = db_table0.find(delimiter)) != std::string::npos) {
+      token = db_table0.substr(0, pos);
+      //std::cout << token << std::endl;
+      if(token!="mcst_"){
+        custmozed_dbs.push_back(token);
+      }
+      db_table0.erase(0, pos + delimiter.length());
+    }
+    
+    q = "";
+    all_DB = custmozed_dbs;
+    for(string db_str : all_DB){
+      q = q + "SELECT ID, PrecursorMZ, Formula, RetentionTime, MS2Peaks FROM " + db_str +
+        " WHERE PrecursorMZ > " + std::to_string(min_mz) +
+        " AND PrecursorMZ < " + std::to_string(max_mz);
+      if(db_str != all_DB[all_DB.size()-1]){
+        q = q + " union ";
+      }
     }
   }
- 
+  
+  //cout << "now q is---> " << q << endl;
   // run the core to get all results with a while loop
   bool done = false;
   int res, ID;
@@ -429,7 +532,6 @@ int SqliteDriver::extractFMMS2_with_mzRange_entireDB(double min_mz, double max_m
   rt_vec = res_rts;
   return 1;
 }
-
 
 // This function is used to extract two columns table [Formula + MS2Peak] from a certain db
 int SqliteDriver::extractALLMS2_with_mzRange(double min_mz, double max_mz){

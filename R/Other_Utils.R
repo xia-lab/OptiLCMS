@@ -220,6 +220,173 @@ peakTableSUM <- function(peak_table) {
   }
 }
 
+generateMS2dbOpt_optilcms <- function(database = "all", ionMode = "positive"){
+  prefix = ""
+  database_opts = ""
+  if(length(database)>1){
+    prefix = "mcst_\t"; # multiple customized
+  }
+  for(i in database){
+    if(i == "all"){ 
+      database_opt <- "all";
+      return("all")
+    } else if(i == "hmdb_exp") {
+      if(ionMode == "positive"){
+        database_opt <- "HMDB_experimental_PosDB";
+      } else if(ionMode == "negative") {
+        database_opt <- "HMDB_experimental_NegDB";
+      } else {
+        database_opt <- "all";
+      }
+    } else if(i == "hmdb_pre"){
+      if(ionMode == "positive"){
+        database_opt <- "HMDB_predicted_PosDB";
+      } else if(ionMode == "negative") {
+        database_opt <- "HMDB_predicted_NegDB";
+      } else {
+        database_opt <- "all";
+      }
+    } else if(i == "gnps"){
+      if(ionMode == "positive"){
+        database_opt <- "GNPS_PosDB";
+      } else if(ionMode == "negative") {
+        database_opt <- "GNPS_NegDB";
+      } else {
+        database_opt <- "all";
+      }
+    } else if(i == "mines"){
+      if(ionMode == "positive"){
+        database_opt <- "MINEs_PosDB";
+      } else if(ionMode == "negative") {
+        database_opt <- "MINEs_NegDB";
+      } else {
+        database_opt <- "all";
+      }
+    } else if(i == "lipidblast"){
+      if(ionMode == "positive"){
+        database_opt <- "LipidBlast_PosDB";
+      } else if(ionMode == "negative") {
+        database_opt <- "LipidBlast_NegDB";
+      } else {
+        database_opt <- "all";
+      }
+    } else if(i == "mona"){
+      if(ionMode == "positive"){
+        database_opt <- "MoNA_PosDB";
+      } else if(ionMode == "negative") {
+        database_opt <- "MoNA_NegDB";
+      } else {
+        database_opt <- "all";
+      }
+    } else if(i == "massbank"){
+      if(ionMode == "positive"){
+        database_opt <- "MassBank_PosDB";
+      } else if(ionMode == "negative") {
+        database_opt <- "MassBank_NegDB";
+      } else {
+        database_opt <- "all";
+      }
+    } else if(i == "riken"){
+      if(ionMode == "positive"){
+        database_opt <- "RIKEN_PosDB";
+      } else if(ionMode == "negative") {
+        database_opt <- "RIKEN_NegDB";
+      } else {
+        database_opt <- "all";
+      }
+    } else if(i == "respect"){
+      if(ionMode == "positive"){
+        database_opt <- "ReSpect_PosDB";
+      } else if(ionMode == "negative") {
+        database_opt <- "ReSpect_NegDB";
+      } else {
+        database_opt <- "all";
+      }
+    } else if(i == "msdial"){
+      if(ionMode == "positive"){
+        database_opt <- "MSDIAL_PosDB";
+      } else if(ionMode == "negative") {
+        database_opt <- "MSDIAL_NegDB";
+      } else {
+        database_opt <- "all";
+      }
+    } else if(i == "bmdms"){
+      if(ionMode == "positive"){
+        database_opt <- "BMDMS_PosDB";
+      } else if(ionMode == "negative") {
+        database_opt <- "BMDMS_PosDB";
+      } else {
+        database_opt <- "all";
+      }
+    }
+    database_opts <- paste0(database_opts, database_opt, "\t")
+  }
+  database_str <- paste0(prefix, database_opts)
+  return(database_str)
+}
+
+generatePvals_SigFeatures <- function(sample_data){
+
+  groups <- as.character(as.matrix(sample_data[1, ]))[-1]
+  sample_data <- sample_data[-1, -1]
+  
+  if (length(unique(groups)) == 1) {
+    sample_data_mean  <-
+      apply(
+        sample_data,
+        1,
+        FUN = function(x) {
+          mean(as.numeric(x), na.rm = TRUE)
+        }
+      )
+  } else {
+    sample_data1 <- matrix(nrow = nrow(sample_data))
+    
+    for (i in seq_along(unique(groups))) {
+      columnnum <- unique(groups)[i] == groups
+      sample_data0  <-
+        subset.data.frame(sample_data, subset = TRUE, select = columnnum)
+      
+      sample_data0  <-
+        round(apply(
+          sample_data0,
+          1,
+          FUN = function(x) {
+            mean(as.numeric(x), na.rm = TRUE)
+          }
+        ), 2)
+      
+      sample_data1 <- cbind(sample_data1, sample_data0)
+    }
+    sample_data_mean <- sample_data1[, -1]
+    colnames(sample_data_mean) <- unique(groups)
+  }
+
+  # run t-test or annova
+  data <- matrix(as.numeric(as.matrix(sample_data)), ncol = ncol(as.matrix(sample_data)));
+  LogNorm<-function(x, min.val){
+    log10((x + sqrt(x^2 + min.val^2))/2)
+  }
+
+  min.val <- min(abs(data[data!=0]))/10;
+  data<-apply(data, 2, LogNorm, min.val);
+  sample_data_log <- data;
+  lvls <- groups[groups != "QC"];
+  sample_data_log <- sample_data_log[,groups != "QC"];
+  groups <- as.factor(lvls);
+  
+  if(length(unique(groups)) != 1){
+    tt.res <- PerformFastUnivTests(t(sample_data_log), groups, var.equal=TRUE);
+    pvals <-tt.res$p.value;
+    pvals[is.nan(pvals)] <- 1;
+    pvals <- signif(pvals, 8)
+  } else {
+    pvals <- rep(-10, nrow(sample_data_log));
+  }
+  return(which(pvals<0.05))
+}
+
+
 #' @importFrom stats sd
 PeakGroupCV <- function(IntoLists, groupsInfo){
   allGroups <- names(groupsInfo)

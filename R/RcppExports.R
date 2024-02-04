@@ -91,8 +91,8 @@ PerformDIADeco <- function(pm, swath, scant1, scant2, scanms1, scanms2, pkw_min,
     .Call(`_OptiLCMS_PerformDIADeco`, pm, swath, scant1, scant2, scanms1, scanms2, pkw_min, ppm2, sn, span, filt)
 }
 
-SpectraSearching <- function(ConsensusRes, idxs, peak_matrix, ppm_ms1, ppm_ms2, rt_tol, rt_ms1, scan_ms1, ion_mode, database_path = "", use_rt = FALSE, enableNL = FALSE, NLdatabase_path = "", useEntropy = FALSE) {
-    .Call(`_OptiLCMS_SpectraSearching`, ConsensusRes, idxs, peak_matrix, ppm_ms1, ppm_ms2, rt_tol, rt_ms1, scan_ms1, ion_mode, database_path, use_rt, enableNL, NLdatabase_path, useEntropy)
+SpectraSearching <- function(ConsensusRes, idxs, peak_matrix, ppm_ms1, ppm_ms2, rt_tol, rt_ms1, scan_ms1, ion_mode, database_path = "", database_table = "all", use_rt = FALSE, enableNL = FALSE, NLdatabase_path = "", useEntropy = FALSE) {
+    .Call(`_OptiLCMS_SpectraSearching`, ConsensusRes, idxs, peak_matrix, ppm_ms1, ppm_ms2, rt_tol, rt_ms1, scan_ms1, ion_mode, database_path, database_table, use_rt, enableNL, NLdatabase_path, useEntropy)
 }
 
 SpectraSearchingSingle <- function(ConsensusRes, idxs, peak_matrix, ppm_ms1, ppm_ms2, ion_mode, database_path = "", database_table = "all", enableNL = FALSE, NLdatabase_path = "", useEntropy = FALSE) {

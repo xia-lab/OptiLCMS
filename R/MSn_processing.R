@@ -608,7 +608,8 @@ PerformDBSearchingBatch <- function(mSet = NULL,
                                     enableNL = FALSE,
                                     NLdatabase_path = NULL,
                                     ncores = 1,
-                                    useEntropy = FALSE
+                                    useEntropy = FALSE,
+                                    databaseOptions = "all"
                                     ){
   
   # This function is a parallel function to enable the database searching in a parallel way
@@ -657,6 +658,14 @@ PerformDBSearchingBatch <- function(mSet = NULL,
       stop("Your neutral loss database is not a valid sqlite file!");
     } 
   }
+  if(ionmode == 1L){
+    dbts <- generateMS2dbOpt_optilcms(databaseOptions, "positive")
+  } else {
+    dbts <- generateMS2dbOpt_optilcms(databaseOptions, "negative")
+  }
+
+  database_table <- dbts;
+  
   num_fts <- length(ConsensusRes[[1]]);
   seq_idx <- seq(0, num_fts-1);
   rt_ms1 <- mSet@MSnData[["scanrts_ms1"]];
@@ -684,6 +693,7 @@ PerformDBSearchingBatch <- function(mSet = NULL,
                             scan_ms1, 
                             ion_mode = ionmode, 
                             database_path = database_path, 
+                            database_table = database_table,
                             enableNL = enableNL,
                             NLdatabase_path = NLdatabase_path,
                             useEntropy = useEntropy)
@@ -699,7 +709,7 @@ PerformDBSearchingBatch <- function(mSet = NULL,
     clusterExport(cl, c("ft_idx_grps", 
                         "ConsensusRes", "peak_matrix", 
                         "ppm1", "ppm2", "rt_tol", "rt_ms1", 
-                        "scan_ms1", "ionmode", "database_path", 
+                        "scan_ms1", "ionmode", "database_path", "database_table",
                         "enableNL", "useEntropy", "NLdatabase_path",
                         "SpectraSearching"), envir = environment())
     res1 <- list()
@@ -707,7 +717,7 @@ PerformDBSearchingBatch <- function(mSet = NULL,
                       1:ncores, 
                       function(x, ft_idx_grps, ConsensusRes, peak_matrix, 
                                ppm1, ppm2, rt_tol, rt_ms1, 
-                               scan_ms1, ionmode, database_path, enableNL, 
+                               scan_ms1, ionmode, database_path, database_table, enableNL, 
                                NLdatabase_path, useEntropy){
                         res0 <- SpectraSearching(ConsensusRes, 
                                                  ft_idx_grps[[x]], 
@@ -718,7 +728,8 @@ PerformDBSearchingBatch <- function(mSet = NULL,
                                                  rt_ms1, 
                                                  scan_ms1, 
                                                  ion_mode = ionmode, 
-                                                 database_path = database_path, 
+                                                 database_path = database_path,
+                                                 database_table = database_table,
                                                  enableNL = enableNL,
                                                  NLdatabase_path = NLdatabase_path,
                                                  useEntropy = useEntropy)
@@ -733,6 +744,7 @@ PerformDBSearchingBatch <- function(mSet = NULL,
                       scan_ms1 = scan_ms1,
                       ionmode = ionmode,
                       database_path = database_path,
+                      database_table = database_table,
                       enableNL = enableNL,
                       NLdatabase_path = NLdatabase_path,
                       useEntropy = useEntropy)
@@ -762,6 +774,7 @@ PerformDBSearchingBatch <- function(mSet = NULL,
                                         scan_ms1,
                                         ionmode,
                                         database_path,
+                                        database_table,
                                         enableNL){
       res0 <- SpectraSearching(ConsensusRes, 
                               ft_idx_grps[[x]], 
@@ -773,6 +786,7 @@ PerformDBSearchingBatch <- function(mSet = NULL,
                               scan_ms1, 
                               ion_mode = ionmode, 
                               database_path = database_path, 
+                              database_table = database_table,
                               enableNL = enableNL)
       res0},
       ConsensusRes = ConsensusRes,
@@ -784,6 +798,7 @@ PerformDBSearchingBatch <- function(mSet = NULL,
       scan_ms1 = scan_ms1,
       ionmode = ionmode,
       database_path = database_path,
+      database_table = database_table,
       enableNL = enableNL,
       BPPARAM = MulticoreParam(ncores));
     #register(bpstop());
