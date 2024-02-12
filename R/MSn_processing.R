@@ -594,6 +594,7 @@ PerformSpectrumConsenus <- function(mSet = NULL,
 #' @param use_rt logical, to use retention time if TRUE;
 #' @param enableNL logical, to enable use Neutral Loss matching for unmatched features if TRUE;
 #' @param NLdatabase_path path of neutral loss database. Must be specified to a valid neutral loss database when enableNL is TRUE.
+#' @param databaseOptions Options of database for searching.
 #' @param ncores 
 #'
 #' @return mSet Object
@@ -822,8 +823,6 @@ PerformDBSearchingBatch <- function(mSet = NULL,
 #'
 #' @return mSet Object
 #' @export
-#'
-#' @examples to add
 PerformResultsExport <- function(mSet = NULL,
                                  type = 0L,
                                  topN = 10L,
@@ -912,7 +911,7 @@ PerformResultsExport <- function(mSet = NULL,
 }
 
 
-#' Title
+#' FormatMSnAnnotation
 #'
 #' @param mSet 
 #' @param topN 
@@ -920,8 +919,6 @@ PerformResultsExport <- function(mSet = NULL,
 #'
 #' @return mSet Object
 #' @export
-#'
-#' @examples to add
 FormatMSnAnnotation <- function(mSet = NULL,
                                 topN = 5L,
                                 isLipidomics = FALSE){
