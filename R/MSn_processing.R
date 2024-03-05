@@ -119,11 +119,11 @@ PerformMSnImport <- function(mSet = NULL,
       peak_mtx <- matrix();
     }
   } else {
-    if(!is.null(mSet) & !is.null(mSet@peakAnnotation[["groupmat"]])){
+    if((!is.null(mSet)) && (!is.null(mSet@peakAnnotation[["groupmat"]]))){
       peak_mtx <- dia_feature_preparation(mSet@peakAnnotation[["groupmat"]],
                                           mSet@peakfilling[["msFeatureData"]][["chromPeaks"]],
                                           mSet@peakfilling[["FeatureGroupTable"]]@listData[["peakidx"]])
-    } else if(!is.null(mSet) & !is.null(mSet@peakAnnotation[["camera_output"]])) {
+    } else if((!is.null(mSet)) && (!is.null(mSet@peakAnnotation[["camera_output"]]))) {
       targetFeatures <- mSet@peakAnnotation[["camera_output"]];
       targetFeatures <- targetFeatures[,c("mzmin", "mzmax", "rtmin", "rtmax")]
       peak_mtx <- lapply(1:nrow(targetFeatures), function(x){
