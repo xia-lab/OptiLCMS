@@ -152,7 +152,10 @@ public:
       // baseline_val = maxo_val/sn_val;
       
       // 2.1) prepare MS1 data and EICs
+      //cout << "this_rt_min_ext ---> " << this_rt_min_ext << endl;
+      //cout << "this_rt_max_ext ---> " << this_rt_max_ext << endl;
       IntegerVector idx_ms1_ext = whichTrue((scantimes_ms1 >= this_rt_min_ext) & (scantimes_ms1 <= this_rt_max_ext));
+      //cout << "idx_ms1_ext size ---> " << idx_ms1_ext.size() << endl;
       IntegerVector idx_ms1 = whichTrue((scantimes_ms1 >= this_rt_min) & (scantimes_ms1 <= this_rt_max));
       IntegerVector is_keep_idx(idx_ms1.size());
       for(int m=0; m<idx_ms1.size(); m++){
@@ -171,6 +174,9 @@ public:
       NumericVector mzVecs = ms1_eic(_,0);
       NumericVector intVecs = ms1_eic(_,1);
       NumericVector rtVecs = scantimes_ms1[idx_ms1_ext];
+      // cout << "rtVecs size  ==> " << rtVecs.size() << endl;
+      // cout << "mzVecs size  ==> " << mzVecs.size() << endl;
+      // cout << "intVecs size ==> " << intVecs.size() << endl;
       NumericMatrix peaks_ms1_ext = cbind((NumericVector)idx_ms1_ext, rtVecs, mzVecs, intVecs);
       NumericVector peak_ms1_ext_smooth = SmoothLoess(peaks_ms1_ext, 0.1);
       NumericVector pk_ms1_sm_int = peak_ms1_ext_smooth[is_keep_idx];
@@ -179,9 +185,18 @@ public:
         // need to give a value to the final result set : todo later
         continue;
       }
+
       int idx_apex_ms1 = whichTrue1(peak_ms1_ext_smooth == max(pk_ms1_sm_int));
       double idx_rt_apex_ms1 = rtVecs[idx_apex_ms1];
-
+      // cout << "pk_ms1_sm_int       ===> " << pk_ms1_sm_int << endl;
+      // cout << "idx_apex_ms1        ===> " << idx_apex_ms1 << endl;
+      // cout << "peak_ms1_ext_smooth ===> " << peak_ms1_ext_smooth << endl;
+      // cout << "idx_rt_apex_ms1     ===> " << idx_rt_apex_ms1 << endl;
+      // cout << "this_rt_min_ext     ===>" << this_rt_min_ext << endl;
+      // cout << "this_rt_max_ext     ===>" << this_rt_max_ext << endl;
+      // cout << "idx_swath           ===>" << idx_swath << endl;
+      // cout << "swath_idx_ms2 size  ===>" << swath_idx_ms2.size() << endl;
+      //cout << "swath_idx_ms2==>" << swath_idx_ms2 << endl;
       // 2.2) prepare MS2 data and EICs
       IntegerVector idx_ms2_ext_all = whichTrue((scantimes_ms2 >= this_rt_min_ext) & 
                                                 (scantimes_ms2 <= this_rt_max_ext) & 
@@ -189,13 +204,17 @@ public:
       IntegerVector idx_ms2_all = whichTrue((scantimes_ms2 >= this_rt_min) & 
                                             (scantimes_ms2 <= this_rt_max) & 
                                             (swath_idx_ms2 == idx_swath));
-      
+      //cout << "line 192 --> " << idx_ms2_ext_all << "\n";
       List spec_exp_ext_ms2 = scan_ms2[idx_ms2_ext_all];
+      
       NumericMatrix spec_apex_ms2;
+      
       if(idx_apex_ms1<spec_exp_ext_ms2.size()){
         NumericMatrix spec_apex_ms20 = spec_exp_ext_ms2[idx_apex_ms1];
         spec_apex_ms2 = spec_apex_ms20;
       } else if(idx_apex_ms1 !=0){
+        // cout << "line 201 --> " << idx_apex_ms1 << "\n";
+        // cout << "line 203 --> " << spec_exp_ext_ms2.size() << "\n";
         NumericMatrix spec_apex_ms20 = spec_exp_ext_ms2[idx_apex_ms1-1];
         spec_apex_ms2 = spec_apex_ms20;
       } else{
@@ -245,7 +264,7 @@ public:
                                      0.0};
       
       // 2.3) run the decoSpectra
-      //cout << "DecoSpectra --> " << f;
+      //cout << "DecoSpectra --> " << f << "\n";
       List spec_decon = DecoSpectra(f,
                                     ms2_eic,
                                     pk_ms1_sm_int,

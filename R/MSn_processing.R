@@ -68,23 +68,24 @@ PerformMSnImport <- function(mSet = NULL,
   
   
   # Process the data of MS2 level
-  scan_ms2_nonEmpty_idx <- lapply(1:length(filesPath), function(x){
-    vapply(pks_list[[x]], nrow, integer(1L)) != 0
-  })
-  scanrts_ms2_List <- lapply(1:length(filesPath), function(x){
-    hdr_list[[x]][["retentionTime"]][(hdr_list[[x]][["msLevel"]] == 2) & (scan_ms2_nonEmpty_idx[[x]])]
-  })
-  scan_ms2_idx <- lapply(1:length(filesPath), function(x){
-    hdr_list[[x]][["msLevel"]] == 2 & (scan_ms2_nonEmpty_idx[[x]])
-  })
-  scan_ms2_List <- lapply(1:length(filesPath), function(x){
-    pks_list[[x]][scan_ms2_idx[[x]]]
-  })
-  
+
   
   # Process the precursors OR swath information
   swath <- matrix()
   if(acquisitionMode == "DDA"){
+    scan_ms2_nonEmpty_idx <- lapply(1:length(filesPath), function(x){
+      vapply(pks_list[[x]], nrow, integer(1L)) != 0
+    })
+    scanrts_ms2_List <- lapply(1:length(filesPath), function(x){
+      hdr_list[[x]][["retentionTime"]][(hdr_list[[x]][["msLevel"]] == 2) & (scan_ms2_nonEmpty_idx[[x]])]
+    })
+    scan_ms2_idx <- lapply(1:length(filesPath), function(x){
+      hdr_list[[x]][["msLevel"]] == 2 & (scan_ms2_nonEmpty_idx[[x]])
+    })
+    scan_ms2_List <- lapply(1:length(filesPath), function(x){
+      pks_list[[x]][scan_ms2_idx[[x]]]
+    })
+    
     prec_mzs_List <- lapply(1:length(filesPath), function(x){
       mtx <- cbind(hdr_list[[x]][["precursorMZ"]][scan_ms2_idx[[x]]],
                    hdr_list[[x]][["precursorIntensity"]][scan_ms2_idx[[x]]])
@@ -101,6 +102,17 @@ PerformMSnImport <- function(mSet = NULL,
     }
     
   } else if(acquisitionMode == "DIA"){
+
+    scanrts_ms2_List <- lapply(1:length(filesPath), function(x){
+      hdr_list[[x]][["retentionTime"]][(hdr_list[[x]][["msLevel"]] == 2)]
+    })
+    scan_ms2_idx <- lapply(1:length(filesPath), function(x){
+      hdr_list[[x]][["msLevel"]] == 2
+    })
+    scan_ms2_List <- lapply(1:length(filesPath), function(x){
+      pks_list[[x]][scan_ms2_idx[[x]]]
+    })
+    
     swath <- read.table(SWATH_file, header = F)
   }
 
