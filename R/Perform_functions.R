@@ -2689,7 +2689,9 @@ PerformAsariResultsFormating <- function(minFrac = 0.7){
   sample_idx <- allGroups;
   
   if(any(sample_idx == "BLANK")){
-    sample_idx <- sample_idx[sample_idx != "BLANK"]
+    sample_idx_nonblk <- sample_idx != "BLANK"
+    sample_idx <- sample_idx[sample_idx_nonblk]
+    ftable1 <- ftable1[,sample_idx_nonblk]
   }
   
   feature_value0 <- ftable1;
@@ -2701,6 +2703,7 @@ PerformAsariResultsFormating <- function(minFrac = 0.7){
   rowNms <- rownames(int.mat);
   colNms <- colnames(int.mat);
   int.mat <- t(apply(int.mat, 1, function(x) .replace.by.lod(as.numeric(x))));
+  int.mat[int.mat == Inf] <- 0
   rownames(int.mat) <- rowNms;
   colnames(int.mat) <- colNms; 
   feature_value <- int.mat;
