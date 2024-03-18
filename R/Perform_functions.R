@@ -2866,18 +2866,15 @@ PerformAsariResultsFormating <- function(minFrac = 0.7){
     group_colors <-
       paste0(RColorBrewer::brewer.pal(9, "Set1")[seq_along(unique(sample_idx))], "60")
   }
-  
+  if(any(sample_idx == "BLANK")){
+    sample_num <- sample_num[sample_idx != "BLANK"]
+    sample_idx <- sample_idx[sample_idx!="BLANK"]
+  }
   ftable1[ftable1 == 0] <- 1
   ints <- lapply(sample_num, function(x){
     log2(ftable1[,x])
   })
-    
-  
-  if(any(sample_idx == "BLANK")){
-    ints <- ints[names(ints) != 0];
-    sample_num <- sample_num[sample_idx != "BLANK"]
-  }
-  
+  #ints <- ints[names(ints) != 0];
   names(ints) <- as.character(sample_num)
   
   sample_idx <- as.factor(sample_idx)
