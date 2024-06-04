@@ -748,7 +748,7 @@ ExperimentsCluster_doe <-function(object, object_mslevel,params,
       if (sysname == "Linux") {
         memtotal <-
           ceiling(as.numeric(
-            system("cat /proc/meminfo | awk '/MemTotal:/ {print $2}'", intern = TRUE)
+            system("awk '/MemTotal/ {print $2}' /proc/meminfo", intern = TRUE)
           ) / 1024 / 1024)
       }
 
