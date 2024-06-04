@@ -743,13 +743,23 @@ ExperimentsCluster_doe <-function(object, object_mslevel,params,
       
       data.size <- round(as.numeric(object.size(object) / 1024 / 1024), 1)
       
-      if (.Platform$OS.type == "unix") {
+      # detect platform
+      sysname = Sys.info()[['sysname']]
+      if (sysname == "Linux") {
         memtotal <-
           ceiling(as.numeric(
-            system("sysctl -a | awk '/memsize:/ {print $2}'", intern = TRUE)
+            system("cat /proc/meminfo | awk '/MemTotal:/ {print $2}'", intern = TRUE)
           ) / 1024 / 1024)
       }
-      if (.Platform$OS.type == "windows") {
+
+      if (sysname == "Darwin"){
+        memtotal <-
+          ceiling(as.numeric(
+            system("sysctl hw.memsize | awk '{print $2}'", intern = TRUE)
+          ) / 1024 / 1024 / 1024)
+      }
+      
+      if (sysname == "Windows") {
         memtotal <-
           ceiling(as.numeric(gsub(
             "\r", "", gsub(
