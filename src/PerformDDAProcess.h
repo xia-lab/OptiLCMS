@@ -452,7 +452,7 @@ private:
       
     }
     if(showOutput){
-      cout << GroupList.size() << " MS/MS features groups have been detected." << endl;
+      //cout << GroupList.size() << " MS/MS features groups have been detected." << endl;
     }
     return 1;
   }
@@ -581,8 +581,8 @@ private:
       cout << "Inclusion intensity threshold: " << inclusion_inten_thre << endl;
     }
     cout << ".........." << endl;
-    cout << "We found " << CleanGroupIdxVec.size() << "    clean feature groups in thread - " << thread_int << " from file: " << file_name << endl;
-    cout << "We found " << ContmGroupIdxVec.size() << " chimeric feature groups in thread - " << thread_int << " from file: " << file_name << endl;
+    cout << CleanGroupIdxVec.size() << "    clean feature groups found in thread - " << thread_int << " from file: " << file_name << endl;
+    cout << ContmGroupIdxVec.size() << " chimeric feature groups found in thread - " << thread_int << " from file: " << file_name << endl;
     
     return 1;
   }
@@ -2671,7 +2671,7 @@ public:
     int res_stp2 = 0;
     if(decoOn){
       if(showOutput){
-        cout << "Deconvolution is going to be executed .. \n";
+        //cout << "Deconvolution is going to be executed .. \n";
       }
       res_stp2 = chimericSpectraDetection();
     }
@@ -2683,7 +2683,7 @@ public:
       //MS2listSummarize_noMerge();
     } else if(ContmGroupIdxVec.size() == 0){
       if(showOutput){
-        cout << "No convoluted MS2 peaks found, skipped deconvolution" << endl;
+        //cout << "No convoluted MS2 peaks found, skipped deconvolution" << endl;
       }
       MS2listSummarize_noDeco();
     } else {
