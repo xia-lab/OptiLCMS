@@ -968,6 +968,10 @@ FormatMSnAnnotation <- function(mSet = NULL,
     warning("Current MSn annotation results contain at most ", maxN, " annotations.")
     topN <- maxN;
   }
+  if(topN == 0){
+    warning("No compound identification results found!")
+    return(data.frame())
+  }
   nmss <- names(mSet@MSnResults[["DBAnnoteRes"]][[1]][[1]])
   if(all(c("InchiKeys", "Compounds", "Formula") %in% nmss)){
     topNResults <- lapply(1:length(mSet@MSnResults$DBAnnoteRes), function(x){
