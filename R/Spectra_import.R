@@ -238,8 +238,12 @@ ImportRawMSData <-
       ms2_idx <- (sclass=="MS2");
       sclass <- sclass[!ms2_idx]
       snames <- snames[!ms2_idx]
+      # file_ms1_idx <- vapply(files, FUN = function(x){
+      #   res <- vapply(snames, function(y){grepl(y, x)}, FUN.VALUE = logical(1L))
+      #   any(res)
+      # }, FUN.VALUE = logical(1L))
       file_ms1_idx <- vapply(files, FUN = function(x){
-        res <- vapply(snames, function(y){grepl(y, x)}, FUN.VALUE = logical(1L))
+        res <- vapply(snames, function(y){y == gsub("\\.[^.]*$", "", basename(x))}, FUN.VALUE = logical(1L))
         any(res)
       }, FUN.VALUE = logical(1L))
       files <- files[file_ms1_idx]
