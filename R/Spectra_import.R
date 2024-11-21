@@ -1101,7 +1101,17 @@ UpdateRawfiles <- function(mSet = NULL, filesIncluded = NULL){
     mSet <- new("mSet");
   }
   
-  if(.on.public.web()){
+  if(.on.public.web() & length(filesIncluded)>1){
+    if(!dir.exists("upload/")){
+      filesList <- list.files("/home/glassfish/projects/MetaboDemoRawData/upload/", recursive = TRUE, full.names = TRUE);
+    } else {
+      filesList <- list.files("upload/", recursive = TRUE, full.names = TRUE);
+    }
+    
+    filesListBaseNMs <- basename(filesList);
+    filesIncluded <- filesList[sapply(filesIncluded, function(x){which(x == filesListBaseNMs)})];
+    
+  } else if(.on.public.web() & !is.na(filesIncluded)){
     
     if(!dir.exists("upload/")){
       filesList <- list.files("/home/glassfish/projects/MetaboDemoRawData/upload/", recursive = TRUE, full.names = TRUE);
@@ -1111,6 +1121,33 @@ UpdateRawfiles <- function(mSet = NULL, filesIncluded = NULL){
     
     filesListBaseNMs <- basename(filesList);
     filesIncluded <- filesList[sapply(filesIncluded, function(x){which(x == filesListBaseNMs)})];
+  } else if(.on.public.web() & is.na(filesIncluded)){
+    if(file.exists("fileInclusionlist.txt")){
+      all_files_txt <- readLines("fileInclusionlist.txt", warn = F)
+      all_files_txt <- gsub("^c\\(|\\)|'", "", all_files_txt)
+      all_file_nms <- strsplit(all_files_txt, ",")[[1]]
+      
+      
+      if(!dir.exists("upload/")){
+        filesList <- list.files("/home/glassfish/projects/MetaboDemoRawData/upload/", recursive = TRUE, full.names = TRUE);
+      } else {
+        filesList <- list.files("upload/", recursive = TRUE, full.names = TRUE);
+      }
+      
+      filesListBaseNMs <- basename(filesList);
+      filesIncluded <- filesList[sapply(all_file_nms, function(x){which(x == filesListBaseNMs)})];
+      
+    } else {
+      
+      if(!dir.exists("upload/")){
+        filesList <- list.files("/home/glassfish/projects/MetaboDemoRawData/upload/", recursive = TRUE, full.names = TRUE);
+      } else {
+        filesList <- list.files("upload/", recursive = TRUE, full.names = TRUE);
+      }
+      
+      filesListBaseNMs <- basename(filesList);
+      filesIncluded <- filesList[sapply(filesListBaseNMs, function(x){which(x == filesListBaseNMs)})];
+    }
   }
   
   if(!is.null(filesIncluded)){
