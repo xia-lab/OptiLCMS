@@ -299,7 +299,7 @@ ImportRawMSData <-
       marker_record("data_import_1")
     }
     
-    raw_data <- SanitySpectra(raw_data, cutoff = 0.05);
+    #raw_data <- SanitySpectra(raw_data, cutoff = 0.05);
     
     MessageOutput(NULL, NULL, 22)
     
@@ -1168,22 +1168,22 @@ UpdateRawfiles <- function(mSet = NULL, filesIncluded = NULL){
     }
     filesIncluded_formated <- filesIncluded_full[extsIdx];
     
-    # file centroid check
-    Centroididx <- unname(sapply(filesIncluded_formated, CentroidCheck));
-    if(!any(Centroididx)){
-      stop("No centroided spectrum found ! Please Centroid them first !")
-    }
-    filesIncluded_centroided <- filesIncluded_formated[Centroididx];
-    message(c(basename(filesIncluded_centroided), " will be included for further processing !\n"))
+    # # file centroid check
+    # Centroididx <- unname(sapply(filesIncluded_formated, CentroidCheck));
+    # if(!any(Centroididx)){
+    #   stop("No centroided spectrum found ! Please Centroid them first !")
+    # }
+    # filesIncluded_centroided <- filesIncluded_formated[Centroididx];
+    # message(c(basename(filesIncluded_centroided), " will be included for further processing !\n"))
+    # 
+    # # file size check
+    # fileSizeInfo <- file.size(filesIncluded_centroided)/1024^2;
+    # largeFileIdx <- fileSizeInfo > 200;
+    # if(any(largeFileIdx)){
+    #   message(c(basename(filesIncluded_centroided)[largeFileIdx]), " is larger than 200MB, please note your memory !")
+    # }
     
-    # file size check
-    fileSizeInfo <- file.size(filesIncluded_centroided)/1024^2;
-    largeFileIdx <- fileSizeInfo > 200;
-    if(any(largeFileIdx)){
-      message(c(basename(filesIncluded_centroided)[largeFileIdx]), " is larger than 200MB, please note your memory !")
-    }
-    
-    filesIncluded <- filesIncluded_centroided;
+    filesIncluded <- filesIncluded_formated;
     
   } else {
     warning("No files will be included for mSet !")
