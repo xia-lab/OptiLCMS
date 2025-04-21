@@ -3128,3 +3128,136 @@ jobFinished <- function(){
       progress = 200
     )
 }
+
+PerformExpsomeClassify <- function(mSet, path_repo = ""){
+  if(path_repo == ""){
+    stop("No classification database provided!")
+  }
+  
+  exposome_repo <- qs::qread("/home/glassfish/projects/exposome_lib/complte_exposome_categories_lib.qs")
+  anno_res <- mSet@MSnResults[["DBAnnoteRes"]]
+  exposome_repo <- as.data.frame(exposome_repo)
+  
+  exposome_res <- lapply(anno_res, function(x){
+    res1 <- x[[1]]
+    if(length(res1$IDs)==0){
+      return(NA)
+    }
+    all_inchikeys <- res1[["InchiKeys"]]
+    nms <- colnames(exposome_repo)[-1]
+    all_cls <- lapply(all_inchikeys, function(u){
+      idx <- which(exposome_repo$InChiKeys == u)
+      if(length(idx)!=0){
+        nms[as.logical(exposome_repo[idx[1], -1])]
+      } else {
+        return(NA)
+      }
+    })
+    names(all_cls) <- all_inchikeys
+    return(all_cls)
+  })
+  
+  mSet@MSnResults[["ExposomeRes"]] <- exposome_res
+  
+  exposome_res_clean <- lapply(exposome_res, function(x){
+    if(length(x)==1){
+      if(is.na(x)){
+        return(NA)
+      } else {
+        return(x[[1]])
+      }
+    } else {
+      return(x[[1]])
+    }
+  })
+  
+  # plot a summary histogram
+  
+  # prepare df_all
+  if(nrow(mSet@dataSet) == 0){
+    # reload mSet if MS1 information is missing
+    mSet <- reloadMS1mSet(mSet);
+  }
+  save(mSet, file = "mSet_PerformExpsomeClassify.rda")
+  
+  ft_idx <- mSet@MSnResults[["Concensus_spec"]][[1]]+1
+  meta_info0 <- meta_info <- as.character(mSet@dataSet[1, -1])
+  meta_info <- unique(meta_info)
+  meta_info <- meta_info[meta_info!="QC" & meta_info!="MS2"]
+  
+  idx2check <- vapply(exposome_res_clean, function(m){
+    is.na(m[1])
+  }, FUN.VALUE = logical(1L))
+  ft_idx <- ft_idx[!idx2check]
+  ft_idx_seq <- seq(1:length(ft_idx))
+  
+  exposome_res_clean <- exposome_res_clean[!idx2check]
+  
+  dt <- mSet@dataSet[-1, -1]
+  res_exp_class_by_group <- lapply(meta_info, FUN = function(n){
+    idx_grp_col <- which(meta_info0 == n)
+    bool_idxs <- vapply(ft_idx, function(x){
+      this_ft_grp <- dt[x, idx_grp_col]
+      length(which(this_ft_grp==0))/length(this_ft_grp)<= 0.75
+    }, FUN.VALUE = logical(1L))
+    this_good_ft_idx <- ft_idx_seq[bool_idxs]
+    res_all_this_pho <- exposome_res_clean[this_good_ft_idx]
+    res_all_this_pho <- unlist(res_all_this_pho)
+    return(res_all_this_pho)
+  })
+  
+  names(res_exp_class_by_group) <- meta_info
+  
+  all_cls <- c("Biocides", "Drugs", "Environment_Contaminantes", "Foods", 
+               "Indoor_Environment", "Industrial_Toxins", "Microbes", "Natural_Toxins",
+               "Neuro_Toxins", "Other_Hazards", "Other_Healths_Related", "Others",
+               "Personal_Cares", "PFAS", "Phenols", "Plants",
+               "Plastics", "PMTs", "Smokes", "Surfactants",
+               "Waters")
+  
+  
+  all_cls_grps <- lapply(res_exp_class_by_group, function(x){
+    rs1 <- vapply(all_cls, function(y){
+      length(which(y==x))
+    }, FUN.VALUE = integer(1L))
+    return(rs1)
+  })
+  
+  df_all1 <- lapply(1:length(all_cls_grps), function(z) {data.frame(Categories = all_cls, Number = as.numeric(all_cls_grps[[z]]), Group = names(all_cls_grps)[z])})
+  df_all <- do.call(rbind, df_all1)
+  
+  qs::qsave(df_all, file = "exposome_classification_summary.qs")
+  
+  require("viridis") 
+  require("ggplot2")
+  if(length(all_cls_grps)==2){
+    fill <- c("#0000FF", "#FF0000")
+  } else {
+    fill <- RColorBrewer::brewer.pal(length(all_cls_grps), "Set2")
+  }
+  
+  p4 <- ggplot(data = df_all) + 
+    geom_bar(aes(y = Number, x = Categories, fill = Group), stat="identity", width = 0.5, position = "dodge") + theme_light() + 
+    theme(axis.text.x = element_text(angle = 45, vjust = 1, hjust=1, size = 8.5))
+  p4 <- p4 + scale_fill_manual(values=fill) 
+  #p4 <- p4 + scale_color_viridis(discrete = TRUE, option = "D")+scale_fill_viridis(discrete = TRUE)
+  p4
+  
+  Cairo::Cairo(820, 500,file = paste0("exposome_cat_comparison.png"),dpi = 90,bg = "white")
+  print(p4)
+  dev.off()
+  
+  Cairo::CairoPDF(width = 8, height = 5,file = paste0("exposome_cat_comparison.pdf"))
+  print(p4)
+  dev.off()
+  
+  return(mSet)
+}
+
+reloadMS1mSet <- function(mSet1){
+  
+  load("mSet.rda")
+  mSet1@peakAnnotation <- mSet@peakAnnotation
+  mSet1@dataSet <- mSet@dataSet
+  return(mSet1)
+}
