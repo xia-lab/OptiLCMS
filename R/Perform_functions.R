@@ -3121,12 +3121,35 @@ checkfac = function(fac) {
   return(list(fac=fac, nrgrp=nrgrp))
 }
 
-jobFinished <- function(){
+jobFinished <- function(mSet = NA){
+  try(exportCompoundTable(mSet), silent = T)
   MessageOutput(
     mes = paste0('<b>Everything of this LC-MS/MS dataset has been completed successfully! </b>\n\n'),
       ecol = '',
       progress = 200
     )
+}
+
+exportCompoundTable <- function(mSet){
+  dt <- mSet@dataSet
+  ms1_idxs <- mSet@MSnData[["peak_mtx_idx"]]
+  dt_cmpd <- mSet@MSnResults[["ResTable"]]
+  cmpd_idx <- vapply(1:nrow(dt_cmpd), function(x){
+    mz_min <- dt_cmpd$mzmin[x]
+    mz_max <- dt_cmpd$mzmax[x]
+    rt_min <- dt_cmpd$rtmin[x]
+    rt_max <- dt_cmpd$rtmax[x]
+    which(mSet@peakAnnotation[["camera_output"]]$mzmin >= mz_min-0.0001 & 
+            mSet@peakAnnotation[["camera_output"]]$mzmax <= mz_max+0.0001 & 
+            mSet@peakAnnotation[["camera_output"]]$rtmin >= rt_min-0.1 & 
+            mSet@peakAnnotation[["camera_output"]]$rtmax <= rt_max+0.1)[1]
+  }, integer(1L))
+  dt_cpmd_ms1 <- dt[c(1, cmpd_idx+1), ]
+  cmpd_labels <- dt_cmpd$Compound_1
+  dt_cpmd_ms1[-1, 1] <- cmpd_labels
+  write.csv(dt_cpmd_ms1, file = "metaboanalyst_compound.csv", row.names = F, quote = T)
+  dt[c(cmpd_idx+1), 1] <- cmpd_labels
+  write.csv(dt, file = "metaboanalyst_input_integrated.csv", row.names = F, quote = T)
 }
 
 PerformExpsomeClassify <- function(mSet, path_repo = ""){
