@@ -1498,6 +1498,7 @@ FormatPeakList <-
     
     # Format peaklist for MetaboAnalyst
     camera_ma <- camera_output[,-length];
+    camera_ma <- cbind(camera_ma, Formula = mSet@peakAnnotation[["massMatching"]][["Formula"]])
     
     if (filtAdducts == TRUE) {
       if (annParams$polarity == "positive") {
@@ -1551,7 +1552,7 @@ FormatPeakList <-
         unique_feats <-
           unique(rbind(camera_isotopes, camera_adducts, camera_feats))
         
-      } else{
+      } else {
         # negative polarity
         
         if (filtIso == TRUE) {
@@ -1603,7 +1604,7 @@ FormatPeakList <-
     # only valid for 2 group comparisons!!
     # ma_feats_miss <-
     #   ma_feats[which(rowMeans(is.na(ma_feats[, (ma_feats[1, ] == as.character(unique(group_info[1])))]))
-    #                  | rowMeans(is.na(ma_feats[, (ma_feats[1, ] == as.character(unique(group_info[2])))])) < missPercent),];
+    ##                  | rowMeans(is.na(ma_feats[, (ma_feats[1, ] == as.character(unique(group_info[2])))])) < missPercent),];
     # 
     
     grps_tb <- table(group_info)
@@ -1722,28 +1723,82 @@ FormatPeakList <-
     
     if(.on.public.web()){
       # remove isotopes and adducts directly
+      
       if (annParams$polarity == "positive") {
+        isotopes_idx <- grepl("\\[M\\]\\+", camera_ma$isotopes)
         camera_isotopes <-
-          camera_ma[grepl("\\[M\\]\\+", camera_ma$isotopes), ]
+          camera_ma[isotopes_idx, ]
+        adducts_idx <- grepl("\\[M\\+H\\]\\+", camera_ma$adduct)
         camera_adducts <-
-          camera_ma[grepl("\\[M\\+H\\]\\+", camera_ma$adduct), ]
+          camera_ma[adducts_idx, ]
+        
+        idx1 <- unique(c(which(isotopes_idx), which(adducts_idx)))
+        pc_grp_idx1 <- camera_output$pcgroup[idx1]
+        
+        parent_ion_idx <- which(camera_ma$isotopes == "" &
+                             camera_ma$adduct == "")
+        pc_grp_parent_ion_idx <- camera_output$pcgroup[parent_ion_idx]
+        
+        parent_ion_idx <- parent_ion_idx[!(pc_grp_parent_ion_idx %in% pc_grp_idx1)]
+        
         camera_feats <-
-          camera_ma[(camera_ma$isotopes == "" &
-                       camera_ma$adduct == ""), ]
+          camera_ma[parent_ion_idx, ]
+        camera_feats_out <-
+          camera_output[parent_ion_idx, ]
+        
+        unique_pc_idx <- unique(camera_feats_out$pcgroup)
+        unique_pc_inx <- vapply(unique_pc_idx, function(x){
+          uid <- which(camera_feats_out$pcgroup == x)
+          if(length(uid)==1){
+            return(uid)
+          } else {
+            uuid <- findMostAbundantFeature(camera_feats_out[uid, ])
+            return(uid[uuid])
+          }
+        }, FUN.VALUE = integer(1L))
+        camera_feats_done <- camera_feats[unique_pc_inx, ]
+        
         unique_feats <-
-          unique(rbind(camera_isotopes, camera_adducts, camera_feats))
+          unique(rbind(camera_isotopes, camera_adducts, camera_feats_done))
         
       } else{
         # negative polarity
+        isotopes_idx <- grepl("\\[M\\]\\-", camera_ma$isotopes)
         camera_isotopes <-
-          camera_ma[grepl("\\[M\\]-", camera_ma$isotopes), ]
+          camera_ma[isotopes_idx, ]
+        adducts_idx <- grepl("\\[M\\-H\\]\\-", camera_ma$adduct)
         camera_adducts <-
-          camera_ma[grepl("\\[M-H\\]-", camera_ma$adduct), ]
+          camera_ma[adducts_idx, ]
+        
+        idx1 <- unique(c(which(isotopes_idx), which(adducts_idx)))
+        pc_grp_idx1 <- camera_ma$pcgroup[idx1]
+        
+        parent_ion_idx <- which(camera_ma$isotopes == "" &
+                                  camera_ma$adduct == "")
+        pc_grp_parent_ion_idx <- camera_ma$pcgroup[parent_ion_idx]
+        
+        parent_ion_idx <- parent_ion_idx[!(pc_grp_parent_ion_idx %in% pc_grp_idx1)]
+        
         camera_feats <-
-          camera_ma[(camera_ma$isotopes == "" &
-                       camera_ma$adduct == ""), ]
+          camera_ma[parent_ion_idx, ]
+        camera_feats_out <-
+          camera_output[parent_ion_idx, ]
+        
+        unique_pc_idx <- unique(camera_feats_out$pcgroup)
+        unique_pc_inx <- vapply(unique_pc_idx, function(x){
+          uid <- which(camera_feats_out$pcgroup == x)
+          if(length(uid)==1){
+            return(uid)
+          } else {
+            uuid <- findMostAbundantFeature(camera_feats_out[uid, ])
+            return(uid[uuid])
+          }
+        }, FUN.VALUE = integer(1L))
+        camera_feats_done <- camera_feats[unique_pc_inx, ]
+        
         unique_feats <-
-          unique(rbind(camera_isotopes, camera_adducts, camera_feats))
+          unique(rbind(camera_isotopes, camera_adducts, camera_feats_done))
+        
       }
       
       unique_feats <- unique_feats[order(unique_feats[, 1]), ];
@@ -1780,9 +1835,9 @@ FormatPeakList <-
       # only valid for 2 group comparisons!!
       # ma_feats_miss <-
       #   ma_feats[which(rowMeans(is.na(ma_feats[, (ma_feats[1, ] == as.character(unique(group_info[1])))]))
-      #                  | rowMeans(is.na(ma_feats[, (ma_feats[1, ] == as.character(unique(group_info[2])))])) < missPercent),];
+      ##                  | rowMeans(is.na(ma_feats[, (ma_feats[1, ] == as.character(unique(group_info[2])))])) < missPercent),];
       # 
-      
+
       grps_tb <- table(group_info)
       grps_info <- names(grps_tb[grps_tb > 2])
       if(length(grps_info) > 1){
@@ -1794,7 +1849,41 @@ FormatPeakList <-
           ma_feats[which(rowMeans(is.na(ma_feats[, (ma_feats[1, ] == as.character(grps_info[1]))])) <= missPercent),];
       }
       
+      
+      # correction based on RSD of QC, if any
+      if("QC" %in% group_info){
+        qc_idx <-which(group_info == "QC")
+        ma_feats_miss0 <- ma_feats_miss[-1,-1]
+        res_idx <- apply(ma_feats_miss0, 1, function(x){
+          qc_vec <- as.numeric(x[qc_idx])
+          rsd <- sd(qc_vec, na.rm = T)/mean(qc_vec, na.rm = T)
+          if(is.na(rsd)){
+            return(FALSE)
+          }
+          return(rsd<=1)
+        })
+        ma_feats_miss <- ma_feats_miss[c(1, which(res_idx)+1),]
+        unique_feats <- unique_feats[res_idx,]
+      }
+      
+      # adding empirical compound information if any
+      empirical_cmpds <- apply(unique_feats, 1, function(y){
+        fres <- y[length(y)]
+        strsplit(fres, "; ")[[1]][1]
+      })
+      
+      new_labels <- vapply(1:length(empirical_cmpds), function(x){
+        if(is.na(empirical_cmpds[x])){
+          return(ma_feats_miss[x+1, 1])
+        } else {
+          return(paste0(empirical_cmpds[x], "_", ma_feats_miss[x+1, 1]))
+        }
+      }, character(1L))
+      ma_feats_miss[2:nrow(ma_feats_miss), 1] <- new_labels
+      
+      ms1_res_dt <- list(ma_feats_miss, unique_feats)
       write.csv(ma_feats_miss, file = "metaboanalyst_input_clean.csv", row.names = F, quote = F)
+      qs::qsave(ms1_res_dt, file = "metaboanalyst_input_clean_MS1.qs")
       # save the rda
       save(mSet, file = "mSet.rda");
     }
@@ -1802,6 +1891,11 @@ FormatPeakList <-
     return(mSet)
   }
 
+findMostAbundantFeature <- function(ft){
+  ft<- ft[-c(1:6, ncol(ft):(ncol(ft)-5))]
+  res <- apply(ft, 1, function(x){mean(x, na.rm = T)})
+  return(which.max(res))
+}
 
 #' @title Export.Annotation
 #' @description Export.Annotation is used to export the result of annotation
@@ -2335,7 +2429,7 @@ PerformAsariResultsFormating <- function(minFrac = 0.7){
   load("mSet.rda")
   load("params.rda")
   mSet@params <- updateRawSpectraParam (peakParams);
-  ftable <- read.csv(paste0(result_folder, "/preferred_Feature_table.tsv"), sep = "\t", check.names=FALSE)
+  ftable_ori <- ftable <- read.csv(paste0(result_folder, "/preferred_Feature_table.tsv"), sep = "\t", check.names=FALSE)
   features <- paste0(ftable$mz, "__", ftable$rtime)
   ftable1 <- ftable[,c(12:ncol(ftable))]
   allSamples <- colnames(ftable1)
@@ -2669,275 +2763,361 @@ PerformAsariResultsFormating <- function(minFrac = 0.7){
   );
   save(mSet, file = "mSet.rda")
   
-  # Generate PCA figure
-  imgName <- "PCA.png";
-  dpi = 72;
-  width = 8;
-  format = "png"
-  if (.on.public.web()) {
-    Cairo::Cairo(
-      file = imgName,
-      unit = "in",
-      dpi = dpi,
-      width = width,
-      height = width * 0.80,
-      type = format,
-      bg = "white"
-    )
-  }
-  
-  sample_idx <- allGroups;
-  
-  if(any(sample_idx == "BLANK")){
-    sample_idx_nonblk <- sample_idx != "BLANK"
-    sample_idx <- sample_idx[sample_idx_nonblk]
-    ftable1 <- ftable1[,sample_idx_nonblk]
-  }
-  
-  feature_value0 <- ftable1;
-  rownames(feature_value0) <- features
-  feature_value <- feature_value0
-  feature_value[is.na(feature_value)] <- 0;
-  
-  int.mat <- as.matrix(feature_value)
-  rowNms <- rownames(int.mat);
-  colNms <- colnames(int.mat);
-  int.mat <- t(apply(int.mat, 1, function(x) .replace.by.lod(as.numeric(x))));
-  int.mat[int.mat == Inf] <- 0
-  rownames(int.mat) <- rowNms;
-  colnames(int.mat) <- colNms; 
-  feature_value <- int.mat;
-  feature_value[feature_value==0] <- 1;
-  
-  pca_feats <- log10(feature_value);
-  
-  if (nrow(feature_value) < 2) {
-    MessageOutput(
-      mes =  paste0(
-        "<font color=\"red\">",
-        "\nERROR: No enough peaks detected, please adjust your parameters or use other Peak/Alignment method",
-        "</font>"
-      ),
-      ecol = "\n",
-      progress = 65
-    );
+  # Generate PCA figure and intensity stats
+  {
+    imgName <- "PCA.png";
+    dpi = 72;
+    width = 8;
+    format = "png"
+    if (.on.public.web()) {
+      Cairo::Cairo(
+        file = imgName,
+        unit = "in",
+        dpi = dpi,
+        width = width,
+        height = width * 0.80,
+        type = format,
+        bg = "white"
+      )
+    }
+    
+    sample_idx <- allGroups;
+    
+    if(any(sample_idx == "BLANK")){
+      sample_idx_nonblk <- sample_idx != "BLANK"
+      sample_idx <- sample_idx[sample_idx_nonblk]
+      ftable1 <- ftable1[,sample_idx_nonblk]
+    }
+    
+    feature_value0 <- ftable1;
+    rownames(feature_value0) <- features
+    feature_value <- feature_value0
+    feature_value[is.na(feature_value)] <- 0;
+    
+    int.mat <- as.matrix(feature_value)
+    rowNms <- rownames(int.mat);
+    colNms <- colnames(int.mat);
+    int.mat <- t(apply(int.mat, 1, function(x) .replace.by.lod(as.numeric(x))));
+    int.mat[int.mat == Inf] <- 0
+    rownames(int.mat) <- rowNms;
+    colnames(int.mat) <- colNms; 
+    feature_value <- int.mat;
+    feature_value[feature_value==0] <- 1;
+    
+    pca_feats <- log10(feature_value);
+    
+    if (nrow(feature_value) < 2) {
+      MessageOutput(
+        mes =  paste0(
+          "<font color=\"red\">",
+          "\nERROR: No enough peaks detected, please adjust your parameters or use other Peak/Alignment method",
+          "</font>"
+        ),
+        ecol = "\n",
+        progress = 65
+      );
+      
+      if (.on.public.web()) {
+        dev.off()
+      }
+      
+      return(NULL)
+    }
+    
+    pca_feats[is.na(pca_feats)] <- 0;
+    df0 <- na.omit(pca_feats);
+    df1 <- df0[is.finite(rowSums(df0)),];
+    df <- t(df1);
+    
+    mSet_pca <- prcomp(df, center = TRUE, scale = FALSE);
+    sum.pca <- summary(mSet_pca);
+    var.pca <-
+      sum.pca$importance[2,]; # variance explained by each PCA
+    
+    xlabel <- paste("PC1", "(", round(100 * var.pca[1], 1), "%)");
+    ylabel <- paste("PC2", "(", round(100 * var.pca[2], 1), "%)");
+    zlabel <- paste("PC3", "(", round(100 * var.pca[3], 1), "%)");
+    # using ggplot2
+    df <- as.data.frame(mSet_pca$x);
+    df$group <- sample_idx;
+    
+    ## Handle to generate json file for PCA3D online
+    if(.on.public.web()){
+      ## For score plot
+      pca3d <- list();
+      pca3d$score$axis <- c(xlabel, ylabel, zlabel);
+      xyz0 <- df[,seq_len(3)];
+      colnames(xyz0) <- rownames(xyz0) <- NULL;
+      pca3d$score$xyz <- data.frame(t(xyz0));
+      colnames(pca3d$score$xyz) <- NULL;
+      pca3d$score$name <- rownames(df);
+      pca3d$score$facA <- df$group;
+      
+      if(length(unique(df$group)) < 9){
+        col.fun <-
+          grDevices::colorRampPalette(RColorBrewer::brewer.pal(length(unique(df$group)), "Set1"));
+      } else {
+        col.fun <-
+          grDevices::colorRampPalette(RColorBrewer::brewer.pal(length(unique(df$group)), "Set3"));
+      }
+      
+      pca3d$score$colors <- col.fun(length(unique(df$group)));
+      
+      ## For loading plot
+      
+      pca3d$loading$axis <- paste("Loading ", seq_len(3), sep="");
+      coords0 <- coords <- data.frame(t(signif(mSet_pca$rotation[,seq_len(3)], 5)));
+      colnames(coords) <- NULL; 
+      pca3d$loading$xyz <- coords;
+      pca3d$loading$name <- rownames(mSet_pca$rotation);
+      pca3d$loading$entrez <- paste0(gsub("__", "@", features));
+      
+      dists <- GetDist3D(coords0);
+      pca3d$loading$cols <- GetRGBColorGradient(dists);
+      
+      pca3d$cls =  df$group;
+      
+      # json.obj <- RJSONIO::toJSON(pca3d, .na='null');
+      # sink("spectra_3d_loading.json");
+      # cat(json.obj);
+      # sink();
+      qs::qsave(pca3d$score, "score3d.qs");
+      qs::qsave(pca3d$loading, "loading3d.qs");
+      fileNm <- paste0("spectra_3d_loading.json");
+      
+      my.json.scatter(fileNm, T);
+      
+    }
+    
+    if (nrow(df) < 30) {
+      if (length(unique(sample_idx)) > 9) {
+        col.fun <-
+          grDevices::colorRampPalette(RColorBrewer::brewer.pal(12, "Set3"));
+        
+        p <-
+          ggplot2::ggplot(df, aes_string(
+            x = "PC1",
+            y = "PC2",
+            color = "group",
+            label = "row.names(df)"
+          )) +
+          geom_text_repel(force = 1.5) + 
+          geom_point(size = 5,  fill = col.fun(length(unique(sample_idx)))) + 
+          theme(axis.text = element_text(size = 12))
+        
+      } else{
+        p <-
+          ggplot2::ggplot(df, aes_string(
+            x = "PC1",
+            y = "PC2",
+            color = "group",
+            label = "row.names(df)"
+          )) +
+          geom_text_repel(force = 1.5) + 
+          geom_point(size = 5) + 
+          scale_color_brewer(palette = "Set1") + 
+          theme(axis.text = element_text(size = 12))
+      }
+      
+    } else {
+      if (length(unique(sample_idx)) > 9) {
+        p <-
+          ggplot2::ggplot(df, aes(x = "PC1",
+                                  y = "PC2",
+                                  color = "group")) + geom_point(size = 5)
+        
+      } else{
+        p <-
+          ggplot2::ggplot(df, aes(x = "PC1",
+                                  y = "PC2",
+                                  color = "group")) + geom_point(size = 5) + scale_color_brewer(palette = "Set1");
+      }
+    }
+    
+    p <-
+      p + xlab(xlabel) + ylab(ylabel) + theme_bw() + theme(axis.title = element_text(size = 12));
+    
+    print(p)
     
     if (.on.public.web()) {
       dev.off()
     }
     
-    return(NULL)
-  }
-  
-  pca_feats[is.na(pca_feats)] <- 0;
-  df0 <- na.omit(pca_feats);
-  df1 <- df0[is.finite(rowSums(df0)),];
-  df <- t(df1);
-  
-  mSet_pca <- prcomp(df, center = TRUE, scale = FALSE);
-  sum.pca <- summary(mSet_pca);
-  var.pca <-
-    sum.pca$importance[2,]; # variance explained by each PCA
-  
-  xlabel <- paste("PC1", "(", round(100 * var.pca[1], 1), "%)");
-  ylabel <- paste("PC2", "(", round(100 * var.pca[2], 1), "%)");
-  zlabel <- paste("PC3", "(", round(100 * var.pca[3], 1), "%)");
-  # using ggplot2
-  df <- as.data.frame(mSet_pca$x);
-  df$group <- sample_idx;
-  
-  ## Handle to generate json file for PCA3D online
-  if(.on.public.web()){
-    ## For score plot
-    pca3d <- list();
-    pca3d$score$axis <- c(xlabel, ylabel, zlabel);
-    xyz0 <- df[,seq_len(3)];
-    colnames(xyz0) <- rownames(xyz0) <- NULL;
-    pca3d$score$xyz <- data.frame(t(xyz0));
-    colnames(pca3d$score$xyz) <- NULL;
-    pca3d$score$name <- rownames(df);
-    pca3d$score$facA <- df$group;
+    # process peak intensity
+    sample_idx <- mSet@rawOnDisk@phenoData@data[["sample_group"]];
     
-    if(length(unique(df$group)) < 9){
-      col.fun <-
-        grDevices::colorRampPalette(RColorBrewer::brewer.pal(length(unique(df$group)), "Set1"));
-    } else {
-      col.fun <-
-        grDevices::colorRampPalette(RColorBrewer::brewer.pal(length(unique(df$group)), "Set3"));
-    }
+    sample_num <-
+      mSet@rawOnDisk@phenoData@data[["sample_name"]];
     
-    pca3d$score$colors <- col.fun(length(unique(df$group)));
+    sample_num <- sample_num[sample_idx!="MS2"]
+    sample_idx <- sample_idx[sample_idx!="MS2"]
     
-    ## For loading plot
-    
-    pca3d$loading$axis <- paste("Loading ", seq_len(3), sep="");
-    coords0 <- coords <- data.frame(t(signif(mSet_pca$rotation[,seq_len(3)], 5)));
-    colnames(coords) <- NULL; 
-    pca3d$loading$xyz <- coords;
-    pca3d$loading$name <- rownames(mSet_pca$rotation);
-    pca3d$loading$entrez <- paste0(gsub("__", "@", features));
-    
-    dists <- GetDist3D(coords0);
-    pca3d$loading$cols <- GetRGBColorGradient(dists);
-    
-    pca3d$cls =  df$group;
-    
-    # json.obj <- RJSONIO::toJSON(pca3d, .na='null');
-    # sink("spectra_3d_loading.json");
-    # cat(json.obj);
-    # sink();
-    qs::qsave(pca3d$score, "score3d.qs");
-    qs::qsave(pca3d$loading, "loading3d.qs");
-    fileNm <- paste0("spectra_3d_loading.json");
-    
-    my.json.scatter(fileNm, T);
-    
-  }
-  
-  if (nrow(df) < 30) {
     if (length(unique(sample_idx)) > 9) {
       col.fun <-
-        grDevices::colorRampPalette(RColorBrewer::brewer.pal(12, "Set3"));
-      
-      p <-
-        ggplot2::ggplot(df, aes_string(
-          x = "PC1",
-          y = "PC2",
-          color = "group",
-          label = "row.names(df)"
-        )) +
-        geom_text_repel(force = 1.5) + 
-        geom_point(size = 5,  fill = col.fun(length(unique(sample_idx)))) + 
-        theme(axis.text = element_text(size = 12))
+        grDevices::colorRampPalette(RColorBrewer::brewer.pal(12, "Set3"))
+      group_colors <- col.fun(length(unique(sample_idx)))
       
     } else{
-      p <-
-        ggplot2::ggplot(df, aes_string(
-          x = "PC1",
-          y = "PC2",
-          color = "group",
-          label = "row.names(df)"
-        )) +
-        geom_text_repel(force = 1.5) + 
-        geom_point(size = 5) + 
-        scale_color_brewer(palette = "Set1") + 
-        theme(axis.text = element_text(size = 12))
+      group_colors <-
+        paste0(RColorBrewer::brewer.pal(9, "Set1")[seq_along(unique(sample_idx))], "60")
     }
-    
-  } else {
-    if (length(unique(sample_idx)) > 9) {
-      p <-
-        ggplot2::ggplot(df, aes(x = "PC1",
-                                       y = "PC2",
-                                       color = "group")) + geom_point(size = 5)
-      
-    } else{
-      p <-
-        ggplot2::ggplot(df, aes(x = "PC1",
-                                       y = "PC2",
-                                       color = "group")) + geom_point(size = 5) + scale_color_brewer(palette = "Set1");
+    if(any(sample_idx == "BLANK")){
+      sample_num <- sample_num[sample_idx != "BLANK"]
+      sample_idx <- sample_idx[sample_idx!="BLANK"]
     }
-  }
-  
-  p <-
-    p + xlab(xlabel) + ylab(ylabel) + theme_bw() + theme(axis.title = element_text(size = 12));
-  
-  print(p)
-  
-  if (.on.public.web()) {
-    dev.off()
-  }
-  
-  # process peak intensity
-  sample_idx <- mSet@rawOnDisk@phenoData@data[["sample_group"]];
-  
-  sample_num <-
-    mSet@rawOnDisk@phenoData@data[["sample_name"]];
-  
-  sample_num <- sample_num[sample_idx!="MS2"]
-  sample_idx <- sample_idx[sample_idx!="MS2"]
-  
-  if (length(unique(sample_idx)) > 9) {
-    col.fun <-
-      grDevices::colorRampPalette(RColorBrewer::brewer.pal(12, "Set3"))
-    group_colors <- col.fun(length(unique(sample_idx)))
+    ftable1[ftable1 == 0] <- 1
+    ints <- lapply(sample_num, function(x){
+      log2(ftable1[,x])
+    })
+    #ints <- ints[names(ints) != 0];
+    names(ints) <- as.character(sample_num)
     
-  } else{
+    sample_idx <- as.factor(sample_idx)
     group_colors <-
-      paste0(RColorBrewer::brewer.pal(9, "Set1")[seq_along(unique(sample_idx))], "60")
-  }
-  if(any(sample_idx == "BLANK")){
-    sample_num <- sample_num[sample_idx != "BLANK"]
-    sample_idx <- sample_idx[sample_idx!="BLANK"]
-  }
-  ftable1[ftable1 == 0] <- 1
-  ints <- lapply(sample_num, function(x){
-    log2(ftable1[,x])
-  })
-  #ints <- ints[names(ints) != 0];
-  names(ints) <- as.character(sample_num)
-  
-  sample_idx <- as.factor(sample_idx)
-  group_colors <-
-    sapply(
-      seq(length(levels(sample_idx))),
-      FUN = function(x) {
-        rep(group_colors[x], length(sample_idx[sample_idx == levels(sample_idx)[x]]))
-      }
-    )
-  
-  if(!.on.public.web()){
-    oldpar <- par(no.readonly = TRUE);
-    on.exit(par(oldpar));
-  }
-  imgName <- "Peak_Intensity.png"
-  if (.on.public.web()) {
-    Cairo::Cairo(
-      file = imgName,
-      unit = "in",
-      dpi = dpi,
-      width = width,
-      height = length(sample_num) * 0.65 * (width/8),
-      type = format,
-      bg = "white"
-    )
-  }
-  
-  #op <- 
-  par(mar = c(3.5, 10, 4, 1.5), xaxt = "s")
-  
-  sampleNMs <- names(ints);
-  len_nms <- nchar(sampleNMs);
-  if(any(len_nms > 15)){
-    names(ints) <- 
-      unname(unlist(sapply(sampleNMs, function(x){
-        LEN_x <- nchar(x);
-        if(LEN_x > 15){
-          substring(x, LEN_x-14,LEN_x)
-        } else {
-          x
+      sapply(
+        seq(length(levels(sample_idx))),
+        FUN = function(x) {
+          rep(group_colors[x], length(sample_idx[sample_idx == levels(sample_idx)[x]]))
         }
-      })))
+      )
+    
+    if(!.on.public.web()){
+      oldpar <- par(no.readonly = TRUE);
+      on.exit(par(oldpar));
+    }
+    imgName <- "Peak_Intensity.png"
+    if (.on.public.web()) {
+      Cairo::Cairo(
+        file = imgName,
+        unit = "in",
+        dpi = dpi,
+        width = width,
+        height = length(sample_num) * 0.65 * (width/8),
+        type = format,
+        bg = "white"
+      )
+    }
+    
+    #op <- 
+    par(mar = c(3.5, 10, 4, 1.5), xaxt = "s")
+    
+    sampleNMs <- names(ints);
+    len_nms <- nchar(sampleNMs);
+    if(any(len_nms > 15)){
+      names(ints) <- 
+        unname(unlist(sapply(sampleNMs, function(x){
+          LEN_x <- nchar(x);
+          if(LEN_x > 15){
+            substring(x, LEN_x-14,LEN_x)
+          } else {
+            x
+          }
+        })))
+    }
+    
+    boxplot(
+      ints,
+      varwidth = TRUE,
+      col = as.character(unlist(group_colors)),
+      ylab = "",
+      horizontal = TRUE,
+      las = 2,
+      main = expression(log[2] ~ intensity),
+      cex.lab = 0.8,
+      cex.main = 1.25
+    )
+    
+    #title(ylab=expression(log[2]~intensity), line=7.5, cex.lab=1.2)
+    grid(nx = NA, ny = NULL)
+    
+    if (.on.public.web()) {
+      dev.off()
+    }
+    
+  }
+
+  # generate clean table and object (optionally) for ms2
+  {
+    annotation_list <- rjson::fromJSON(file = paste0(alfs, "/Annotated_empiricalCompounds.json"))
+    unique_ft_anns <- unique(ftab_annotation$`[EmpCpd]interim_id`)
+    
+    # filter adducts/isotopes
+    ft_res <- vapply(unique_ft_anns, function(x){
+      idxs <- which(ftab_annotation$`[EmpCpd]interim_id` == x)
+      rltions <- ftab_annotation$`[EmpCpd]ion_relation`[idxs]
+      
+      parental_ion_idx <- which(grepl("M0,M\\+H\\+|M0,M\\-H\\-", rltions))
+      ft_final_idx <- integer(1L)
+      if(length(parental_ion_idx)== 0){
+        return(ftab_annotation$`[peak]id_number`[idxs[1]])
+      } else if(length(parental_ion_idx)>1){
+        parental_ion_idx <- parental_ion_idx[1]
+      }
+      ft_final_idx <- idxs[parental_ion_idx]
+      return(ftab_annotation$`[peak]id_number`[ft_final_idx])
+    }, FUN.VALUE = character(1L))
+    idx_keep1 <- which(ftable_ori$id_number %in% ft_res)
+    ftable_f1 <- ftable_ori[idx_keep1, ]
+    ftab_annotation_f1 <- ftab_annotation[idx_keep1, ]
+    
+    # filter QC
+    group_info <- mSet@rawOnDisk@phenoData@data[["sample_group"]];
+    
+    if("QC" %in% group_info){
+      qc_names <- names(which(allGroups == "QC"))
+      qc_idx <- vapply(qc_names, function(y) {which(y == colnames(ftable_f1))}, integer(1L))
+      ma_feats_miss0 <- ftable_f1[,qc_idx]
+      idx_keep2 <- apply(ma_feats_miss0, 1, function(x){
+        qc_vec <- as.numeric(x)
+        rsd <- sd(qc_vec, na.rm = T)/mean(qc_vec, na.rm = T)
+        if(is.na(rsd)){
+          return(FALSE)
+        }
+        return(rsd<=1)
+      })
+      ftable_f2 <- ftable_f1[idx_keep2, ]
+      ftab_annotation_f2 <- ftab_annotation_f1[idx_keep2, ]
+    }
+
+    # add empirical label
+    features <- paste0(ftable_f2$mz, "__", ftable_f2$rtime)
+    ftable_f2_1 <- ftable_f2[,c(12:ncol(ftable_f2))]
+    
+    empir_cmpds <- apply(ftab_annotation_f2, 1, function(x){
+      emp1 <- as.character(x[length(x)])
+      if(emp1==""){
+        return("")
+      } else {
+        emp_id <- as.character(x[5])
+        
+        emp_res <- annotation_list[[emp_id]][["list_matches"]][[1]][[1]]
+        if(is.null(emp_res)){
+          return("")
+        } else {
+          return(strsplit(emp_res,"_")[[1]][1])
+        }
+      }
+    })
+    features[empir_cmpds != ""] <- paste0(empir_cmpds[empir_cmpds !=""],"_",features[empir_cmpds != ""])
+    
+    allSamples <- colnames(ftable_f2_1)
+    allGroups <- 
+      vapply(allSamples, FUN = function(x){
+        idx <- which(mSet@rawOnDisk@phenoData@data[["sample_name"]] == x)
+        mSet@rawOnDisk@phenoData@data[["sample_group"]][idx]
+      }, character(1L))
+    ftable_f2_2 <- t(data.frame(Groups = allGroups))
+    ftable_f2_3 <- data.frame(Samples = c("Groups", features))
+    ftable_f2_0 <- rbind(ftable_f2_2, ftable_f2_1)
+    ftable_f2_0 <- cbind(ftable_f2_3, ftable_f2_0)
+    rownames(ftable_f2_0) <- NULL;
+    
+    ms1_res_dt <- list(ftable_f2_0, ftab_annotation_f2, ftable_f2)
+    write.csv(ftable_f2_0, file = "metaboanalyst_input_clean.csv", row.names = F, quote = F)
+    qs::qsave(ms1_res_dt, file = "metaboanalyst_input_clean_MS1_asari.qs")
+    
   }
   
-  boxplot(
-    ints,
-    varwidth = TRUE,
-    col = as.character(unlist(group_colors)),
-    ylab = "",
-    horizontal = TRUE,
-    las = 2,
-    main = expression(log[2] ~ intensity),
-    cex.lab = 0.8,
-    cex.main = 1.25
-  )
-  
-  #title(ylab=expression(log[2]~intensity), line=7.5, cex.lab=1.2)
-  grid(nx = NA, ny = NULL)
-  
-  if (.on.public.web()) {
-    dev.off()
-  }
   
   # restore the mSet Obj for other tasks
   save(mSet, file = "mSet.rda")
@@ -2950,6 +3130,11 @@ PerformAsariResultsFormating <- function(minFrac = 0.7){
     ecol = "\n",
     progress = 100
   );
+  
+  
+}
+
+findMostAbundantAsariFeature <- function(){
   
   
 }
@@ -3201,7 +3386,7 @@ PerformExpsomeClassify <- function(mSet, path_repo = ""){
     # reload mSet if MS1 information is missing
     mSet <- reloadMS1mSet(mSet);
   }
-  save(mSet, file = "mSet_PerformExpsomeClassify.rda")
+  #save(mSet, file = "mSet_PerformExpsomeClassify.rda")
   
   ft_idx <- mSet@MSnResults[["Concensus_spec"]][[1]]+1
   meta_info0 <- meta_info <- as.character(mSet@dataSet[1, -1])
@@ -3276,6 +3461,130 @@ PerformExpsomeClassify <- function(mSet, path_repo = ""){
   
   return(mSet)
 }
+
+PerformMetabolomeClassify <- function(mSet, path_repo = ""){
+  #save(mSet, file = "PerformMetabolomeClassify_mSet.rda")
+  if(path_repo == ""){
+    stop("No classification database provided!")
+  }
+  
+  metabolome_repo <- qs::qread("/home/glassfish/projects/metabolome_lib/complete_metabolome_taxonomies_lib.qs")
+  anno_res <- mSet@MSnResults[["DBAnnoteRes"]]
+  metabolome_repo <- as.data.frame(metabolome_repo)
+  
+  metabolome_res <- lapply(anno_res, function(x){
+    res1 <- x[[1]]
+    if(length(res1$IDs)==0){
+      return(NA)
+    }
+    all_inchikeys <- res1[["InchiKeys"]]
+    nms <- colnames(metabolome_repo)[-1]
+    all_cls <- lapply(all_inchikeys, function(u){
+      idx <- which(metabolome_repo$InChiKeys == u)
+      if(length(idx)!=0){
+       metabolome_repo[idx[1], -1]
+      } else {
+        return(NA)
+      }
+    })
+    names(all_cls) <- all_inchikeys
+    return(all_cls)
+  })
+
+  mSet@MSnResults[["MetabolomeRes"]] <- metabolome_res
+
+  metabolome_res_clean <- lapply(metabolome_res, function(x){
+    if(length(x)==1){
+      if(is.na(x)){
+        return(NA)
+      } else {
+        return(x[[1]])
+      }
+    } else {
+      return(x[[1]])
+    }
+  })
+  
+  # prepare df_all
+  if(nrow(mSet@dataSet) == 0){
+    # reload mSet if MS1 information is missing
+    mSet <- reloadMS1mSet(mSet);
+  }
+  
+  #
+  ft_idx <- mSet@MSnResults[["Concensus_spec"]][[1]]+1
+  meta_info0 <- meta_info <- as.character(mSet@dataSet[1, -1])
+  meta_info <- unique(meta_info)
+  meta_info <- meta_info[meta_info!="QC" & meta_info!="MS2"]
+  
+  idx2check <- vapply(metabolome_res_clean, function(m){
+    is.na(m[1])
+  }, FUN.VALUE = logical(1L))
+  ft_idx <- ft_idx[!idx2check]
+  ft_idx_seq <- seq(1:length(ft_idx))
+  
+  metabolome_res_clean <- metabolome_res_clean[!idx2check]
+  
+  dt <- mSet@dataSet[-1, -1]
+  res_exp_class_by_group <- lapply(meta_info, FUN = function(n){
+    
+    idx_grp_col <- which(meta_info0 == n)
+    bool_idxs <- vapply(ft_idx, function(x){
+      this_ft_grp <- dt[x, idx_grp_col]
+      length(which(this_ft_grp==0))/length(this_ft_grp)<= 0.75
+    }, FUN.VALUE = logical(1L))
+    
+    this_good_ft_idx <- ft_idx_seq[bool_idxs]
+    res_all_this_pho <- metabolome_res_clean[this_good_ft_idx]
+    res_all_this_pho_done <- do.call(rbind, res_all_this_pho)
+    return(res_all_this_pho_done)
+  })
+  
+  names(res_exp_class_by_group) <- meta_info
+  qs::qsave(res_exp_class_by_group, file = "metabolome_classification_summary.qs")
+  
+  return(mSet)
+  
+}
+
+SummarizeAllResults4Reference <- function(mSet){
+  save(mSet, file = "mSet_SummarizeAllResults4Reference.rda");
+  
+  ms1_dt <- mSet@peakAnnotation[["camera_output"]];
+  ms2_dt <- qs::qread("compound_msn_results_index.qs")
+  ms2_dtx <- as.data.frame(matrix(NA, nrow = nrow(ms1_dt), ncol = 25))
+  for(i in 1:nrow(ms2_dt)){
+    ms2_dtx[ms2_dt$peak_idx_vals[i], ] <- ms2_dt[i, -c(1:5)]
+  }
+  colnames(ms2_dtx) <- colnames(ms2_dt)[ -c(1:5)]
+  
+  ms1_2_dt <- cbind(ms1_dt, ms2_dtx)
+  
+  ft_idx <- mSet@MSnResults[["Concensus_spec"]][[1]]+1
+  
+  # add metabolome info
+  mSet@MSnResults[["MetabolomeRes"]] -> metabolome_res
+  metabolome_dtx <- as.data.frame(matrix(NA, nrow = nrow(ms1_dt), ncol = 4))
+  for(i in 1:nrow(ms2_dt)){
+    idx <- which(ms2_dt$peak_idx_vals[i] == ft_idx)
+    metabolome_dtx[ms2_dt$peak_idx_vals[i], ] <- metabolome_res[[idx]][[1]][2:5]
+  }
+  colnames(metabolome_dtx) <- c("Kingdoms", "Super_classes", "Classes", "Sub_classes")
+  # add metabolome info
+  mSet@MSnResults[["ExposomeRes"]] -> exposome_res
+  exposome_dtx <- as.data.frame(matrix(NA, nrow = nrow(ms1_dt), ncol = 1))
+  for(i in 1:nrow(ms2_dt)){
+    idx <- which(ms2_dt$peak_idx_vals[i] == ft_idx)
+    exposome_dtx[ms2_dt$peak_idx_vals[i], 1] <- paste(exposome_res[[idx]][[1]], collapse = "; ")
+  }
+  colnames(exposome_dtx) <- c("Exposome_classes")
+  
+  metabo_feat_ref <- cbind(ms1_2_dt, metabolome_dtx, exposome_dtx)
+  write.csv(metabo_feat_ref, file = "metaboanalyst_feature_reference.csv", row.names = F, quote = T)
+  
+  return(mSet)
+}
+
 
 reloadMS1mSet <- function(mSet1){
   

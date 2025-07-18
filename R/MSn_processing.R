@@ -1128,7 +1128,10 @@ FormatMSnAnnotation <- function(mSet = NULL,
   }
 
   keep_peak_idx <- vapply(topNResults, function(x){nrow(x) != 0}, logical(length = 1L))
+  peak_idx_vals <- peak_idx+1
   peak_mtx_identified <- peak_mtx_identified[keep_peak_idx, ]
+  peak_idx_vals <- peak_idx_vals[keep_peak_idx]
+  
   ## formatting lipidomics results
   if(isLipidomics){
     # generate colnames
@@ -1220,6 +1223,74 @@ FormatMSnAnnotation <- function(mSet = NULL,
   peak_mtx_res[,4] <- round(peak_mtx_res[,4], 2)
   
   res_final <- cbind(peak_mtx_res, res_dtx)
+  peak_idx_vals <- peak_idx_vals[row_idx]
+  # generate metaboanalyst_input_clean.csv with MS2 results included
+  if(file.exists("metaboanalyst_input_clean_MS1.qs")){
+    clean_ft_list <- qs::qread("metaboanalyst_input_clean_MS1.qs")
+    unique_feats <- clean_ft_list[[2]]
+    unique_feats$mzmin <- round(as.numeric(unique_feats$mzmin),4)
+    unique_feats$mzmax <- round(as.numeric(unique_feats$mzmin),4)
+    unique_feats$rtmin <- round(as.numeric(unique_feats$rtmin),2)
+    unique_feats$rtmax <- round(as.numeric(unique_feats$rtmax),2)
+    
+    cmpd_idx <- vapply(1:nrow(res_final), function(x){
+      if(res_final$Score_1[x]<30){return(NA)}
+      idx <- which((unique_feats$mzmin<res_final$mzmin[x]+0.001) & 
+                     (unique_feats$mzmax>res_final$mzmax[x]-0.001) &
+                     (unique_feats$rtmin>res_final$rtmin[x]-0.1) &
+                     (unique_feats$rtmax<res_final$rtmax[x]+0.1))
+      if(length(idx)==0){return(NA)}
+      return(idx)
+    }, integer(1L))
+    cmpd_inx <- which(!is.na(cmpd_idx))
+    cmpd_idx <- cmpd_idx[!is.na(cmpd_idx)]
+    
+    ft_table_clean <- clean_ft_list[[1]]
+    ft_table_clean[cmpd_idx+1,1] <- res_final$Compound_1[cmpd_inx]
+    write.csv(ft_table_clean, file = "metaboanalyst_input_clean.csv", row.names = F, quote = F)
+  }
+  if(file.exists("metaboanalyst_input_clean_MS1_asari.qs")){
+    clean_ft_list <- qs::qread("metaboanalyst_input_clean_MS1_asari.qs")
+    unique_feats <- clean_ft_list[[3]]
+    unique_feats_mzmin <- round(as.numeric(unique_feats$mz-10*unique_feats$mz*1e-6),4)
+    unique_feats_mzmax <- round(as.numeric(unique_feats$mz+10*unique_feats$mz*1e-6),4)
+    unique_feats$rtime_left_base <- round(as.numeric(unique_feats$rtime_left_base),2)
+    unique_feats$rtime_right_base <- round(as.numeric(unique_feats$rtime_right_base),2)
+    
+    cmpd_idx <- vapply(1:nrow(res_final), function(x){
+      if(res_final$Score_1[x]<30){return(NA)}
+      idx <- which((unique_feats_mzmin<res_final$mzmin[x]+0.001) & 
+                     (unique_feats_mzmax>res_final$mzmax[x]-0.001) &
+                     (unique_feats$rtime_left_base>res_final$rtmin[x]-1) &
+                     (unique_feats$rtime_right_base<res_final$rtmax[x]+1))
+      if(length(idx)==0){return(NA)}
+      return(idx[1])
+    }, integer(1L))
+    cmpd_inx <- which(!is.na(cmpd_idx))
+    cmpd_idx <- cmpd_idx[!is.na(cmpd_idx)]
+    
+    ft_table_clean <- clean_ft_list[[1]]
+    ft_table_clean[cmpd_idx+1,1] <- res_final$Compound_1[cmpd_inx]
+    
+    # remove duplicates
+    rmrow1 <- which(ft_table_clean$Samples == "None")
+    ft_table_clean <- ft_table_clean[-rmrow1,]
+    
+    if(length(unique(ft_table_clean$Samples)) != length(ft_table_clean$Samples)){
+      res <- table(ft_table_clean$Samples[-1])
+      nms2rm <- names(res[which(res>1)])
+      nms2rm_list <- lapply(nms2rm, function(x){
+        which(ft_table_clean$Samples == x)[-1]
+      })
+      idx_row2rm <- unlist(nms2rm_list)
+      ft_table_clean <- ft_table_clean[-idx_row2rm,]
+    }
+    
+    write.csv(ft_table_clean, file = "metaboanalyst_input_clean.csv", row.names = F, quote = T)
+  }
+  
+  res_final2 <- cbind(peak_idx_vals, res_final)
+  qs::qsave(res_final2, file = "compound_msn_results_index.qs")
   
   return(res_final)
 }
