@@ -3332,7 +3332,7 @@ exportCompoundTable <- function(mSet){
   dt_cpmd_ms1 <- dt[c(1, cmpd_idx+1), ]
   cmpd_labels <- dt_cmpd$Compound_1
   dt_cpmd_ms1[-1, 1] <- cmpd_labels
-  write.csv(dt_cpmd_ms1, file = "metaboanalyst_compound.csv", row.names = F, quote = T)
+  write.csv(dt_cpmd_ms1, file = "metaboanalyst_input_compound.csv", row.names = F, quote = T)
   dt[c(cmpd_idx+1), 1] <- cmpd_labels
   write.csv(dt, file = "metaboanalyst_input_integrated.csv", row.names = F, quote = T)
 }

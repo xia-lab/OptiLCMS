@@ -1274,7 +1274,9 @@ FormatMSnAnnotation <- function(mSet = NULL,
     
     # remove duplicates
     rmrow1 <- which(ft_table_clean$Samples == "None")
-    ft_table_clean <- ft_table_clean[-rmrow1,]
+    if(length(rmrow1) !=0){
+      ft_table_clean <- ft_table_clean[-rmrow1,]
+    }
     
     if(length(unique(ft_table_clean$Samples)) != length(ft_table_clean$Samples)){
       res <- table(ft_table_clean$Samples[-1])

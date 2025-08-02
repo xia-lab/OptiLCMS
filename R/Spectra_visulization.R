@@ -1951,6 +1951,156 @@ my.json.scatter <- function(filenm, containsLoading=F){
 
 
 
+PerformAllMirrorPlotting <- function(fragDB_path = NA,
+                                     ppm = 10, 
+                                     dpi = 150, format = "png", width = 10, height = 6){
+  
+  MirrorPlotting <- OptiLCMS:::MirrorPlotting;
+  parse_ms2peaks <- OptiLCMS:::parse_ms2peaks;
+  
+
+  mSet_raw <- qs::qread("msn_mset_result.qs")
+  mSet_raw@MSnResults -> MSnResults;
+  mSet_raw@MSnData -> MSnData
+  
+  idx_all <- MSnResults[["Concensus_spec"]][[1]]
+  
+  useFrg = FALSE;
+  
+  if(!is.na(fragDB_path)){
+    if(file.exists(fragDB_path)){
+      useFrg = TRUE;
+    } else {
+      useFrg = FALSE;
+      warning("fragDB_path does not exist!")
+    }
+  }
+  
+  require("RSQLite")
+  require("DBI")
+  require("plotly")
+  
+  if(is.list(MSnData[["peak_mtx"]])){
+      peak_list <- lapply(MSnData[["peak_mtx"]], function(x){x[c(2,3,5,6)]})
+      peak_mtx_complete <- do.call(rbind, peak_list)
+      colnames(peak_mtx_complete) <- c("mzmin", "mzmax", "rtmin", "rtmax")
+    } else {
+      peak_mtx_complete <- MSnData[["peak_mtx"]]
+    }
+    
+    DBAnnoteRes <- lapply(MSnResults[["DBAnnoteRes"]], function(x){
+      res <- x[[1]][[1]]
+      if(length(res) == 0) {
+        return(NULL)
+      } else {
+        x[[1]]
+      }
+  })
+
+  peak_mtx <- as.data.frame(peak_mtx_complete)
+
+  sub_idx <- 1
+  
+  if(!dir.exists("MSN_results/reference_spectrum")){
+    dir.create("MSN_results/reference_spectrum", recursive = T)
+  }
+  if(!dir.exists("MSN_results/compounds_info")){
+    dir.create("MSN_results/compounds_info", recursive = T)
+  }
+  if(!dir.exists("MSN_results/mirror_plots")){
+    dir.create("MSN_results/mirror_plots", recursive = T)
+  }
+  
+  for(inx in seq(idx_all)){
+    if(is.null(DBAnnoteRes[[inx]])){
+      next;
+    }
+    idx <- idx_all[inx]
+    mz <- mean(as.numeric(peak_mtx_complete[idx, c(1:2)]))
+    rt <- mean(as.numeric(peak_mtx_complete[idx, c(3:4)]))
+    mz <- round(mz, 4)
+    rt <- round(rt, 2)
+    
+    result_num <- idx #<- peak_idx;
+    ucmpds <- unique(DBAnnoteRes[[inx]][["InchiKeys"]])
+    uidx <- vapply(ucmpds, function(x){
+      which(DBAnnoteRes[[inx]][["InchiKeys"]] == x)[1]
+    }, FUN.VALUE = integer(1L))
+    spec_bottom <- DBAnnoteRes[[inx]][["MS2Pekas"]][uidx][sub_idx]
+    spec_bottom <- parse_ms2peaks(spec_bottom)
+    
+    spec_top_m <- MSnResults[["Concensus_spec"]][[2]][[inx]][[1]]
+    compound_name <- DBAnnoteRes[[inx]][["Compounds"]][uidx][sub_idx]
+    title <- paste0(mz, "__", rt)
+    subtitle <- paste0(compound_name)
+    p1 <- MirrorPlotting(spec_top_m, 
+                         spec_bottom, 
+                         ppm = ppm,
+                         title= title, 
+                         subtitle = subtitle,
+                         cutoff_relative = 0.1)
+    
+    DBID_num <- DBAnnoteRes[[inx]][["IDs"]][uidx][sub_idx]
+    frgs_vec_done <- vector("character", 0L)
+    if(length(DBID_num)==1){
+      
+      if(useFrg){
+        con <- dbConnect(SQLite(), fragDB_path)
+        db <- dbGetQuery(con, paste0("SELECT DB_Tables FROM Index_table where Max_ID>",DBID_num," AND Min_ID<",DBID_num))
+        frgs <- dbGetQuery(con, paste0("SELECT Fragments FROM ", db, " where ID='",DBID_num,"'"))
+        dbDisconnect(con)
+        
+        frgs_vec <- strsplit(frgs$Fragments, split = "\t")[[1]]
+        normalize_spectrum <- OptiLCMS:::normalize_spectrum
+        bottom <- normalize_spectrum(spec_bottom, 1)
+        frgs_vec_done <- vapply(bottom$mz, function(x){
+          y <- frgs_vec[spec_bottom[,1] == x]
+          if(is.na(y[1])){return("")}
+          return(y[1])
+        }, FUN.VALUE = character(1L))
+        
+        write.table(bottom[,c(1:2)],
+                    file = paste0("MSN_results/reference_spectrum/reference_spectrum_",result_num, "_", sub_idx,".txt"),
+                    row.names = F, col.names = T)
+        
+        compoundName <- DBAnnoteRes[[inx]][["Compounds"]][sub_idx]
+        score <- DBAnnoteRes[[inx]][["Scores"]][[1]][sub_idx]
+        inchikeys <- DBAnnoteRes[[inx]][["InchiKeys"]][sub_idx]
+        formulas <- DBAnnoteRes[[inx]][["Formula"]][sub_idx]
+        
+        df_cmpd <- data.frame(CompoundName = compoundName,
+                              score = score,
+                              InchiKeys = inchikeys,
+                              Formula = formulas)
+        write.table(df_cmpd,
+                    file = paste0("MSN_results/compounds_info/compound_info_",result_num, "_", sub_idx,".txt"),
+                    row.names = F, col.names = T)
+      }
+    }
+    
+    p1 <- p1 + theme(
+      axis.title.x = element_text(size = 16),
+      axis.text.x = element_text(size = 14),
+      axis.text.y = element_text(size = 14),
+      axis.title.y = element_text(size = 16),
+      text=element_text(family="serif", face = "plain"),
+      plot.subtitle=element_text(size=13, face="plain", color="black"),
+      plot.title=element_text(size=18, face="plain", color="black"))
+    default.dpi <- dpi
+    Cairo::Cairo(
+      file = paste0("MSN_results/mirror_plots/mirror_plotting_", result_num, "_", sub_idx, "_", default.dpi, ".png"),
+      unit = "in", dpi = dpi, width = width, height = height, type = format, bg = "white")
+    print(p1)
+    dev.off()
+    
+  }
+
+  zip("msn_result.zip", files = "MSN_results")
+  
+  return(1);
+}
+
+
 # Define a function to convert RGBA to Hex and opacity values
 rgba_to_hex_opacity <- function(rgba_array) {
   # Define an empty vector to store the hex color values
