@@ -1473,7 +1473,7 @@ FormatPeakList <-
            filtIso = TRUE,
            filtAdducts = FALSE,
            missPercent = 0.75) {
-    save(mSet, annParams, filtIso, filtAdducts, missPercent, file  = "FormatPeakList_input.rda")
+    #save(mSet, annParams, filtIso, filtAdducts, missPercent, file  = "FormatPeakList_input.rda")
     
     fullUserPath <- mSet@WorkingDir;
     if(is.null(fullUserPath) | length(fullUserPath) == 0){
