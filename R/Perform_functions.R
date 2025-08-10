@@ -1473,6 +1473,7 @@ FormatPeakList <-
            filtIso = TRUE,
            filtAdducts = FALSE,
            missPercent = 0.75) {
+    save(mSet, annParams, filtIso, filtAdducts, missPercent, file  = "FormatPeakList_input.rda")
     
     fullUserPath <- mSet@WorkingDir;
     if(is.null(fullUserPath) | length(fullUserPath) == 0){
@@ -1892,7 +1893,8 @@ FormatPeakList <-
   }
 
 findMostAbundantFeature <- function(ft){
-  ft<- ft[-c(1:6, ncol(ft):(ncol(ft)-5))]
+  idx <- which(colnames(ft) %in% c("mz", "mzmin", "mzmax", "rt", "rtmin", "rtmax", "isotopes", "adduct", "pcgroup"))
+  ft<- ft[-c(idx)]
   res <- apply(ft, 1, function(x){mean(x, na.rm = T)})
   return(which.max(res))
 }
@@ -3077,6 +3079,9 @@ PerformAsariResultsFormating <- function(minFrac = 0.7){
       })
       ftable_f2 <- ftable_f1[idx_keep2, ]
       ftab_annotation_f2 <- ftab_annotation_f1[idx_keep2, ]
+    } else {
+      ftable_f2 <- ftable_f1
+      ftab_annotation_f2 <- ftab_annotation_f1
     }
 
     # add empirical label
