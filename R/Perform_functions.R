@@ -1957,6 +1957,13 @@ Export.PeakTable <- function(mSet = NULL, path = getwd()){
   fast.write.csv(ma_feats_miss,
                  paste0(path, "/metaboanalyst_input.csv"),
                  row.names = FALSE);
+  
+  # Generate reference table
+  {
+    ms1_dt <- mSet@peakAnnotation[["camera_output"]];
+    write.csv(ms1_dt, file = "metaboanalyst_feature_reference.csv", row.names = F, quote = T)
+  }
+  
   MessageOutput(
     mes = paste0("\nEverything for MS1 spectra has been finished successfully ! (",
                  Sys.time(),
@@ -2764,6 +2771,13 @@ PerformAsariResultsFormating <- function(minFrac = 0.7){
     quote = FALSE
   );
   save(mSet, file = "mSet.rda")
+  
+  # Generate reference table
+  {
+    ms1_dt <- mSet@peakAnnotation[["camera_output"]];
+    write.csv(ms1_dt, file = "metaboanalyst_feature_reference.csv", row.names = F, quote = T)
+  }
+  
   
   # Generate PCA figure and intensity stats
   {
