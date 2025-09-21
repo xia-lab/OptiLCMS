@@ -10,7 +10,7 @@ SQLITOBJECTS = sqlite/sqlite3.o
 
 PENSEOBJECTS = pense/robust_scale_location.o pense/rho.o pense/rcpp_parse_config.o pense/r_utilities.o pense/r_robust_utils.o pense/r_pense_regression.o pense/r_mesten_regression.o pense/r_interface_utils.o pense/r_interface.o pense/r_enpy.o pense/r_en_regression.o pense/enpy_psc.o pense/enpy_initest.o
 
-OPTMSOBJECTS = utilities.o sqlite_utilities.o optim_ultra.o lowess.o hclust_ultrafast.o dda_utilities.o spectrumConsensus.o SWATH_DIA_Deconv.o RcppExports.o PerformDIAProcess.o PerformDDAProcess.o DetectPeaks.o DecoSpectra.o linear_regression.o spectra_searching.o export_interfece.o
+OPTMSOBJECTS = utilities.o sqlite_utilities.o optim_ultra.o lowess.o hclust_ultrafast.o dda_utilities.o spectrumConsensus.o SWATH_DIA_Deconv.o RcppExports.o PerformDIAProcess.o PerformDDAProcess.o DetectPeaks.o DecoSpectra.o linear_regression.o spectra_searching.o export_interfece.o mzClust.o
 
 ENTROBJECTS = entropy.o CleanSpectrum.o SpectralEntropy.o
 

@@ -91,6 +91,10 @@ PerformDIADeco <- function(pm, swath, scant1, scant2, scanms1, scanms2, pkw_min,
     .Call(`_OptiLCMS_PerformDIADeco`, pm, swath, scant1, scant2, scanms1, scanms2, pkw_min, ppm2, sn, span, filt)
 }
 
+R_mzClust_hclust_rcpp <- function(x, num, d, eppm, eabs) {
+    .Call(`_OptiLCMS_R_mzClust_hclust_rcpp`, x, num, d, eppm, eabs)
+}
+
 SpectraSearching <- function(ConsensusRes, idxs, peak_matrix, ppm_ms1, ppm_ms2, rt_tol, rt_ms1, scan_ms1, ion_mode, database_path = "", database_table = "all", use_rt = FALSE, enableNL = FALSE, NLdatabase_path = "", useEntropy = FALSE) {
     .Call(`_OptiLCMS_SpectraSearching`, ConsensusRes, idxs, peak_matrix, ppm_ms1, ppm_ms2, rt_tol, rt_ms1, scan_ms1, ion_mode, database_path, database_table, use_rt, enableNL, NLdatabase_path, useEntropy)
 }

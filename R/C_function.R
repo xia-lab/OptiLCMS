@@ -5,7 +5,6 @@
 #' @section OptiLCMS functions:
 #' The OptiLCMS functions ...
 #'
-#' @docType package
 #' @name OptiLCMS
 #' @useDynLib OptiLCMS, .registration=TRUE
 NULL

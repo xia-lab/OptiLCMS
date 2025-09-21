@@ -14,7 +14,8 @@ PerformDBSearchingBatch(
   enableNL = FALSE,
   NLdatabase_path = NULL,
   ncores = 1,
-  useEntropy = FALSE
+  useEntropy = FALSE,
+  databaseOptions = "all"
 )
 }
 \arguments{
@@ -35,6 +36,8 @@ PerformDBSearchingBatch(
 \item{NLdatabase_path}{path of neutral loss database. Must be specified to a valid neutral loss database when enableNL is TRUE.}
 
 \item{ncores}{}
+
+\item{databaseOptions}{Options of database for searching.}
 }
 \value{
 mSet Object

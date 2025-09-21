@@ -29,6 +29,3 @@ mSet Object
 \description{
 PerformResultsExport
 }
-\examples{
-to add
-}

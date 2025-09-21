@@ -2,7 +2,7 @@
 % Please edit documentation in R/MSn_processing.R
 \name{FormatMSnAnnotation}
 \alias{FormatMSnAnnotation}
-\title{Title}
+\title{FormatMSnAnnotation}
 \usage{
 FormatMSnAnnotation(mSet = NULL, topN = 5L, isLipidomics = FALSE)
 }
@@ -17,8 +17,5 @@ FormatMSnAnnotation(mSet = NULL, topN = 5L, isLipidomics = FALSE)
 mSet Object
 }
 \description{
-Title
-}
-\examples{
-to add
+FormatMSnAnnotation
 }

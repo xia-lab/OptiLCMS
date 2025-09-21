@@ -171,6 +171,21 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
+// R_mzClust_hclust_rcpp
+IntegerVector R_mzClust_hclust_rcpp(NumericVector x, int num, NumericVector d, double eppm, double eabs);
+RcppExport SEXP _OptiLCMS_R_mzClust_hclust_rcpp(SEXP xSEXP, SEXP numSEXP, SEXP dSEXP, SEXP eppmSEXP, SEXP eabsSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< NumericVector >::type x(xSEXP);
+    Rcpp::traits::input_parameter< int >::type num(numSEXP);
+    Rcpp::traits::input_parameter< NumericVector >::type d(dSEXP);
+    Rcpp::traits::input_parameter< double >::type eppm(eppmSEXP);
+    Rcpp::traits::input_parameter< double >::type eabs(eabsSEXP);
+    rcpp_result_gen = Rcpp::wrap(R_mzClust_hclust_rcpp(x, num, d, eppm, eabs));
+    return rcpp_result_gen;
+END_RCPP
+}
 // SpectraSearching
 List SpectraSearching(List ConsensusRes, IntegerVector idxs, NumericMatrix peak_matrix, double ppm_ms1, double ppm_ms2, double rt_tol, List rt_ms1, List scan_ms1, int ion_mode, std::string database_path, std::string database_table, bool use_rt, bool enableNL, std::string NLdatabase_path, bool useEntropy);
 RcppExport SEXP _OptiLCMS_SpectraSearching(SEXP ConsensusResSEXP, SEXP idxsSEXP, SEXP peak_matrixSEXP, SEXP ppm_ms1SEXP, SEXP ppm_ms2SEXP, SEXP rt_tolSEXP, SEXP rt_ms1SEXP, SEXP scan_ms1SEXP, SEXP ion_modeSEXP, SEXP database_pathSEXP, SEXP database_tableSEXP, SEXP use_rtSEXP, SEXP enableNLSEXP, SEXP NLdatabase_pathSEXP, SEXP useEntropySEXP) {
@@ -407,6 +422,7 @@ static const R_CallMethodDef CallEntries[] = {
     {"_OptiLCMS_r_calculate_entropy_similarity", (DL_FUNC) &_OptiLCMS_r_calculate_entropy_similarity, 9},
     {"_OptiLCMS_PerformDDADeco", (DL_FUNC) &_OptiLCMS_PerformDDADeco, 19},
     {"_OptiLCMS_PerformDIADeco", (DL_FUNC) &_OptiLCMS_PerformDIADeco, 11},
+    {"_OptiLCMS_R_mzClust_hclust_rcpp", (DL_FUNC) &_OptiLCMS_R_mzClust_hclust_rcpp, 5},
     {"_OptiLCMS_SpectraSearching", (DL_FUNC) &_OptiLCMS_SpectraSearching, 15},
     {"_OptiLCMS_SpectraSearchingSingle", (DL_FUNC) &_OptiLCMS_SpectraSearchingSingle, 11},
     {"_OptiLCMS_SpectraSearchingBatch", (DL_FUNC) &_OptiLCMS_SpectraSearchingBatch, 11},
