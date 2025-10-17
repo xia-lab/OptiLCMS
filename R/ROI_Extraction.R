@@ -299,7 +299,7 @@ PerformROIExtraction <-
       raw_data <-
         tryCatch(read.MSdata(
           dda_file1,
-          pdata = new("NAnnotatedDataFrame", pd),
+          pdata = new("AnnotatedDataFrame", pd),
           msLevel. = 1L,
           mode = "inMemory"
         ), error = function(e) {e})
