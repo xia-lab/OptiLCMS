@@ -1499,7 +1499,9 @@ FormatPeakList <-
     
     # Format peaklist for MetaboAnalyst
     camera_ma <- camera_output[,-length];
-    camera_ma <- cbind(camera_ma, Formula = mSet@peakAnnotation[["massMatching"]][["Formula"]])
+    if(!is.null(mSet@peakAnnotation[["massMatching"]][["Formula"]])){
+      camera_ma <- cbind(camera_ma, Formula = mSet@peakAnnotation[["massMatching"]][["Formula"]])
+    }
     
     if (filtAdducts == TRUE) {
       if (annParams$polarity == "positive") {

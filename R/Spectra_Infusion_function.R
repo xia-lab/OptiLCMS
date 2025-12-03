@@ -68,6 +68,7 @@ PerformInfusionImport <- function(filesPath = NA){
 PerformInusionFeatureDection <- function(mSet, method = "cwt", noise = NA, 
                                          snthresh = 3, ppm = 10, 
                                          scales = c(1,4,9), 
+                                         groups = NULL,
                                          ncores = 1L){
   
   mSet@MSnData$scan_ms1 -> scan_ms1
@@ -99,7 +100,8 @@ PerformInusionFeatureDection <- function(mSet, method = "cwt", noise = NA,
         peaks_table <- peaks_table[-which(is.na(peaks_table[,1])), ]
       }
       
-      if(nrow(peaks_table)==1){
+      leng_log <- nrow(peaks_table)
+      if(length(leng_log) == 0){
         peaks_table <- as.data.frame(t(as.matrix(peaks_table)))
       } else {
         peaks_table <- as.data.frame(peaks_table)
@@ -212,12 +214,29 @@ PerformInusionFeatureDection <- function(mSet, method = "cwt", noise = NA,
   }
   
   peaks_list_all <- do.call(rbind, peaks_list)
+  if(length(which(is.na(peaks_list_all$mz)))>0){
+    peaks_list_all <- peaks_list_all[!is.na(peaks_list_all$mz), ]
+  }
   peaks_list_all <- peaks_list_all[peaks_list_all$sn>= snthresh,]
 
   # peak grouping across different samples and groups
   message("MZ alignment across samples .. ", appendLF = F)
+  if(is.null(groups)){
+    sampleGroups_idx <- unique(peaks_list_all$sample)
+  } else {
+    
+    spec_files_nms <- basename(spec_files)
+    sampleGroups_idx <- sapply(peaks_list_all$sample, function(x){
+      sfn <- spec_files_nms[x]
+      idx <- sfn == sampleGroups[,1]
+      sampleGroups[idx, 2]
+    })
+    if(is.list(sampleGroups_idx)){
+      sampleGroups_idx <- unlist(sampleGroups_idx)
+    }
+  }
   res_merged_files <- do_groupPeaks_mzClustx(peaks_list_all,
-                                       sampleGroups = rep(1, length(this_file)),
+                                       sampleGroups = sampleGroups_idx,
                                        ppm = ppm,
                                        absMz = 0,
                                        minFraction = 0,
