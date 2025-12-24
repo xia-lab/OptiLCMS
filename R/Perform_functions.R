@@ -1870,23 +1870,30 @@ FormatPeakList <-
       }
       
       # adding empirical compound information if any
-      empirical_cmpds <- apply(unique_feats, 1, function(y){
-        fres <- y[length(y)]
-        strsplit(fres, "; ")[[1]][1]
-      })
-      
-      new_labels <- vapply(1:length(empirical_cmpds), function(x){
-        if(is.na(empirical_cmpds[x])){
-          return(ma_feats_miss[x+1, 1])
-        } else {
-          return(paste0(empirical_cmpds[x], "_", ma_feats_miss[x+1, 1]))
-        }
-      }, character(1L))
-      ma_feats_miss[2:nrow(ma_feats_miss), 1] <- new_labels
-      
-      ms1_res_dt <- list(ma_feats_miss, unique_feats)
-      write.csv(ma_feats_miss, file = "metaboanalyst_input_clean.csv", row.names = F, quote = F)
-      qs::qsave(ms1_res_dt, file = "metaboanalyst_input_clean_MS1.qs")
+      if(nrow(unique_feats)>0){
+        empirical_cmpds <- apply(unique_feats, 1, function(y){
+          fres <- y[length(y)]
+          strsplit(fres, "; ")[[1]][1]
+        })
+        
+        new_labels <- vapply(1:length(empirical_cmpds), function(x){
+          if(is.na(empirical_cmpds[x])){
+            return(ma_feats_miss[x+1, 1])
+          } else {
+            return(paste0(empirical_cmpds[x], "_", ma_feats_miss[x+1, 1]))
+          }
+        }, character(1L))
+        ma_feats_miss[2:nrow(ma_feats_miss), 1] <- new_labels
+        
+        ms1_res_dt <- list(ma_feats_miss, unique_feats)
+        write.csv(ma_feats_miss, file = "metaboanalyst_input_clean.csv", row.names = F, quote = F)
+        qs::qsave(ms1_res_dt, file = "metaboanalyst_input_clean_MS1.qs")
+      } else {
+        ms1_res_dt <- list(ma_feats_miss, unique_feats)
+        qs::qsave(ms1_res_dt, file = "metaboanalyst_input_clean_MS1.qs")
+        write.csv(ma_feats_miss, file = "metaboanalyst_input_clean.csv", row.names = F, quote = F)
+      }
+
       # save the rda
       save(mSet, file = "mSet.rda");
     }
