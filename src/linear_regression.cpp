@@ -100,6 +100,7 @@ NumericVector PerformLinearRegress(NumericMatrix X, NumericVector Y, NumericVect
   NumericVector theseBetas, residueVec(110);
   double thisbeta, thisResidue;
   NumericVector currentCol, mCol;
+  
   for(int n=0; n<110; n++){
     thisResidue = 0.0;
     std::vector<double> sumCol(Y.size());
@@ -119,14 +120,21 @@ NumericVector PerformLinearRegress(NumericMatrix X, NumericVector Y, NumericVect
       thisResidue = thisResidue + fabs(sumCol[s] - Y[s]);
     }
     residueVec[n] = thisResidue;
-    
   }
   // cout << "lambdaVec -> " << lambdaVec << endl;
+  // cout << residueVec << endl;
   int idx_min = which_min(residueVec);
+  //cout << "Now the min residue is --> " << min(residueVec) << " | idx-> " << idx_min << endl;
+  if(idx_min<0){
+    idx_min = 0;
+  }
+  if(NumericVector::is_na(idx_min)){
+    idx_min = 0;
+  }
   // cout << "Now the min residue is --> " << min(residueVec) << " | idx-> " << idx_min << endl;
+  // cout << "Now the estimatedResList size is --> " << estimatedResList.size() << endl;
   tmpL = estimatedResList[idx_min];
   theseBetas = tmpL["beta"];
-  
   // NumericVector tlmb = tmpL["lambda"];
   // cout <<  " lambdaVec[idx_min]-> " << tlmb << endl;
   return theseBetas;
