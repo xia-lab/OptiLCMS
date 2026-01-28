@@ -868,6 +868,19 @@ PerformResultsExport <- function(mSet = NULL,
   Match_res <- mSet@MSnResults[["DBMatchRes"]];
   if(is.null(Match_res)){
     stop("Missing Matching result is not allowed. Please try to run \"PerformDBSearchingBatch\" first!")
+  } else {
+    # cleanning NAN
+    Match_res <- lapply(Match_res, function(k){
+      idx2keep <- vapply(k[["Scores"]], function(u){
+        !all(is.nan(u)) | !all(is.na(u))
+      }, FUN.VALUE = logical(1L))
+      if(!all(idx2keep)){
+        k$Scores <- k$Scores[idx2keep]
+        k$dot_product <- k$dot_product[idx2keep]
+        k$Neutral_loss <- k$Neutral_loss[idx2keep]
+      }
+      return(k)
+    })
   }
   ionmode <- mSet@MSnData[["ion_mode"]];
   if(ionmode != 0 & ionmode != 1){
