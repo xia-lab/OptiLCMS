@@ -1588,7 +1588,7 @@ PerformMirrorPlotting <- function(mSet = NULL,
                              cutoff_relative = cutoff_relative)
         
         # Construct the plot file name
-        plot_filename <- paste0(sub_dir, "/", as.character(paste0(mz, "__", rt)), "_", j, ".png")
+        # plot_filename <- paste0(sub_dir, "/", as.character(paste0(mz, "__", rt)), "_", j, ".png")
         
         # Save the plot with Cairo
         # ggsave(plot_filename, plot = last_plot(), width = width, height = height, dpi = dpi)
