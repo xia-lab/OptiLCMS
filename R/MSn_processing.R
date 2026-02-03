@@ -872,7 +872,11 @@ PerformResultsExport <- function(mSet = NULL,
     # cleanning NAN
     Match_res <- lapply(Match_res, function(k){
       idx2keep <- vapply(k[["Scores"]], function(u){
-        !all(is.nan(u)) | !all(is.na(u))
+        if(length(u)==0){
+          return(TRUE)
+        } else {
+          return(!all(is.nan(u)) | !all(is.na(u)))
+        }
       }, FUN.VALUE = logical(1L))
       if(!all(idx2keep)){
         k$Scores <- k$Scores[idx2keep]
@@ -975,7 +979,11 @@ FormatMSnAnnotation <- function(mSet = NULL,
   peak_mtx_identified <- peak_mtx[peak_idx+1,]
   ## formarring MS2 results [topN, compounds, inchikey and scores]
   maxN <- max(vapply(1:length(mSet@MSnResults$DBAnnoteRes), function(x){
-    length(mSet@MSnResults[["DBAnnoteRes"]][[x]][[1]][[1]])
+    if(length(mSet@MSnResults[["DBAnnoteRes"]][[x]])==0){
+      return(0L)
+    } else {
+      return(length(mSet@MSnResults[["DBAnnoteRes"]][[x]][[1]][[1]]))
+    }
   }, integer(1L)))
   if(topN > maxN){
     warning("Current MSn annotation results contain at most ", maxN, " annotations.")
@@ -989,6 +997,24 @@ FormatMSnAnnotation <- function(mSet = NULL,
   if(all(c("InchiKeys", "Compounds", "Formula") %in% nmss)){
     topNResults <- lapply(1:length(mSet@MSnResults$DBAnnoteRes), function(x){
       
+      if(length(mSet@MSnResults[["DBAnnoteRes"]][[x]]) == 0){
+        if(isLipidomics){
+          return(data.frame(cmpds = character(1L),
+                            inchikeys = character(1L),
+                            formulas = character(1L),
+                            scores = double(1L),
+                            databases = character(1L),
+                            supclass = NA,
+                            mainclass = NA,
+                            subclass = NA))
+        } else {
+          return(data.frame(cmpds = character(1L),
+                            inchikeys = character(1L),
+                            formulas = character(1L),
+                            scores = double(1L),
+                            databases = character(1L)))
+        }
+      }
       cmpds <- mSet@MSnResults[["DBAnnoteRes"]][[x]][[1]][["Compounds"]];
       inchikeys <- mSet@MSnResults[["DBAnnoteRes"]][[x]][[1]][["InchiKeys"]];
       formulas <- mSet@MSnResults[["DBAnnoteRes"]][[x]][[1]][["Formula"]];
@@ -1001,6 +1027,24 @@ FormatMSnAnnotation <- function(mSet = NULL,
         uincks <- uincks[1:topN]; #original order kept
       }
       idx <- vapply(uincks, function(x){which(x==inchikeys)[1]}, FUN.VALUE = integer(1L),USE.NAMES = F)
+      if(length(idx) == 0){
+        if(isLipidomics){
+          return(data.frame(cmpds = character(1L),
+                            inchikeys = character(1L),
+                            formulas = character(1L),
+                            scores = double(1L),
+                            databases = character(1L),
+                            supclass = NA,
+                            mainclass = NA,
+                            subclass = NA))
+        } else {
+          return(data.frame(cmpds = character(1L),
+                            inchikeys = character(1L),
+                            formulas = character(1L),
+                            scores = double(1L),
+                            databases = character(1L)))
+        }
+      }
       if(isLipidomics){
         if(!is.null(mSet@MSnResults[["DBAnnoteRes"]][[x]][[1]][["Super_Class"]])){
           supcls <- mSet@MSnResults[["DBAnnoteRes"]][[x]][[1]][["Super_Class"]];

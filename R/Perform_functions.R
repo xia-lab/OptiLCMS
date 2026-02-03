@@ -3375,6 +3375,9 @@ PerformExpsomeClassify <- function(mSet, path_repo = ""){
   exposome_repo <- as.data.frame(exposome_repo)
   
   exposome_res <- lapply(anno_res, function(x){
+    if(length(x)==0){
+      return(NA)
+    }
     res1 <- x[[1]]
     if(length(res1$IDs)==0){
       return(NA)
@@ -3501,6 +3504,9 @@ PerformMetabolomeClassify <- function(mSet, path_repo = ""){
   metabolome_repo <- as.data.frame(metabolome_repo)
   
   metabolome_res <- lapply(anno_res, function(x){
+    if(length(x)==0){
+      return(NA)
+    }
     res1 <- x[[1]]
     if(length(res1$IDs)==0){
       return(NA)
