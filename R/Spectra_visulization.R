@@ -1989,6 +1989,9 @@ PerformAllMirrorPlotting <- function(fragDB_path = NA,
     }
     
     DBAnnoteRes <- lapply(MSnResults[["DBAnnoteRes"]], function(x){
+      if(length(x)==0){
+        return(NULL)
+      }
       res <- x[[1]][[1]]
       if(length(res) == 0) {
         return(NULL)
