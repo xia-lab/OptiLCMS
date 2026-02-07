@@ -977,6 +977,8 @@ FormatMSnAnnotation <- function(mSet = NULL,
   }
   peak_idx <- mSet@MSnResults[["Concensus_spec"]][[1]]
   peak_mtx_identified <- peak_mtx[peak_idx+1,]
+  MS1_peak_idx_all <- row.names(mSet@MSnData[["peak_mtx"]])
+  MS1_peak_idx_identified <- MS1_peak_idx_all[peak_idx+1]
   ## formarring MS2 results [topN, compounds, inchikey and scores]
   maxN <- max(vapply(1:length(mSet@MSnResults$DBAnnoteRes), function(x){
     if(length(mSet@MSnResults[["DBAnnoteRes"]][[x]])==0){
@@ -1188,6 +1190,7 @@ FormatMSnAnnotation <- function(mSet = NULL,
   peak_idx_vals <- peak_idx+1
   peak_mtx_identified <- peak_mtx_identified[keep_peak_idx, ]
   peak_idx_vals <- peak_idx_vals[keep_peak_idx]
+  MS1_peak_idx_identified <- MS1_peak_idx_identified[keep_peak_idx]
   
   ## formatting lipidomics results
   if(isLipidomics){
@@ -1281,6 +1284,7 @@ FormatMSnAnnotation <- function(mSet = NULL,
   
   res_final <- cbind(peak_mtx_res, res_dtx)
   peak_idx_vals <- peak_idx_vals[row_idx]
+  MS1_peak_idx_identified <- MS1_peak_idx_identified[row_idx]
   # generate metaboanalyst_input_clean.csv with MS2 results included
   if(file.exists("metaboanalyst_input_clean_MS1.qs")){
     clean_ft_list <- qs::qread("metaboanalyst_input_clean_MS1.qs")
@@ -1348,8 +1352,11 @@ FormatMSnAnnotation <- function(mSet = NULL,
     write.csv(ft_table_clean, file = "metaboanalyst_input_clean.csv", row.names = F, quote = T)
   }
   
-  res_final2 <- cbind(peak_idx_vals, res_final)
-  qs::qsave(res_final2, file = "compound_msn_results_index.qs")
+  res_final1 <- cbind(peak_idx_vals, res_final)
+  res_final2 <- cbind(MS1_peak_idx_identified, res_final)
+  
+  qs::qsave(res_final1, file = "compound_msn_results_index.qs")
+  qs::qsave(res_final2, file = "compound_msn_results_index2MS1.qs")
   
   return(res_final)
 }
