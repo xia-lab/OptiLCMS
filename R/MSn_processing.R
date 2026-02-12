@@ -978,6 +978,9 @@ FormatMSnAnnotation <- function(mSet = NULL,
   peak_idx <- mSet@MSnResults[["Concensus_spec"]][[1]]
   peak_mtx_identified <- peak_mtx[peak_idx+1,]
   MS1_peak_idx_all <- row.names(mSet@MSnData[["peak_mtx"]])
+  if(is.null(MS1_peak_idx_all)){
+    MS1_peak_idx_all <- c(1:nrow(mSet@MSnData[["peak_mtx"]]))
+  }
   MS1_peak_idx_identified <- MS1_peak_idx_all[peak_idx+1]
   ## formarring MS2 results [topN, compounds, inchikey and scores]
   maxN <- max(vapply(1:length(mSet@MSnResults$DBAnnoteRes), function(x){
