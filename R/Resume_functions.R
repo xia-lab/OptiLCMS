@@ -722,6 +722,11 @@ controller.modifier <- function(new_command_set, last_command_set, plan){
     if(.on.public.web()){
       # load params.rda and params_last.rda and do a comparison
       peakParams <- NULL;
+      if(!file.exists("params_last.rda")){
+        if(file.exists("params.rda")){
+          file.copy("params.rda", "params_last.rda")
+        }
+      }
       load("params_last.rda");
       last_param <-peakParams;
       

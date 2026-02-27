@@ -2449,6 +2449,15 @@ PerformAsariResultsFormating <- function(minFrac = 0.7){
   mSet@params <- updateRawSpectraParam (peakParams);
   ftable_ori <- ftable <- read.csv(paste0(result_folder, "/preferred_Feature_table.tsv"), sep = "\t", check.names=FALSE)
   features <- paste0(ftable$mz, "__", ftable$rtime)
+  if(length(unique(features)) != length(features)){
+    # duplicate feature, need to remove one
+    ft_tb_freq <- table(features)
+    ft2rm_idx <- which(as.numeric(ft_tb_freq) >1)
+    ft2rm_nms <- row.names(ft_tb_freq)[ft2rm_idx]
+    ft2rm_row_idx <- unlist(sapply(ft2rm_nms, function(x){which(x == features)[-1]}))
+    ftable_ori <- ftable <- ftable[-ft2rm_row_idx,]
+    features <- paste0(ftable$mz, "__", ftable$rtime)
+  }
   ftable1 <- ftable[,c(12:ncol(ftable))]
   allSamples <- colnames(ftable1)
   allGroups <- 
