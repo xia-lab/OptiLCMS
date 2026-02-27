@@ -2928,24 +2928,23 @@ PerformAsariResultsFormating <- function(minFrac = 0.7){
         col.fun <-
           grDevices::colorRampPalette(RColorBrewer::brewer.pal(12, "Set3"));
         
-        p <-
-          ggplot2::ggplot(df, aes_string(
-            x = "PC1",
-            y = "PC2",
-            color = "group",
-            label = "row.names(df)"
-          )) +
+        p <- ggplot2::ggplot(df, aes(
+          x = .data[["PC1"]],
+          y = .data[["PC2"]],
+          color = .data[["group"]],
+          label = row.names(df) # row.names doesn't need .data as it's a function call
+        )) +
           geom_text_repel(force = 1.5) + 
-          geom_point(size = 5,  fill = col.fun(length(unique(sample_idx)))) + 
+          geom_point(size = 5, fill = col.fun(length(unique(sample_idx)))) + 
           theme(axis.text = element_text(size = 12))
         
       } else{
         p <-
-          ggplot2::ggplot(df, aes_string(
-            x = "PC1",
-            y = "PC2",
-            color = "group",
-            label = "row.names(df)"
+          ggplot2::ggplot(df, aes(
+            x = .data[["PC1"]],
+            y = .data[["PC2"]],
+            color = .data[["group"]],
+            label = row.names(df) # row.names doesn't need .data as it's a function call
           )) +
           geom_text_repel(force = 1.5) + 
           geom_point(size = 5) + 
