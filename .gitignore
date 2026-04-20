@@ -12,3 +12,5 @@ src/*.so
 src/*.o
 NEWS.md
 *.dll
+src/Makevars
+.DS_Store

@@ -16,8 +16,20 @@ ENTROBJECTS = entropy.o CleanSpectrum.o SpectralEntropy.o
 
 OBJECTS= $(MQOBJECTS) $(OBIOBJECTS) $(XCMSOBJECTS) $(BATCHOBJECTS) $(SQLITOBJECTS) $(PENSEOBJECTS) $(OPTMSOBJECTS) $(ENTROBJECTS)
 
-PKG_CXXFLAGS= -fstrict-aliasing
-PKG_LIBS = $(LAPACK_LIBS) $(BLAS_LIBS) $(FLIBS)
+# All platform-specific flags are filled in by ../configure based on runtime
+# detection. Linux/gcc ends up with just -fopenmp. macOS/Apple-clang picks up
+# -Xclang -fopenmp + Homebrew libomp + Homebrew gettext. Never edit by hand.
+#
+# The FLIBS line below is emitted by configure: on a healthy install it's just
+# a comment (R's inherited FLIBS wins); when configure detected stale paths in
+# R's FLIBS (happens after brew gcc upgrades or /opt/gfortran version mismatch)
+# it emits `FLIBS = <working override>` which fully overrides R's version.
+@FLIBS_LINE@
+
+PKG_CPPFLAGS = @EXTRA_CPPFLAGS@
+PKG_CFLAGS   = @OPENMP_CFLAGS@
+PKG_CXXFLAGS = @OPENMP_CXXFLAGS@ -fstrict-aliasing
+PKG_LIBS     = @OPENMP_LIBS@ @EXTRA_LIBS@ $(LAPACK_LIBS) $(BLAS_LIBS) $(FLIBS)
 
 .PHONY: all
 

@@ -1,0 +1,193 @@
+#!/bin/sh
+# OptiLCMS configure — autodetects macOS toolchain gaps so users don't need to
+# hand-patch ~/.R/Makevars. Generates src/Makevars from src/Makevars.in.
+#
+# macOS-specific headers the package needs that aren't in the Xcode SDK:
+#   - <omp.h>     (OpenMP)  — supplied by Homebrew `libomp`
+#   - <libintl.h> (gettext) — supplied by Homebrew `gettext`
+#
+# Both are in glibc/gcc on Linux, so nothing special is needed there.
+# On macOS we probe Homebrew prefixes and splice the right -I/-L flags in.
+
+R_HOME="${R_HOME:-$(R RHOME 2>/dev/null)}"
+RBIN="${R_HOME}/bin/R"
+R_CXX=$("${RBIN}" CMD config CXX)
+R_CC=$("${RBIN}" CMD config CC)
+SHLIB_OMP_CXX=$("${RBIN}" CMD config SHLIB_OPENMP_CXXFLAGS 2>/dev/null)
+SHLIB_OMP_C=$("${RBIN}" CMD config SHLIB_OPENMP_CFLAGS 2>/dev/null)
+
+uname_s=$(uname -s 2>/dev/null)
+is_darwin=0
+[ "${uname_s}" = "Darwin" ] && is_darwin=1
+
+OPENMP_CFLAGS=""
+OPENMP_CXXFLAGS=""
+OPENMP_LIBS=""
+EXTRA_CPPFLAGS=""
+EXTRA_LIBS=""
+
+# ---- helpers --------------------------------------------------------------
+
+# probe_compile COMPILE_FLAGS LINK_FLAGS HEADER SYMBOL
+# Compiles a minimal program that uses HEADER and SYMBOL. Returns 0 on success.
+probe_compile() {
+    tmp=$(mktemp -d 2>/dev/null || mktemp -d -t optilcms-conf)
+    cat > "${tmp}/probe.cpp" <<EOF
+#include <${3}>
+int main() { (void)${4}; return 0; }
+EOF
+    ${R_CXX} ${1} "${tmp}/probe.cpp" -o "${tmp}/probe" ${2} >/dev/null 2>&1
+    rc=$?
+    rm -rf "${tmp}"
+    return $rc
+}
+
+first_existing_prefix() {
+    # Echoes the first directory from the arg list that contains include/${header}.
+    header="${1}"; shift
+    for p in "$@"; do
+        if [ -n "${p}" ] && [ -f "${p}/include/${header}" ]; then
+            echo "${p}"
+            return 0
+        fi
+    done
+    return 1
+}
+
+# ---- OpenMP (omp.h) -------------------------------------------------------
+
+if [ ${is_darwin} -eq 1 ]; then
+    echo "configure: macOS detected — probing OpenMP / libomp"
+    if [ -n "${SHLIB_OMP_CXX}" ] && probe_compile "${SHLIB_OMP_CXX}" "${SHLIB_OMP_CXX}" omp.h "omp_get_max_threads()"; then
+        OPENMP_CFLAGS="${SHLIB_OMP_C}"
+        OPENMP_CXXFLAGS="${SHLIB_OMP_CXX}"
+        OPENMP_LIBS="${SHLIB_OMP_CXX}"
+        echo "configure: R's SHLIB_OPENMP flags work as-is"
+    else
+        brew_omp=$(first_existing_prefix omp.h /opt/homebrew/opt/libomp /usr/local/opt/libomp)
+        if [ -n "${brew_omp}" ]; then
+            cxx="-Xclang -fopenmp -I${brew_omp}/include"
+            ld="-L${brew_omp}/lib -lomp"
+            if probe_compile "${cxx}" "${ld}" omp.h "omp_get_max_threads()"; then
+                OPENMP_CFLAGS="${cxx}"
+                OPENMP_CXXFLAGS="${cxx}"
+                OPENMP_LIBS="${ld}"
+                echo "configure: using Homebrew libomp at ${brew_omp}"
+            fi
+        fi
+    fi
+    if [ -z "${OPENMP_CXXFLAGS}" ]; then
+        echo "configure: WARNING — no OpenMP. To enable: brew install libomp"
+        echo "configure:           (pense/entropy parallel paths will be serial)"
+    fi
+else
+    OPENMP_CFLAGS="${SHLIB_OMP_C}"
+    OPENMP_CXXFLAGS="${SHLIB_OMP_CXX}"
+    OPENMP_LIBS="${SHLIB_OMP_CXX}"
+    echo "configure: ${uname_s} — using R's OpenMP flags: ${SHLIB_OMP_CXX}"
+fi
+
+# ---- Fortran libs — detect + repair stale R FLIBS on macOS ----------------
+# R's built-in FLIBS sometimes points at a gfortran install that was removed
+# (e.g. /opt/gfortran/lib/gcc/.../14.2.0 when the user has 12.2.0) or at a
+# specific Homebrew gcc Cellar version that was later upgraded. Detect the
+# case and substitute a working -L path so the link step doesn't explode.
+
+FLIBS_OVERRIDE=""
+
+if [ ${is_darwin} -eq 1 ]; then
+    echo "configure: sanity-checking R's FLIBS"
+    rflibs=$("${RBIN}" CMD config FLIBS 2>/dev/null)
+    flibs_broken=0
+    # Any -L<dir> that doesn't exist => FLIBS is stale.
+    for dir in $(echo "${rflibs}" | tr ' ' '\n' | sed -n 's|^-L||p'); do
+        if [ -n "${dir}" ] && [ ! -d "${dir}" ]; then
+            echo "configure:   stale -L path: ${dir}"
+            flibs_broken=1
+        fi
+    done
+    if [ ${flibs_broken} -eq 1 ]; then
+        # Hunt for a working gfortran lib dir.
+        for candidate in \
+            /opt/gfortran/lib/gcc/aarch64-apple-darwin20.0/12.2.0 \
+            /opt/gfortran/lib/gcc/aarch64-apple-darwin20.0/13.0.0 \
+            /opt/gfortran/lib/gcc/aarch64-apple-darwin20.0/14.2.0 \
+            /opt/R/arm64/gfortran/lib/gcc/aarch64-apple-darwin23.0/14.2.0 \
+            /opt/homebrew/opt/gcc/lib/gcc/current; do
+            if [ -d "${candidate}" ]; then
+                FLIBS_OVERRIDE="-L${candidate} -lgfortran -lquadmath -lm"
+                echo "configure: overriding FLIBS → ${FLIBS_OVERRIDE}"
+                break
+            fi
+        done
+        if [ -z "${FLIBS_OVERRIDE}" ]; then
+            echo "configure: WARNING — no working gfortran lib dir found."
+            echo "configure:   Install CRAN's gfortran: https://mac.r-project.org/tools/"
+            echo "configure:   Or: brew install gcc"
+        fi
+    fi
+fi
+
+# ---- gettext (libintl.h) — macOS only -------------------------------------
+
+if [ ${is_darwin} -eq 1 ]; then
+    echo "configure: probing gettext / libintl"
+    if probe_compile "" "" libintl.h "gettext(\"\")" ; then
+        echo "configure: libintl.h resolves without extra flags"
+    else
+        brew_gettext=$(first_existing_prefix libintl.h /opt/homebrew/opt/gettext /usr/local/opt/gettext)
+        if [ -n "${brew_gettext}" ]; then
+            cpp="-I${brew_gettext}/include"
+            ld="-L${brew_gettext}/lib -lintl"
+            if probe_compile "${cpp}" "${ld}" libintl.h "gettext(\"\")"; then
+                EXTRA_CPPFLAGS="${EXTRA_CPPFLAGS} ${cpp}"
+                EXTRA_LIBS="${EXTRA_LIBS} ${ld}"
+                echo "configure: using Homebrew gettext at ${brew_gettext}"
+            fi
+        else
+            echo "configure: WARNING — libintl.h not found. To install: brew install gettext"
+        fi
+    fi
+fi
+
+# ---- generate src/Makevars from src/Makevars.in ---------------------------
+
+if [ ! -f src/Makevars.in ]; then
+    echo "configure: ERROR — src/Makevars.in missing" >&2
+    exit 1
+fi
+
+# Strip leading whitespace from the accumulators so substitutions stay clean.
+EXTRA_CPPFLAGS=$(echo "${EXTRA_CPPFLAGS}" | sed -e 's/^ *//')
+EXTRA_LIBS=$(echo "${EXTRA_LIBS}" | sed -e 's/^ *//')
+
+# When FLIBS_OVERRIDE is set, emit a top-level `FLIBS = <override>` line in
+# Makevars that fully replaces R's inherited FLIBS (which we know is broken).
+# When empty, emit nothing so R's normal FLIBS flows through.
+if [ -n "${FLIBS_OVERRIDE}" ]; then
+    # `override` is required here — Makeconf's FLIBS is a plain assignment and
+    # so is ours, which normally means last-wins. But R's install process can
+    # set FLIBS via the `make` command line (make FLIBS="..." ...), which has
+    # higher precedence than any Makefile/Makevars assignment. Only `override`
+    # beats command-line. See GNU make manual §6.7.
+    FLIBS_LINE="override FLIBS := ${FLIBS_OVERRIDE}"
+else
+    FLIBS_LINE="# R's default FLIBS is used (configure detected no stale paths)"
+fi
+
+sed -e "s|@OPENMP_CFLAGS@|${OPENMP_CFLAGS}|g" \
+    -e "s|@OPENMP_CXXFLAGS@|${OPENMP_CXXFLAGS}|g" \
+    -e "s|@OPENMP_LIBS@|${OPENMP_LIBS}|g" \
+    -e "s|@EXTRA_CPPFLAGS@|${EXTRA_CPPFLAGS}|g" \
+    -e "s|@EXTRA_LIBS@|${EXTRA_LIBS}|g" \
+    -e "s|@FLIBS_LINE@|${FLIBS_LINE}|g" \
+    src/Makevars.in > src/Makevars
+
+echo "configure: wrote src/Makevars"
+echo "  OPENMP_CFLAGS   = ${OPENMP_CFLAGS}"
+echo "  OPENMP_CXXFLAGS = ${OPENMP_CXXFLAGS}"
+echo "  OPENMP_LIBS     = ${OPENMP_LIBS}"
+echo "  EXTRA_CPPFLAGS  = ${EXTRA_CPPFLAGS}"
+echo "  EXTRA_LIBS      = ${EXTRA_LIBS}"
+echo "  FLIBS_OVERRIDE  = ${FLIBS_OVERRIDE}"
+exit 0
