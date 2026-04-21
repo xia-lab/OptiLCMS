@@ -134,14 +134,12 @@ void MatI::file_rows_cols(std::ifstream &stream, int &rows, int &cols) {
     stream.getline(line, BIGGEST_LINE);
     ++rows;
     char *ptr = line;
-    int linelength = 0;
     while(*ptr != '\0') {
         if (*ptr == ' ') {
             *ptr = '\0';  // keep track of spaces
             ++cols;
         }
         ++ptr;
-        ++linelength;
     }
     ++cols; // for the last one
     // Check for spaces on the end:
@@ -542,14 +540,12 @@ void MatD::file_rows_cols(std::ifstream &stream, int &rows, int &cols) {
     stream.getline(line, BIGGEST_LINE);
     ++rows;
     char *ptr = line;
-    int linelength = 0;
     while(*ptr != '\0') {
         if (*ptr == ' ') {
             *ptr = '\0';  // keep track of spaces
             ++cols;
         }
         ++ptr;
-        ++linelength;
     }
     ++cols; // for the last one
     // Check for spaces on the end:
@@ -950,14 +946,12 @@ void MatF::file_rows_cols(std::ifstream &stream, int &rows, int &cols) {
     stream.getline(line, BIGGEST_LINE);
     ++rows;
     char *ptr = line;
-    int linelength = 0;
     while(*ptr != '\0') {
         if (*ptr == ' ') {
             *ptr = '\0';  // keep track of spaces
             ++cols;
         }
         ++ptr;
-        ++linelength;
     }
     ++cols; // for the last one
     // Check for spaces on the end:
