@@ -46,12 +46,8 @@ class Tracker {
         std::vector<double> irP;
 
         double q_val_i; //process uncertainty scalar
-        double r_val_i;
-        double p_val_i;
 
         double q_val_m; //process uncertainty scalar
-        double r_val_m;
-        double p_val_m;
 
         /*mass*/
         std::vector<double> mrXhat;
