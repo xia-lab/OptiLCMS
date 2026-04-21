@@ -11,6 +11,7 @@ PerformInusionFeatureDection(
   snthresh = 3,
   ppm = 10,
   scales = c(1, 4, 9),
+  groups = NULL,
   ncores = 1L
 )
 }

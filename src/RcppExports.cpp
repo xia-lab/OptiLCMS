@@ -401,6 +401,7 @@ BEGIN_RCPP
 END_RCPP
 }
 
+RcppExport SEXP R_set_obiwarp(SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP);
 RcppExport SEXP binYonX(SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP);
 RcppExport SEXP binYonX_multi(SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP);
 RcppExport SEXP breaks_on_nBins(SEXP, SEXP, SEXP, SEXP);
@@ -411,7 +412,6 @@ RcppExport SEXP getMZ(SEXP, SEXP, SEXP, SEXP, SEXP, SEXP);
 RcppExport SEXP impute_with_linear_interpolation(SEXP, SEXP);
 RcppExport SEXP impute_with_linear_interpolation_base(SEXP, SEXP, SEXP);
 RcppExport SEXP massifquant(SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP);
-RcppExport SEXP R_set_obiwarp(SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP);
 
 static const R_CallMethodDef CallEntries[] = {
     {"_OptiLCMS_DecoSpectra", (DL_FUNC) &_OptiLCMS_DecoSpectra, 9},
@@ -436,6 +436,7 @@ static const R_CallMethodDef CallEntries[] = {
     {"_OptiLCMS_RectUnique", (DL_FUNC) &_OptiLCMS_RectUnique, 6},
     {"_OptiLCMS_continuousPtsAboveThreshold", (DL_FUNC) &_OptiLCMS_continuousPtsAboveThreshold, 5},
     {"_OptiLCMS_continuousPtsAboveThresholdIdx", (DL_FUNC) &_OptiLCMS_continuousPtsAboveThresholdIdx, 5},
+    {"R_set_obiwarp",                         (DL_FUNC) &R_set_obiwarp,                         18},
     {"binYonX",                               (DL_FUNC) &binYonX,                               14},
     {"binYonX_multi",                         (DL_FUNC) &binYonX_multi,                         14},
     {"breaks_on_nBins",                       (DL_FUNC) &breaks_on_nBins,                        4},
@@ -446,7 +447,6 @@ static const R_CallMethodDef CallEntries[] = {
     {"impute_with_linear_interpolation",      (DL_FUNC) &impute_with_linear_interpolation,       2},
     {"impute_with_linear_interpolation_base", (DL_FUNC) &impute_with_linear_interpolation_base,  3},
     {"massifquant",                           (DL_FUNC) &massifquant,                           14},
-    {"R_set_obiwarp",                         (DL_FUNC) &R_set_obiwarp,                         18},
     {NULL, NULL, 0}
 };
 
