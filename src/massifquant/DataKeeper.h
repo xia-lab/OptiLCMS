@@ -33,7 +33,6 @@ class DataKeeper {
         std::vector<double> mz; //an
         std::vector<double> intensity;
 
-        struct scanBuf * scbuf;
         double * pmz;
         double * pinten;
         int * pscanindex;
