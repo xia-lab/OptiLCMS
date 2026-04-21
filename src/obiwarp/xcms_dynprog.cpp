@@ -1110,19 +1110,17 @@ void DynProg::find_path(MatF& smat, VecF &gap_penalty, int minimize,
   //  * END CALC ADD SCORE MATRIX
   //  ************************************************************
 
-  float bestscore;
   int optimal_m;
   int optimal_n;
   if (local) {
     if (minimize) {
-      bestscore = DynProg::_global_min(tmp_asmat, optimal_m, optimal_n);
+      DynProg::_global_min(tmp_asmat, optimal_m, optimal_n);
     }
     else {
-      bestscore = DynProg::_global_max(tmp_asmat, optimal_m, optimal_n);
+      DynProg::_global_max(tmp_asmat, optimal_m, optimal_n);
     }
   }
   else {  //global
-    bestscore = tmp_asmat(rows - 1, cols - 1);
     optimal_m = rows - 1;
     optimal_n = cols - 1;
   }
