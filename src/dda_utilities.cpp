@@ -296,7 +296,7 @@ double get_mass_potassium(){
 vector<int> parse_formula(std::string formula_txt){
   // C H O N P S
   // cout << "formula_txt -> " << formula_txt << endl;
-  if((formula_txt.find("[") != -1) | (formula_txt.find("+") != -1) | (formula_txt.find("-") != -1) | (formula_txt.find("(") != -1)){
+  if((formula_txt.find("[") != -1) || (formula_txt.find("+") != -1) || (formula_txt.find("-") != -1) || (formula_txt.find("(") != -1)){
     //std::replace(formula_txt.begin(), formula_txt.end(), "[", "");
     formula_txt = std::regex_replace(formula_txt, std::regex("\\[|\\]|\\+|\\-|\\(|\\)"), "");
     //formula_txt.replace(formula_txt.find("["), 1, "");
