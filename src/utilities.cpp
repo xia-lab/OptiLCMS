@@ -194,25 +194,25 @@ IntegerVector GetRoi(NumericVector is_roi, int idx_apex_eic) {
   // cout << "bool1 --> " << bool1 << endl;
   // cout << "bool2 --> " << bool2 << endl;
   
-  if(bool1 & !bool2){
+  if(bool1 && !bool2){
     for(int j = 0; j < maxSize; j++){
-      if((i_s_new[j] <= idx_apex_eic) & (i_e_new[0] >= idx_apex_eic)){
+      if((i_s_new[j] <= idx_apex_eic) && (i_e_new[0] >= idx_apex_eic)){
         idx_fr_roi = seq(i_s_new[j], i_e_new[0]);
         break;
       }
     }
   } 
-  if(bool2 & !bool1){
+  if(bool2 && !bool1){
     for(int j = 0; j < maxSize; j++){
-      if((i_s_new[0] <= idx_apex_eic) & (i_e_new[j] >= idx_apex_eic)){
+      if((i_s_new[0] <= idx_apex_eic) && (i_e_new[j] >= idx_apex_eic)){
         idx_fr_roi = seq(i_s_new[0], i_e_new[j]);
         break;
       }
     }
   }
-  if(bool2 & bool1){
+  if(bool2 && bool1){
     for(int j = 0; j < maxSize; j++){
-      if((i_s_new[j] <= idx_apex_eic) & (i_e_new[j] >= idx_apex_eic)){
+      if((i_s_new[j] <= idx_apex_eic) && (i_e_new[j] >= idx_apex_eic)){
         idx_fr_roi = seq(i_s_new[j], i_e_new[j]);
         break;
       }
@@ -395,7 +395,7 @@ IntegerVector FindLocalMax(NumericVector x, int m = 3, double v = 20) {
     //cout << "x[i+1] " << x[i+1] << endl;
     //cout << "tmpLogVec1 --> " << tmpLogVec1 << endl;
     //cout << "tmpLogVec2 --> " << tmpLogVec2 << endl;
-    if(is_true(all(tmpLogVec1)) & is_true(all(tmpLogVec2))){
+    if(is_true(all(tmpLogVec1)) && is_true(all(tmpLogVec2))){
       pksf.push_back(i + 1);
     }
   }
@@ -438,7 +438,7 @@ IntegerVector FindLocalMin(NumericVector x, int m = 3) {
     LogicalVector tmpLogVec1 = (t1 >= x[i + 1]);
     LogicalVector tmpLogVec2 = (t2 >= x[i + 1]);
 
-    if(is_true(all(tmpLogVec1)) & is_true(all(tmpLogVec2))){
+    if(is_true(all(tmpLogVec1)) && is_true(all(tmpLogVec2))){
       pksf.push_back(i + 1);
     }
   }
