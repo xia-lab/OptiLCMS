@@ -29,16 +29,25 @@ inline void exception::copy_stack_trace_to_r() const { rcpp_set_stack_trace(R_Ni
 # ifndef Rcpp_protection_meat_H
 #  define Rcpp_protection_meat_H
 namespace Rcpp {
+inline SEXP armor_wrap_or_sexp(SEXP x) {
+    return x;
+}
+
+template <typename U>
+inline SEXP armor_wrap_or_sexp(const U& x) {
+    return wrap(x);
+}
+
 template <typename T>
 template <typename U>
 Armor<T>::Armor(U x) : data() {
-    init(wrap(x));
+    init(armor_wrap_or_sexp(x));
 }
 
 template <typename T>
 template <typename U>
 inline Armor<T>& Armor<T>::operator=(const U& x) {
-    REPROTECT(data = wrap(x), index);
+    REPROTECT(data = armor_wrap_or_sexp(x), index);
     return *this;
 }
 }  // namespace Rcpp
