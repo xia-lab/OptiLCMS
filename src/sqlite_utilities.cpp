@@ -3,19 +3,6 @@
 SqliteDriver::SqliteDriver(String dbase, string db_tb, int ion_mode = 0){
   database = dbase;
   db_table = db_tb;
-  sqlite3* db;
-  sqlite3_stmt* stmt;
-  const unsigned char* MS2peaks;
-  string MS2Peak_str;
-  
-  vector<int> IDs_vec;
-  vector<string> FMs_vec;
-  vector<string> MS2Peaks_vec;
-  vector<string> cmpds_vec;
-  vector<string> smiles_vec;
-  vector<string> inchikeys_vec;
-  vector<double> precmz_vec;
-  vector<double> rt_vec;
 
   SqliteDriver::setEntireDatabase(ion_mode);
 
