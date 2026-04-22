@@ -13,8 +13,30 @@ R_HOME="${R_HOME:-$(R RHOME 2>/dev/null)}"
 RBIN="${R_HOME}/bin/R"
 R_CXX=$("${RBIN}" CMD config CXX)
 R_CC=$("${RBIN}" CMD config CC)
-SHLIB_OMP_CXX=$("${RBIN}" CMD config SHLIB_OPENMP_CXXFLAGS 2>/dev/null)
-SHLIB_OMP_C=$("${RBIN}" CMD config SHLIB_OPENMP_CFLAGS 2>/dev/null)
+
+# Query an R config variable and return empty string if R reports it missing.
+get_r_cfg() {
+    out=$("${RBIN}" CMD config "$1" 2>&1 || true)
+    case "${out}" in
+        ERROR:*|*"no information for variable"*)
+            echo ""
+            ;;
+        *)
+            echo "${out}"
+            ;;
+    esac
+}
+
+SHLIB_OMP_CXX=$(get_r_cfg SHLIB_OPENMP_CXXFLAGS)
+SHLIB_OMP_C=$(get_r_cfg SHLIB_OPENMP_CFLAGS)
+
+# Older/non-standard R builds may expose OPENMP_*FLAGS instead.
+if [ -z "${SHLIB_OMP_CXX}" ]; then
+    SHLIB_OMP_CXX=$(get_r_cfg OPENMP_CXXFLAGS)
+fi
+if [ -z "${SHLIB_OMP_C}" ]; then
+    SHLIB_OMP_C=$(get_r_cfg OPENMP_CFLAGS)
+fi
 
 uname_s=$(uname -s 2>/dev/null)
 is_darwin=0
@@ -84,7 +106,21 @@ else
     OPENMP_CFLAGS="${SHLIB_OMP_C}"
     OPENMP_CXXFLAGS="${SHLIB_OMP_CXX}"
     OPENMP_LIBS="${SHLIB_OMP_CXX}"
-    echo "configure: ${uname_s} — using R's OpenMP flags: ${SHLIB_OMP_CXX}"
+
+    if [ -z "${OPENMP_CXXFLAGS}" ]; then
+        # Linux toolchains typically accept plain -fopenmp even when R config
+        # does not expose SHLIB_OPENMP_CXXFLAGS.
+        if probe_compile "-fopenmp" "-fopenmp" omp.h "omp_get_max_threads()"; then
+            OPENMP_CFLAGS="-fopenmp"
+            OPENMP_CXXFLAGS="-fopenmp"
+            OPENMP_LIBS="-fopenmp"
+            echo "configure: ${uname_s} — SHLIB_OPENMP_CXXFLAGS missing; using fallback -fopenmp"
+        else
+            echo "configure: ${uname_s} — OpenMP flags unavailable; building without OpenMP"
+        fi
+    else
+        echo "configure: ${uname_s} — using R's OpenMP flags: ${SHLIB_OMP_CXX}"
+    fi
 fi
 
 # ---- Fortran libs — detect + repair stale R FLIBS on macOS ----------------
