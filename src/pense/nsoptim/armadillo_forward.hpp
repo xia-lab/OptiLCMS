@@ -16,7 +16,6 @@
 #  pragma clang diagnostic ignored "-Weverything"
 #endif
 
-# include <Rcpp.h>
 # include <RcppArmadillo/interface/RcppArmadilloForward.h>
 
 #ifdef __clang__
