@@ -79,13 +79,13 @@ public:
     // 1) prepare all parameters (swath info and index of scans)
     IntegerVector swath_idx_ms2(scan_ms2.size()); //swath_idx_ms2 is corresponding to the rows of "swath_info"
     double tl, tu; // scan time bounds (lower and upper);
-    int swath_idx, k_count = 0;
+    int swath_idx = 0, k_count = 0;
     if(scantimes_ms1[0] > scantimes_ms2[0]){
       // for the case starting with MS2 acquisition
       tl = 0;
       tu = scantimes_ms1[0];
       for(int s=k_count; s<scan_ms2.size(); s++){
-        if((tl<scantimes_ms2[s]) & (tu>scantimes_ms2[s])){
+        if((tl<scantimes_ms2[s]) && (tu>scantimes_ms2[s])){
           swath_idx_ms2[s] = swath_idx;
           swath_idx++;
           k_count++;
@@ -99,7 +99,7 @@ public:
       tu = scantimes_ms1[t];
       swath_idx = 0;
       for(int s=k_count; s<scan_ms2.size(); s++){
-        if((tl<scantimes_ms2[s]) & (tu>scantimes_ms2[s])){
+        if((tl<scantimes_ms2[s]) && (tu>scantimes_ms2[s])){
           swath_idx_ms2[s] = swath_idx;
           swath_idx++;
           k_count++;
@@ -122,7 +122,7 @@ public:
     int idx_swath;
     double this_rt, this_rt_min, this_rt_max, rt_expansion, this_rt_min_ext, this_rt_max_ext;
     double this_mz, this_mz_min, this_mz_max; // no need to expand mz, because this has already been a range.
-    double baseline_val, maxo_val, sn_val;
+    double baseline_val;
     vector<NumericMatrix> deco_results(peak_list.size());
     cout << "===== Start deconvolution. Progress shown below ===== \n";
     for(int f=0; f<peak_list.size() ; f++){ // 477 | f<peak_list.size() 6198 // this for-loop can be parallel, later
@@ -144,7 +144,7 @@ public:
       this_rt_max_ext = this_rt + rt_expansion;
       
       for(int sw=0; sw<swath_info.nrow();sw++){
-        if((this_mz >= swath_info(sw,0)) & (this_mz <= swath_info(sw,1))){
+        if((this_mz >= swath_info(sw,0)) && (this_mz <= swath_info(sw,1))){
           idx_swath = sw;
           break;
         }
@@ -225,7 +225,7 @@ public:
       //cout << "spec_apex_ms2 nrow -> " << spec_apex_ms2.nrow() << endl;
       int m = 0;
       for(int n=0; n<spec_apex_ms2.nrow(); n++){
-        if((spec_apex_ms2(n,1) > filter_thres) & 
+        if((spec_apex_ms2(n,1) > filter_thres) && 
            (spec_apex_ms2(n,0) <= this_mz)){
           m++;
         }
@@ -233,7 +233,7 @@ public:
       NumericVector mzs4ms2(m);
       m = 0;
       for(int n=0; n<spec_apex_ms2.nrow(); n++){
-        if((spec_apex_ms2(n,1) > filter_thres) & 
+        if((spec_apex_ms2(n,1) > filter_thres) && 
            (spec_apex_ms2(n,0) <= this_mz)){
           mzs4ms2[m] = spec_apex_ms2(n,0);
           m++;
@@ -357,18 +357,18 @@ public:
         for (int iRec = 0; iRec<nr; iRec++) {
           bool bl1 = (spec(iRec, 0) >= mzStart);
           bool bl2 = (spec(iRec, 0) <= mzEnd);
-          if (bl1 & bl2) {
+          if (bl1 && bl2) {
             idxInRange.push_back(iRec); 
             iInRange++;
           }
         }
         
         if (iInRange > 1) {
-          double intInRange[iInRange];
+          std::vector<double> intInRange(iInRange);
           for (int i = 0; i < iInRange; i++) {
             intInRange[i] = spec(idxInRange[i], 1);
           }
-          int iMax = findMaxIdx2(intInRange, iInRange);
+          int iMax = findMaxIdx2(intInRange.data(), iInRange);
           mzSpec(iSpec) = spec(idxInRange[iMax], 0);
           intSpec(iSpec) = spec(idxInRange[iMax], 1);
         } else if (iInRange == 1){
