@@ -216,6 +216,7 @@ sed -e "s|@OPENMP_CFLAGS@|${OPENMP_CFLAGS}|g" \
     -e "s|@OPENMP_LIBS@|${OPENMP_LIBS}|g" \
     -e "s|@EXTRA_CPPFLAGS@|${EXTRA_CPPFLAGS}|g" \
     -e "s|@EXTRA_LIBS@|${EXTRA_LIBS}|g" \
+    -e "s|@PKG_FLIBS@||g" \
     -e "s|@FLIBS_LINE@|${FLIBS_LINE}|g" \
     src/Makevars.in > src/Makevars
 
