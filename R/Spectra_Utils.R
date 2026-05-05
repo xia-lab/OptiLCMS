@@ -7196,4 +7196,51 @@ lin2 <- function (x1, y1, x2, y2, x)
   return(x);
 }
 
+#' Read serialized data with qs2/qs fallback
+#'
+#' @param file A file path ending with `.qs2` or `.qs`.
+#' @param ... Additional arguments passed to the underlying reader.
+#' @export
+ov_qs_read <- function(file, ...) {
+  if (file.exists(file)) {
+    r <- try(qs2::qs_read(file, ...), silent = TRUE)
+    if (!inherits(r, "try-error")) return(r)
+    return(qs::qread(file, ...))
+  }
+  if (endsWith(tolower(file), ".qs")) {
+    v2 <- paste0(substr(file, 1, nchar(file) - 3L), ".qs2")
+    if (file.exists(v2)) { r <- try(qs2::qs_read(v2, ...), silent = TRUE); if (!inherits(r, "try-error")) return(r); return(qs::qread(v2, ...)) }
+  } else if (endsWith(tolower(file), ".qs2")) {
+    v1 <- paste0(substr(file, 1, nchar(file) - 4L), ".qs")
+    if (file.exists(v1)) { r <- try(qs2::qs_read(v1, ...), silent = TRUE); if (!inherits(r, "try-error")) return(r); return(qs::qread(v1, ...)) }
+  }
+  stop("ov_qs_read: neither .qs2 nor .qs found for: ", file, call. = FALSE)
+}
+
+#' Save serialized data via qs2
+#'
+#' @param obj An R object to serialize.
+#' @param file Output file path.
+#' @param ... Additional arguments passed to `qs2::qs_save`.
+#' @export
+ov_qs_save <- function(obj, file, ...) {
+  .args <- list(...)
+  for (.k in c("preset", "nthreads", "check_hash")) .args[[.k]] <- NULL
+  do.call(qs2::qs_save, c(list(object = obj, file = file), .args))
+  invisible(file)
+}
+
+#' Check whether serialized data exists in `.qs2` or `.qs` form
+#'
+#' @param file A file path ending with `.qs2` or `.qs`.
+#' @return Logical scalar indicating whether either file exists.
+#' @export
+ov_qs_exists <- function(file) {
+  if (file.exists(file)) return(TRUE)
+  if (endsWith(tolower(file), ".qs"))  return(file.exists(paste0(substr(file, 1, nchar(file) - 3L), ".qs2")))
+  if (endsWith(tolower(file), ".qs2")) return(file.exists(paste0(substr(file, 1, nchar(file) - 4L), ".qs")))
+  FALSE
+}
+
+
 
