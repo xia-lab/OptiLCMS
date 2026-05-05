@@ -47,6 +47,7 @@ OPENMP_CXXFLAGS=""
 OPENMP_LIBS=""
 EXTRA_CPPFLAGS=""
 EXTRA_LIBS=""
+PKG_FLIBS='$(FLIBS)'
 
 # ---- helpers --------------------------------------------------------------
 
@@ -164,6 +165,22 @@ if [ ${is_darwin} -eq 1 ]; then
     fi
 fi
 
+# ---- Avoid duplicate Fortran runtime libs in link line ---------------------
+# On some macOS R toolchains, BLAS/LAPACK already expand to include
+# -lgfortran -lquadmath -lm. Appending $(FLIBS) then duplicates those entries
+# and ld warns "ignoring duplicate libraries". Keep $(FLIBS) only when needed.
+if [ ${is_darwin} -eq 1 ]; then
+    rblas=$("${RBIN}" CMD config BLAS_LIBS 2>/dev/null)
+    rlapack=$("${RBIN}" CMD config LAPACK_LIBS 2>/dev/null)
+    combined=" ${rblas} ${rlapack} "
+    if echo "${combined}" | grep -q ' -lgfortran ' \
+       && echo "${combined}" | grep -q ' -lquadmath ' \
+       && echo "${combined}" | grep -q ' -lm '; then
+        PKG_FLIBS=""
+        echo "configure: BLAS/LAPACK already provide Fortran runtime libs; omitting \\$(FLIBS) from PKG_LIBS"
+    fi
+fi
+
 # ---- gettext (libintl.h) — macOS only -------------------------------------
 
 if [ ${is_darwin} -eq 1 ]; then
@@ -216,6 +233,7 @@ sed -e "s|@OPENMP_CFLAGS@|${OPENMP_CFLAGS}|g" \
     -e "s|@OPENMP_LIBS@|${OPENMP_LIBS}|g" \
     -e "s|@EXTRA_CPPFLAGS@|${EXTRA_CPPFLAGS}|g" \
     -e "s|@EXTRA_LIBS@|${EXTRA_LIBS}|g" \
+    -e "s|@PKG_FLIBS@|${PKG_FLIBS}|g" \
     -e "s|@FLIBS_LINE@|${FLIBS_LINE}|g" \
     src/Makevars.in > src/Makevars
 
@@ -225,5 +243,6 @@ echo "  OPENMP_CXXFLAGS = ${OPENMP_CXXFLAGS}"
 echo "  OPENMP_LIBS     = ${OPENMP_LIBS}"
 echo "  EXTRA_CPPFLAGS  = ${EXTRA_CPPFLAGS}"
 echo "  EXTRA_LIBS      = ${EXTRA_LIBS}"
+echo "  PKG_FLIBS       = ${PKG_FLIBS}"
 echo "  FLIBS_OVERRIDE  = ${FLIBS_OVERRIDE}"
 exit 0
