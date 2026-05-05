@@ -13,15 +13,15 @@ PerformResultsExport(
 )
 }
 \arguments{
-\item{mSet}{}
+\item{mSet}{mSet Object containing DB search results.}
 
-\item{type}{}
+\item{type}{Integer export mode (0L, 1L, 2L, or 3L).}
 
-\item{topN}{}
+\item{topN}{Integer, maximum number of annotations retained per feature.}
 
-\item{ncores}{}
+\item{ncores}{Integer, number of CPU cores to use.}
 
-\item{lipids}{}
+\item{lipids}{Logical, whether to apply lipid-class export formatting.}
 }
 \value{
 mSet Object

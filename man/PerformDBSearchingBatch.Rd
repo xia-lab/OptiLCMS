@@ -35,7 +35,7 @@ PerformDBSearchingBatch(
 
 \item{NLdatabase_path}{path of neutral loss database. Must be specified to a valid neutral loss database when enableNL is TRUE.}
 
-\item{ncores}{}
+\item{ncores}{Integer, number of CPU cores to use.}
 
 \item{databaseOptions}{Options of database for searching.}
 }

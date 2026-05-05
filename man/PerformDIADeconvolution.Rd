@@ -19,15 +19,15 @@ PerformDIADeconvolution(
 
 \item{min_width}{minimum peak width value, in seconds}
 
-\item{ppm2}{}
+\item{ppm2}{Numeric, MS2 m/z tolerance in ppm.}
 
-\item{sn}{}
+\item{sn}{Numeric, signal-to-noise threshold for MS2 deconvolution.}
 
-\item{span}{}
+\item{span}{Numeric, smoothing span used during chromatographic processing.}
 
-\item{filtering}{}
+\item{filtering}{Numeric, minimum intensity filter threshold.}
 
-\item{ncores}{}
+\item{ncores}{Integer, number of CPU cores to use.}
 }
 \value{
 mSet Object

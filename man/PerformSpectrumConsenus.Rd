@@ -15,17 +15,17 @@ PerformSpectrumConsenus(
 )
 }
 \arguments{
-\item{mSet}{}
+\item{mSet}{mSet Object after MS2 deconvolution.}
 
-\item{ppm2}{}
+\item{ppm2}{Numeric, MS2 m/z tolerance in ppm.}
 
-\item{concensus_fraction}{}
+\item{concensus_fraction}{Numeric in \link{0,1}, minimum fraction for consensus peaks.}
 
-\item{database_path}{}
+\item{database_path}{Character, path to the SQLite database used for correction.}
 
-\item{use_rt}{}
+\item{use_rt}{Logical, whether to use retention time in consensus processing.}
 
-\item{user_dbCorrection}{}
+\item{user_dbCorrection}{Logical, whether to apply database-based correction.}
 }
 \value{
 mSet Object

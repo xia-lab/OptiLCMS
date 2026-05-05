@@ -450,11 +450,11 @@ PerformDDADeconvolution <- function(mSet= NULL,
 #'
 #' @param mSet mSet Object contains raw spectral data from *PerformMSnImport*
 #' @param min_width minimum peak width value, in seconds
-#' @param ppm2 
-#' @param sn 
-#' @param span 
-#' @param filtering 
-#' @param ncores 
+#' @param ppm2 Numeric, MS2 m/z tolerance in ppm.
+#' @param sn Numeric, signal-to-noise threshold for MS2 deconvolution.
+#' @param span Numeric, smoothing span used during chromatographic processing.
+#' @param filtering Numeric, minimum intensity filter threshold.
+#' @param ncores Integer, number of CPU cores to use.
 #'
 #' @return mSet Object
 #' @export
@@ -527,12 +527,12 @@ PerformDIADeconvolution <- function(mSet= NULL,
 
 #' PerformSpectrumConsenus
 #'
-#' @param mSet 
-#' @param ppm2 
-#' @param concensus_fraction 
-#' @param database_path 
-#' @param use_rt 
-#' @param user_dbCorrection 
+#' @param mSet mSet Object after MS2 deconvolution.
+#' @param ppm2 Numeric, MS2 m/z tolerance in ppm.
+#' @param concensus_fraction Numeric in [0,1], minimum fraction for consensus peaks.
+#' @param database_path Character, path to the SQLite database used for correction.
+#' @param use_rt Logical, whether to use retention time in consensus processing.
+#' @param user_dbCorrection Logical, whether to apply database-based correction.
 #'
 #' @return mSet Object
 #' @export
@@ -607,7 +607,7 @@ PerformSpectrumConsenus <- function(mSet = NULL,
 #' @param enableNL logical, to enable use Neutral Loss matching for unmatched features if TRUE;
 #' @param NLdatabase_path path of neutral loss database. Must be specified to a valid neutral loss database when enableNL is TRUE.
 #' @param databaseOptions Options of database for searching.
-#' @param ncores 
+#' @param ncores Integer, number of CPU cores to use.
 #'
 #' @return mSet Object
 #' @export
@@ -827,11 +827,11 @@ PerformDBSearchingBatch <- function(mSet = NULL,
 
 #' PerformResultsExport
 #'
-#' @param mSet 
-#' @param type 
-#' @param topN 
-#' @param ncores 
-#' @param lipids 
+#' @param mSet mSet Object containing DB search results.
+#' @param type Integer export mode (0L, 1L, 2L, or 3L).
+#' @param topN Integer, maximum number of annotations retained per feature.
+#' @param ncores Integer, number of CPU cores to use.
+#' @param lipids Logical, whether to apply lipid-class export formatting.
 #'
 #' @return mSet Object
 #' @export
@@ -942,9 +942,9 @@ PerformResultsExport <- function(mSet = NULL,
 
 #' FormatMSnAnnotation
 #'
-#' @param mSet 
-#' @param topN 
-#' @param isLipidomics 
+#' @param mSet mSet Object containing exported annotation results.
+#' @param topN Integer, number of top-ranked annotations to keep.
+#' @param isLipidomics Logical, whether to format output for lipidomics workflows.
 #'
 #' @return mSet Object
 #' @export

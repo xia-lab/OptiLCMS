@@ -7,11 +7,11 @@
 FormatMSnAnnotation(mSet = NULL, topN = 5L, isLipidomics = FALSE)
 }
 \arguments{
-\item{mSet}{}
+\item{mSet}{mSet Object containing exported annotation results.}
 
-\item{topN}{}
+\item{topN}{Integer, number of top-ranked annotations to keep.}
 
-\item{isLipidomics}{}
+\item{isLipidomics}{Logical, whether to format output for lipidomics workflows.}
 }
 \value{
 mSet Object
