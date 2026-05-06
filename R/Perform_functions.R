@@ -2682,8 +2682,9 @@ PerformAsariResultsFormating <- function(minFrac = 0.7){
   
   sample_data_log <- data;
   cvs <- round(apply(data, 1,FUN = CalCV),4)*100
-  lvls <- groups[groups != "QC"];
-  sample_data_log <- sample_data_log[,groups != "QC"];
+  group_keep_idx <- groups != "QC" & !grepl("^blank$", groups, ignore.case = TRUE);
+  lvls <- groups[group_keep_idx];
+  sample_data_log <- sample_data_log[, group_keep_idx, drop = FALSE];
   groups <- as.factor(lvls);
   
   ttest_res <- PerformFastUnivTests(t(sample_data_log), as.factor(groups))
