@@ -433,7 +433,7 @@ PerformIndividualInusionFeatureDection <- function(mSet, method = "cwt", noise =
       message(" Done! ", appendLF = T)
       
   }
-  qs::qsave(peaks_list, file = paste0(sub(".mzML|.mzXML|.cdf|.CDF|.mzData", "", basename(spec_files[i])), "_peakTable.qs"))
+  ov_qs_save(peaks_list, file = paste0(sub(".mzML|.mzXML|.cdf|.CDF|.mzData", "", basename(spec_files[i])), "_peakTable.qs"))
 
 }
 

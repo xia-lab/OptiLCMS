@@ -1887,10 +1887,10 @@ FormatPeakList <-
         
         ms1_res_dt <- list(ma_feats_miss, unique_feats)
         write.csv(ma_feats_miss, file = "metaboanalyst_input_clean.csv", row.names = F, quote = F)
-        qs::qsave(ms1_res_dt, file = "metaboanalyst_input_clean_MS1.qs")
+        ov_qs_save(ms1_res_dt, file = "metaboanalyst_input_clean_MS1.qs")
       } else {
         ms1_res_dt <- list(ma_feats_miss, unique_feats)
-        qs::qsave(ms1_res_dt, file = "metaboanalyst_input_clean_MS1.qs")
+        ov_qs_save(ms1_res_dt, file = "metaboanalyst_input_clean_MS1.qs")
         write.csv(ma_feats_miss, file = "metaboanalyst_input_clean.csv", row.names = F, quote = F)
       }
 
@@ -2725,7 +2725,7 @@ PerformAsariResultsFormating <- function(minFrac = 0.7){
             quote = TRUE, 
             row.names = FALSE);
   
-  qs::qsave(mSet@peakAnnotation[["Formula2Cmpd"]][FeatureOrder], 
+  ov_qs_save(mSet@peakAnnotation[["Formula2Cmpd"]][FeatureOrder], 
             file = "formula2cmpd.qs")
   
   # camera_output
@@ -2916,8 +2916,8 @@ PerformAsariResultsFormating <- function(minFrac = 0.7){
       # sink("spectra_3d_loading.json");
       # cat(json.obj);
       # sink();
-      qs::qsave(pca3d$score, "score3d.qs");
-      qs::qsave(pca3d$loading, "loading3d.qs");
+      ov_qs_save(pca3d$score, "score3d.qs");
+      ov_qs_save(pca3d$loading, "loading3d.qs");
       fileNm <- paste0("spectra_3d_loading.json");
       
       my.json.scatter(fileNm, T);
@@ -3151,7 +3151,7 @@ PerformAsariResultsFormating <- function(minFrac = 0.7){
     
     ms1_res_dt <- list(ftable_f2_0, ftab_annotation_f2, ftable_f2)
     write.csv(ftable_f2_0, file = "metaboanalyst_input_clean.csv", row.names = F, quote = F)
-    qs::qsave(ms1_res_dt, file = "metaboanalyst_input_clean_MS1_asari.qs")
+    ov_qs_save(ms1_res_dt, file = "metaboanalyst_input_clean_MS1_asari.qs")
     
   }
   
@@ -3379,7 +3379,7 @@ PerformExpsomeClassify <- function(mSet, path_repo = ""){
     stop("No classification database provided!")
   }
   
-  exposome_repo <- qs::qread("/home/glassfish/projects/exposome_lib/complte_exposome_categories_lib.qs")
+  exposome_repo <- ov_qs_read("/home/glassfish/projects/exposome_lib/complte_exposome_categories_lib.qs")
   anno_res <- mSet@MSnResults[["DBAnnoteRes"]]
   exposome_repo <- as.data.frame(exposome_repo)
   
@@ -3474,7 +3474,7 @@ PerformExpsomeClassify <- function(mSet, path_repo = ""){
   df_all1 <- lapply(1:length(all_cls_grps), function(z) {data.frame(Categories = all_cls, Number = as.numeric(all_cls_grps[[z]]), Group = names(all_cls_grps)[z])})
   df_all <- do.call(rbind, df_all1)
   
-  qs::qsave(df_all, file = "exposome_classification_summary.qs")
+  ov_qs_save(df_all, file = "exposome_classification_summary.qs")
   
   require("viridis") 
   require("ggplot2")
@@ -3508,7 +3508,7 @@ PerformMetabolomeClassify <- function(mSet, path_repo = ""){
     stop("No classification database provided!")
   }
   
-  metabolome_repo <- qs::qread("/home/glassfish/projects/metabolome_lib/complete_metabolome_taxonomies_lib.qs")
+  metabolome_repo <- ov_qs_read("/home/glassfish/projects/metabolome_lib/complete_metabolome_taxonomies_lib.qs")
   anno_res <- mSet@MSnResults[["DBAnnoteRes"]]
   metabolome_repo <- as.data.frame(metabolome_repo)
   
@@ -3584,7 +3584,7 @@ PerformMetabolomeClassify <- function(mSet, path_repo = ""){
   })
   
   names(res_exp_class_by_group) <- meta_info
-  qs::qsave(res_exp_class_by_group, file = "metabolome_classification_summary.qs")
+  ov_qs_save(res_exp_class_by_group, file = "metabolome_classification_summary.qs")
   
   return(mSet)
   
@@ -3594,7 +3594,7 @@ SummarizeAllResults4Reference <- function(mSet){
   save(mSet, file = "mSet_SummarizeAllResults4Reference.rda");
   
   ms1_dt <- mSet@peakAnnotation[["camera_output"]];
-  ms2_dt <- qs::qread("compound_msn_results_index.qs")
+  ms2_dt <- ov_qs_read("compound_msn_results_index.qs")
   ms2_dtx <- as.data.frame(matrix(NA, nrow = nrow(ms1_dt), ncol = 25))
   for(i in 1:nrow(ms2_dt)){
     ms2_dtx[ms2_dt$peak_idx_vals[i], ] <- ms2_dt[i, -c(1:5)]

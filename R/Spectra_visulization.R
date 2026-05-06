@@ -1031,8 +1031,8 @@ PlotSpectraPCA <-
       # sink("spectra_3d_loading.json");
       # cat(json.obj);
       # sink();
-      qs::qsave(pca3d$score, "score3d.qs");
-      qs::qsave(pca3d$loading, "loading3d.qs");
+      ov_qs_save(pca3d$score, "score3d.qs");
+      ov_qs_save(pca3d$loading, "loading3d.qs");
       fileNm <- paste0("spectra_3d_loading.json");
       
       my.json.scatter(fileNm, T);
@@ -1799,7 +1799,7 @@ plotBPIs <-function(mSet = NULL,
 
 my.json.scatter <- function(filenm, containsLoading=F){
   library(igraph);
-  res <- qs::qread("score3d.qs")
+  res <- ov_qs_read("score3d.qs")
   nodes <- vector(mode="list");
   names <- res$name;
   if(ncol(res$xyz) > nrow(res$xyz)){
@@ -1878,7 +1878,7 @@ my.json.scatter <- function(filenm, containsLoading=F){
                     ticks=ticks,
                     metaCol = legendData);
   }else{
-    res2 <- qs::qread("loading3d.qs");
+    res2 <- ov_qs_read("loading3d.qs");
     if(ncol(res2$xyz) > nrow(res2$xyz)){
       orig.load.xyz <- t(res2$xyz);
     }else{
@@ -1959,7 +1959,7 @@ PerformAllMirrorPlotting <- function(fragDB_path = NA,
   parse_ms2peaks <- OptiLCMS:::parse_ms2peaks;
   
 
-  mSet_raw <- qs::qread("msn_mset_result.qs")
+  mSet_raw <- ov_qs_read("msn_mset_result.qs")
   mSet_raw@MSnResults -> MSnResults;
   mSet_raw@MSnData -> MSnData
   
@@ -2168,11 +2168,11 @@ ComputeEncasing <- function(filenm, type, names.vec, level=0.95, omics="NA"){
 }
 
 .get.rdt.set <- function(){
-  return(qs::qread("rdt.set.qs"));
+  return(ov_qs_read("rdt.set.qs"));
 }
 
 .set.rdt.set <- function(my.set){
-  qs::qsave(my.set, file="rdt.set.qs");
+  ov_qs_save(my.set, file="rdt.set.qs");
 }
 
 

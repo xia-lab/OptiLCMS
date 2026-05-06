@@ -1290,7 +1290,7 @@ FormatMSnAnnotation <- function(mSet = NULL,
   MS1_peak_idx_identified <- MS1_peak_idx_identified[row_idx]
   # generate metaboanalyst_input_clean.csv with MS2 results included
   if(file.exists("metaboanalyst_input_clean_MS1.qs")){
-    clean_ft_list <- qs::qread("metaboanalyst_input_clean_MS1.qs")
+    clean_ft_list <- ov_qs_read("metaboanalyst_input_clean_MS1.qs")
     unique_feats <- clean_ft_list[[2]]
     unique_feats$mzmin <- round(as.numeric(unique_feats$mzmin),4)
     unique_feats$mzmax <- round(as.numeric(unique_feats$mzmin),4)
@@ -1314,7 +1314,7 @@ FormatMSnAnnotation <- function(mSet = NULL,
     write.csv(ft_table_clean, file = "metaboanalyst_input_clean.csv", row.names = F, quote = F)
   }
   if(file.exists("metaboanalyst_input_clean_MS1_asari.qs")){
-    clean_ft_list <- qs::qread("metaboanalyst_input_clean_MS1_asari.qs")
+    clean_ft_list <- ov_qs_read("metaboanalyst_input_clean_MS1_asari.qs")
     unique_feats <- clean_ft_list[[3]]
     unique_feats_mzmin <- round(as.numeric(unique_feats$mz-10*unique_feats$mz*1e-6),4)
     unique_feats_mzmax <- round(as.numeric(unique_feats$mz+10*unique_feats$mz*1e-6),4)
@@ -1358,8 +1358,8 @@ FormatMSnAnnotation <- function(mSet = NULL,
   res_final1 <- cbind(peak_idx_vals, res_final)
   res_final2 <- cbind(MS1_peak_idx_identified, res_final)
   
-  qs::qsave(res_final1, file = "compound_msn_results_index.qs")
-  qs::qsave(res_final2, file = "compound_msn_results_index2MS1.qs")
+  ov_qs_save(res_final1, file = "compound_msn_results_index.qs")
+  ov_qs_save(res_final2, file = "compound_msn_results_index2MS1.qs")
   
   return(res_final)
 }
