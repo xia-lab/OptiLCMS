@@ -16,23 +16,19 @@ PerformInusionFeatureDection(
 )
 }
 \arguments{
-\item{mSet}{}
+\item{mSet}{mSet Object containing raw infusion MS data.}
 
-\item{method}{}
+\item{method}{Character, peak detection method ("cwt" or "KDE").}
 
-\item{noise}{}
+\item{noise}{Numeric, noise threshold for peak detection.}
 
-\item{snthresh}{}
+\item{snthresh}{Numeric, signal-to-noise threshold.}
 
-\item{ppm}{}
+\item{ppm}{Numeric, mass accuracy in ppm.}
 
-\item{scales}{}
+\item{scales}{Numeric vector, wavelet scales for CWT method.}
 
-\item{ncores}{}
-
-\item{minFraction}{}
-
-\item{minSamples}{}
+\item{ncores}{Integer, number of CPU cores to use.}
 }
 \value{
 mSet Object

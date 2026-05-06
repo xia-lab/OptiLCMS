@@ -7,7 +7,7 @@
 PerformInfusionImport(filesPath = NA)
 }
 \arguments{
-\item{filesPath}{}
+\item{filesPath}{Character vector, paths to mass spectrometry data files.}
 }
 \value{
 mSet Object

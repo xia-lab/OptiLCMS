@@ -7,11 +7,11 @@
 FormatInfusionFeatureTable(mSet, minFraction = 0.1, minSamples = 0)
 }
 \arguments{
-\item{mSet}{}
+\item{mSet}{mSet Object containing detected infusion features.}
 
-\item{minFraction}{}
+\item{minFraction}{Numeric in between 0 and 1, minimum fraction for feature grouping.}
 
-\item{minSamples}{}
+\item{minSamples}{Integer, minimum number of samples required.}
 }
 \value{
 mSet Object

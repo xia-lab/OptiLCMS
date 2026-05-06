@@ -19,7 +19,7 @@ PerformSpectrumConsenus(
 
 \item{ppm2}{Numeric, MS2 m/z tolerance in ppm.}
 
-\item{concensus_fraction}{Numeric in \link{0,1}, minimum fraction for consensus peaks.}
+\item{concensus_fraction}{Numeric between 0 and 1, minimum fraction for consensus peaks.}
 
 \item{database_path}{Character, path to the SQLite database used for correction.}
 
