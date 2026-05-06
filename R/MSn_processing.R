@@ -529,7 +529,7 @@ PerformDIADeconvolution <- function(mSet= NULL,
 #'
 #' @param mSet mSet Object after MS2 deconvolution.
 #' @param ppm2 Numeric, MS2 m/z tolerance in ppm.
-#' @param concensus_fraction Numeric in [0,1], minimum fraction for consensus peaks.
+#' @param concensus_fraction Numeric between 0 and 1, minimum fraction for consensus peaks.
 #' @param database_path Character, path to the SQLite database used for correction.
 #' @param use_rt Logical, whether to use retention time in consensus processing.
 #' @param user_dbCorrection Logical, whether to apply database-based correction.

@@ -1,6 +1,6 @@
 #' PerformInfusionImport
 #'
-#' @param filesPath 
+#' @param filesPath Character vector, paths to mass spectrometry data files.
 #'
 #' @return mSet Object
 #' @export
@@ -51,15 +51,13 @@ PerformInfusionImport <- function(filesPath = NA){
 
 #' PerformInusionFeatureDection
 #'
-#' @param mSet 
-#' @param method 
-#' @param noise 
-#' @param snthresh 
-#' @param ppm 
-#' @param scales 
-#' @param minFraction 
-#' @param minSamples 
-#' @param ncores 
+#' @param mSet mSet Object containing raw infusion MS data.
+#' @param method Character, peak detection method ("cwt" or "KDE").
+#' @param noise Numeric, noise threshold for peak detection.
+#' @param snthresh Numeric, signal-to-noise threshold.
+#' @param ppm Numeric, mass accuracy in ppm.
+#' @param scales Numeric vector, wavelet scales for CWT method.
+#' @param ncores Integer, number of CPU cores to use.
 #'
 #' @return mSet Object
 #' @export
@@ -274,13 +272,13 @@ PerformInusionFeatureDection <- function(mSet, method = "cwt", noise = NA,
 
 #' PerformIndividualInusionFeatureDection
 #'
-#' @param mSet 
-#' @param method 
-#' @param noise 
-#' @param snthresh 
-#' @param ppm 
-#' @param scales 
-#' @param ncores 
+#' @param mSet mSet Object containing raw infusion MS data.
+#' @param method Character, peak detection method ("cwt" or "KDE").
+#' @param noise Numeric, noise threshold for peak detection.
+#' @param snthresh Numeric, signal-to-noise threshold.
+#' @param ppm Numeric, mass accuracy in ppm.
+#' @param scales Numeric vector, wavelet scales for CWT method.
+#' @param ncores Integer, number of CPU cores to use.
 #'
 #' @return NA
 #' @export
@@ -443,9 +441,9 @@ PerformIndividualInusionFeatureDection <- function(mSet, method = "cwt", noise =
 
 #' FormatInfusionFeatureTable
 #'
-#' @param mSet 
-#' @param minFraction 
-#' @param minSamples 
+#' @param mSet mSet Object containing detected infusion features.
+#' @param minFraction Numeric in between 0 and 1, minimum fraction for feature grouping.
+#' @param minSamples Integer, minimum number of samples required.
 #'
 #' @return mSet Object
 #' @export
