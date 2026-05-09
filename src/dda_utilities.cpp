@@ -273,7 +273,7 @@ double spectrumSimilarity(NumericMatrix mtx1, NumericMatrix mtx2, double ppm_ms2
 
 double entropySimilarity(NumericMatrix mtx1, NumericMatrix mtx2, double ppm_ms2){
   // raw matrix would be ok, calculate entropy similarity
-  cout << "We are using entropySimilarity now " << endl;
+  // cout << "We are using entropySimilarity now " << endl;
   double res = 0;
   res = r_calculate_entropy_similarity(mtx1, mtx2,
                                        -1.0, ppm_ms2, // da, ppm
