@@ -2030,6 +2030,9 @@ PerformAllMirrorPlotting <- function(fragDB_path = NA,
       which(DBAnnoteRes[[inx]][["InchiKeys"]] == x)[1]
     }, FUN.VALUE = integer(1L))
     spec_bottom <- DBAnnoteRes[[inx]][["MS2Pekas"]][uidx][sub_idx]
+    if(spec_bottom==""){
+      next
+    }
     spec_bottom <- parse_ms2peaks(spec_bottom)
     
     spec_top_m <- MSnResults[["Concensus_spec"]][[2]][[inx]][[1]]
