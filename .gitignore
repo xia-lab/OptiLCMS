@@ -14,3 +14,4 @@ NEWS.md
 *.dll
 src/Makevars
 .DS_Store
+.positai
