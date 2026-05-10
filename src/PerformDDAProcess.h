@@ -2347,36 +2347,30 @@ private:
     all_mzs = new_mzs;
     vector<int> all_dirs;
     vector<double> all_rule_ms;
-    vector<int> * all_rule_formulas;
     if(rule_opt == 0) {
       all_dirs = getAll_dir_change();
       all_rule_ms = getAll_ms_change();
-      all_rule_formulas = getAll_formulas();
     } else if(rule_opt == 1) {
       // Bio-transformation
       all_dirs = getBio_dir_change();
       all_rule_ms = getBio_ms_change();
-      all_rule_formulas = getBio_formulas();
     } else if(rule_opt == 2) {
       // adducts
       all_dirs = getAdc_dir_change();
       all_rule_ms = getAdc_ms_change();
-      all_rule_formulas = getAdc_formulas();
     } else if(rule_opt == 3) {
       // fragments
       all_dirs = getFrg_dir_change();
       all_rule_ms = getFrg_ms_change();
-      all_rule_formulas = getFrg_formulas();
     } else {
       all_dirs = getFrg_dir_change();
       all_rule_ms = getFrg_ms_change();
-      all_rule_formulas = getFrg_formulas();
     }
     
     vector<double> predicted_prec_mzs;
     vector<int> all_rules_idx, all_mzs_idx, allIDs;
     double thismz, thisrule_mz, thisprdc_mz, ms_error;
-    int thisdir, x;
+    int thisdir;
     
     NumericMatrix ms2_ref_mtx, ms2_ref_mtx_best;
     vector<string> allMS2refs;
@@ -2396,10 +2390,10 @@ private:
           thisprdc_mz = thismz + thisrule_mz;
           ms_error = thisprdc_mz*ppm_ms1*1e-6;
           if(useRT){
-            x = SQLiteObj.extractIDMS2_with_mzrtRange(thisprdc_mz - ms_error, thisprdc_mz + ms_error,
-                                                      min_rt - rt_tol, max_rt + rt_tol);
+            SQLiteObj.extractIDMS2_with_mzrtRange(thisprdc_mz - ms_error, thisprdc_mz + ms_error,
+                                                  min_rt - rt_tol, max_rt + rt_tol);
           } else {
-            x = SQLiteObj.extractIDMS2_with_mzRange_expDB(thisprdc_mz - ms_error, thisprdc_mz + ms_error);
+            SQLiteObj.extractIDMS2_with_mzRange_expDB(thisprdc_mz - ms_error, thisprdc_mz + ms_error);
           }
           
           allIDs = SQLiteObj.getIDsVec();
@@ -2419,10 +2413,10 @@ private:
           } else {
             ms_error = thisprdc_mz*ppm_ms1*1e-6;
             if(useRT){
-              x = SQLiteObj.extractIDMS2_with_mzrtRange(thisprdc_mz - ms_error, thisprdc_mz + ms_error,
-                                                        min_rt - rt_tol, max_rt + rt_tol);
+              SQLiteObj.extractIDMS2_with_mzrtRange(thisprdc_mz - ms_error, thisprdc_mz + ms_error,
+                                                    min_rt - rt_tol, max_rt + rt_tol);
             } else {
-              x = SQLiteObj.extractIDMS2_with_mzRange_expDB(thisprdc_mz - ms_error, thisprdc_mz + ms_error);
+              SQLiteObj.extractIDMS2_with_mzRange_expDB(thisprdc_mz - ms_error, thisprdc_mz + ms_error);
             }
             allIDs = SQLiteObj.getIDsVec();
             allMS2refs = SQLiteObj.getMS2PeaksVec();
@@ -2443,10 +2437,10 @@ private:
           }
           ms_error = thisprdc_mz*ppm_ms1*1e-6;
           if(useRT){
-            x = SQLiteObj.extractIDMS2_with_mzrtRange(thisprdc_mz - ms_error, thisprdc_mz + ms_error,
-                                                      min_rt - rt_tol, max_rt + rt_tol);
+            SQLiteObj.extractIDMS2_with_mzrtRange(thisprdc_mz - ms_error, thisprdc_mz + ms_error,
+                                                  min_rt - rt_tol, max_rt + rt_tol);
           } else {
-            x = SQLiteObj.extractIDMS2_with_mzRange_expDB(thisprdc_mz - ms_error, thisprdc_mz + ms_error);
+            SQLiteObj.extractIDMS2_with_mzRange_expDB(thisprdc_mz - ms_error, thisprdc_mz + ms_error);
           }
           allIDs = SQLiteObj.getIDsVec();
           allMS2refs = SQLiteObj.getMS2PeaksVec();
@@ -2573,7 +2567,7 @@ private:
     NumericMatrix resx;
     NumericVector thisclss = thisSpectra(_,2);
     NumericVector uni_thisClss = unique(thisclss);
-    int n=0, min_bd, max_bd;
+    int min_bd, max_bd;
     for(double u : uni_thisClss){
       if(u == (double) idx){
         IntegerVector idxVec = whichTrue(u == thisclss);
@@ -2666,18 +2660,16 @@ public:
     if(showOutput){
       cout << "PerformDDAProcess starting..." << "\n";
     }
-    int res_stp0 = formatPeakMatrix();
-    int res_stp1 = precursorsGrouping();
-    int res_stp2 = 0;
+    formatPeakMatrix();
+    precursorsGrouping();
     if(decoOn){
       if(showOutput){
         //cout << "Deconvolution is going to be executed .. \n";
       }
-      res_stp2 = chimericSpectraDetection();
+      chimericSpectraDetection();
     }
     
     // If need to run deconvolution
-    int res_stp3, res_stp4, res_stp5;
     if(!decoOn) {
       MS2listSummarize_noDeco();
       //MS2listSummarize_noMerge();
