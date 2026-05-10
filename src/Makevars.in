@@ -19,12 +19,9 @@ OBJECTS= $(MQOBJECTS) $(OBIOBJECTS) $(XCMSOBJECTS) $(BATCHOBJECTS) $(SQLITOBJECT
 # All platform-specific flags are filled in by ../configure based on runtime
 # detection. Linux/gcc ends up with just -fopenmp. macOS/Apple-clang picks up
 # -Xclang -fopenmp + Homebrew libomp + Homebrew gettext. Never edit by hand.
-#
-# The FLIBS line below is emitted by configure: on a healthy install it's just
-# a comment (R's inherited FLIBS wins); when configure detected stale paths in
-# R's FLIBS (happens after brew gcc upgrades or /opt/gfortran version mismatch)
-# it emits `FLIBS = <working override>` which fully overrides R's version.
-@FLIBS_LINE@
+# This package does not link Fortran objects, so force FLIBS empty to avoid
+# stale gfortran runtime paths inherited from some R toolchains.
+override FLIBS :=
 
 PKG_CPPFLAGS = @EXTRA_CPPFLAGS@
 PKG_CFLAGS   = @OPENMP_CFLAGS@

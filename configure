@@ -123,47 +123,6 @@ else
     fi
 fi
 
-# ---- Fortran libs — detect + repair stale R FLIBS on macOS ----------------
-# R's built-in FLIBS sometimes points at a gfortran install that was removed
-# (e.g. /opt/gfortran/lib/gcc/.../14.2.0 when the user has 12.2.0) or at a
-# specific Homebrew gcc Cellar version that was later upgraded. Detect the
-# case and substitute a working -L path so the link step doesn't explode.
-
-FLIBS_OVERRIDE=""
-
-if [ ${is_darwin} -eq 1 ]; then
-    echo "configure: sanity-checking R's FLIBS"
-    rflibs=$("${RBIN}" CMD config FLIBS 2>/dev/null)
-    flibs_broken=0
-    # Any -L<dir> that doesn't exist => FLIBS is stale.
-    for dir in $(echo "${rflibs}" | tr ' ' '\n' | sed -n 's|^-L||p'); do
-        if [ -n "${dir}" ] && [ ! -d "${dir}" ]; then
-            echo "configure:   stale -L path: ${dir}"
-            flibs_broken=1
-        fi
-    done
-    if [ ${flibs_broken} -eq 1 ]; then
-        # Hunt for a working gfortran lib dir.
-        for candidate in \
-            /opt/gfortran/lib/gcc/aarch64-apple-darwin20.0/12.2.0 \
-            /opt/gfortran/lib/gcc/aarch64-apple-darwin20.0/13.0.0 \
-            /opt/gfortran/lib/gcc/aarch64-apple-darwin20.0/14.2.0 \
-            /opt/R/arm64/gfortran/lib/gcc/aarch64-apple-darwin23.0/14.2.0 \
-            /opt/homebrew/opt/gcc/lib/gcc/current; do
-            if [ -d "${candidate}" ]; then
-                FLIBS_OVERRIDE="-L${candidate} -lgfortran -lquadmath -lm"
-                echo "configure: overriding FLIBS → ${FLIBS_OVERRIDE}"
-                break
-            fi
-        done
-        if [ -z "${FLIBS_OVERRIDE}" ]; then
-            echo "configure: WARNING — no working gfortran lib dir found."
-            echo "configure:   Install CRAN's gfortran: https://mac.r-project.org/tools/"
-            echo "configure:   Or: brew install gcc"
-        fi
-    fi
-fi
-
 # ---- gettext (libintl.h) — macOS only -------------------------------------
 
 if [ ${is_darwin} -eq 1 ]; then
@@ -197,27 +156,11 @@ fi
 EXTRA_CPPFLAGS=$(echo "${EXTRA_CPPFLAGS}" | sed -e 's/^ *//')
 EXTRA_LIBS=$(echo "${EXTRA_LIBS}" | sed -e 's/^ *//')
 
-# When FLIBS_OVERRIDE is set, emit a top-level `FLIBS = <override>` line in
-# Makevars that fully replaces R's inherited FLIBS (which we know is broken).
-# When empty, emit nothing so R's normal FLIBS flows through.
-if [ -n "${FLIBS_OVERRIDE}" ]; then
-    # `override` is required here — Makeconf's FLIBS is a plain assignment and
-    # so is ours, which normally means last-wins. But R's install process can
-    # set FLIBS via the `make` command line (make FLIBS="..." ...), which has
-    # higher precedence than any Makefile/Makevars assignment. Only `override`
-    # beats command-line. See GNU make manual §6.7.
-    FLIBS_LINE="override FLIBS := ${FLIBS_OVERRIDE}"
-else
-    FLIBS_LINE="# R's default FLIBS is used (configure detected no stale paths)"
-fi
-
 sed -e "s|@OPENMP_CFLAGS@|${OPENMP_CFLAGS}|g" \
     -e "s|@OPENMP_CXXFLAGS@|${OPENMP_CXXFLAGS}|g" \
     -e "s|@OPENMP_LIBS@|${OPENMP_LIBS}|g" \
     -e "s|@EXTRA_CPPFLAGS@|${EXTRA_CPPFLAGS}|g" \
     -e "s|@EXTRA_LIBS@|${EXTRA_LIBS}|g" \
-    -e "s|@PKG_FLIBS@||g" \
-    -e "s|@FLIBS_LINE@|${FLIBS_LINE}|g" \
     src/Makevars.in > src/Makevars
 
 echo "configure: wrote src/Makevars"
@@ -226,5 +169,4 @@ echo "  OPENMP_CXXFLAGS = ${OPENMP_CXXFLAGS}"
 echo "  OPENMP_LIBS     = ${OPENMP_LIBS}"
 echo "  EXTRA_CPPFLAGS  = ${EXTRA_CPPFLAGS}"
 echo "  EXTRA_LIBS      = ${EXTRA_LIBS}"
-echo "  FLIBS_OVERRIDE  = ${FLIBS_OVERRIDE}"
 exit 0
