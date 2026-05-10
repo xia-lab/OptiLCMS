@@ -10,8 +10,16 @@
 #ifndef AUTOCONFIG_HPP_
 #define AUTOCONFIG_HPP_
 
-#define PENSE_ENABLE_OPENMP 1
-/* #undef PENSE_DISABLE_OPENMP */
+/* OpenMP is optional. Enable it only when the compiler can see omp.h. */
+#if defined(__has_include)
+#  if __has_include(<omp.h>)
+#    define PENSE_ENABLE_OPENMP 1
+#  else
+#    define PENSE_DISABLE_OPENMP 1
+#  endif
+#else
+#  define PENSE_ENABLE_OPENMP 1
+#endif
 /* #undef PENSE_OPENMP_ADD_CONST_SHARED */
 #define NSOPTIM_METRICS_DISABLED 1
 /* #undef NSOPTIM_METRICS_ENABLED */

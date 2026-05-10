@@ -71,10 +71,19 @@ void R_CheckUserInterrupt(void);
 #define free R_chk_free
 
 #ifdef ENABLE_NLS
-#include <libintl.h>
-#define _(String) gettext (String)
+#  if defined(__has_include)
+#    if __has_include(<libintl.h>)
+#      include <libintl.h>
+#      define _(String) gettext (String)
+#    else
+#      define _(String) (String)
+#    endif
+#  else
+#    include <libintl.h>
+#    define _(String) gettext (String)
+#  endif
 #else
-#define _(String) (String)
+#  define _(String) (String)
 #endif
 
 #else
