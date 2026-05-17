@@ -3392,6 +3392,12 @@ PerformExpsomeClassify <- function(mSet, path_repo = ""){
       return(NA)
     }
     all_inchikeys <- res1[["InchiKeys"]]
+    all_names <- res1[["Compounds"]]
+    if(length(all_inchikeys)>3){
+      # Keep only first 3 as candidates if there are more
+      all_inchikeys <- all_inchikeys[1:3]
+      all_names <- all_names[1:3]
+    }
     nms <- colnames(exposome_repo)[-1]
     all_cls <- lapply(all_inchikeys, function(u){
       idx <- which(exposome_repo$InChiKeys == u)
@@ -3401,11 +3407,19 @@ PerformExpsomeClassify <- function(mSet, path_repo = ""){
         return(NA)
       }
     })
-    names(all_cls) <- all_inchikeys
+    names(all_cls) <- paste0(all_names,"||",all_inchikeys)
     return(all_cls)
   })
   
   mSet@MSnResults[["ExposomeRes"]] <- exposome_res
+  
+  cmpd_names <- vapply(exposome_res, function(x){
+    if(is.list(x)){
+      return(names(x)[1])
+    } else {
+      if(is.na(x)){return("")} else {return(names(x)[1])}
+    }
+  }, character(1L))
   
   exposome_res_clean <- lapply(exposome_res, function(x){
     if(length(x)==1){
@@ -3418,6 +3432,7 @@ PerformExpsomeClassify <- function(mSet, path_repo = ""){
       return(x[[1]])
     }
   })
+  names(exposome_res_clean) <- cmpd_names
   
   # plot a summary histogram
   
@@ -3454,6 +3469,35 @@ PerformExpsomeClassify <- function(mSet, path_repo = ""){
     return(res_all_this_pho)
   })
   
+  res_exp_class_by_group_int <- lapply(meta_info, FUN = function(n){
+    idx_grp_col <- which(meta_info0 == n)
+
+    group_dt <- dt[ft_idx, idx_grp_col, drop = FALSE]
+    group_dt_num <- matrix(
+      as.numeric(as.matrix(group_dt)),
+      nrow = nrow(group_dt),
+      dimnames = dimnames(group_dt)
+    )
+
+    ints_means <- rowMeans(group_dt_num, na.rm = TRUE)
+    bool_idxs <- rowSums(group_dt_num == 0, na.rm = TRUE) / ncol(group_dt_num) <= 0.75
+
+    if (!any(bool_idxs)) {
+      return(data.frame(name = character(0), value = numeric(0)))
+    }
+
+    res_all_this_pho <- exposome_res_clean[bool_idxs]
+    ints_means_clean <- ints_means[bool_idxs]
+
+    cls_names <- unlist(res_all_this_pho, use.names = FALSE)
+    cls_values <- rep(ints_means_clean, lengths(res_all_this_pho))
+    result <- aggregate(cls_values, by = list(name = cls_names), FUN = sum)
+    colnames(result)[2] <- "value"
+
+    return(result)
+  })
+  names(res_exp_class_by_group_int) <- meta_info
+  
   names(res_exp_class_by_group) <- meta_info
   
   all_cls <- c("Biocides", "Drugs", "Environment_Contaminantes", "Foods", 
@@ -3466,12 +3510,64 @@ PerformExpsomeClassify <- function(mSet, path_repo = ""){
   
   all_cls_grps <- lapply(res_exp_class_by_group, function(x){
     rs1 <- vapply(all_cls, function(y){
-      length(which(y==x))
+      nms_cmps <- names(x)[(which(x == y))]
+      # Removes an optional underscore or space followed by 1-3 digits at the end
+      nms_cmps <- gsub("[_ ]?\\d{1,3}$", "", nms_cmps)
+      length(unique(nms_cmps))
+      #length(which(y==x))
     }, FUN.VALUE = integer(1L))
     return(rs1)
   })
   
-  df_all1 <- lapply(1:length(all_cls_grps), function(z) {data.frame(Categories = all_cls, Number = as.numeric(all_cls_grps[[z]]), Group = names(all_cls_grps)[z])})
+  all_cls_cmpd_names <- lapply(res_exp_class_by_group, function(x){
+    rs1 <- sapply(all_cls, function(y){
+      names(x)[which(y==x)]
+    })
+    return(rs1)
+  })
+  
+  
+  df_all1 <- lapply(1:length(all_cls_grps), function(z) {
+    #cat(z,"\n")
+    dfx <- res_exp_class_by_group_int[[z]]
+    intensity <- vapply(all_cls, function(y){
+      if(y %in% dfx[,1]){
+        dfx[which(y == dfx[,1]),2]
+      } else{
+        0.0
+      }
+    }, numeric(1L))
+    
+    dfy <- all_cls_cmpd_names[[z]]
+    names_cpmd <- lapply(all_cls, function(y){
+      #cat(y,"\n")
+      if(y %in% names(dfy)){
+        res <- dfy[[which(y == names(dfy))]]
+      } else{
+        res <- ""
+      }
+      if(length(res)==0){
+        return("")
+      } else {
+        res <- gsub("\\d{1,3}$", "", res)
+        return(res)
+      }
+    })
+    
+    df_all_res <- data.frame(Categories = all_cls, 
+               Number = as.numeric(all_cls_grps[[z]]), 
+               Intensity = intensity,
+               Group = names(all_cls_grps)[z],
+               Compound_names = rep(c(NA), 21))
+    
+    
+    for(u in 1:length(all_cls)){
+      df_all_res$Compound_names[u] <- list(c(names_cpmd[[u]]))
+    }
+    
+    return(df_all_res)
+    
+    })
   df_all <- do.call(rbind, df_all1)
   
   ov_qs_save(df_all, file = "exposome_classification_summary.qs")
@@ -3489,7 +3585,7 @@ PerformExpsomeClassify <- function(mSet, path_repo = ""){
     theme(axis.text.x = element_text(angle = 45, vjust = 1, hjust=1, size = 8.5))
   p4 <- p4 + scale_fill_manual(values=fill) 
   #p4 <- p4 + scale_color_viridis(discrete = TRUE, option = "D")+scale_fill_viridis(discrete = TRUE)
-  p4
+  #p4
   
   Cairo::Cairo(820, 500,file = paste0("exposome_cat_comparison.png"),dpi = 90,bg = "white")
   print(p4)
@@ -3521,17 +3617,22 @@ PerformMetabolomeClassify <- function(mSet, path_repo = ""){
       return(NA)
     }
     all_inchikeys <- res1[["InchiKeys"]]
+    all_compounds <- res1[["Compounds"]]
     nms <- colnames(metabolome_repo)[-1]
     all_cls <- lapply(all_inchikeys, function(u){
       idx <- which(metabolome_repo$InChiKeys == u)
       if(length(idx)!=0){
-       metabolome_repo[idx[1], -1]
+       metabolome_repo[idx[1], c(2:6,1)]
       } else {
         return(NA)
       }
     })
-    names(all_cls) <- all_inchikeys
-    return(all_cls)
+    all_cls1 <- lapply(1:length(all_compounds), function(n){
+      all_cls_df <- all_cls[[n]]
+      cbind(all_cls_df, Compound = all_compounds[n])
+    })
+    
+    return(all_cls1)
   })
 
   mSet@MSnResults[["MetabolomeRes"]] <- metabolome_res
