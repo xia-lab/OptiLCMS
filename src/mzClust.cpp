@@ -1,3 +1,4 @@
+#include <array>
 #include <Rcpp.h>
 #include <vector>
 #include <cfloat>
