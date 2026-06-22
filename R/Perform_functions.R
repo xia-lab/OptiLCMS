@@ -481,7 +481,9 @@ SetAnnotationParam <-
       annParams$max.iso <- peakParams$max_iso
       annParams$corr.eic.th <- peakParams$corr_eic_th
       annParams$mz.abs.add <- peakParams$mz_abs_add;
-      annParams$adducts <- unlist(strsplit(peakParams$adducts, "\\|"));
+      # Guard: the optimized params.rda (centWave-auto) carries no character `adducts`
+      # field, so strsplit() threw "non-character argument" and aborted Peak Annotation.
+      annParams$adducts <- if (is.character(peakParams$adducts)) unlist(strsplit(peakParams$adducts, "\\|")) else 'NULL';
       
     } else {
       annParams$polarity <- polarity
