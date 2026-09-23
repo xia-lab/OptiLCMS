@@ -42,16 +42,16 @@ judge_if_petoh(
 PEtOH level 2 annotation (acyl_count=2) or NULL if criteria not met
 }
 \description{
-Detects PEtOH (phosphatidylethanediol) in positive \link{M+NH4}+ and negative \link{M-H}-
+Detects PEtOH (phosphatidylethanediol) in positive M+NH4+ and negative M-H-
 modes with 2D chain iteration and acyl cation detection.
 }
 \details{
-\strong{Positive Mode \link{M+NH4}+:}
-Soft diagnostic \link{M+H-NH3}+ (threshold 1.0). 2D iteration detecting acyl cation
+\strong{Positive Mode M+NH4+:}
+Soft diagnostic M+H-NH3+ (threshold 1.0). 2D iteration detecting acyl cation
 ions (formula: acyl_cation - electron, intensity 0.1). Requires foundCount = 2.
 
-\strong{Negative Mode \link{M-H}-:}
-Seeks phosphate head m/z 125.000919 (\link{C2H6O4P}-, threshold 1). 2D iteration
-detecting \link{FA-H}- ions (intensity 5.0). Requires foundCount = 2.
+\strong{Negative Mode M-H-:}
+Seeks phosphate head m/z 125.000919 (C2H6O4P-, threshold 1). 2D iteration
+detecting FA-H- ions (intensity 5.0). Requires foundCount = 2.
 }
 \keyword{internal}

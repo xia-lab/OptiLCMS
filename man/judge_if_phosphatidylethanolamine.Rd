@@ -49,9 +49,9 @@ Positive mode uses header loss fragments (-141.019094261 for C2H8NO4P).
 \details{
 \strong{Diagnostic fragments by adduct:}
 \itemize{
-\item \strong{\link{M+H}+ Positive}: Loss of PE head group (-141.019094261)
-\item \strong{\link{M+Na}+ Positive}: Same head loss + additional diagnostic at M-43.042199
-\item \strong{\link{M-H}- Negative}: PE head group fragment at m/z 196.03803
+\item \strong{M+H+ Positive}: Loss of PE head group (-141.019094261)
+\item \strong{M+Na+ Positive}: Same head loss + additional diagnostic at M-43.042199
+\item \strong{M-H- Negative}: PE head group fragment at m/z 196.03803
 (Rejects if C3H6O5P at 152.995833871 found, which markers PI instead)
 }
 

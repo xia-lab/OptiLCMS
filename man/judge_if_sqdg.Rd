@@ -42,16 +42,16 @@ judge_if_sqdg(
 SQDG level 2 annotation (acyl_count=2) or NULL if criteria not met
 }
 \description{
-Detects SQDG (sulfoquinovose-containing diacylglycerol) in positive \link{M+NH4}+
-and negative \link{M-H}- modes with 2D chain iteration.
+Detects SQDG (sulfoquinovose-containing diacylglycerol) in positive M+NH4+
+and negative M-H- modes with 2D chain iteration.
 }
 \details{
-\strong{Positive Mode \link{M+NH4}+:}
-Seeks \link{M+H-C6H10O7S}+ diagnostic (threshold 1.0). Then 2D iteration detecting
+\strong{Positive Mode M+NH4+:}
+Seeks M+H-C6H10O7S+ diagnostic (threshold 1.0). Then 2D iteration detecting
 nl_SN1 and nl_SN2 with intensity 10.0 each. Requires foundCount = 2.
 
-\strong{Negative Mode \link{M-H}-:}
-Seeks sulfate head m/z 225.0069 (\link{C6H9O7S}-, threshold 1.0). Then 2D iteration
+\strong{Negative Mode M-H-:}
+Seeks sulfate head m/z 225.0069 (C6H9O7S-, threshold 1.0). Then 2D iteration
 detecting fatty acid ions + neutral losses (nl_SN1, nl_SN2). Requires foundCount ≥ 2.
 }
 \keyword{internal}

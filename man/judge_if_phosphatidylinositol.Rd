@@ -48,10 +48,10 @@ PI has unique multi-diagnostic validation in Na+ mode and OR-based logic in nega
 \details{
 \strong{Diagnostic fragments by adduct:}
 \itemize{
-\item \strong{\link{M+NH4}+ Positive}: Diagnostic C6H12O9P+NH4 head group loss (-277.056272)
+\item \strong{M+NH4+ Positive}: Diagnostic C6H12O9P+NH4 head group loss (-277.056272)
 \strong{NO acyl chain iteration} - returns Level 1 (class-level) only
 Inositol head group is too labile to support acyl composition analysis
-\item \strong{\link{M+Na}+ Positive}: \strong{UNIQUE MULTI-FRAGMENT VALIDATION} (3-of-3 required!)
+\item \strong{M+Na+ Positive}: \strong{UNIQUE MULTI-FRAGMENT VALIDATION} (3-of-3 required!)
 \enumerate{
 \item -(C6H12O9P + Na) = -(259.021895 + 22.9892207)
 \item -(C6H12O9P + H) = -(260.02972)
@@ -59,7 +59,7 @@ Inositol head group is too labile to support acyl composition analysis
 ALL THREE must be present (AND logic) - most restrictive criterion
 Returns Level 1 (no acyl information available)
 }
-\item \strong{\link{M-H}- Negative}: \strong{OR-BASED DIAGNOSTIC LOGIC} (need >= 1 of 2)
+\item \strong{M-H- Negative}: \strong{OR-BASED DIAGNOSTIC LOGIC} (need >= 1 of 2)
 \enumerate{
 \item 241.01188 + ELECTRON (C6H10O8P- fixed m/z)
 \item 297.037548 + ELECTRON (C9H14O9P- fixed m/z)

@@ -48,13 +48,13 @@ PG has a glycerol-based head group (C3H8O6P) with distinctive neutral loss patte
 \details{
 \strong{Diagnostic fragments by adduct:}
 \itemize{
-\item \strong{\link{M+NH4}+ Positive}: Loss of PG head group (C3H8O6P+NH4, -189.040227)
+\item \strong{M+NH4+ Positive}: Loss of PG head group (C3H8O6P+NH4, -189.040227)
 \strong{BMP Discrimination}: averageIntensity < 30 required to exclude BMP
 Uses 2 neutral loss fragments, both must be found
-\item \strong{\link{M+Na}+ Positive}: Loss of C3H8O6P-Na (sum -194.0, no acyl composition possible)
+\item \strong{M+Na+ Positive}: Loss of C3H8O6P-Na (sum -194.0, no acyl composition possible)
 Returns Level 1 (class-level) annotation only
-\item \strong{\link{M-H}- Negative}: \strong{Fixed diagnostic} at m/z 152.995833871 (C3H6O5P-)
-Uses fatty acid product ions \link{RCOO}- (intensity: 1.0)
+\item \strong{M-H- Negative}: \strong{Fixed diagnostic} at m/z 152.995833871 (C3H6O5P-)
+Uses fatty acid product ions RCOO- (intensity: 1.0)
 Most permissive: diagnostic NOT required for return
 }
 

@@ -24,13 +24,13 @@ PBtOH level 2 annotation (acyl_count=2) or NULL if criteria not met
 Identifies PBtOH lipids using 2D iteration over acyl chains.
 }
 \details{
-\strong{Positive Mode \link{M+NH4}+:}
-Seeks diagnostic m/z = theoreticalMz - 17.026549 (\link{M+H-NH3}+, threshold 1).
+\strong{Positive Mode M+NH4+:}
+Seeks diagnostic m/z = theoreticalMz - 17.026549 (M+H-NH3+, threshold 1).
 2D iteration detecting acyl_cation - electron ions (intensity 0.1).
 Requires foundCount = 2.
 
-\strong{Negative Mode \link{M-H}-:}
-Seeks phosphate head m/z 153.03221938 (\link{C4H10O4P}-, threshold 1).
-2D iteration detecting \link{FA-H}- ions (intensity 5.0). Requires foundCount = 2.
+\strong{Negative Mode M-H-:}
+Seeks phosphate head m/z 153.03221938 (C4H10O4P-, threshold 1).
+2D iteration detecting FA-H- ions (intensity 5.0). Requires foundCount = 2.
 }
 \keyword{internal}

@@ -48,13 +48,13 @@ PS has amino acid-derived head group with distinctive neutral loss patterns.
 \details{
 \strong{Diagnostic fragments by adduct:}
 \itemize{
-\item \strong{\link{M+H}+ Positive}: Loss of PS head group (C3H8NO6P, -185.008927)
+\item \strong{M+H+ Positive}: Loss of PS head group (C3H8NO6P, -185.008927)
 Uses neutral losses from both acyl chains with and without H2O
-\item \strong{\link{M+Na}+ Positive}: Same head loss but cannot determine acyl composition
+\item \strong{M+Na+ Positive}: Same head loss but cannot determine acyl composition
 Returns Level 1 (class-level) annotation only
-\item \strong{\link{M-H}- Negative}: Loss of serine head (C3H5NO2, -87.032029)
+\item \strong{M-H- Negative}: Loss of serine head (C3H5NO2, -87.032029)
 \strong{Cross-class exclusion}: Rejects if m/z 63.008491 found (PG marker)
-Uses fatty acid product ions \link{RCOO}-
+Uses fatty acid product ions RCOO-
 }
 
 \strong{Annotation levels:}

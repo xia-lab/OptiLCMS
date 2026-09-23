@@ -45,13 +45,13 @@ LipidMolecule list or NULL
 Identifies PC lipids using diagnostic fragments and acyl chain analysis.
 }
 \details{
-\strong{Positive Mode (\link{M+H}+)}:
+\strong{Positive Mode (M+H+)}:
 \itemize{
 \item Seeks m/z 184.07332 (C5H15NO4P - choline head group)
 \item Excludes if PE header loss (M-141) is stronger than PC diagnostic
 }
 
-\strong{Positive Mode (\link{M+Na}+)}:
+\strong{Positive Mode (M+Na+)}:
 \itemize{
 \item Seeks characteristic losses for Na+ adducts
 }

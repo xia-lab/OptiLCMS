@@ -48,13 +48,13 @@ Complex multi-mode analysis with different thresholds per adduct type.
 \details{
 \strong{Diagnostic fragments by adduct:}
 \itemize{
-\item \strong{\link{M+H}+ Positive}: Diagnostic m/z 184.07332 (phosphocholine head), sphingoid iteration
-\item \strong{\link{M+Na}+ Positive}: THREE diagnostics with varying thresholds (threshold 20, 30, 1)
+\item \strong{M+H+ Positive}: Diagnostic m/z 184.07332 (phosphocholine head), sphingoid iteration
+\item \strong{M+Na+ Positive}: THREE diagnostics with varying thresholds (threshold 20, 30, 1)
 Requires diagnostic1 AND diagnostic2 (diagnostic3 optional)
-\item \strong{\link{M+FA-H}- / \link{M+Hac-H}- / \link{M+HCOO}- / \link{M+CH3COO}- Negative}:
-Two diagnostics: \link{M-CH3}- and fixed m/z 168.042572
+\item \strong{M+FA-H- / M+Hac-H- / M+HCOO- / M+CH3COO- Negative}:
+Two diagnostics: M-CH3- and fixed m/z 168.042572
 Both must be present
-\item \strong{\link{M+HCO3}- Negative}: Two different diagnostics with high thresholds
+\item \strong{M+HCO3- Negative}: Two different diagnostics with high thresholds
 Both must be present
 }
 

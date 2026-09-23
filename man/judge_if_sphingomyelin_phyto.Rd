@@ -48,12 +48,12 @@ and phyto-specific intensity thresholds.
 \details{
 \strong{Diagnostic fragments by adduct:}
 \itemize{
-\item \strong{\link{M+H}+ Positive}: Diagnostic m/z 184.07332 (phosphocholine)
+\item \strong{M+H+ Positive}: Diagnostic m/z 184.07332 (phosphocholine)
 Threshold: 30.0 (HIGHER than regular SM at 10.0)
 Indicates phytosphingoid's higher complexity
 Returns Level 2 (class/composition only)
-\item \strong{\link{M+FA-H}- / \link{M+Hac-H}- / \link{M+HCOO}- / \link{M+CH3COO}- Negative}:
-Two diagnostics: \link{M-CH3}- and fixed m/z 168.042572
+\item \strong{M+FA-H- / M+Hac-H- / M+HCOO- / M+CH3COO- Negative}:
+Two diagnostics: M-CH3- and fixed m/z 168.042572
 Threshold: 50.0 and 0.01 (same as SM)
 Returns Level 2
 }

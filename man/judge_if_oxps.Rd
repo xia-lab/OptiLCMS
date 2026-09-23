@@ -54,9 +54,9 @@ Lipid annotation object (if match found) or NULL
 Identifies oxidized phosphatidylserine via 3D iteration with serine-specific diagnostic.
 }
 \details{
-\strong{Negative Mode \link{M-H}-:}
+\strong{Negative Mode M-H-:}
 Required diagnostic: \strong{M - 87.032029} (C3H5NO2, serine loss) - threshold 1.0.
-Optional: \link{M-H-H2O}- (threshold 5.0)
+Optional: M-H-H2O- (threshold 5.0)
 
 \strong{3D Iteration:}
 For each (sn1_carbon, sn1_double, sn1_oxidized):

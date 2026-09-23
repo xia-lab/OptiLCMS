@@ -42,17 +42,17 @@ judge_if_pmeoh(
 PMeOH level 2 annotation (acyl_count=2) or NULL if criteria not met
 }
 \description{
-Detects PMeOH (phosphatidylmethanol) in positive \link{M+NH4}+ and negative \link{M-H}-
+Detects PMeOH (phosphatidylmethanol) in positive M+NH4+ and negative M-H-
 modes with 2D chain iteration and acyl cation/fatty acid detection.
 }
 \details{
-\strong{Positive Mode \link{M+NH4}+:}
-Soft diagnostic \link{M+H-NH3}+ (threshold 1.0). 2D iteration detecting acyl cation
+\strong{Positive Mode M+NH4+:}
+Soft diagnostic M+H-NH3+ (threshold 1.0). 2D iteration detecting acyl cation
 ions minus electron (intensity 0.1). Requires foundCount = 2.
 
-\strong{Negative Mode \link{M-H}-:}
-Seeks phosphate head m/z 110.98527 (\link{CH4O4P}-, threshold 1). Rejects if
+\strong{Negative Mode M-H-:}
+Seeks phosphate head m/z 110.98527 (CH4O4P-, threshold 1). Rejects if
 m/z 63.008491 present (threshold 30, EtherPE contamination filter). 2D iteration
-detecting \link{FA-H}- ions (intensity 5.0). Requires foundCount = 2.
+detecting FA-H- ions (intensity 5.0). Requires foundCount = 2.
 }
 \keyword{internal}

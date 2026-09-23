@@ -55,11 +55,11 @@ Identifies oxidized phosphatidylglycerol via 3D iteration with multiple diagnost
 and SM (sphingomyelin) interference rejection.
 }
 \details{
-\strong{Negative Mode \link{M-H}-:}
+\strong{Negative Mode M-H-:}
 Multiple diagnostics with different thresholds:
 \enumerate{
 \item \strong{Fixed m/z 152.995833871} (C3H6O5P-, PG head group) - threshold 0.01, optional
-\item \strong{\link{M-H-H2O}-} - threshold 5.0, \strong{required}
+\item \strong{M-H-H2O-} - threshold 5.0, \strong{required}
 \item \strong{M - 74.036779433} - threshold 50.0, must NOT exist (SM rejection)
 \item \strong{M - 60.021129369} - threshold 50.0, must NOT exist (SM rejection)
 }

@@ -60,12 +60,12 @@ Most complex acyl iteration (3D loop over sn1, sn2, sn3).
 \details{
 \strong{Diagnostic fragments by adduct:}
 \itemize{
-\item \strong{\link{M+NH4}+ Positive}: Loss of ammonia (-17.026549), threshold 1.0
+\item \strong{M+NH4+ Positive}: Loss of ammonia (-17.026549), threshold 1.0
 \strong{3D ITERATION}: sn1 × sn2 × (calculated sn3)
 Excludes "18:5" composition on any position
 Requires ALL 3 neutral loss fragments (foundCount == 3)
 Returns Level 3 annotation (complete acyl composition)
-\item \strong{\link{M+Na}+ Positive}:
+\item \strong{M+Na+ Positive}:
 Uses theoreticalMz directly or with H+ adjustment
 If first query fails (foundCount < 3), tries alternative diagnostic
 Requires ALL 3 neutral loss fragments

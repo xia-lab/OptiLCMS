@@ -54,14 +54,14 @@ Lipid annotation object (if match found) or NULL
 Identifies oxidized phosphatidylinositol via 3D iteration with fixed diagnostic fragments.
 }
 \details{
-\strong{Negative Mode \link{M-H}-:}
+\strong{Negative Mode M-H-:}
 Two fixed diagnostic fragments (at least one required):
 \enumerate{
 \item \strong{m/z 241.01188} (C6H10O8P-, PI head group) - threshold 0.01
 \item \strong{m/z 297.037548} (C9H14O9P-, extended PI head) - threshold 0.01
 }
 
-Optional: \link{M-H-H2O}- (threshold 5.0)
+Optional: M-H-H2O- (threshold 5.0)
 
 \strong{3D Iteration:}
 For each (sn1_carbon, sn1_double, sn1_oxidized):

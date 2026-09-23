@@ -48,12 +48,12 @@ PT is similar to PS but with threonine (C4) instead of serine (C3) head group.
 \details{
 \strong{Diagnostic fragments by adduct:}
 \itemize{
-\item \strong{\link{M+H}+ Positive}: Loss of PT head group (C4H10NO6P, -199.024576)
+\item \strong{M+H+ Positive}: Loss of PT head group (C4H10NO6P, -199.024576)
 Uses \strong{6 neutral loss fragments} (both acyl chains with/without H2O)
 Also uses head group diagnostic neutral loss (diagnostic_mz)
 Requires ≥2 of 6 fragments found
-\item \strong{\link{M-H}- Negative}: Loss of threonine head (C4H7NO2, calculated from atoms)
-Uses fatty acid product ions \link{RCOO}-
+\item \strong{M-H- Negative}: Loss of threonine head (C4H7NO2, calculated from atoms)
+Uses fatty acid product ions RCOO-
 Requires ≥1 of 2 fragments (more lenient than PS)
 }
 

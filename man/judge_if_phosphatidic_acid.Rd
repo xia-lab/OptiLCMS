@@ -45,7 +45,7 @@ Lipid annotation object (if match found) or NULL
 Identifies phosphatidic acid via diagnostic phosphate head group and fatty acid detection.
 }
 \details{
-\strong{Negative Mode \link{M-H}- only:}
+\strong{Negative Mode M-H- only:}
 Required diagnostic: \strong{m/z 152.99583} (C3H6O5P-, phosphate head group, threshold 1.0).
 
 \strong{2D Iteration:}
