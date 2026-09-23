@@ -1,6 +1,14 @@
 #include "sqlite_utilities.h"
+#include "sqlite_lipid_utilities.h"
+#include <algorithm>
+#include <cstring>
+#include <iomanip>
+#include <sstream>
 
-SqliteDriver::SqliteDriver(String dbase, string db_tb, int ion_mode = 0){
+// Lipid-specific helpers are implemented in sqlite_lipid_utilities.cpp
+
+
+SqliteDriver::SqliteDriver(String dbase, string db_tb, int ion_mode){
   database = dbase;
   db_table = db_tb;
 
@@ -20,6 +28,8 @@ int SqliteDriver::setDB_table (string db_tb){
 }
 
 int SqliteDriver::setEntireDatabase (int ion_mode){
+  ion_mode_current = ion_mode;
+  lipidomics_blob_schema = false;
   if(ion_mode == 0){
     all_DB  = {"HMDB_experimental_NegDB","HMDB_predicted_NegDB",
                "GNPS_NegDB","MoNA_NegDB","MINEs_NegDB","MSDIAL_NegDB",
@@ -46,6 +56,19 @@ int SqliteDriver::create_connection(String database_Path){
   if (sqlite3_open (database_Path.get_cstring(), &db) != SQLITE_OK) {
     fprintf(stderr, "Error opening database.\n");
     return 0;
+  }
+
+  lipidomics_blob_schema = detect_lipidomics_schema(db);
+  if (lipidomics_blob_schema) {
+    if (ion_mode_current == 1) {
+      all_DB = {"spectra_pos"};
+      all_expDB = {"spectra_pos"};
+      db_table = "spectra_pos";
+    } else {
+      all_DB = {"spectra_neg"};
+      all_expDB = {"spectra_neg"};
+      db_table = "spectra_neg";
+    }
   }
 
   return 1;
@@ -127,6 +150,44 @@ vector<int> SqliteDriver::extractIDs_with_mzRange(double min_mz, double max_mz){
 
 // This function is used to extract two columns table [ID + MS2Peak]
 int SqliteDriver::extractIDMS2_with_mzRange(double min_mz, double max_mz){
+  if (lipidomics_blob_schema) {
+    vector<int> res_ID;
+    vector<string> res_MS2Peaks;
+    string table = (ion_mode_current == 1) ? "spectra_pos" : "spectra_neg";
+    string q = "SELECT record_index, ref_spectra FROM " + table +
+      " WHERE precursor_mz > " + std::to_string(min_mz) +
+      " AND precursor_mz < " + std::to_string(max_mz);
+
+    bool done = false;
+    int res;
+    sqlite3_prepare(db, q.c_str(), -1, &stmt, NULL);
+    while(!done){
+      res  = sqlite3_step (stmt);
+      if(res == SQLITE_ROW){
+        int ID = sqlite3_column_int(stmt, 0);
+        const void* blob_ptr = sqlite3_column_blob(stmt, 1);
+        int blob_size = sqlite3_column_bytes(stmt, 1);
+        Rcpp::NumericMatrix spec = decode_lipid_blob_to_matrix(blob_ptr, blob_size);
+        if (spec.nrow() > 0) {
+          res_ID.push_back(ID);
+          res_MS2Peaks.push_back("");
+          MS2Peaks_mat_vec.push_back(spec);
+        }
+      } else if(res == SQLITE_DONE) {
+        done = true;
+        break;
+      } else {
+        cout << "Now something wierd happening [lipid_xx0152opas] --> " << res << endl;
+        sqlite3_finalize(stmt);
+        return 0;
+      }
+    }
+    sqlite3_finalize(stmt);
+    IDs_vec = res_ID;
+    MS2Peaks_vec = res_MS2Peaks;
+    return 1;
+  }
+
   // Initiate result vector
   vector<int> res_ID;
   vector<string> res_MS2Peaks;
@@ -168,6 +229,11 @@ int SqliteDriver::extractIDMS2_with_mzRange(double min_mz, double max_mz){
 
 // This function is used to extract two columns table [ID + MS2Peak] based on mz + rt
 int SqliteDriver::extractIDMS2_with_mzrtRange(double min_mz, double max_mz, double min_rt, double max_rt){
+  if (lipidomics_blob_schema) {
+    // Lipidomics schema does not provide RT in spectra tables; fallback to m/z-only extraction.
+    return extractIDMS2_with_mzRange(min_mz, max_mz);
+  }
+
   // Initiate result vector
   vector<int> res_ID;
   vector<string> res_MS2Peaks;
@@ -286,6 +352,54 @@ vector<int> SqliteDriver::extractIDs_with_mzRange_entireDB(double min_mz, double
 
 // This function is used to extract two columns table [ID + MS2Peak]
 int SqliteDriver::extractIDMS2_with_mzRange_entireDB(double min_mz, double max_mz){
+  if (lipidomics_blob_schema) {
+    vector<int> res_ID;
+    vector<string> res_MS2Peaks;
+
+    vector<string> table_vec;
+    if (db_table == "all") {
+      table_vec = all_DB;
+    } else {
+      table_vec = {db_table};
+    }
+
+    for (const string& table : table_vec) {
+      string q = "SELECT record_index, ref_spectra FROM " + table +
+        " WHERE precursor_mz > " + std::to_string(min_mz) +
+        " AND precursor_mz < " + std::to_string(max_mz);
+
+      bool done = false;
+      int res;
+      sqlite3_prepare(db, q.c_str(), -1, &stmt, NULL);
+      while(!done){
+        res  = sqlite3_step (stmt);
+        if(res == SQLITE_ROW){
+          int ID = sqlite3_column_int(stmt, 0);
+          const void* blob_ptr = sqlite3_column_blob(stmt, 1);
+          int blob_size = sqlite3_column_bytes(stmt, 1);
+          Rcpp::NumericMatrix spec = decode_lipid_blob_to_matrix(blob_ptr, blob_size);
+          if (spec.nrow() > 0) {
+            res_ID.push_back(ID);
+            res_MS2Peaks.push_back("");
+            MS2Peaks_mat_vec.push_back(spec);
+          }
+        } else if(res == SQLITE_DONE) {
+          done = true;
+          break;
+        } else {
+          cout << "Now something wierd happening [lipid_xx0289opas] --> " << res << endl;
+          sqlite3_finalize(stmt);
+          return 0;
+        }
+      }
+      sqlite3_finalize(stmt);
+    }
+
+    IDs_vec = res_ID;
+    MS2Peaks_vec = res_MS2Peaks;
+    return 1;
+  }
+
   // Initiate result vector
   vector<int> res_ID;
   vector<string> res_MS2Peaks;
@@ -368,6 +482,56 @@ int SqliteDriver::extractIDMS2_with_mzRange_entireDB(double min_mz, double max_m
 
 // This function is used to extract two columns table [ID + MS2Peak] from experimental db only
 int SqliteDriver::extractIDMS2_with_mzRange_expDB(double min_mz, double max_mz){
+  if (lipidomics_blob_schema) {
+    vector<int> res_ID;
+    vector<string> res_MS2Peaks;
+
+    int count = 0;
+    for (const string& table : all_expDB) {
+      string q = "SELECT record_index, ref_spectra FROM " + table +
+        " WHERE precursor_mz > " + std::to_string(min_mz) +
+        " AND precursor_mz < " + std::to_string(max_mz);
+
+      bool done = false;
+      int res;
+      sqlite3_prepare(db, q.c_str(), -1, &stmt, NULL);
+      while(!done){
+        if(count > 50){
+          done = true;
+          break;
+        }
+        res  = sqlite3_step (stmt);
+        if(res == SQLITE_ROW){
+          int ID = sqlite3_column_int(stmt, 0);
+          const void* blob_ptr = sqlite3_column_blob(stmt, 1);
+          int blob_size = sqlite3_column_bytes(stmt, 1);
+          Rcpp::NumericMatrix spec = decode_lipid_blob_to_matrix(blob_ptr, blob_size);
+          if (spec.nrow() > 0) {
+            res_ID.push_back(ID);
+            res_MS2Peaks.push_back("");
+            MS2Peaks_mat_vec.push_back(spec);
+            count++;
+          }
+        } else if(res == SQLITE_DONE) {
+          done = true;
+          break;
+        } else {
+          cout << "Now something wierd happening [lipid_xx0289exp] --> " << res << endl;
+          sqlite3_finalize(stmt);
+          return 0;
+        }
+      }
+      sqlite3_finalize(stmt);
+      if(count > 50){
+        break;
+      }
+    }
+
+    IDs_vec = res_ID;
+    MS2Peaks_vec = res_MS2Peaks;
+    return 1;
+  }
+
   // Initiate result vector
   vector<int> res_ID;
   vector<string> res_MS2Peaks;
@@ -1014,6 +1178,10 @@ vector<int> SqliteDriver::getIDsVec(){
 
 vector<string> SqliteDriver::getMS2PeaksVec(){
   return MS2Peaks_vec;
+}
+
+std::vector<Rcpp::NumericMatrix> SqliteDriver::getMS2PeaksMatVec(){
+  return MS2Peaks_mat_vec;
 }
 
 vector<string> SqliteDriver::getCMPDsVec(){

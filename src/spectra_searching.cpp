@@ -558,7 +558,7 @@ List SpectraSearching(List ConsensusRes,
           if(tmp_ix2 != -1){
             ints_ref[n] = reff_intss[tmp_ix2];
           }
-          if((ints_exp[n] != 0) & (ints_ref[n] != 0)) {
+          if((ints_exp[n] != 0) && (ints_ref[n] != 0)) {
             matched_count++;
           }
         }
@@ -604,7 +604,7 @@ List SpectraSearching(List ConsensusRes,
       //cout << this_idx << " <- this_idx | i -> " << i << endl;
       for(int k=0; k<neutral_loss_list.size();k++){
         NumericVector tmp_vec = score_list[k];
-        if((max(tmp_vec)<=10) | (tmp_vec.size() == 0)) {
+        if((max(tmp_vec)<=10) || (tmp_vec.size() == 0)) {
           // run neutral loss matching and return results into "neutral_loss_list[l];" (l == k)
           // cout << "RUN NL --> Now max score is --> " << max(tmp_vec) << endl;
           // cout << "tmp_vec --> " << tmp_vec << " | k--> " << k << endl;
@@ -772,7 +772,7 @@ List SpectraSearchingSingle(List ConsensusRes,
           if(tmp_ix2 != -1){
             ints_ref[n] = reff_intss[tmp_ix2];
           }
-          if((ints_exp[n] != 0) & (ints_ref[n] != 0)) {
+          if((ints_exp[n] != 0) && (ints_ref[n] != 0)) {
             matched_count++;
           }
         }
@@ -807,7 +807,7 @@ List SpectraSearchingSingle(List ConsensusRes,
       //cout << this_idx << " <- this_idx | i -> " << i << endl;
       for(int k=0; k<neutral_loss_list.size();k++){
         NumericVector tmp_vec = score_list[k];
-        if((max(tmp_vec)<=10) | (tmp_vec.size() == 0)) {
+        if((max(tmp_vec)<=10) || (tmp_vec.size() == 0)) {
           // run neutral loss matching and return results into "neutral_loss_list[l];" (l == k)
           // cout << "RUN NL --> Now max score is --> " << max(tmp_vec) << endl;
           // cout << "tmp_vec --> " << tmp_vec << " | k--> " << k << endl;
@@ -970,7 +970,7 @@ List SpectraSearchingBatch(List ConsensusRes,
           if(tmp_ix2 != -1){
             ints_ref[n] = reff_intss[tmp_ix2];
           }
-          if((ints_exp[n] != 0) & (ints_ref[n] != 0)) {
+          if((ints_exp[n] != 0) && (ints_ref[n] != 0)) {
             matched_count++;
           }
         }
@@ -1005,7 +1005,7 @@ List SpectraSearchingBatch(List ConsensusRes,
       //cout << this_idx << " <- this_idx | i -> " << i << endl;
       for(int k=0; k<neutral_loss_list.size();k++){
         NumericVector tmp_vec = score_list[k];
-        if((max(tmp_vec)<=10) | (tmp_vec.size() == 0)) {
+        if((max(tmp_vec)<=10) || (tmp_vec.size() == 0)) {
           // run neutral loss matching and return results into "neutral_loss_list[l];" (l == k)
           // cout << "RUN NL --> Now max score is --> " << max(tmp_vec) << endl;
           // cout << "tmp_vec --> " << tmp_vec << " | k--> " << k << endl;

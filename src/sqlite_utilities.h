@@ -14,6 +14,8 @@ class SqliteDriver {
 private:
   string database;
   string db_table;
+  int ion_mode_current = 0;
+  bool lipidomics_blob_schema = false;
   sqlite3* db;
   sqlite3_stmt* stmt;
   const unsigned char* MS2peaks;
@@ -23,6 +25,8 @@ private:
   vector<int> IDs_vec;
   vector<string> FMs_vec;
   vector<string> MS2Peaks_vec;
+  // For lipid blob schema we store decoded spectra as NumericMatrix objects
+  std::vector<Rcpp::NumericMatrix> MS2Peaks_mat_vec;
   vector<string> cmpds_vec;
   vector<string> smiles_vec;
   vector<string> inchikeys_vec;
@@ -87,6 +91,7 @@ public:
   vector<int> getIDsVec();
   
   vector<string> getMS2PeaksVec();
+  std::vector<Rcpp::NumericMatrix> getMS2PeaksMatVec();
   
   vector<string> getFMs();
   

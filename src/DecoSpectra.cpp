@@ -143,7 +143,7 @@ List DecoSpectra(int idx_pg,
       }
     }
     nr_rmList.push_back(nr_rm_vec);
-    if(is_true(all(nr_rm_vec)) | !is_peakVec[i]){
+    if(is_true(all(nr_rm_vec)) || !is_peakVec[i]){
       logVec.push_back(true);
     } else {
       logVec.push_back(false);
@@ -779,11 +779,11 @@ List DecoSpectra(int idx_pg,
     spec_cpl = NumericMatrix (0,0);
   }
   
-  if((spec_smp.ncol() == 0) & (spec_cpl.ncol() == 0)){
+  if((spec_smp.ncol() == 0) && (spec_cpl.ncol() == 0)){
     return spec_decon;
-  } else if((spec_smp.ncol() == 0) & (spec_cpl.ncol() != 0)){
+  } else if((spec_smp.ncol() == 0) && (spec_cpl.ncol() != 0)){
     spec = spec_cpl;
-  } else if((spec_smp.ncol() != 0) & (spec_cpl.ncol() == 0)){
+  } else if((spec_smp.ncol() != 0) && (spec_cpl.ncol() == 0)){
     spec = spec_smp;
   }
   

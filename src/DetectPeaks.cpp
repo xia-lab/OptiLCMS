@@ -196,7 +196,7 @@ List DetectPeaks(NumericMatrix eic, double peakwidth_min, int num_scantime, int 
           }
         }
         
-        if((lbVec[idx] == idx_apex_frroi[idx]) | (rbVec[idx] == idx_apex_frroi[idx])){
+        if((lbVec[idx] == idx_apex_frroi[idx]) || (rbVec[idx] == idx_apex_frroi[idx])){
           i_rm.push_back(idx);
           continue;
         }

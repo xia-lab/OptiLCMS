@@ -5,6 +5,30 @@ DecoSpectra <- function(idx_pg, spectra_eics, peak_ms1, num_scantime, idx_apex_e
     .Call(`_OptiLCMS_DecoSpectra`, idx_pg, spectra_eics, peak_ms1, num_scantime, idx_apex_eic, info_pk_ms1, peakwidth_min, snthr, is_dec_smoothed)
 }
 
+match_edge_cpp <- function(temp_fg, temp_mz_list, mz_tol_ppm, mz_tol_abs, temp_RT_list, temp_deltaRT) {
+    .Call(`_OptiLCMS_match_edge_cpp`, temp_fg, temp_mz_list, mz_tol_ppm, mz_tol_abs, temp_RT_list, temp_deltaRT)
+}
+
+Heterodimer_connection_core <- function(pgroup, ppm) {
+    .Call(`_OptiLCMS_Heterodimer_connection_core`, pgroup, ppm)
+}
+
+fast_calculate_formula <- function(formular1, transformulas, sign) {
+    .Call(`_OptiLCMS_fast_calculate_formula`, formular1, transformulas, sign)
+}
+
+propagate_heterodimer_core <- function(df_heterodimer, sf, propagation_category, node_mass, ppm_threshold) {
+    .Call(`_OptiLCMS_propagate_heterodimer_core`, df_heterodimer, sf, propagation_category, node_mass, ppm_threshold)
+}
+
+path_annotate <- function(ilp_nodes, solution_index, class_index, canu_met, ilp_edges_anno_met, dis_mat_met, g_annotation, canu_nonmet, ilp_edges_anno_nonmet, dis_mat_nonmet, g_anno_non) {
+    .Call(`_OptiLCMS_path_annotate`, ilp_nodes, solution_index, class_index, canu_met, ilp_edges_anno_met, dis_mat_met, g_annotation, canu_nonmet, ilp_edges_anno_nonmet, dis_mat_nonmet, g_anno_non)
+}
+
+path_annotate_met_only <- function(ilp_nodes, solution_index, class_index, canu_met, ilp_edges_anno_met, dis_mat_met, g_annotation) {
+    .Call(`_OptiLCMS_path_annotate_met_only`, ilp_nodes, solution_index, class_index, canu_met, ilp_edges_anno_met, dis_mat_met, g_annotation)
+}
+
 PerformDIA_main <- function(pm, swath, scanrt1, scanrt2, scanms1, scanms2, pkw_min, ppm2, sn, sm_span, filt) {
     .Call(`_OptiLCMS_PerformDIA_main`, pm, swath, scanrt1, scanrt2, scanms1, scanms2, pkw_min, ppm2, sn, sm_span, filt)
 }
@@ -87,8 +111,28 @@ PerformDDADeco <- function(pm, scant1, scant2, scanms1, scanms2, prec_mzs, win_s
     .Call(`_OptiLCMS_PerformDDADeco`, pm, scant1, scant2, scanms1, scanms2, prec_mzs, win_size, ppm1, ppm2, sn, filt, intensity_thresh, ionmode, db_path, decoOn, useEntropy, show_output, thread_num, file_nm)
 }
 
+PerformLipidDDADeco <- function(pm, scant1, scant2, scanms1, scanms2, prec_mzs, win_size, ppm1, ppm2, sn, filt, intensity_thresh, ionmode, db_path, decoOn, useEntropy, show_output, thread_num, file_nm) {
+    .Call(`_OptiLCMS_PerformLipidDDADeco`, pm, scant1, scant2, scanms1, scanms2, prec_mzs, win_size, ppm1, ppm2, sn, filt, intensity_thresh, ionmode, db_path, decoOn, useEntropy, show_output, thread_num, file_nm)
+}
+
 PerformDIADeco <- function(pm, swath, scant1, scant2, scanms1, scanms2, pkw_min, ppm2, sn, span, filt) {
     .Call(`_OptiLCMS_PerformDIADeco`, pm, swath, scant1, scant2, scanms1, scanms2, pkw_min, ppm2, sn, span, filt)
+}
+
+lipidomics_get_isotope_pattern_cpp <- function(db_path, lipid_index) {
+    .Call(`_OptiLCMS_lipidomics_get_isotope_pattern_cpp`, db_path, lipid_index)
+}
+
+lipidomics_db_search_precursor_cpp <- function(database_path, precursor_mz, ppm, max_candidates = 300L, max_per_table = 100L) {
+    .Call(`_OptiLCMS_lipidomics_db_search_precursor_cpp`, database_path, precursor_mz, ppm, max_candidates, max_per_table)
+}
+
+lipidomics_db_search_precursors_blob_cpp <- function(database_path, spectra_table, precursor_mzs, ppm, max_candidates = 300L, max_per_table = 100L) {
+    .Call(`_OptiLCMS_lipidomics_db_search_precursors_blob_cpp`, database_path, spectra_table, precursor_mzs, ppm, max_candidates, max_per_table)
+}
+
+lipids_build_dot_buffer_cpp <- function(mass1, intensity1, mass2, intensity2, bin, min_mz, max_mz, drive_reference = FALSE) {
+    .Call(`_OptiLCMS_lipids_build_dot_buffer_cpp`, mass1, intensity1, mass2, intensity2, bin, min_mz, max_mz, drive_reference)
 }
 
 R_mzClust_hclust_rcpp <- function(x, num, d, eppm, eabs) {

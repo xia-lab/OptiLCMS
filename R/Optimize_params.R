@@ -1846,6 +1846,8 @@ getMaxSettings <- function(testdata, model) {
   colnames(ret) <- c("response", paste("x", seq_len(ncol(testdata)), sep=""))
   return(ret)
 }
+
+#' @export
 expand.grid.subset  <- function(subset, sequence, dimensions) { 
   # generate a list, with sequence for each dimension
   vars <- list()

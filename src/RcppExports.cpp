@@ -30,6 +30,100 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
+// match_edge_cpp
+DataFrame match_edge_cpp(double temp_fg, NumericVector temp_mz_list, double mz_tol_ppm, double mz_tol_abs, NumericVector temp_RT_list, double temp_deltaRT);
+RcppExport SEXP _OptiLCMS_match_edge_cpp(SEXP temp_fgSEXP, SEXP temp_mz_listSEXP, SEXP mz_tol_ppmSEXP, SEXP mz_tol_absSEXP, SEXP temp_RT_listSEXP, SEXP temp_deltaRTSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< double >::type temp_fg(temp_fgSEXP);
+    Rcpp::traits::input_parameter< NumericVector >::type temp_mz_list(temp_mz_listSEXP);
+    Rcpp::traits::input_parameter< double >::type mz_tol_ppm(mz_tol_ppmSEXP);
+    Rcpp::traits::input_parameter< double >::type mz_tol_abs(mz_tol_absSEXP);
+    Rcpp::traits::input_parameter< NumericVector >::type temp_RT_list(temp_RT_listSEXP);
+    Rcpp::traits::input_parameter< double >::type temp_deltaRT(temp_deltaRTSEXP);
+    rcpp_result_gen = Rcpp::wrap(match_edge_cpp(temp_fg, temp_mz_list, mz_tol_ppm, mz_tol_abs, temp_RT_list, temp_deltaRT));
+    return rcpp_result_gen;
+END_RCPP
+}
+// Heterodimer_connection_core
+List Heterodimer_connection_core(List pgroup, double ppm);
+RcppExport SEXP _OptiLCMS_Heterodimer_connection_core(SEXP pgroupSEXP, SEXP ppmSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< List >::type pgroup(pgroupSEXP);
+    Rcpp::traits::input_parameter< double >::type ppm(ppmSEXP);
+    rcpp_result_gen = Rcpp::wrap(Heterodimer_connection_core(pgroup, ppm));
+    return rcpp_result_gen;
+END_RCPP
+}
+// fast_calculate_formula
+StringVector fast_calculate_formula(StringVector formular1, StringVector transformulas, int sign);
+RcppExport SEXP _OptiLCMS_fast_calculate_formula(SEXP formular1SEXP, SEXP transformulasSEXP, SEXP signSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< StringVector >::type formular1(formular1SEXP);
+    Rcpp::traits::input_parameter< StringVector >::type transformulas(transformulasSEXP);
+    Rcpp::traits::input_parameter< int >::type sign(signSEXP);
+    rcpp_result_gen = Rcpp::wrap(fast_calculate_formula(formular1, transformulas, sign));
+    return rcpp_result_gen;
+END_RCPP
+}
+// propagate_heterodimer_core
+List propagate_heterodimer_core(DataFrame df_heterodimer, List sf, StringVector propagation_category, NumericVector node_mass, double ppm_threshold);
+RcppExport SEXP _OptiLCMS_propagate_heterodimer_core(SEXP df_heterodimerSEXP, SEXP sfSEXP, SEXP propagation_categorySEXP, SEXP node_massSEXP, SEXP ppm_thresholdSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< DataFrame >::type df_heterodimer(df_heterodimerSEXP);
+    Rcpp::traits::input_parameter< List >::type sf(sfSEXP);
+    Rcpp::traits::input_parameter< StringVector >::type propagation_category(propagation_categorySEXP);
+    Rcpp::traits::input_parameter< NumericVector >::type node_mass(node_massSEXP);
+    Rcpp::traits::input_parameter< double >::type ppm_threshold(ppm_thresholdSEXP);
+    rcpp_result_gen = Rcpp::wrap(propagate_heterodimer_core(df_heterodimer, sf, propagation_category, node_mass, ppm_threshold));
+    return rcpp_result_gen;
+END_RCPP
+}
+// path_annotate
+StringVector path_annotate(DataFrame ilp_nodes, double solution_index, double class_index, DataFrame canu_met, DataFrame ilp_edges_anno_met, NumericMatrix dis_mat_met, List g_annotation, DataFrame canu_nonmet, DataFrame ilp_edges_anno_nonmet, NumericMatrix dis_mat_nonmet, List g_anno_non);
+RcppExport SEXP _OptiLCMS_path_annotate(SEXP ilp_nodesSEXP, SEXP solution_indexSEXP, SEXP class_indexSEXP, SEXP canu_metSEXP, SEXP ilp_edges_anno_metSEXP, SEXP dis_mat_metSEXP, SEXP g_annotationSEXP, SEXP canu_nonmetSEXP, SEXP ilp_edges_anno_nonmetSEXP, SEXP dis_mat_nonmetSEXP, SEXP g_anno_nonSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< DataFrame >::type ilp_nodes(ilp_nodesSEXP);
+    Rcpp::traits::input_parameter< double >::type solution_index(solution_indexSEXP);
+    Rcpp::traits::input_parameter< double >::type class_index(class_indexSEXP);
+    Rcpp::traits::input_parameter< DataFrame >::type canu_met(canu_metSEXP);
+    Rcpp::traits::input_parameter< DataFrame >::type ilp_edges_anno_met(ilp_edges_anno_metSEXP);
+    Rcpp::traits::input_parameter< NumericMatrix >::type dis_mat_met(dis_mat_metSEXP);
+    Rcpp::traits::input_parameter< List >::type g_annotation(g_annotationSEXP);
+    Rcpp::traits::input_parameter< DataFrame >::type canu_nonmet(canu_nonmetSEXP);
+    Rcpp::traits::input_parameter< DataFrame >::type ilp_edges_anno_nonmet(ilp_edges_anno_nonmetSEXP);
+    Rcpp::traits::input_parameter< NumericMatrix >::type dis_mat_nonmet(dis_mat_nonmetSEXP);
+    Rcpp::traits::input_parameter< List >::type g_anno_non(g_anno_nonSEXP);
+    rcpp_result_gen = Rcpp::wrap(path_annotate(ilp_nodes, solution_index, class_index, canu_met, ilp_edges_anno_met, dis_mat_met, g_annotation, canu_nonmet, ilp_edges_anno_nonmet, dis_mat_nonmet, g_anno_non));
+    return rcpp_result_gen;
+END_RCPP
+}
+// path_annotate_met_only
+StringVector path_annotate_met_only(DataFrame ilp_nodes, double solution_index, double class_index, DataFrame canu_met, DataFrame ilp_edges_anno_met, NumericMatrix dis_mat_met, List g_annotation);
+RcppExport SEXP _OptiLCMS_path_annotate_met_only(SEXP ilp_nodesSEXP, SEXP solution_indexSEXP, SEXP class_indexSEXP, SEXP canu_metSEXP, SEXP ilp_edges_anno_metSEXP, SEXP dis_mat_metSEXP, SEXP g_annotationSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< DataFrame >::type ilp_nodes(ilp_nodesSEXP);
+    Rcpp::traits::input_parameter< double >::type solution_index(solution_indexSEXP);
+    Rcpp::traits::input_parameter< double >::type class_index(class_indexSEXP);
+    Rcpp::traits::input_parameter< DataFrame >::type canu_met(canu_metSEXP);
+    Rcpp::traits::input_parameter< DataFrame >::type ilp_edges_anno_met(ilp_edges_anno_metSEXP);
+    Rcpp::traits::input_parameter< NumericMatrix >::type dis_mat_met(dis_mat_metSEXP);
+    Rcpp::traits::input_parameter< List >::type g_annotation(g_annotationSEXP);
+    rcpp_result_gen = Rcpp::wrap(path_annotate_met_only(ilp_nodes, solution_index, class_index, canu_met, ilp_edges_anno_met, dis_mat_met, g_annotation));
+    return rcpp_result_gen;
+END_RCPP
+}
 // PerformDIA_main
 List PerformDIA_main(List pm, NumericMatrix swath, NumericVector scanrt1, NumericVector scanrt2, List scanms1, List scanms2, double pkw_min, double ppm2, double sn, double sm_span, double filt);
 RcppExport SEXP _OptiLCMS_PerformDIA_main(SEXP pmSEXP, SEXP swathSEXP, SEXP scanrt1SEXP, SEXP scanrt2SEXP, SEXP scanms1SEXP, SEXP scanms2SEXP, SEXP pkw_minSEXP, SEXP ppm2SEXP, SEXP snSEXP, SEXP sm_spanSEXP, SEXP filtSEXP) {
@@ -150,6 +244,35 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
+// PerformLipidDDADeco
+List PerformLipidDDADeco(NumericMatrix pm, NumericVector scant1, NumericVector scant2, List scanms1, List scanms2, NumericMatrix prec_mzs, double win_size, double ppm1, double ppm2, double sn, double filt, double intensity_thresh, int ionmode, std::string db_path, bool decoOn, bool useEntropy, bool show_output, int thread_num, std::string file_nm);
+RcppExport SEXP _OptiLCMS_PerformLipidDDADeco(SEXP pmSEXP, SEXP scant1SEXP, SEXP scant2SEXP, SEXP scanms1SEXP, SEXP scanms2SEXP, SEXP prec_mzsSEXP, SEXP win_sizeSEXP, SEXP ppm1SEXP, SEXP ppm2SEXP, SEXP snSEXP, SEXP filtSEXP, SEXP intensity_threshSEXP, SEXP ionmodeSEXP, SEXP db_pathSEXP, SEXP decoOnSEXP, SEXP useEntropySEXP, SEXP show_outputSEXP, SEXP thread_numSEXP, SEXP file_nmSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< NumericMatrix >::type pm(pmSEXP);
+    Rcpp::traits::input_parameter< NumericVector >::type scant1(scant1SEXP);
+    Rcpp::traits::input_parameter< NumericVector >::type scant2(scant2SEXP);
+    Rcpp::traits::input_parameter< List >::type scanms1(scanms1SEXP);
+    Rcpp::traits::input_parameter< List >::type scanms2(scanms2SEXP);
+    Rcpp::traits::input_parameter< NumericMatrix >::type prec_mzs(prec_mzsSEXP);
+    Rcpp::traits::input_parameter< double >::type win_size(win_sizeSEXP);
+    Rcpp::traits::input_parameter< double >::type ppm1(ppm1SEXP);
+    Rcpp::traits::input_parameter< double >::type ppm2(ppm2SEXP);
+    Rcpp::traits::input_parameter< double >::type sn(snSEXP);
+    Rcpp::traits::input_parameter< double >::type filt(filtSEXP);
+    Rcpp::traits::input_parameter< double >::type intensity_thresh(intensity_threshSEXP);
+    Rcpp::traits::input_parameter< int >::type ionmode(ionmodeSEXP);
+    Rcpp::traits::input_parameter< std::string >::type db_path(db_pathSEXP);
+    Rcpp::traits::input_parameter< bool >::type decoOn(decoOnSEXP);
+    Rcpp::traits::input_parameter< bool >::type useEntropy(useEntropySEXP);
+    Rcpp::traits::input_parameter< bool >::type show_output(show_outputSEXP);
+    Rcpp::traits::input_parameter< int >::type thread_num(thread_numSEXP);
+    Rcpp::traits::input_parameter< std::string >::type file_nm(file_nmSEXP);
+    rcpp_result_gen = Rcpp::wrap(PerformLipidDDADeco(pm, scant1, scant2, scanms1, scanms2, prec_mzs, win_size, ppm1, ppm2, sn, filt, intensity_thresh, ionmode, db_path, decoOn, useEntropy, show_output, thread_num, file_nm));
+    return rcpp_result_gen;
+END_RCPP
+}
 // PerformDIADeco
 List PerformDIADeco(List pm, NumericMatrix swath, NumericVector scant1, NumericVector scant2, List scanms1, List scanms2, double pkw_min, double ppm2, double sn, double span, double filt);
 RcppExport SEXP _OptiLCMS_PerformDIADeco(SEXP pmSEXP, SEXP swathSEXP, SEXP scant1SEXP, SEXP scant2SEXP, SEXP scanms1SEXP, SEXP scanms2SEXP, SEXP pkw_minSEXP, SEXP ppm2SEXP, SEXP snSEXP, SEXP spanSEXP, SEXP filtSEXP) {
@@ -168,6 +291,67 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< double >::type span(spanSEXP);
     Rcpp::traits::input_parameter< double >::type filt(filtSEXP);
     rcpp_result_gen = Rcpp::wrap(PerformDIADeco(pm, swath, scant1, scant2, scanms1, scanms2, pkw_min, ppm2, sn, span, filt));
+    return rcpp_result_gen;
+END_RCPP
+}
+// lipidomics_get_isotope_pattern_cpp
+NumericMatrix lipidomics_get_isotope_pattern_cpp(std::string db_path, int lipid_index);
+RcppExport SEXP _OptiLCMS_lipidomics_get_isotope_pattern_cpp(SEXP db_pathSEXP, SEXP lipid_indexSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< std::string >::type db_path(db_pathSEXP);
+    Rcpp::traits::input_parameter< int >::type lipid_index(lipid_indexSEXP);
+    rcpp_result_gen = Rcpp::wrap(lipidomics_get_isotope_pattern_cpp(db_path, lipid_index));
+    return rcpp_result_gen;
+END_RCPP
+}
+// lipidomics_db_search_precursor_cpp
+DataFrame lipidomics_db_search_precursor_cpp(std::string database_path, double precursor_mz, double ppm, int max_candidates, int max_per_table);
+RcppExport SEXP _OptiLCMS_lipidomics_db_search_precursor_cpp(SEXP database_pathSEXP, SEXP precursor_mzSEXP, SEXP ppmSEXP, SEXP max_candidatesSEXP, SEXP max_per_tableSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< std::string >::type database_path(database_pathSEXP);
+    Rcpp::traits::input_parameter< double >::type precursor_mz(precursor_mzSEXP);
+    Rcpp::traits::input_parameter< double >::type ppm(ppmSEXP);
+    Rcpp::traits::input_parameter< int >::type max_candidates(max_candidatesSEXP);
+    Rcpp::traits::input_parameter< int >::type max_per_table(max_per_tableSEXP);
+    rcpp_result_gen = Rcpp::wrap(lipidomics_db_search_precursor_cpp(database_path, precursor_mz, ppm, max_candidates, max_per_table));
+    return rcpp_result_gen;
+END_RCPP
+}
+// lipidomics_db_search_precursors_blob_cpp
+List lipidomics_db_search_precursors_blob_cpp(std::string database_path, std::string spectra_table, NumericVector precursor_mzs, double ppm, int max_candidates, int max_per_table);
+RcppExport SEXP _OptiLCMS_lipidomics_db_search_precursors_blob_cpp(SEXP database_pathSEXP, SEXP spectra_tableSEXP, SEXP precursor_mzsSEXP, SEXP ppmSEXP, SEXP max_candidatesSEXP, SEXP max_per_tableSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< std::string >::type database_path(database_pathSEXP);
+    Rcpp::traits::input_parameter< std::string >::type spectra_table(spectra_tableSEXP);
+    Rcpp::traits::input_parameter< NumericVector >::type precursor_mzs(precursor_mzsSEXP);
+    Rcpp::traits::input_parameter< double >::type ppm(ppmSEXP);
+    Rcpp::traits::input_parameter< int >::type max_candidates(max_candidatesSEXP);
+    Rcpp::traits::input_parameter< int >::type max_per_table(max_per_tableSEXP);
+    rcpp_result_gen = Rcpp::wrap(lipidomics_db_search_precursors_blob_cpp(database_path, spectra_table, precursor_mzs, ppm, max_candidates, max_per_table));
+    return rcpp_result_gen;
+END_RCPP
+}
+// lipids_build_dot_buffer_cpp
+List lipids_build_dot_buffer_cpp(NumericVector mass1, NumericVector intensity1, NumericVector mass2, NumericVector intensity2, double bin, double min_mz, double max_mz, bool drive_reference);
+RcppExport SEXP _OptiLCMS_lipids_build_dot_buffer_cpp(SEXP mass1SEXP, SEXP intensity1SEXP, SEXP mass2SEXP, SEXP intensity2SEXP, SEXP binSEXP, SEXP min_mzSEXP, SEXP max_mzSEXP, SEXP drive_referenceSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< NumericVector >::type mass1(mass1SEXP);
+    Rcpp::traits::input_parameter< NumericVector >::type intensity1(intensity1SEXP);
+    Rcpp::traits::input_parameter< NumericVector >::type mass2(mass2SEXP);
+    Rcpp::traits::input_parameter< NumericVector >::type intensity2(intensity2SEXP);
+    Rcpp::traits::input_parameter< double >::type bin(binSEXP);
+    Rcpp::traits::input_parameter< double >::type min_mz(min_mzSEXP);
+    Rcpp::traits::input_parameter< double >::type max_mz(max_mzSEXP);
+    Rcpp::traits::input_parameter< bool >::type drive_reference(drive_referenceSEXP);
+    rcpp_result_gen = Rcpp::wrap(lipids_build_dot_buffer_cpp(mass1, intensity1, mass2, intensity2, bin, min_mz, max_mz, drive_reference));
     return rcpp_result_gen;
 END_RCPP
 }
@@ -401,6 +585,7 @@ BEGIN_RCPP
 END_RCPP
 }
 
+RcppExport SEXP R_set_obiwarp(SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP);
 RcppExport SEXP binYonX(SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP);
 RcppExport SEXP binYonX_multi(SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP);
 RcppExport SEXP breaks_on_nBins(SEXP, SEXP, SEXP, SEXP);
@@ -411,17 +596,27 @@ RcppExport SEXP getMZ(SEXP, SEXP, SEXP, SEXP, SEXP, SEXP);
 RcppExport SEXP impute_with_linear_interpolation(SEXP, SEXP);
 RcppExport SEXP impute_with_linear_interpolation_base(SEXP, SEXP, SEXP);
 RcppExport SEXP massifquant(SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP);
-RcppExport SEXP R_set_obiwarp(SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP);
 
 static const R_CallMethodDef CallEntries[] = {
     {"_OptiLCMS_DecoSpectra", (DL_FUNC) &_OptiLCMS_DecoSpectra, 9},
+    {"_OptiLCMS_match_edge_cpp", (DL_FUNC) &_OptiLCMS_match_edge_cpp, 6},
+    {"_OptiLCMS_Heterodimer_connection_core", (DL_FUNC) &_OptiLCMS_Heterodimer_connection_core, 2},
+    {"_OptiLCMS_fast_calculate_formula", (DL_FUNC) &_OptiLCMS_fast_calculate_formula, 3},
+    {"_OptiLCMS_propagate_heterodimer_core", (DL_FUNC) &_OptiLCMS_propagate_heterodimer_core, 5},
+    {"_OptiLCMS_path_annotate", (DL_FUNC) &_OptiLCMS_path_annotate, 11},
+    {"_OptiLCMS_path_annotate_met_only", (DL_FUNC) &_OptiLCMS_path_annotate_met_only, 7},
     {"_OptiLCMS_PerformDIA_main", (DL_FUNC) &_OptiLCMS_PerformDIA_main, 11},
     {"_OptiLCMS_dia_feature_preparation", (DL_FUNC) &_OptiLCMS_dia_feature_preparation, 3},
     {"_OptiLCMS_SpectraDeconvCore", (DL_FUNC) &_OptiLCMS_SpectraDeconvCore, 9},
     {"_OptiLCMS_r_calculate_unweighted_entropy_similarity", (DL_FUNC) &_OptiLCMS_r_calculate_unweighted_entropy_similarity, 9},
     {"_OptiLCMS_r_calculate_entropy_similarity", (DL_FUNC) &_OptiLCMS_r_calculate_entropy_similarity, 9},
     {"_OptiLCMS_PerformDDADeco", (DL_FUNC) &_OptiLCMS_PerformDDADeco, 19},
+    {"_OptiLCMS_PerformLipidDDADeco", (DL_FUNC) &_OptiLCMS_PerformLipidDDADeco, 19},
     {"_OptiLCMS_PerformDIADeco", (DL_FUNC) &_OptiLCMS_PerformDIADeco, 11},
+    {"_OptiLCMS_lipidomics_get_isotope_pattern_cpp", (DL_FUNC) &_OptiLCMS_lipidomics_get_isotope_pattern_cpp, 2},
+    {"_OptiLCMS_lipidomics_db_search_precursor_cpp", (DL_FUNC) &_OptiLCMS_lipidomics_db_search_precursor_cpp, 5},
+    {"_OptiLCMS_lipidomics_db_search_precursors_blob_cpp", (DL_FUNC) &_OptiLCMS_lipidomics_db_search_precursors_blob_cpp, 6},
+    {"_OptiLCMS_lipids_build_dot_buffer_cpp", (DL_FUNC) &_OptiLCMS_lipids_build_dot_buffer_cpp, 8},
     {"_OptiLCMS_R_mzClust_hclust_rcpp", (DL_FUNC) &_OptiLCMS_R_mzClust_hclust_rcpp, 5},
     {"_OptiLCMS_SpectraSearching", (DL_FUNC) &_OptiLCMS_SpectraSearching, 15},
     {"_OptiLCMS_SpectraSearchingSingle", (DL_FUNC) &_OptiLCMS_SpectraSearchingSingle, 11},
@@ -436,6 +631,7 @@ static const R_CallMethodDef CallEntries[] = {
     {"_OptiLCMS_RectUnique", (DL_FUNC) &_OptiLCMS_RectUnique, 6},
     {"_OptiLCMS_continuousPtsAboveThreshold", (DL_FUNC) &_OptiLCMS_continuousPtsAboveThreshold, 5},
     {"_OptiLCMS_continuousPtsAboveThresholdIdx", (DL_FUNC) &_OptiLCMS_continuousPtsAboveThresholdIdx, 5},
+    {"R_set_obiwarp",                         (DL_FUNC) &R_set_obiwarp,                         18},
     {"binYonX",                               (DL_FUNC) &binYonX,                               14},
     {"binYonX_multi",                         (DL_FUNC) &binYonX_multi,                         14},
     {"breaks_on_nBins",                       (DL_FUNC) &breaks_on_nBins,                        4},
@@ -446,7 +642,6 @@ static const R_CallMethodDef CallEntries[] = {
     {"impute_with_linear_interpolation",      (DL_FUNC) &impute_with_linear_interpolation,       2},
     {"impute_with_linear_interpolation_base", (DL_FUNC) &impute_with_linear_interpolation_base,  3},
     {"massifquant",                           (DL_FUNC) &massifquant,                           14},
-    {"R_set_obiwarp",                         (DL_FUNC) &R_set_obiwarp,                         18},
     {NULL, NULL, 0}
 };
 

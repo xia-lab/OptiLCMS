@@ -6,7 +6,7 @@ using namespace Rcpp;
 using namespace std;
 
 // Names of all rules
-vector<string> static getBio_rules_name() {
+inline vector<string> getBio_rules_name() {
   const vector<string> bio_rules_name = { // 18
     "O-NH", "NH3-O", "H2", "CH2", "NH", 
     "O", "NH3", "H2O", "CO", "C2H4", 
@@ -16,7 +16,7 @@ vector<string> static getBio_rules_name() {
   return bio_rules_name;
 }
 
-vector<string> static getAdc_rules_name() {
+inline vector<string> getAdc_rules_name() {
   const vector<string> adc_rules_name = { // 22
     "Na-H", "K-H", "HCOOH", "HCOONa", 
     "HCOOK", "C2H4O2", "CH3COONa", "CH3COOK",  "H2SO4", 
@@ -27,14 +27,14 @@ vector<string> static getAdc_rules_name() {
   return adc_rules_name;
 }
 
-vector<string> static getFrg_rules_name() {
+inline vector<string> getFrg_rules_name() {
   const vector<string> frg_rules_name = { // 5
     "CO2", "CH20", "H20", "NH3", "H"
   };
   return frg_rules_name;
 }
 
-vector<string> static getAll_rules_name() {
+inline vector<string> getAll_rules_name() {
   const vector<string> all_rules_name = { // 45
     "O-NH", "NH3-O", "H2", "CH2", "NH",
     "O", "NH3", "H2O", "CO", "C2H4",
@@ -51,7 +51,7 @@ vector<string> static getAll_rules_name() {
 }
 
 // formula vector of all rules
-static vector<int> * getBio_formulas(){
+inline vector<int> * getBio_formulas(){
   static vector<int> bio_formulas[18] = {
     // C H O N P S Na K
     {0,-1,1,-1,0,0,0,0}, {0,3,-1,1,0,0,0,0}, {0,2,0,0,0,0,0,0}, {1,2,0,0,0,0,0,0}, {0,1,0,1,0,0,0,0}, 
@@ -62,7 +62,7 @@ static vector<int> * getBio_formulas(){
   return bio_formulas;
 }
 
-static vector<int> * getAdc_formulas(){
+inline vector<int> * getAdc_formulas(){
   static vector<int> adc_formulas[22] = {
     // C H O N P S Na K
     {0,-1,0,0,0,0,1,0}, {0,-1,0,0,0,0,0,1}, {1,2,2,0,0,0,0,0}, {1,1,2,0,0,0,1,0}, 
@@ -74,7 +74,7 @@ static vector<int> * getAdc_formulas(){
   return adc_formulas;
 }
 
-static vector<int> * getFrg_formulas(){
+inline vector<int> * getFrg_formulas(){
   static vector<int> frg_formulas[5] = {
     // C H O N P S Na K
     {1,0,2,0,0,0,0,0}, {1,2,1,0,0,0,0,0}, {0,2,1,0,0,0,0,0}, {0,3,0,1,0,0,0,0}, {1,0,0,0,0,0,0,0}
@@ -82,7 +82,7 @@ static vector<int> * getFrg_formulas(){
   return frg_formulas;
 }
 
-static vector<int> * getAll_formulas(){
+inline vector<int> * getAll_formulas(){
   static vector<int> all_formulas[45] = {
     // C H O N P S Na K
     {0,-1,1,-1,0,0,0,0}, {0,3,-1,1,0,0,0,0}, {0,2,0,0,0,0,0,0}, {1,2,0,0,0,0,0,0}, {0,1,0,1,0,0,0,0}, 
@@ -100,7 +100,7 @@ static vector<int> * getAll_formulas(){
 }
 
 // mass different of all rules
-vector<double> static getBio_ms_change (){
+inline vector<double> getBio_ms_change (){
   const vector<double> bio_ms_change {
     0.9840, 1.0316, 2.0157, 14.0157, 15.0109,
     15.9949, 17.0265, 18.0106, 27.9949, 28.0313, 
@@ -110,7 +110,7 @@ vector<double> static getBio_ms_change (){
   return bio_ms_change;
 }
 
-vector<double> static getAdc_ms_change (){
+inline vector<double> getAdc_ms_change (){
   const vector<double> adc_ms_change = {
     21.9819, 37.9559, 46.0055, 67.9874, 83.9614, 
     60.0211, 82.0031, 97.9770, 97.9674, 62.9956, 
@@ -122,14 +122,14 @@ vector<double> static getAdc_ms_change (){
   return adc_ms_change;
 }
 
-vector<double> static getFrg_ms_change (){
+inline vector<double> getFrg_ms_change (){
   const vector<double> frg_ms_change = {
     43.9898, 30.0106, 18.0106, 17.0265, 1.0078
   };
   return frg_ms_change;
 }
 
-vector<double> static getAll_ms_change (){
+inline vector<double> getAll_ms_change (){
   const vector<double> all_ms_change = {
     0.9840, 1.0316, 2.0157, 14.0157, 15.0109,
     15.9949, 17.0265, 18.0106, 27.9949, 28.0313, 
@@ -146,7 +146,7 @@ vector<double> static getAll_ms_change (){
 }
 
 // change direction of all rules
-vector<int> static getBio_dir_change(){
+inline vector<int> getBio_dir_change(){
   const vector<int> bio_dir_change = { // 0, add + minus; 1, add only; -1, minus only
     0,0,0,0,0,
     0,0,0,0,0,
@@ -155,7 +155,7 @@ vector<int> static getBio_dir_change(){
   return bio_dir_change;
 }
 
-vector<int> static getAdc_dir_change(){
+inline vector<int> getAdc_dir_change(){
   const vector<int> adc_dir_change = {
     1,1,1,1,1,
     1,1,1,1,1,
@@ -165,14 +165,14 @@ vector<int> static getAdc_dir_change(){
   return adc_dir_change;
 }
 
-vector<int> static getFrg_dir_change(){
+inline vector<int> getFrg_dir_change(){
   const vector<int> frg_dir_change = {
     -1, -1, -1, -1, -1
   };
   return frg_dir_change;
 }
 
-vector<int> static getAll_dir_change(){
+inline vector<int> getAll_dir_change(){
   const vector<int> all_dir_change = {
     0,0,0,0,0,
     0,0,0,0,0,

@@ -1,5 +1,6 @@
 #include <RcppArmadillo.h>
 #include "PerformDDAProcess.h"
+#include "PerformLipidsDDAProcess.h"
 #include "PerformDIAProcess.h"
 
 using namespace Rcpp;
@@ -45,6 +46,46 @@ List PerformDDADeco(NumericMatrix pm,
                               file_nm);
   List res = res0;//[1];
   
+  return res;
+}
+
+// [[Rcpp::export]]
+List PerformLipidDDADeco(NumericMatrix pm,
+                         NumericVector scant1,
+                         NumericVector scant2,
+                         List scanms1,
+                         List scanms2,
+                         NumericMatrix prec_mzs,
+                         double win_size,
+                         double ppm1,
+                         double ppm2,
+                         double sn,
+                         double filt,
+                         double intensity_thresh,
+                         int ionmode,
+                         std::string db_path,
+                         bool decoOn,
+                         bool useEntropy,
+                         bool show_output,
+                         int thread_num,
+                         std::string file_nm){
+
+  List res0 = PerformLipidDDA_main(pm,
+                                   scant1, scant2,
+                                   scanms1, scanms2,
+                                   prec_mzs, win_size,
+                                   ppm1, ppm2,
+                                   sn, filt,
+                                   intensity_thresh,
+                                   ionmode,
+                                   db_path,
+                                   decoOn,
+                                   useEntropy,
+                                   show_output,
+                                   thread_num,
+                                   file_nm);
+  List res = res0;
+
   return res;
 }
 

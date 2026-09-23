@@ -11,6 +11,17 @@
 
 # Internal mSet Class for OptiLCMS
 # Internal mSet Class for OptiLCMS
+peak_info <- setClass(
+  "peak_info",
+  slots = c(
+    id = "numeric",
+    Rt = "list",
+    Mz = "list",
+    intensity_list = "list",
+    rtime_list = "list"
+  )
+)
+
 setClass("mSet",
          representation = representation(rawfiles = "character",
                                          rawOnDisk = "OnDiskMSnExp",

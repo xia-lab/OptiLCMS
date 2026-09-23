@@ -61,7 +61,7 @@ private:
   
   int formatPeakMatrix() {
     // this function is used to format peak_matrix as a matrix with four columns
-    if((peak_matrix.nrow() == 1) & (peak_matrix.ncol() == 1)){
+    if((peak_matrix.nrow() == 1) && (peak_matrix.ncol() == 1)){
       return 0;
     }
     NumericVector RT_min, RT_max;
@@ -110,7 +110,7 @@ private:
     if(showOutput){
       cout << scan_ms1.size()  << " MS1 scans and " << scan_ms2.size() << " MS2 scans have been included."<< endl;
     }
-    if((peak_matrix.ncol() > 1) & (peak_matrix.nrow() >= 1)){
+    if((peak_matrix.ncol() > 1) && (peak_matrix.nrow() >= 1)){
       // there are some targets for detection
       double tf_rt_min, tf_rt_max, tf_mz_min, tf_mz_max;
       vector<int> prec_idxs;
@@ -123,10 +123,10 @@ private:
         
         NumericVector allMzs_vals = precursors_mzs(_,0);
         for(int j = 0; j < allMzs_vals.size(); j++){
-          if((allMzs_vals[j] < tf_mz_min) | (allMzs_vals[j] > tf_mz_max)){
+          if((allMzs_vals[j] < tf_mz_min) || (allMzs_vals[j] > tf_mz_max)){
             continue;
           }
-          if((scanrt_ms2[j] > tf_rt_min) & (scanrt_ms2[j] < tf_rt_max)){
+          if((scanrt_ms2[j] > tf_rt_min) && (scanrt_ms2[j] < tf_rt_max)){
             prec_idxs.push_back(j);
           }
         }
@@ -195,7 +195,7 @@ private:
           NumericMatrix tmpM = scan_ms1[j];
           tmpV = tmpM(_,0);
           for(int t = 0; t < tmpV.size(); t++){
-            if ((tmpV[t] > min_mz) & (tmpV[t] < max_mz)){
+            if ((tmpV[t] > min_mz) && (tmpV[t] < max_mz)){
               rts.push_back(scanrt_ms1[j]);
               break;
             }
@@ -288,10 +288,10 @@ private:
         prec_idxs.clear();
         NumericVector allMzs_vals = precursors_mzs(_,0);
         for(int j = 0; j < allMzs_vals.size(); j++){
-          if((allMzs_vals[j] < tf_mz_min) | (allMzs_vals[j] > tf_mz_max)){
+          if((allMzs_vals[j] < tf_mz_min) || (allMzs_vals[j] > tf_mz_max)){
             continue;
           }
-          if((scanrt_ms2[j] > tf_rt_min) & (scanrt_ms2[j] < tf_rt_max)){
+          if((scanrt_ms2[j] > tf_rt_min) && (scanrt_ms2[j] < tf_rt_max)){
             prec_idxs.push_back(j);
           }
         }
@@ -345,7 +345,7 @@ private:
         max_mz = max(mzs4SmPeak);
         vector<double> rts4thisPeak;
         for(int j = 0; j < allMzs0.size(); j++){
-          if((allMzs0[j] >= min_mz) & (allMzs0[j] <= max_mz)){
+          if((allMzs0[j] >= min_mz) && (allMzs0[j] <= max_mz)){
             rts4thisPeak.push_back(scanrt_ms2[j]);
           }
         }
@@ -437,10 +437,10 @@ private:
         prec_idxs.clear();
         NumericVector allMzs_vals = precursors_mzs(_,0);
         for(int j = 0; j < allMzs_vals.size(); j++){
-          if((allMzs_vals[j] < tf_mz_min) | (allMzs_vals[j] > tf_mz_max)){
+          if((allMzs_vals[j] < tf_mz_min) || (allMzs_vals[j] > tf_mz_max)){
             continue;
           }
-          if((scanrt_ms2[j] > tf_rt_min) & (scanrt_ms2[j] < tf_rt_max)){
+          if((scanrt_ms2[j] > tf_rt_min) && (scanrt_ms2[j] < tf_rt_max)){
             prec_idxs.push_back(j);
           }
         }
@@ -493,7 +493,7 @@ private:
         int idx_near = which_min(resRt);
         // idx_near: is the index of the nearest MS1 scan
         // cout << idx_near << " <-- idx_near" << endl;
-        if((scanrt_ms1[idx_near] < rt_range_min) | (scanrt_ms1[idx_near] > rt_range_max)){
+        if((scanrt_ms1[idx_near] < rt_range_min) || (scanrt_ms1[idx_near] > rt_range_max)){
           // cout << "reaching here --> rt_range_min: " << rt_range_min << " | rt_range_max: " << rt_range_max << "|| -> " << scanrt_ms1[idx_near] << endl;
           CleanGroupIdxVec.push_back(i);
           continue;
@@ -501,8 +501,8 @@ private:
         NumericMatrix thisMS1Scan = scan_ms1[idx_near];
         bool isClean = true;
         for(int j = 0; j < thisMS1Scan.nrow(); j++){
-          if((abs(thisMS1Scan(j,0) - thisMz) < isolation_window_size/2.0) & 
-             (thisMS1Scan(j,0) > mz_range_max | thisMS1Scan(j,0) < mz_range_min) &
+           if((abs(thisMS1Scan(j,0) - thisMz) < isolation_window_size/2.0) &&
+             (thisMS1Scan(j,0) > mz_range_max || thisMS1Scan(j,0) < mz_range_min) &&
              (thisMS1Scan(j,1) > inclusion_inten_thre)){
             isClean = false;
             break;
@@ -510,11 +510,11 @@ private:
         }
         if(idx_near>0){
           int idx_near1 = idx_near - 1;
-          if((scanrt_ms1[idx_near1] > rt_range_min) & (scanrt_ms1[idx_near1] < rt_range_max)){
+          if((scanrt_ms1[idx_near1] > rt_range_min) && (scanrt_ms1[idx_near1] < rt_range_max)){
             NumericMatrix thisMS1Scan = scan_ms1[idx_near1];
             for(int j = 0; j < thisMS1Scan.nrow(); j++){
-              if((abs(thisMS1Scan(j,0) - thisMz) < isolation_window_size/2.0) & 
-                 (thisMS1Scan(j,0) > mz_range_max | thisMS1Scan(j,0) < mz_range_min) &
+                if((abs(thisMS1Scan(j,0) - thisMz) < isolation_window_size/2.0) &&
+                  (thisMS1Scan(j,0) > mz_range_max || thisMS1Scan(j,0) < mz_range_min) &&
                  (thisMS1Scan(j,1) > inclusion_inten_thre)){
                 isClean = false;
                 break;
@@ -524,11 +524,11 @@ private:
         }
         if(idx_near < scan_ms1.size()-1){
           int idx_near2 = idx_near + 1;
-          if((scanrt_ms1[idx_near2] > rt_range_min) & (scanrt_ms1[idx_near2] < rt_range_max)){
+          if((scanrt_ms1[idx_near2] > rt_range_min) && (scanrt_ms1[idx_near2] < rt_range_max)){
             NumericMatrix thisMS1Scan = scan_ms1[idx_near2];
             for(int j = 0; j < thisMS1Scan.nrow(); j++){
-              if((abs(thisMS1Scan(j,0) - thisMz) < isolation_window_size/2.0) & 
-                 (thisMS1Scan(j,0) > mz_range_max | thisMS1Scan(j,0) < mz_range_min) &
+                if((abs(thisMS1Scan(j,0) - thisMz) < isolation_window_size/2.0) &&
+                  (thisMS1Scan(j,0) > mz_range_max || thisMS1Scan(j,0) < mz_range_min) &&
                  (thisMS1Scan(j,1) > inclusion_inten_thre)){
                 isClean = false;
                 break;
@@ -554,7 +554,7 @@ private:
         int pre_scan_idx = min(thisGrp) - 1;
         int nxt_scan_idx = max(thisGrp) + 1;
         bool isClean = true;
-        if((pre_scan_idx > -1) & (nxt_scan_idx < prec_mzs_vals.size())){
+        if((pre_scan_idx > -1) && (nxt_scan_idx < prec_mzs_vals.size())){
           if(abs(prec_mzs_vals[pre_scan_idx] - prec_mzs_vals[ths_scan_idx]) < isolation_window_size/2.0){
             isClean = false;
           }
@@ -626,8 +626,8 @@ private:
         
         NumericMatrix thisMS1Scan = scan_ms1[idx_near];
         for(int j = 0; j < thisMS1Scan.nrow(); j++){
-          if((abs(thisMS1Scan(j,0) - thisMz) < isolation_window_size/2.0) & 
-             (thisMS1Scan(j,0) > mz_range_max | thisMS1Scan(j,0) < mz_range_min) &
+           if((abs(thisMS1Scan(j,0) - thisMz) < isolation_window_size/2.0) &&
+             (thisMS1Scan(j,0) > mz_range_max || thisMS1Scan(j,0) < mz_range_min) &&
              (thisMS1Scan(j,1) > inclusion_inten_thre)){
             mzs.push_back(thisMS1Scan(j,0));
             rts.push_back(scanrt_ms1[idx_near]);
@@ -647,7 +647,7 @@ private:
               for(int ii : idxs_iso){
                 double tmpInts = thisMS1Scan(ii,1);
                 int numC = floor(thisMS1Scan(ii,0)/12); // maximum possible C number
-                if((thisMS1Scan(j,1)/tmpInts > C13_12_ratio*0.95) & (thisMS1Scan(j,1)/tmpInts < C13_12_ratio*numC*1.05)){ //allow a variance of 5% at most
+                if((thisMS1Scan(j,1)/tmpInts > C13_12_ratio*0.95) && (thisMS1Scan(j,1)/tmpInts < C13_12_ratio*numC*1.05)){ //allow a variance of 5% at most
                   //cout <<kcount << " | " << idx << "<- group idx || REaching here found orphan isotopes --> truly FOUND [M+0] <-- \n";
                   bl_final = true;
                 }
@@ -663,11 +663,11 @@ private:
         }
         if(idx_near>0){
           int idx_near1 = idx_near - 1;
-          if((scanrt_ms1[idx_near1] > rt_range_min) & (scanrt_ms1[idx_near1] < rt_range_max)){
+          if((scanrt_ms1[idx_near1] > rt_range_min) && (scanrt_ms1[idx_near1] < rt_range_max)){
             NumericMatrix thisMS1Scan = scan_ms1[idx_near1];
             for(int j = 0; j < thisMS1Scan.nrow(); j++){
-              if((abs(thisMS1Scan(j,0) - thisMz) < isolation_window_size/2.0) & 
-                 (thisMS1Scan(j,0) > mz_range_max | thisMS1Scan(j,0) < mz_range_min) &
+                if((abs(thisMS1Scan(j,0) - thisMz) < isolation_window_size/2.0) &&
+                  (thisMS1Scan(j,0) > mz_range_max || thisMS1Scan(j,0) < mz_range_min) &&
                  (thisMS1Scan(j,1) > inclusion_inten_thre)){
                 
                 //cout << "REaching here -->2\n";
@@ -687,7 +687,7 @@ private:
                   for(int ii : idxs_iso){
                     double tmpInts = thisMS1Scan(ii,1);
                     int numC = floor(thisMS1Scan(ii,0)/12); // maximum possible C number
-                    if((thisMS1Scan(j,1)/tmpInts > C13_12_ratio*0.95) & (thisMS1Scan(j,1)/tmpInts < C13_12_ratio*numC*1.05)){ //allow a variance of 5% at most
+                    if((thisMS1Scan(j,1)/tmpInts > C13_12_ratio*0.95) && (thisMS1Scan(j,1)/tmpInts < C13_12_ratio*numC*1.05)){ //allow a variance of 5% at most
                       // cout <<kcount << " | " << idx << "<- idx || REaching here found orphan isotopes --> truly FOUND [M+0] <-- \n";
                       bl_final = true;
                     }
@@ -706,11 +706,11 @@ private:
         }
         if(idx_near < scan_ms1.size()-1){
           int idx_near2 = idx_near + 1;
-          if((scanrt_ms1[idx_near2] > rt_range_min) & (scanrt_ms1[idx_near2] < rt_range_max)){
+          if((scanrt_ms1[idx_near2] > rt_range_min) && (scanrt_ms1[idx_near2] < rt_range_max)){
             NumericMatrix thisMS1Scan = scan_ms1[idx_near2];
             for(int j = 0; j < thisMS1Scan.nrow(); j++){
-              if((abs(thisMS1Scan(j,0) - thisMz) < isolation_window_size/2.0) & 
-                 (thisMS1Scan(j,0) > mz_range_max | thisMS1Scan(j,0) < mz_range_min) &
+                if((abs(thisMS1Scan(j,0) - thisMz) < isolation_window_size/2.0) &&
+                  (thisMS1Scan(j,0) > mz_range_max || thisMS1Scan(j,0) < mz_range_min) &&
                  (thisMS1Scan(j,1) > inclusion_inten_thre)){
                 
                 //cout << "REaching here -->3\n";
@@ -730,7 +730,7 @@ private:
                   for(int ii : idxs_iso){
                     double tmpInts = thisMS1Scan(ii,1);
                     int numC = floor(thisMS1Scan(ii,0)/12); // maximum possible C number
-                    if((thisMS1Scan(j,1)/tmpInts > C13_12_ratio*0.95) & (thisMS1Scan(j,1)/tmpInts < C13_12_ratio*numC*1.05)){ //allow a variance of 5% at most
+                    if((thisMS1Scan(j,1)/tmpInts > C13_12_ratio*0.95) && (thisMS1Scan(j,1)/tmpInts < C13_12_ratio*numC*1.05)){ //allow a variance of 5% at most
                       // cout << kcount << " | " << idx << "<- idx || REaching here found orphan isotopes --> truly FOUND [M+0] <-- \n";
                       bl_final = true;
                     }
@@ -768,7 +768,7 @@ private:
         NumericMatrix allConvolutedPrcs(0,4); // this matrix include 4 columns [m/z, rt, intensity, orphanisotope (yes=1, no=0)]
         NumericVector mzs, rts, ints, orphs;
         
-        if((pre_scan_idx > -1) & (nxt_scan_idx < prec_mzs_vals.size())){
+        if((pre_scan_idx > -1) && (nxt_scan_idx < prec_mzs_vals.size())){
           if(abs(prec_mzs_vals[pre_scan_idx] - prec_mzs_vals[ths_scan_idx]) < isolation_window_size/2.0){
             mzs.push_back(prec_mzs_vals[pre_scan_idx]);
             rts.push_back(scanrt_ms2[pre_scan_idx]);
@@ -870,8 +870,6 @@ private:
     SqliteDriver SQLiteObj(database_path, "HMDB_experimental_PosDB", ion_mode);
     SQLiteObj.create_connection(database_path);
     
-    int nn =0, mm=0;
-    
     List allSpectraList, allSpectraList_res, allSpectraList_idx;
     // allSpectraList is a part for List results (for contaminated and deconvoluted spectrum);
     // allSpectraList_res is the 1st List; allSpectraList_idx is the 2nd List;
@@ -935,10 +933,10 @@ private:
           for(int ch=0; ch<chimericPrecrsrs.nrow();ch++){
             ch_mz = chimericPrecrsrs(ch,0);
             ch_rt = chimericPrecrsrs(ch,1);
-            if((ch_mz > min_mzc-mass_error) & (ch_mz < max_mzc+mass_error)){cond1 = true;}
-            if((ch_rt > min_rtc) & (ch_rt < max_rtc)){cond2 = true;}
+            if((ch_mz > min_mzc-mass_error) && (ch_mz < max_mzc+mass_error)){cond1 = true;}
+            if((ch_rt > min_rtc) && (ch_rt < max_rtc)){cond2 = true;}
           }
-          if(cond1 & cond2){
+          if(cond1 && cond2){
             idxxx = which_max(ints_vec);
             idxxx = scan_idxs[idxxx];
             for(int s=0; s < main_candidate_msms.size(); s++){
@@ -951,7 +949,7 @@ private:
         // (3). if chimeras_candidate_msms.size() <= 1 (still) -> have to find another approach (leverage concept from NetID)
         // Searching homologues/or similar structure from database to generate pseudo spectrum for deconvolution 
         // [NedID approach]:  May also search bio-transform/abiotic transformation results.
-        if((chimeras_candidate_msms.size() <= 1) & enable_propagation){
+        if((chimeras_candidate_msms.size() <= 1) && enable_propagation){
           chimeras_candidate_msms_prec = predictRef_Spectrum(SQLiteObj, 
                                                              thisSpectra, 
                                                              chimericPrecrsrs,
@@ -1031,7 +1029,7 @@ private:
           }
           
           // III. process chimeric candidate (if exits)
-          if((allChimCandiMtxs.size()>0) & (chimeras_candidate_msms.size() != 0)){
+          if((allChimCandiMtxs.size()>0) && (chimeras_candidate_msms.size() != 0)){
             bool blx2;
             for(int km=0; km<allChimCandiMtxs.size();km++){
               NumericMatrix thisChimCandiMtx = allChimCandiMtxs[km];
@@ -1105,7 +1103,7 @@ private:
           all_candidates_mtx = cbind(all_candidates_mtx, cand_vec);
           loading_penalties.push_back(1);
           // chimeric
-          if((allChimCandiMtxs.size()>0) & (chimeras_candidate_msms.size() != 0)){
+          if((allChimCandiMtxs.size()>0) && (chimeras_candidate_msms.size() != 0)){
             for(int km=0; km<allChimCandiMtxs.size();km++){
               NumericVector cand_vec(allMzs.size());
               NumericMatrix thisChimCandiMtx = allChimCandiMtxs[km];
@@ -1462,7 +1460,7 @@ private:
     }
     
     // Adding deconvoluted spectra into the list from decoResList
-    int dec_idx, tmp_idx = 0;
+    int dec_idx;
     List spec_decoed = decoResList[0];
     List indc_decoed = decoResList[1];
     for(int dd=0; dd<ContmGroupIdxVec.size(); dd++){
@@ -2210,7 +2208,7 @@ private:
             blv1 = true;
           }
         }
-        if((exp_vec[exp_idx]>0) & (blv1)){
+        if((exp_vec[exp_idx]>0) && (blv1)){
           new_exp_mz.push_back(mzs_vec[exp_idx]);
           new_exp_int.push_back(exp_vec[exp_idx]);
         }
@@ -2247,7 +2245,7 @@ private:
             blv1 = true;
           }
         }
-        if((final_ints>0.0) & (blv1)){
+        if((final_ints>0.0) && (blv1)){
           new_exp_mz.push_back(mzs_vec[exp_idx]);
           new_exp_int.push_back(final_ints);
         }
@@ -2460,7 +2458,7 @@ private:
     // " | allMS2refs_List-> " << allMS2refs_List.size() << endl;
     List contamCandidateList_clean;
     allMS2refs.clear();
-    int this_idx0, this_idx1;
+    int this_idx1;
     
     if(predicted_prec_mzs.size() != 0){
       for(int k=0;k<allMS2refs_List.size();k++) {
@@ -2479,7 +2477,7 @@ private:
             if(curr_simi > best_simi){
               best_simi = curr_simi;
               ms2_ref_mtx_best = ms2_ref_mtx;
-              this_idx0 = k;
+              // this_idx0 = k;
               this_idx1 = all_mzs_idx[k];
             }
           }
@@ -2487,7 +2485,6 @@ private:
       }
       
       // already found most similar spectrum --> starting generating a pseudo spectrum
-      int rule_idx;
       vector<int> this_formula, this_sub_formula;
       List sub_formula_list;
       NumericVector all_ref_mzs, all_ref_ints, new_ref_mzs, new_ref_ints;
@@ -2495,8 +2492,6 @@ private:
       if(best_simi>0.001){
         // cout << best_simi << " <--- best_simi | this_idx ---> " << this_idx0 << " | --> " << ms2_ref_mtx_best.nrow() << endl;
         // vector<string> allMS2refs = allMS2refs_List[this_idx0];
-        rule_idx = all_rules_idx[this_idx0];
-        //this_formula = all_rule_formulas[rule_idx];
         all_ref_mzs = ms2_ref_mtx_best(_,0);
         all_ref_ints = ms2_ref_mtx_best(_,1);
         //cout << "all_ref_mzs --> " << all_ref_mzs.size() << endl;
@@ -2514,12 +2509,12 @@ private:
           for(int n=0; n<sub_formula_list.size();n++){
             //cout << "line 2451 <-- \n";
             vector<int> this_sub_formula = sub_formula_list[n];
-            if((this_sub_formula[0] <= this_formula[0]) &
-               (this_sub_formula[1] <= this_formula[1]) &
-               (this_sub_formula[2] <= this_formula[2]) &
-               (this_sub_formula[3] <= this_formula[3]) &
-               (this_sub_formula[4] <= this_formula[4]) &
-               (this_sub_formula[5] <= this_formula[5])){
+            if((this_sub_formula[0] <= this_formula[0]) &&
+              (this_sub_formula[1] <= this_formula[1]) &&
+              (this_sub_formula[2] <= this_formula[2]) &&
+              (this_sub_formula[3] <= this_formula[3]) &&
+              (this_sub_formula[4] <= this_formula[4]) &&
+              (this_sub_formula[5] <= this_formula[5])){
               //cout << "FOUND good fragment -> " << m << endl;
               keep=true;
               break;
