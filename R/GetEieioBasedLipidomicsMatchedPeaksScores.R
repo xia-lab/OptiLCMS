@@ -132,179 +132,94 @@ extract_lipid_class <- function(lipid_name) {
   return(class_part)
 }
 
-# ─────────────────────────────────────────────────────────────────────────────
-# Lipid-class-specific characterizers (EIEIO collision type)
-# 
-# Each of these functions should:
-#   1. Parse the reference structure (chains, double bonds, etc.)
-#   2. Calculate diagnostic m/z values for EIEIO fragmentation
-#   3. Search the experimental scan for matches
-#   4. Return list(lipid_name_annotated, c(percentage, count))
-#
-# TODO: Implement each characterizer based on EIEIO fragmentation patterns
-# ─────────────────────────────────────────────────────────────────────────────
-
-characterize_pc_eieio <- function(scan, reference, tolerance, mz_begin, mz_end) {
-  # TODO: Implement EIEIO-specific PC fragmentation logic
-  list(reference$Name, c(0, 0))
+# Shared EIEIO scoring path. The C# characterizers differ primarily in these
+# cutoffs; fragment matching and double-bond handling are shared.
+.eieio_default_score <- function(scan, reference, tolerance, mz_begin, mz_end,
+                                 class_cutoff, chain_cutoff, position_cutoff,
+                                 doublebond_cutoff) {
+  matched <- .eid_get_matched_peaks(scan, reference, tolerance, mz_begin, mz_end)
+  if (nrow(matched) == 0L) return(list(TotalScore = 0, TotalMatchedIonCount = 0))
+  classify <- function(flag) vapply(matched$SpectrumComment, .eid_comment_has, logical(1L), flag = flag)
+  classions <- matched[classify("metaboliteclass"), , drop = FALSE]
+  chainions <- matched[classify("acylchain"), , drop = FALSE]
+  positionions <- matched[classify("snposition"), , drop = FALSE]
+  dbions <- matched[classify("doublebond"), , drop = FALSE]
+  dbhigh <- dbions[vapply(dbions$SpectrumComment, .eid_comment_has, logical(1L), flag = "doublebond_high"), , drop = FALSE]
+  detected <- function(peaks) sum(peaks$IsMatched)
+  class_detected <- detected(classions)
+  chain_detected <- detected(chainions)
+  position_detected <- detected(positionions)
+  db_detected <- detected(dbions)
+  class_exists <- class_detected >= class_cutoff && all(!classions$AbsolutelyRequired | classions$IsMatched)
+  chain_exists <- chain_detected >= chain_cutoff && all(!chainions$AbsolutelyRequired | chainions$IsMatched)
+  position_exists <- position_cutoff <= 0 || (position_detected >= position_cutoff && all(!positionions$AbsolutelyRequired | positionions$IsMatched))
+  db_percent <- db_detected / (nrow(dbions) + 1e-10)
+  db_high_exists <- nrow(dbhigh) == sum(dbhigh$IsMatched)
+  db_exists <- db_high_exists && db_percent > doublebond_cutoff
+  db_score <- if (db_exists) db_percent + .eid_matched_coefficient(dbions) else 0
+  if (db_exists) {
+    high_resolution <- dbions$Resolution[vapply(dbions$SpectrumComment, .eid_comment_has, logical(1L), flag = "doublebond_high") & dbions$IsMatched]
+    low_resolution <- dbions$Resolution[vapply(dbions$SpectrumComment, .eid_comment_has, logical(1L), flag = "doublebond_low") & dbions$IsMatched]
+    high_mean <- if (length(high_resolution) > 0L) mean(high_resolution) else 0
+    low_mean <- if (length(low_resolution) > 0L) mean(low_resolution) else 0
+    if (high_mean > low_mean * 1.5) db_score <- db_score + 0.5
+  }
+  class_score <- if (class_exists && nrow(classions) > 0L) class_detected / nrow(classions) else 0
+  chain_score <- if (chain_exists && nrow(chainions) > 0L) chain_detected / nrow(chainions) else 0
+  position_score <- if (position_cutoff > 0 && position_exists && nrow(positionions) > 0L) position_detected / nrow(positionions) else 0
+  list(TotalScore = class_score + chain_score + position_score + db_score,
+       TotalMatchedIonCount = class_detected + chain_detected + position_detected + db_detected)
 }
 
-characterize_pe_eieio <- function(scan, reference, tolerance, mz_begin, mz_end) {
-  # TODO: Implement EIEIO-specific PE fragmentation logic
-  list(reference$Name, c(0, 0))
+.eieio_characterize <- function(scan, reference, tolerance, mz_begin, mz_end, cutoffs) {
+  score <- do.call(.eieio_default_score, c(list(scan, reference, tolerance, mz_begin, mz_end), as.list(cutoffs)))
+  list(reference$Name, c(score$TotalScore, score$TotalMatchedIonCount))
 }
 
-characterize_ps_eieio <- function(scan, reference, tolerance, mz_begin, mz_end) {
-  # TODO: Implement EIEIO-specific PS fragmentation logic
-  list(reference$Name, c(0, 0))
+.eieio_alias <- function(cutoffs) function(scan, reference, tolerance, mz_begin, mz_end) {
+  .eieio_characterize(scan, reference, tolerance, mz_begin, mz_end, cutoffs)
 }
 
-characterize_pg_eieio <- function(scan, reference, tolerance, mz_begin, mz_end) {
-  # TODO: Implement EIEIO-specific PG fragmentation logic
-  list(reference$Name, c(0, 0))
-}
+.eieio_diacyl <- c(2, 2, 1, 0.5)
+.eieio_diacyl_neutral <- c(0, 2, 1, 0.5)
+.eieio_hbmp <- c(1, 2, 1, 0.5)
+.eieio_lysophospholipid <- c(2, 1, 1, 0.5)
+.eieio_single <- c(1, 1, 0, 2)
+.eieio_mono <- c(2, 1, 1, 2)
+.eieio_ceramide <- c(1, 1, 0, 0.5)
+.eieio_hexceramide <- c(2, 2, 1, 0.5)
+.eieio_triacyl <- c(0, 2, 1, 0.5)
 
-characterize_pi_eieio <- function(scan, reference, tolerance, mz_begin, mz_end) {
-  # TODO: Implement EIEIO-specific PI fragmentation logic
-  list(reference$Name, c(0, 0))
-}
-
-characterize_pa_eieio <- function(scan, reference, tolerance, mz_begin, mz_end) {
-  # TODO: Implement EIEIO-specific PA fragmentation logic
-  list(reference$Name, c(0, 0))
-}
-
-characterize_dg_eieio <- function(scan, reference, tolerance, mz_begin, mz_end) {
-  # TODO: Implement EIEIO-specific DG fragmentation logic
-  list(reference$Name, c(0, 0))
-}
-
-characterize_bmp_eieio <- function(scan, reference, tolerance, mz_begin, mz_end) {
-  # TODO: Implement EIEIO-specific BMP fragmentation logic
-  list(reference$Name, c(0, 0))
-}
-
-characterize_lpc_eieio <- function(scan, reference, tolerance, mz_begin, mz_end) {
-  # TODO: Implement EIEIO-specific LPC fragmentation logic
-  list(reference$Name, c(0, 0))
-}
-
-characterize_lps_eieio <- function(scan, reference, tolerance, mz_begin, mz_end) {
-  # TODO: Implement EIEIO-specific LPS fragmentation logic
-  list(reference$Name, c(0, 0))
-}
-
-characterize_lpe_eieio <- function(scan, reference, tolerance, mz_begin, mz_end) {
-  # TODO: Implement EIEIO-specific LPE fragmentation logic
-  list(reference$Name, c(0, 0))
-}
-
-characterize_lpg_eieio <- function(scan, reference, tolerance, mz_begin, mz_end) {
-  # TODO: Implement EIEIO-specific LPG fragmentation logic
-  list(reference$Name, c(0, 0))
-}
-
-characterize_lpi_eieio <- function(scan, reference, tolerance, mz_begin, mz_end) {
-  # TODO: Implement EIEIO-specific LPI fragmentation logic
-  list(reference$Name, c(0, 0))
-}
-
-characterize_dgta_eieio <- function(scan, reference, tolerance, mz_begin, mz_end) {
-  # TODO: Implement EIEIO-specific DGTA fragmentation logic
-  list(reference$Name, c(0, 0))
-}
-
-characterize_dgts_eieio <- function(scan, reference, tolerance, mz_begin, mz_end) {
-  # TODO: Implement EIEIO-specific DGTS fragmentation logic
-  list(reference$Name, c(0, 0))
-}
-
-characterize_ldgta_eieio <- function(scan, reference, tolerance, mz_begin, mz_end) {
-  # TODO: Implement EIEIO-specific LDGTA fragmentation logic
-  list(reference$Name, c(0, 0))
-}
-
-characterize_ldgts_eieio <- function(scan, reference, tolerance, mz_begin, mz_end) {
-  # TODO: Implement EIEIO-specific LDGTS fragmentation logic
-  list(reference$Name, c(0, 0))
-}
-
-characterize_sm_eieio <- function(scan, reference, tolerance, mz_begin, mz_end) {
-  # TODO: Implement EIEIO-specific SM fragmentation logic
-  list(reference$Name, c(0, 0))
-}
-
-characterize_ceramide_eieio <- function(scan, reference, tolerance, mz_begin, mz_end) {
-  # TODO: Implement EIEIO-specific ceramide fragmentation logic
-  list(reference$Name, c(0, 0))
-}
-
-characterize_hexcer_eieio <- function(scan, reference, tolerance, mz_begin, mz_end) {
-  # TODO: Implement EIEIO-specific HexCer fragmentation logic
-  list(reference$Name, c(0, 0))
-}
-
-characterize_hex2cer_eieio <- function(scan, reference, tolerance, mz_begin, mz_end) {
-  # TODO: Implement EIEIO-specific Hex2Cer fragmentation logic
-  list(reference$Name, c(0, 0))
-}
-
-characterize_hbmp_eieio <- function(scan, reference, tolerance, mz_begin, mz_end) {
-  # TODO: Implement EIEIO-specific HBMP fragmentation logic
-  list(reference$Name, c(0, 0))
-}
-
-characterize_tg_eieio <- function(scan, reference, tolerance, mz_begin, mz_end) {
-  # TODO: Implement EIEIO-specific TG fragmentation logic
-  list(reference$Name, c(0, 0))
-}
-
-characterize_etherpc_eieio <- function(scan, reference, tolerance, mz_begin, mz_end) {
-  # TODO: Implement EIEIO-specific EtherPC fragmentation logic
-  list(reference$Name, c(0, 0))
-}
-
-characterize_etherpe_eieio <- function(scan, reference, tolerance, mz_begin, mz_end) {
-  # TODO: Implement EIEIO-specific EtherPE fragmentation logic
-  list(reference$Name, c(0, 0))
-}
-
-characterize_shexcer_eieio <- function(scan, reference, tolerance, mz_begin, mz_end) {
-  # TODO: Implement EIEIO-specific SHexCer fragmentation logic
-  list(reference$Name, c(0, 0))
-}
-
-characterize_gm3_eieio <- function(scan, reference, tolerance, mz_begin, mz_end) {
-  # TODO: Implement EIEIO-specific GM3 fragmentation logic
-  list(reference$Name, c(0, 0))
-}
-
-characterize_ce_eieio <- function(scan, reference, tolerance, mz_begin, mz_end) {
-  # TODO: Implement EIEIO-specific CE fragmentation logic
-  list(reference$Name, c(0, 0))
-}
-
-characterize_mg_eieio <- function(scan, reference, tolerance, mz_begin, mz_end) {
-  # TODO: Implement EIEIO-specific MG fragmentation logic
-  list(reference$Name, c(0, 0))
-}
-
-characterize_car_eieio <- function(scan, reference, tolerance, mz_begin, mz_end) {
-  # TODO: Implement EIEIO-specific CAR fragmentation logic
-  list(reference$Name, c(0, 0))
-}
-
-characterize_dmedfahfa_eieio <- function(scan, reference, tolerance, mz_begin, mz_end) {
-  # TODO: Implement EIEIO-specific DMEDFAHFA fragmentation logic
-  list(reference$Name, c(0, 0))
-}
-
-characterize_dmedfa_eieio <- function(scan, reference, tolerance, mz_begin, mz_end) {
-  # TODO: Implement EIEIO-specific DMEDFA fragmentation logic
-  list(reference$Name, c(0, 0))
-}
-
-characterize_dmedoxfa_eieio <- function(scan, reference, tolerance, mz_begin, mz_end) {
-  # TODO: Implement EIEIO-specific DMEDOxFA fragmentation logic
-  list(reference$Name, c(0, 0))
-}
+characterize_pc_eieio <- .eieio_alias(.eieio_diacyl)
+characterize_pe_eieio <- .eieio_alias(.eieio_diacyl)
+characterize_ps_eieio <- .eieio_alias(.eieio_diacyl)
+characterize_pg_eieio <- .eieio_alias(.eieio_diacyl)
+characterize_pi_eieio <- .eieio_alias(.eieio_diacyl)
+characterize_pa_eieio <- .eieio_alias(.eieio_diacyl)
+characterize_dg_eieio <- .eieio_alias(.eieio_diacyl_neutral)
+characterize_bmp_eieio <- .eieio_alias(.eieio_diacyl)
+characterize_lpc_eieio <- .eieio_alias(.eieio_lysophospholipid)
+characterize_lps_eieio <- .eieio_alias(.eieio_lysophospholipid)
+characterize_lpe_eieio <- .eieio_alias(.eieio_lysophospholipid)
+characterize_lpg_eieio <- .eieio_alias(.eieio_lysophospholipid)
+characterize_lpi_eieio <- .eieio_alias(.eieio_lysophospholipid)
+characterize_dgta_eieio <- .eieio_alias(.eieio_diacyl)
+characterize_dgts_eieio <- .eieio_alias(.eieio_diacyl)
+characterize_ldgta_eieio <- .eieio_alias(.eieio_diacyl)
+characterize_ldgts_eieio <- .eieio_alias(.eieio_diacyl)
+characterize_sm_eieio <- .eieio_alias(.eieio_ceramide)
+characterize_ceramide_eieio <- .eieio_alias(.eieio_ceramide)
+characterize_hexcer_eieio <- .eieio_alias(.eieio_hexceramide)
+characterize_hex2cer_eieio <- .eieio_alias(.eieio_hexceramide)
+characterize_hbmp_eieio <- .eieio_alias(.eieio_hbmp)
+characterize_tg_eieio <- .eieio_alias(.eieio_triacyl)
+characterize_etherpc_eieio <- .eieio_alias(.eieio_diacyl)
+characterize_etherpe_eieio <- .eieio_alias(.eieio_diacyl)
+characterize_shexcer_eieio <- .eieio_alias(.eieio_hexceramide)
+characterize_gm3_eieio <- .eieio_alias(.eieio_hexceramide)
+characterize_ce_eieio <- .eieio_alias(.eieio_single)
+characterize_mg_eieio <- .eieio_alias(.eieio_mono)
+characterize_car_eieio <- .eieio_alias(c(2, 1, 0, 0.5))
+characterize_dmedfahfa_eieio <- .eieio_alias(c(1, 1, 1, 0.5))
+characterize_dmedfa_eieio <- .eieio_alias(c(1, 1, 0, 0.5))
+characterize_dmedoxfa_eieio <- .eieio_alias(c(1, 1, 0, 0.5))
