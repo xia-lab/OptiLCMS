@@ -138,6 +138,16 @@ get_oad_based_lipid_molecule_annotation_result <- function(scan, reference,
     return(list(mass = spectrum$Mass, intensity = spectrum$Intensity))
   }
 
+  if (is.list(spectrum) && length(spectrum) > 0L &&
+      all(vapply(spectrum, function(peak) {
+        is.list(peak) && !is.null(peak$Mass) && !is.null(peak$Intensity)
+      }, logical(1L)))) {
+    return(list(
+      mass = vapply(spectrum, function(peak) as.numeric(peak$Mass)[1L], numeric(1L)),
+      intensity = vapply(spectrum, function(peak) as.numeric(peak$Intensity)[1L], numeric(1L))
+    ))
+  }
+
   if (is.matrix(spectrum) && ncol(spectrum) >= 2L) {
     return(list(mass = spectrum[, 1L], intensity = spectrum[, 2L]))
   }
