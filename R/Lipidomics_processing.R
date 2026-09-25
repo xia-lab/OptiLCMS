@@ -75,6 +75,9 @@ PerformLipidsAnalysis <- function(
     Table <- character(ncan)
     ID <- integer(ncan)
     PrecursorMZ <- numeric(ncan)
+    Adduct <- character(ncan)
+    ExactMass <- numeric(ncan)
+    MolecularWeight <- numeric(ncan)
     Name <- character(ncan)
     InChIKey <- character(ncan)
     CompoundClass <- character(ncan)
@@ -88,6 +91,9 @@ PerformLipidsAnalysis <- function(
       Table[k] <- if (!is.null(cnd$Table)) as.character(cnd$Table) else ""
       ID[k] <- if (!is.null(cnd$RecordIndex)) as.integer(cnd$RecordIndex) else NA_integer_
       PrecursorMZ[k] <- if (!is.null(cnd$PrecursorMZ)) as.numeric(cnd$PrecursorMZ) else NA_real_
+      Adduct[k] <- if (!is.null(cnd$Adduct)) as.character(cnd$Adduct) else ""
+      ExactMass[k] <- if (!is.null(cnd$ExactMass)) as.numeric(cnd$ExactMass) else NA_real_
+      MolecularWeight[k] <- if (!is.null(cnd$MolecularWeight)) as.numeric(cnd$MolecularWeight) else NA_real_
       Name[k] <- if (!is.null(cnd$IUPACName) && nzchar(as.character(cnd$IUPACName))) as.character(cnd$IUPACName) else if (!is.null(cnd$AbbreName)) as.character(cnd$AbbreName) else ""
       AbbreName[k] <- if (!is.null(cnd$AbbreName)) as.character(cnd$AbbreName) else ""
       InChIKey[k] <- if (!is.null(cnd$InChIKey)) as.character(cnd$InChIKey) else ""
@@ -100,6 +106,9 @@ PerformLipidsAnalysis <- function(
     df <- data.frame(
       Table = Table,
       ID = ID,
+      Adduct = Adduct,
+      ExactMass = ExactMass,
+      MolecularWeight = MolecularWeight,
       AbbreName = AbbreName,
       PrecursorMZ = PrecursorMZ,
       Name = Name,
@@ -127,6 +136,73 @@ PerformLipidsAnalysis <- function(
     lapply(seq_len(nrow(spec_mtx)), function(i) {
       list(Mass = as.numeric(spec_mtx[i, 1]), Intensity = as.numeric(spec_mtx[i, 2]))
     })
+  }
+
+  .generate_realtime_oad_reference <- function(reference, candidate) {
+    if (!identical(source_type, "GeneratedLipid") ||
+        !identical(parameter$CollisionType, "OAD") ||
+        !exists("generate_oad_lipid_spectrum", mode = "function", inherits = TRUE)) {
+      return(reference)
+    }
+
+    lipid_name <- if (!is.null(candidate$AbbreName) &&
+                      nzchar(as.character(candidate$AbbreName))) {
+      as.character(candidate$AbbreName)
+    } else {
+      as.character(reference$Name)
+    }
+    adduct <- if (!is.null(candidate$Adduct) &&
+                  nzchar(as.character(candidate$Adduct))) {
+      as.character(candidate$Adduct)
+    } else if (grepl("-$", ion_mode)) {
+      "[M-H]-"
+    } else {
+      "[M+H]+"
+    }
+
+    neutral_mass <- suppressWarnings(as.numeric(candidate$ExactMass))
+    if (!is.finite(neutral_mass)) {
+      neutral_mass <- suppressWarnings(as.numeric(candidate$MolecularWeight))
+    }
+    if (!is.finite(neutral_mass)) {
+      precursor <- suppressWarnings(as.numeric(reference$PrecursorMz))
+      neutral_mass <- switch(adduct,
+        "[M+H]+" = precursor - .oad_sg_proton,
+        "[M+Na]+" = precursor - .oad_sg_na,
+        "[M+NH4]+" = precursor - .oad_sg_nh4,
+        "[M+H-H2O]+" = precursor - .oad_sg_proton + .oad_sg_water,
+        "[M-H2O+H]+" = precursor - .oad_sg_proton + .oad_sg_water,
+        "[M-H]-" = precursor + .oad_sg_proton,
+        "[M+HCOO]-" = precursor - .oad_sg_formate + .oad_sg_proton,
+        "[M+CH3COO]-" = precursor - .oad_sg_acetate + .oad_sg_proton,
+        "[M+HCO3]-" = precursor - .oad_sg_bicarbonate + .oad_sg_proton,
+        NA_real_
+      )
+    }
+    if (!is.finite(neutral_mass)) return(reference)
+
+    lipid <- list(
+      Name = lipid_name,
+      Mass = neutral_mass,
+      InChIKey = reference$InChIKey
+    )
+    if (!isTRUE(can_generate_oad_lipid_spectrum(lipid, adduct))) return(reference)
+
+    generated <- tryCatch(
+      generate_oad_lipid_spectrum(lipid, adduct),
+      error = function(e) NULL
+    )
+    if (is.null(generated) || is.null(generated$Spectrum) ||
+        nrow(generated$Spectrum) == 0L) {
+      return(reference)
+    }
+
+    reference$Spectrum <- .matrix_to_peak_list(generated$Spectrum[, c("Mass", "Intensity"), drop = FALSE])
+    reference$PrecursorMz <- as.numeric(generated$PrecursorMz)
+    reference$Name <- generated$Name
+    reference$CompoundClass <- generated$CompoundClass
+    reference$Adduct <- generated$AdductIonName
+    reference
   }
 
   .parse_ms2peaks_local <- function(ms2peaks_str) {
@@ -320,10 +396,6 @@ PerformLipidsAnalysis <- function(
         ref_mtx <- .parse_ms2peaks_local(ms2p_obj)
       }
       ref_spec <- .matrix_to_peak_list(ref_mtx)
-      if (length(ref_spec) == 0) {
-        scored[[j]] <- NULL
-        next
-      }
 
       ref_prec <- as.numeric(candidates$PrecursorMZ[[j]])
       if (!is.finite(ref_prec)) ref_prec <- precursor_mz
@@ -339,6 +411,12 @@ PerformLipidsAnalysis <- function(
         ChromXs_RT = as.numeric(candidates$RetentionTime[[j]]),
         CollisionCrossSection = as.numeric(candidates$CollisionCrossSection[[j]])
       )
+
+      reference <- .generate_realtime_oad_reference(reference, candidates[j, , drop = FALSE])
+      if (length(reference$Spectrum) == 0) {
+        scored[[j]] <- NULL
+        next
+      }
 
       if (use_isotopes) {
         ref_iso_pre <- NULL
