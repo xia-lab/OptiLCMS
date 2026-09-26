@@ -8,8 +8,6 @@
 #'
 #' @return mSet Object
 #' @export
-#'
-#' @examples to add
 PerformMSnImport <- function(mSet = NULL, 
                              filesPath = NULL, 
                              targetFeatures = NULL,
@@ -224,8 +222,6 @@ PerformMSnImport <- function(mSet = NULL,
 #'
 #' @return mSet Object
 #' @export
-#'
-#' @examples to add
 PerformDDADeconvolution <- function(mSet= NULL, 
                                     ppm1 = 5, 
                                     ppm2 = 15,
@@ -458,8 +454,6 @@ PerformDDADeconvolution <- function(mSet= NULL,
 #'
 #' @return mSet Object
 #' @export
-#'
-#' @examples to add
 PerformDIADeconvolution <- function(mSet= NULL, 
                                     min_width = 5,
                                     ppm2,
@@ -533,11 +527,10 @@ PerformDIADeconvolution <- function(mSet= NULL,
 #' @param database_path Character, path to the SQLite database used for correction.
 #' @param use_rt Logical, whether to use retention time in consensus processing.
 #' @param user_dbCorrection Logical, whether to apply database-based correction.
+#' @param useEntropy Logical, whether to use entropy during consensus matching (default FALSE).
 #'
 #' @return mSet Object
 #' @export
-#'
-#' @examples to add
 PerformSpectrumConsenus <- function(mSet = NULL, 
                                     ppm2,
                                     concensus_fraction = 0.5,
@@ -608,6 +601,7 @@ PerformSpectrumConsenus <- function(mSet = NULL,
 #' @param NLdatabase_path path of neutral loss database. Must be specified to a valid neutral loss database when enableNL is TRUE.
 #' @param databaseOptions Options of database for searching.
 #' @param ncores Integer, number of CPU cores to use.
+#' @param useEntropy Logical, whether to use entropy similarity during database searching (default FALSE).
 #'
 #' @return mSet Object
 #' @export
@@ -1513,6 +1507,7 @@ MirrorPlotting <- function(spec.top,
 #' @param height height of the image, default is 6
 #' @param dpi dpi value, default is 300
 #' @param interactive to make figure interactive, default is FALSE. TRUE or FALSE.
+#' @param format Character, output image format, e.g. "png" (default "png").
 #' @export
 #'
 PerformMirrorPlotting <- function(mSet = NULL, 

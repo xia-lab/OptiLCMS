@@ -7,6 +7,7 @@
 #'
 #' @name OptiLCMS
 #' @useDynLib OptiLCMS, .registration=TRUE
+#' @importFrom Rcpp evalCpp
 NULL
 #> NULL
 

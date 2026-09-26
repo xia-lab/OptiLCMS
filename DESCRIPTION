@@ -21,7 +21,7 @@ Depends: R (>= 4.0.0), methods, Biobase, BiocParallel (>= 1.8.0), stats, utils, 
 Imports: mzR (>= 2.22.0), lattice, RColorBrewer, plyr, RJSONIO, parallel, tools, grDevices, grid, graphics,
          RBGL, S4Vectors, ggplot2, graph, progress, rsm, Cairo, Hmisc, entropy, cluster, data.table,
          scales, ggrepel, Rcpp (>= 1.0.9)
-Suggests: knitr (>= 1.1.0), MALDIquant, MassSpecWavelet, mtbls2, rmarkdown, BiocStyle
+Suggests: knitr (>= 1.1.0), MALDIquant, MassSpecWavelet, mtbls2, rmarkdown, BiocStyle, jsonlite
 Enhances: XML
 Maintainer: Zhiqiang Pang <zhiqiang.pang@mail.mcgill.ca>
 VignetteBuilder: knitr

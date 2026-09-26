@@ -26,6 +26,7 @@
 #'   set to \code{"OAD"}, \code{"EID"}, or \code{"EIEIO"} to select the corresponding
 #'   reference spectrum during analysis; other source types keep the database
 #'   spectrum unchanged.
+#' @param use_isotopes Logical, whether to extract scan isotope envelope around precursor and fetch reference isotope patterns (default FALSE).
 #'
 #' @return Updated \code{mSet} object with:
 #' \itemize{
@@ -597,6 +598,18 @@ LipidSpectraSearching <- function(ConsensusRes, idxs, peak_matrix, ppm_ms1, ppm_
   #' PerformLipidsDBSearchingBatch
   #'
   #' Batch database searching for lipidomics DB (sqlite). Stores results in mSet@MSnResults$LipidDBMatchRes
+  #'
+  #' @param mSet mSet Object contains raw spectral data after results consensus from \code{PerformSpectrumConsenus}.
+  #' @param ppm1 Numeric, MS1 precursor tolerance in ppm (default 5).
+  #' @param ppm2 Numeric, MS2 fragment tolerance in ppm (default 15).
+  #' @param rt_tol Numeric, retention time tolerance in seconds (default 0).
+  #' @param database_path Character, path to the lipidomics SQLite database.
+  #' @param use_rt Logical, whether to use retention time during searching (default FALSE).
+  #' @param ncores Integer, number of CPU cores to use (default 1L).
+  #' @param useEntropy Logical, whether to use spectral entropy similarity in database matching (default FALSE).
+  #'
+  #' @return Updated mSet object with database search results stored in \code{mSet@MSnResults$LipidDBMatchRes}.
+  #' @export
   PerformLipidsDBSearchingBatch <- function(mSet = NULL,
                                            ppm1 = 5,
                                            ppm2 = 15,

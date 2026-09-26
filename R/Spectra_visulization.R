@@ -1955,10 +1955,6 @@ PerformAllMirrorPlotting <- function(fragDB_path = NA,
                                      ppm = 10, 
                                      dpi = 150, format = "png", width = 10, height = 6){
   
-  MirrorPlotting <- OptiLCMS:::MirrorPlotting;
-  parse_ms2peaks <- OptiLCMS:::parse_ms2peaks;
-  
-
   mSet_raw <- ov_qs_read("msn_mset_result.qs")
   mSet_raw@MSnResults -> MSnResults;
   mSet_raw@MSnData -> MSnData
@@ -2057,7 +2053,6 @@ PerformAllMirrorPlotting <- function(fragDB_path = NA,
         dbDisconnect(con)
         
         frgs_vec <- strsplit(frgs$Fragments, split = "\t")[[1]]
-        normalize_spectrum <- OptiLCMS:::normalize_spectrum
         bottom <- normalize_spectrum(spec_bottom, 1)
         frgs_vec_done <- vapply(bottom$mz, function(x){
           y <- frgs_vec[spec_bottom[,1] == x]

@@ -49,7 +49,7 @@ SpectraDeconvCore <- function(idx, spectra_eics, ms1Peak, ScanNum, ms1PeakInfo, 
 #' @param peaks_b A matrix of spectral peaks, with two columns: mz and intensity
 #' @param ms2_tolerance_in_da The MS2 tolerance in Da, set to -1 to disable
 #' @param ms2_tolerance_in_ppm The MS2 tolerance in ppm, set to -1 to disable
-#' @param clean_spectra Whether to clean the spectra before calculating the entropy similarity, see \code{\link{clean_spectrum}}
+#' @param clean_spectra Whether to clean the spectra before calculating the entropy similarity, see \code{\link{CleanSpectrum}}
 #' @param min_mz The minimum mz value to keep, set to -1 to disable
 #' @param max_mz The maximum mz value to keep, set to -1 to disable
 #' @param noise_threshold The noise threshold, set to -1 to disable, all peaks have intensity < noise_threshold * max_intensity will be removed
@@ -82,7 +82,7 @@ calculate_unweighted_entropy_similarity <- function(peaks_a, peaks_b, ms2_tolera
 #' @param peaks_b A matrix of spectral peaks, with two columns: mz and intensity
 #' @param ms2_tolerance_in_da The MS2 tolerance in Da, set to -1 to disable
 #' @param ms2_tolerance_in_ppm The MS2 tolerance in ppm, set to -1 to disable
-#' @param clean_spectra Whether to clean the spectra before calculating the entropy similarity, see \code{\link{clean_spectrum}}
+#' @param clean_spectra Whether to clean the spectra before calculating the entropy similarity, see \code{\link{CleanSpectrum}}
 #' @param min_mz The minimum mz value to keep, set to -1 to disable
 #' @param max_mz The maximum mz value to keep, set to -1 to disable
 #' @param noise_threshold The noise threshold, set to -1 to disable, all peaks have intensity < noise_threshold * max_intensity will be removed

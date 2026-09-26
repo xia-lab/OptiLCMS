@@ -7,3 +7,8 @@ README.md
 .DS_Store
 ^\.positai$
 ^\.claude$
+^src/Makevars$
+^src/symbols\.rds$
+^\.\.Rcheck$
+^tests/.*\.Rout$
+^tests/.*\.Rout\.fail$

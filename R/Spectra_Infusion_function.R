@@ -58,11 +58,10 @@ PerformInfusionImport <- function(filesPath = NA){
 #' @param ppm Numeric, mass accuracy in ppm.
 #' @param scales Numeric vector, wavelet scales for CWT method.
 #' @param ncores Integer, number of CPU cores to use.
+#' @param groups Character vector or list specifying sample grouping (default NULL).
 #'
 #' @return mSet Object
 #' @export
-#'
-#' @examples todo
 PerformInusionFeatureDection <- function(mSet, method = "cwt", noise = NA, 
                                          snthresh = 3, ppm = 10, 
                                          scales = c(1,4,9), 
