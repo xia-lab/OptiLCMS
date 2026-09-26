@@ -13,6 +13,7 @@ Authors@R: c(
            email = "jeff.xia@mcgill.ca",
            comment = c(ORCID = "0000-0003-2040-2624"))
            )
+Author: Zhiqiang Pang [aut, cre], Jianguo Xia [aut]
 Description: A pipeline for users to do the LC-MS (Liquid chromatography–mass spectrometry) raw data processing with automatically optimized parameters. An automated 
              pipeline is implemented inside this page for users to avoid manaually optimized the parameters. More functions on MS/MS data processing is on the way.
 License: MIT + file LICENSE

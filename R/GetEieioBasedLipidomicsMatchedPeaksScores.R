@@ -113,6 +113,10 @@ get_eieio_based_lipid_molecule_annotation_result <- function(scan, reference,
 # ─────────────────────────────────────────────────────────────────────────────
 get_eieio_based_lipidomics_matched_peaks_scores <- function(scan, reference, 
                                                             tolerance, mz_begin, mz_end) {
+  if (nrow(.eid_peak_rows(scan$Spectrum)) == 0L ||
+      nrow(.eid_peak_rows(reference$Spectrum)) == 0L) {
+    return(c(-1, -1))
+  }
   result <- get_eieio_based_lipid_molecule_annotation_result(
     scan, reference, tolerance, mz_begin, mz_end)
   # result is list(lipid_name, scores_vector)
@@ -136,7 +140,7 @@ extract_lipid_class <- function(lipid_name) {
 # cutoffs; fragment matching and double-bond handling are shared.
 .eieio_default_score <- function(scan, reference, tolerance, mz_begin, mz_end,
                                  class_cutoff, chain_cutoff, position_cutoff,
-                                 doublebond_cutoff) {
+                                 doublebond_cutoff, position_diagnostic = NULL) {
   matched <- .eid_get_matched_peaks(scan, reference, tolerance, mz_begin, mz_end)
   if (nrow(matched) == 0L) return(list(TotalScore = 0, TotalMatchedIonCount = 0))
   classify <- function(flag) vapply(matched$SpectrumComment, .eid_comment_has, logical(1L), flag = flag)
@@ -148,21 +152,34 @@ extract_lipid_class <- function(lipid_name) {
   detected <- function(peaks) sum(peaks$IsMatched)
   class_detected <- detected(classions)
   chain_detected <- detected(chainions)
-  position_detected <- detected(positionions)
+  position_detected <- if (position_cutoff > 0) detected(positionions) else 0L
   db_detected <- detected(dbions)
   class_exists <- class_detected >= class_cutoff && all(!classions$AbsolutelyRequired | classions$IsMatched)
   chain_exists <- chain_detected >= chain_cutoff && all(!chainions$AbsolutelyRequired | chainions$IsMatched)
-  position_exists <- position_cutoff <= 0 || (position_detected >= position_cutoff && all(!positionions$AbsolutelyRequired | positionions$IsMatched))
+  minimum_intensity <- min(.eid_peak_rows(scan$Spectrum)$Intensity, na.rm = TRUE)
+  if (!is.finite(minimum_intensity)) minimum_intensity <- 0
+  position_advanced <- .eieio_diagnostic_ions_exist(positionions, position_diagnostic, minimum_intensity)
+  position_exists <- position_cutoff <= 0 || (position_advanced && position_detected >= position_cutoff && all(!positionions$AbsolutelyRequired | positionions$IsMatched))
   db_percent <- db_detected / (nrow(dbions) + 1e-10)
-  db_high_exists <- nrow(dbhigh) == sum(dbhigh$IsMatched)
+  reference_high <- .eid_peak_rows(reference$Spectrum)
+  reference_high <- reference_high[vapply(reference_high$SpectrumComment,
+                                          .eid_comment_has, logical(1L),
+                                          flag = "doublebond_high"), , drop = FALSE]
+  db_high_exists <- .eieio_diagnostic_fragments_exist(
+    dbhigh[dbhigh$IsMatched, , drop = FALSE], reference_high, tolerance,
+    minimum_intensity)
   db_exists <- db_high_exists && db_percent > doublebond_cutoff
   db_score <- if (db_exists) db_percent + .eid_matched_coefficient(dbions) else 0
+  hgrain_exists <- any(grepl("+H_p3", dbions$Comment, fixed = TRUE) &
+                       vapply(dbions$SpectrumComment, .eid_comment_has,
+                              logical(1L), flag = "doublebond_high"))
   if (db_exists) {
     high_resolution <- dbions$Resolution[vapply(dbions$SpectrumComment, .eid_comment_has, logical(1L), flag = "doublebond_high") & dbions$IsMatched]
     low_resolution <- dbions$Resolution[vapply(dbions$SpectrumComment, .eid_comment_has, logical(1L), flag = "doublebond_low") & dbions$IsMatched]
     high_mean <- if (length(high_resolution) > 0L) mean(high_resolution) else 0
     low_mean <- if (length(low_resolution) > 0L) mean(low_resolution) else 0
-    if (high_mean > low_mean * 1.5) db_score <- db_score + 0.5
+    if (!hgrain_exists && high_mean > low_mean * 1.5) db_score <- db_score + 0.5
+    if (.eieio_hgrain_bonus(dbions) && db_exists) db_score <- db_score + 0.5
   }
   class_score <- if (class_exists && nrow(classions) > 0L) class_detected / nrow(classions) else 0
   chain_score <- if (chain_exists && nrow(chainions) > 0L) chain_detected / nrow(chainions) else 0
@@ -171,12 +188,130 @@ extract_lipid_class <- function(lipid_name) {
        TotalMatchedIonCount = class_detected + chain_detected + position_detected + db_detected)
 }
 
+.eieio_diagnostic_fragments_exist <- function(peaks, expected, tolerance,
+                                              minimum_intensity,
+                                              minimum_intensity_factor = 2) {
+  if (nrow(expected) == 0L) return(TRUE)
+  if (nrow(peaks) == 0L) return(FALSE)
+  threshold <- minimum_intensity * minimum_intensity_factor
+  misses <- 0L
+  for (index in seq_len(nrow(expected))) {
+    present <- any(abs(peaks$Mass - expected$Mass[index]) < tolerance &
+                   peaks$Resolution > 1e-7 &
+                   peaks$Resolution > threshold &
+                   peaks$OriginalIntensity > 12)
+    if (!present) {
+      misses <- misses + 1L
+      if ((nrow(expected) < 5L && misses == 1L) ||
+          (nrow(expected) >= 5L && misses == 2L)) return(FALSE)
+    }
+  }
+  TRUE
+}
+
+    .eieio_diagnostic_ions_exist <- function(peaks, diagnostic_ions, minimum_intensity,
+                     minimum_intensity_factor = 2) {
+      if (is.null(diagnostic_ions) || nrow(diagnostic_ions) == 0L) return(TRUE)
+      if (nrow(peaks) == 0L) return(FALSE)
+      all(vapply(seq_len(nrow(diagnostic_ions)), function(index) {
+        tolerance <- diagnostic_ions$MzTolerance[index]
+        cutoff <- diagnostic_ions$IonAbundanceCutOff[index]
+        any(abs(peaks$Mass - diagnostic_ions$Mz[index]) < tolerance &
+        peaks$Resolution > cutoff &
+        peaks$Resolution > minimum_intensity * minimum_intensity_factor &
+        peaks$OriginalIntensity > 12)
+      }, logical(1L)))
+    }
+
+.eieio_hgrain_bonus <- function(doublebond_ions) {
+  hgrain <- doublebond_ions[grepl("+H_p3", doublebond_ions$Comment, fixed = TRUE), , drop = FALSE]
+  if (nrow(hgrain) == 0L) return(FALSE)
+  hgrain <- hgrain[order(hgrain$Mass, decreasing = TRUE), , drop = FALSE]
+  count <- 0L
+  peak_average <- 0
+  for (index in rev(seq_len(nrow(hgrain)))) {
+    count <- count + 1L
+    peak <- hgrain[index, , drop = FALSE]
+    if (.eid_comment_has(peak$SpectrumComment, "doublebond_high")) {
+      peak_average <- peak_average / count
+      return(peak$Resolution > peak_average * 3)
+    }
+    peak_average <- peak_average + peak$Resolution
+  }
+  FALSE
+}
+
 .eieio_characterize <- function(scan, reference, tolerance, mz_begin, mz_end, cutoffs) {
   score <- do.call(.eieio_default_score, c(list(scan, reference, tolerance, mz_begin, mz_end), as.list(cutoffs)))
   list(reference$Name, c(score$TotalScore, score$TotalMatchedIonCount))
 }
 
 .eieio_alias <- function(cutoffs) function(scan, reference, tolerance, mz_begin, mz_end) {
+  .eieio_characterize(scan, reference, tolerance, mz_begin, mz_end, cutoffs)
+}
+
+.eieio_chain_summary <- function(reference) {
+  name <- as.character(reference$Name %||% "")
+  matches <- regmatches(name, gregexpr("[0-9]+:[0-9]+", name, perl = TRUE))[[1L]]
+  if (length(matches) == 0L || identical(matches, character(0))) return(matrix(numeric(), ncol = 2L))
+  matrix(as.numeric(unlist(strsplit(matches, ":", fixed = TRUE))), ncol = 2L, byrow = TRUE)
+}
+
+.eieio_adduct_name <- function(reference) {
+  adduct <- reference$AdductType
+  if (is.list(adduct)) adduct <- adduct$AdductIonName %||% adduct$Name
+  as.character(adduct %||% "")
+}
+
+.eieio_adduct_mass <- function(reference) {
+  adduct <- reference$AdductType
+  if (is.list(adduct)) {
+    adduct <- adduct$AdductIonAccurateMass %||% adduct$AccurateMass %||% adduct$Mass
+  }
+  value <- suppressWarnings(as.numeric(adduct))
+  if (length(value) == 0L || is.na(value[1L])) 0 else value[1L]
+}
+
+.eieio_fragment_intensity <- function(spectrum, mass, tolerance) {
+  peaks <- .eid_peak_rows(spectrum)
+  if (nrow(peaks) == 0L) return(0)
+  matched <- abs(peaks$Mass - mass) < tolerance
+  if (!any(matched)) 0 else max(peaks$Intensity[matched], na.rm = TRUE)
+}
+
+.eieio_fragment1_greater <- function(spectrum, fragment1, fragment2, tolerance) {
+  .eieio_fragment_intensity(spectrum, fragment1, tolerance) >
+    .eieio_fragment_intensity(spectrum, fragment2, tolerance)
+}
+
+.eieio_dgta_fragment_masses <- function(reference) {
+  carbon <- 12.00000000000
+  hydrogen <- 1.00782503207
+  nitrogen <- 14.00307400480
+  oxygen <- 15.99491461956
+  adduct <- .eieio_adduct_mass(reference)
+  c(dgta = 7 * carbon + 13 * hydrogen + nitrogen + 2 * oxygen + adduct,
+    dgts = 6 * carbon + 11 * hydrogen + nitrogen + 2 * oxygen + adduct)
+}
+
+.eieio_dynamic_characterize <- function(scan, reference, tolerance, mz_begin, mz_end,
+                                        cutoffs, equal_chain_cutoff = FALSE,
+                                        position_zero_adducts = character(),
+                                        triacyl_chain_cutoff = FALSE) {
+  chains <- .eieio_chain_summary(reference)
+  if (equal_chain_cutoff && nrow(chains) == 2L && all(chains[1L, ] == chains[2L, ])) {
+    cutoffs[2L] <- 1
+  }
+  if (triacyl_chain_cutoff && nrow(chains) == 3L) {
+    equal12 <- all(chains[1L, ] == chains[2L, ])
+    equal23 <- all(chains[2L, ] == chains[3L, ])
+    equal13 <- all(chains[1L, ] == chains[3L, ])
+    cutoffs[2L] <- if (equal12 && equal23) 1 else if (equal12 || equal23 || equal13) 2 else 3
+  }
+  if (isTRUE(position_zero_adducts) ||
+      identical(.eieio_adduct_name(reference), position_zero_adducts)) {
+    cutoffs[3L] <- 0
+  }
   .eieio_characterize(scan, reference, tolerance, mz_begin, mz_end, cutoffs)
 }
 
@@ -190,36 +325,96 @@ extract_lipid_class <- function(lipid_name) {
 .eieio_hexceramide <- c(2, 2, 1, 0.5)
 .eieio_triacyl <- c(0, 2, 1, 0.5)
 
-characterize_pc_eieio <- .eieio_alias(.eieio_diacyl)
-characterize_pe_eieio <- .eieio_alias(.eieio_diacyl)
-characterize_ps_eieio <- .eieio_alias(.eieio_diacyl)
-characterize_pg_eieio <- .eieio_alias(.eieio_diacyl)
-characterize_pi_eieio <- .eieio_alias(.eieio_diacyl)
+characterize_pc_eieio <- function(scan, reference, tolerance, mz_begin, mz_end) {
+  .eieio_dynamic_characterize(scan, reference, tolerance, mz_begin, mz_end,
+                              .eieio_diacyl, equal_chain_cutoff = TRUE)
+}
+characterize_pe_eieio <- function(scan, reference, tolerance, mz_begin, mz_end) {
+  .eieio_dynamic_characterize(scan, reference, tolerance, mz_begin, mz_end,
+                              .eieio_diacyl, equal_chain_cutoff = TRUE,
+                              position_zero_adducts = "[M+H]+")
+}
+characterize_ps_eieio <- function(scan, reference, tolerance, mz_begin, mz_end) {
+  .eieio_dynamic_characterize(scan, reference, tolerance, mz_begin, mz_end,
+                              c(3, 2, 1, 0.5), equal_chain_cutoff = TRUE,
+                              position_zero_adducts = "[M+H]+")
+}
+characterize_pg_eieio <- function(scan, reference, tolerance, mz_begin, mz_end) {
+  .eieio_dynamic_characterize(scan, reference, tolerance, mz_begin, mz_end,
+                              c(3, 2, 1, 0.5), equal_chain_cutoff = TRUE,
+                              position_zero_adducts = "[M+NH4]+")
+}
+characterize_pi_eieio <- function(scan, reference, tolerance, mz_begin, mz_end) {
+  .eieio_dynamic_characterize(scan, reference, tolerance, mz_begin, mz_end,
+                              .eieio_diacyl, equal_chain_cutoff = TRUE,
+                              position_zero_adducts = "[M+NH4]+")
+}
 characterize_pa_eieio <- .eieio_alias(.eieio_diacyl)
-characterize_dg_eieio <- .eieio_alias(.eieio_diacyl_neutral)
-characterize_bmp_eieio <- .eieio_alias(.eieio_diacyl)
+characterize_dg_eieio <- function(scan, reference, tolerance, mz_begin, mz_end) {
+  .eieio_dynamic_characterize(scan, reference, tolerance, mz_begin, mz_end,
+                              .eieio_diacyl_neutral, equal_chain_cutoff = TRUE,
+                              position_zero_adducts = "[M+NH4]+")
+}
+characterize_bmp_eieio <- function(scan, reference, tolerance, mz_begin, mz_end) {
+  .eieio_dynamic_characterize(scan, reference, tolerance, mz_begin, mz_end,
+                              .eieio_diacyl, equal_chain_cutoff = TRUE,
+                              position_zero_adducts = "[M+H]+")
+}
 characterize_lpc_eieio <- .eieio_alias(.eieio_lysophospholipid)
 characterize_lps_eieio <- .eieio_alias(.eieio_lysophospholipid)
 characterize_lpe_eieio <- .eieio_alias(.eieio_lysophospholipid)
 characterize_lpg_eieio <- .eieio_alias(.eieio_lysophospholipid)
 characterize_lpi_eieio <- .eieio_alias(.eieio_lysophospholipid)
-characterize_dgta_eieio <- .eieio_alias(.eieio_diacyl)
-characterize_dgts_eieio <- .eieio_alias(.eieio_diacyl)
-characterize_ldgta_eieio <- .eieio_alias(.eieio_diacyl)
-characterize_ldgts_eieio <- .eieio_alias(.eieio_diacyl)
+characterize_dgta_eieio <- function(scan, reference, tolerance, mz_begin, mz_end) {
+  masses <- .eieio_dgta_fragment_masses(reference)
+  cutoff <- if (.eieio_fragment1_greater(scan$Spectrum, masses[["dgts"]], masses[["dgta"]], tolerance)) 10 else 2
+  .eieio_characterize(scan, reference, tolerance, mz_begin, mz_end, c(cutoff, 2, 1, 0.5))
+}
+characterize_dgts_eieio <- function(scan, reference, tolerance, mz_begin, mz_end) {
+  masses <- .eieio_dgta_fragment_masses(reference)
+  cutoff <- if (.eieio_fragment1_greater(scan$Spectrum, masses[["dgta"]], masses[["dgts"]], tolerance)) 10 else 2
+  .eieio_characterize(scan, reference, tolerance, mz_begin, mz_end, c(cutoff, 2, 1, 0.5))
+}
+characterize_ldgta_eieio <- function(scan, reference, tolerance, mz_begin, mz_end) {
+  masses <- .eieio_dgta_fragment_masses(reference)
+  cutoff <- if (.eieio_fragment1_greater(scan$Spectrum, masses[["dgts"]], masses[["dgta"]], tolerance)) 10 else 1
+  .eieio_characterize(scan, reference, tolerance, mz_begin, mz_end, c(cutoff, 2, 1, 0.5))
+}
+characterize_ldgts_eieio <- function(scan, reference, tolerance, mz_begin, mz_end) {
+  masses <- .eieio_dgta_fragment_masses(reference)
+  cutoff <- if (.eieio_fragment1_greater(scan$Spectrum, masses[["dgta"]], masses[["dgts"]], tolerance)) 10 else 1
+  .eieio_characterize(scan, reference, tolerance, mz_begin, mz_end, c(cutoff, 2, 1, 0.5))
+}
 characterize_sm_eieio <- .eieio_alias(.eieio_ceramide)
 characterize_ceramide_eieio <- .eieio_alias(.eieio_ceramide)
 characterize_hexcer_eieio <- .eieio_alias(.eieio_hexceramide)
 characterize_hex2cer_eieio <- .eieio_alias(.eieio_hexceramide)
 characterize_hbmp_eieio <- .eieio_alias(.eieio_hbmp)
-characterize_tg_eieio <- .eieio_alias(.eieio_triacyl)
+characterize_tg_eieio <- function(scan, reference, tolerance, mz_begin, mz_end) {
+  .eieio_dynamic_characterize(scan, reference, tolerance, mz_begin, mz_end,
+                              .eieio_triacyl, position_zero_adducts = "[M+NH4]+",
+                              triacyl_chain_cutoff = TRUE)
+}
 characterize_etherpc_eieio <- .eieio_alias(.eieio_diacyl)
-characterize_etherpe_eieio <- .eieio_alias(.eieio_diacyl)
+characterize_etherpe_eieio <- function(scan, reference, tolerance, mz_begin, mz_end) {
+  .eieio_dynamic_characterize(scan, reference, tolerance, mz_begin, mz_end,
+                              .eieio_diacyl, position_zero_adducts = "[M+H]+")
+}
 characterize_shexcer_eieio <- .eieio_alias(.eieio_hexceramide)
 characterize_gm3_eieio <- .eieio_alias(.eieio_hexceramide)
 characterize_ce_eieio <- .eieio_alias(.eieio_single)
 characterize_mg_eieio <- .eieio_alias(.eieio_mono)
 characterize_car_eieio <- .eieio_alias(c(2, 1, 0, 0.5))
-characterize_dmedfahfa_eieio <- .eieio_alias(c(1, 1, 1, 0.5))
+characterize_dmedfahfa_eieio <- function(scan, reference, tolerance, mz_begin, mz_end) {
+  matched <- .eid_get_matched_peaks(scan, reference, tolerance, mz_begin, mz_end)
+  position <- matched[vapply(matched$SpectrumComment, .eid_comment_has, logical(1L), flag = "snposition"), , drop = FALSE]
+  diagnostic <- if (nrow(position) > 0L) {
+    data.frame(Mz = position$Mass[1L], MzTolerance = 0.05,
+               IonAbundanceCutOff = 10, stringsAsFactors = FALSE)
+  } else NULL
+  score <- .eieio_default_score(scan, reference, tolerance, mz_begin, mz_end,
+                                1, 1, 1, 0.5, diagnostic)
+  list(reference$Name, c(score$TotalScore, score$TotalMatchedIonCount))
+}
 characterize_dmedfa_eieio <- .eieio_alias(c(1, 1, 0, 0.5))
 characterize_dmedoxfa_eieio <- .eieio_alias(c(1, 1, 0, 0.5))

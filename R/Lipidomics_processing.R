@@ -14,14 +14,36 @@
 #' @param max_candidates Integer, max candidates fetched per feature across all tables.
 #' @param max_per_table Integer, max candidates fetched from each table.
 #' @param top_n Integer, number of top-scoring hits kept for each feature.
-#' @param parameter Optional search parameter list produced by \code{new_ms_ref_search_parameter()}.
+#' @param parameter Optional search parameter list used by \code{calculate_score}.
+#'   When omitted, \code{new_ms_ref_search_parameter()} is used. To select the
+#'   collision-energy spectrum model for generated lipid candidates, set its
+#'   \code{CollisionType} field to \code{"OAD"}, \code{"EID"}, or \code{"EIEIO"}; for example,
+#'   \code{parameter <- new_ms_ref_search_parameter(); parameter$CollisionType <- "EID"}.
+#'   The collision type is used for real-time spectrum generation only when
+#'   \code{source_type = "GeneratedLipid"}.
 #' @param source_type Character source tag passed to \code{calculate_score}.
+#'   Use \code{"GeneratedLipid"} together with \code{parameter$CollisionType}
+#'   set to \code{"OAD"}, \code{"EID"}, or \code{"EIEIO"} to select the corresponding
+#'   reference spectrum during analysis; other source types keep the database
+#'   spectrum unchanged.
 #'
 #' @return Updated \code{mSet} object with:
 #' \itemize{
 #'   \item \code{mSet@MSnResults$LipidMatchRes}: per-feature ranked scoring results.
 #'   \item \code{mSet@MSnResults$LipidTopHits}: summary table of the top-\code{top_n} hits per feature.
 #' }
+#' @details
+#' To use OAD-generated references:
+#' \preformatted{
+#' parameter <- new_ms_ref_search_parameter()
+#' parameter$CollisionType <- "OAD"
+#' mSet <- PerformLipidsAnalysis(mSet, parameter = parameter,
+#'                               source_type = "GeneratedLipid")
+#' }
+#' Replace \code{"OAD"} with \code{"EID"} to use EID-generated references.
+#' EIEIO and EID use distinct scoring paths. EIEIO uses the translated
+#' EIEIO diagnostic-fragment scorer; EID uses the EID scorer. Set
+#' \code{parameter$CollisionType} to \code{"EIEIO"} for EIEIO scoring.
 #' @export
 PerformLipidsAnalysis <- function(
   mSet = NULL,
@@ -150,13 +172,18 @@ PerformLipidsAnalysis <- function(
   .generate_realtime_collision_reference <- function(reference, candidate) {
     collision_type <- as.character(parameter$CollisionType)
     if (!identical(source_type, "GeneratedLipid") ||
-        !collision_type %in% c("OAD", "EID")) {
+        !collision_type %in% c("EIEIO", "OAD", "EID")) {
       return(reference)
     }
-    generator_name <- if (collision_type == "OAD") "generate_oad_lipid_spectrum" else "generate_eid_lipid_spectrum"
-    can_generate_name <- if (collision_type == "OAD") "can_generate_oad_lipid_spectrum" else "can_generate_eid_lipid_spectrum"
+    if (collision_type == "EIEIO") {
+      generator_name <- "generate_eieio_spectrum"
+      can_generate_name <- NULL
+    } else {
+      generator_name <- if (collision_type == "OAD") "generate_oad_lipid_spectrum" else "generate_eid_lipid_spectrum"
+      can_generate_name <- if (collision_type == "OAD") "can_generate_oad_lipid_spectrum" else "can_generate_eid_lipid_spectrum"
+    }
     if (!exists(generator_name, mode = "function", inherits = TRUE) ||
-        !exists(can_generate_name, mode = "function", inherits = TRUE)) return(reference)
+        (!is.null(can_generate_name) && !exists(can_generate_name, mode = "function", inherits = TRUE))) return(reference)
 
     lipid_name <- if (!is.null(candidate$AbbreName) &&
                       nzchar(as.character(candidate$AbbreName))) {
@@ -205,9 +232,23 @@ PerformLipidsAnalysis <- function(
       Mass = neutral_mass,
       InChIKey = reference$InChIKey
     )
-    can_generate <- get(can_generate_name, mode = "function", inherits = TRUE)
+    if (collision_type == "EIEIO") {
+      candidate_class <- if (!is.null(candidate$CompoundClass)) as.character(candidate$CompoundClass[[1L]]) else ""
+      eieio_classes <- if (exists(".eieio_sg_registered_classes", mode = "variable", inherits = TRUE)) {
+        get(".eieio_sg_registered_classes", mode = "any", inherits = TRUE)
+      } else {
+        character()
+      }
+      if (!nzchar(candidate_class) || !candidate_class %in% eieio_classes) {
+        candidate_class <- sub("[ _].*$", "", lipid_name)
+      }
+      if (nzchar(candidate_class)) lipid$LipidClass <- candidate_class
+    }
     generator <- get(generator_name, mode = "function", inherits = TRUE)
-    if (!isTRUE(can_generate(lipid, adduct))) return(reference)
+    if (!is.null(can_generate_name)) {
+      can_generate <- get(can_generate_name, mode = "function", inherits = TRUE)
+      if (!isTRUE(can_generate(lipid, adduct))) return(reference)
+    }
 
     generated <- tryCatch(
       generator(lipid, adduct),

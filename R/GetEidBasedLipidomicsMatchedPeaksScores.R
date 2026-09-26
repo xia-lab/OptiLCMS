@@ -1,5 +1,5 @@
 # GetEidBasedLipidomicsMatchedPeaksScores.R
-# Translation of MSDIAL EID scoring through EieioMsCharacterizationUtility.
+# Translation of MSDIAL EID lipid spectrum matching and scoring.
 
 .eid_value <- function(x, names, default = NULL) {
   if (is.null(x)) return(default)
@@ -11,19 +11,38 @@
 }
 
 .eid_peak_rows <- function(spectrum) {
-  if (is.null(spectrum) || length(spectrum) == 0L) return(data.frame())
+  if (is.null(spectrum) || length(spectrum) == 0L) {
+    return(data.frame(Mass = numeric(), Intensity = numeric(),
+                      Resolution = numeric(), Charge = numeric(),
+                      Comment = character(), SpectrumComment = character(),
+                      AbsolutelyRequired = logical(), stringsAsFactors = FALSE))
+  }
   if (is.data.frame(spectrum)) {
+    if (nrow(spectrum) == 0L) {
+      return(data.frame(Mass = numeric(), Intensity = numeric(),
+                        Resolution = numeric(), Charge = numeric(),
+                        Comment = character(), SpectrumComment = character(),
+                        AbsolutelyRequired = logical(), stringsAsFactors = FALSE))
+    }
     if (is.null(spectrum$Intensity)) spectrum$Intensity <- 0
+    if (is.null(spectrum$Resolution)) spectrum$Resolution <- spectrum$Intensity
+    if (is.null(spectrum$Charge)) spectrum$Charge <- spectrum$Intensity
     if (is.null(spectrum$SpectrumComment)) spectrum$SpectrumComment <- ""
     if (is.null(spectrum$Comment)) spectrum$Comment <- ""
     if (is.null(spectrum$AbsolutelyRequired)) spectrum$AbsolutelyRequired <- FALSE
     return(spectrum)
   }
   if (is.matrix(spectrum) && ncol(spectrum) >= 2L) {
-    return(data.frame(Mass = as.numeric(spectrum[, 1L]), Intensity = as.numeric(spectrum[, 2L]), stringsAsFactors = FALSE))
+    intensity <- as.numeric(spectrum[, 2L])
+    return(data.frame(Mass = as.numeric(spectrum[, 1L]), Intensity = intensity,
+              Resolution = intensity, Charge = intensity, stringsAsFactors = FALSE))
   }
   if (is.list(spectrum) && !is.null(spectrum$Mass)) {
-    return(data.frame(Mass = as.numeric(spectrum$Mass), Intensity = as.numeric(spectrum$Intensity), stringsAsFactors = FALSE))
+    intensity <- as.numeric(spectrum$Intensity)
+    resolution <- as.numeric(spectrum$Resolution %||% intensity)
+    charge <- as.numeric(spectrum$Charge %||% intensity)
+    return(data.frame(Mass = as.numeric(spectrum$Mass), Intensity = intensity,
+              Resolution = resolution, Charge = charge, stringsAsFactors = FALSE))
   }
   if (is.list(spectrum)) {
     rows <- lapply(spectrum, function(peak) {
@@ -31,6 +50,8 @@
       data.frame(
         Mass = as.numeric(.eid_value(peak, c("Mass", "mass", "Mz", "mz"), NA_real_)),
         Intensity = as.numeric(.eid_value(peak, c("Intensity", "intensity"), 0)),
+        Resolution = as.numeric(.eid_value(peak, c("Resolution", "resolution"), .eid_value(peak, c("Intensity", "intensity"), 0))),
+        Charge = as.numeric(.eid_value(peak, c("Charge", "charge", "OriginalIntensity", "original_intensity"), .eid_value(peak, c("Intensity", "intensity"), 0))),
         Comment = as.character(.eid_value(peak, c("Comment", "comment"), "")),
         SpectrumComment = as.character(.eid_value(peak, c("SpectrumComment", "spectrum_comment"), "")),
         AbsolutelyRequired = as.logical(.eid_value(peak, c("IsAbsolutelyRequiredFragmentForAnnotation", "AbsolutelyRequired"), FALSE)),
@@ -75,7 +96,7 @@
     index <- which(abs(exp_peaks$Mass - out$Mass[i]) < tolerance)
     if (length(index) > 0L) {
       out$Resolution[i] <- sum(exp_peaks$Intensity[index], na.rm = TRUE)
-      out$OriginalIntensity[i] <- out$Resolution[i]
+      out$OriginalIntensity[i] <- sum(exp_peaks$Charge[index], na.rm = TRUE)
       out$IsMatched[i] <- TRUE
     }
   }

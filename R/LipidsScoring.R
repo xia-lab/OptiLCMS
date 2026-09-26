@@ -883,7 +883,7 @@ calculate_score <- function(property, scan, scan_isotopes, reference, reference_
     scan$Spectrum, reference$Spectrum, ms2_tol)
 
   # ── lipidomics matched-peaks scores ────────────────────────────────────────
-  # Route to EAD-specific or standard CID/HCD path based on source_type and collision type
+  # Route to EIEIO/EID/OAD-specific or standard CID/HCD path based on source_type and collision type
   # 
   # For GeneratedLipid source:
   #   - EIEIO: get_eieio_based_lipidomics_matched_peaks_scores
@@ -920,9 +920,21 @@ calculate_score <- function(property, scan, scan_isotopes, reference, reference_
     }
   }
   else {
-    # MspDB or other source, or no collision type specified: standard path
-    matched_peaks_scores <- get_lipidomics_matched_peaks_scores(
-      scan, reference, ms2_tol, mass_begin, mass_end)
+    # Non-generated references retain the collision-specific scorer when one
+    # is requested; otherwise use the standard CID/HCD path.
+    collision_type <- parameter$CollisionType
+    if (collision_type == "EIEIO") {
+      matched_peaks_scores <- get_eieio_based_lipidomics_matched_peaks_scores(
+        scan, reference, ms2_tol, mass_begin, mass_end)
+    }
+    else if (collision_type == "EID") {
+      matched_peaks_scores <- get_eid_based_lipidomics_matched_peaks_scores(
+        scan, reference, ms2_tol, mass_begin, mass_end)
+    }
+    else {
+      matched_peaks_scores <- get_lipidomics_matched_peaks_scores(
+        scan, reference, ms2_tol, mass_begin, mass_end)
+    }
   }
   # matched_peaks_scores[1] = MatchedPeaksPercentage
   # matched_peaks_scores[2] = MatchedPeaksCount
