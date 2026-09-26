@@ -35,6 +35,3 @@ mSet Object
 \description{
 PerformDIADeconvolution
 }
-\examples{
-to add
-}

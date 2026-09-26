@@ -26,13 +26,12 @@ PerformSpectrumConsenus(
 \item{use_rt}{Logical, whether to use retention time in consensus processing.}
 
 \item{user_dbCorrection}{Logical, whether to apply database-based correction.}
+
+\item{useEntropy}{Logical, whether to use entropy during consensus matching (default FALSE).}
 }
 \value{
 mSet Object
 }
 \description{
 PerformSpectrumConsenus
-}
-\examples{
-to add
 }

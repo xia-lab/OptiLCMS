@@ -47,6 +47,3 @@ mSet Object
 \description{
 PerformDDADeconvolution
 }
-\examples{
-to add
-}

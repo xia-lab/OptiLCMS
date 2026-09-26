@@ -37,6 +37,8 @@ PerformDBSearchingBatch(
 
 \item{ncores}{Integer, number of CPU cores to use.}
 
+\item{useEntropy}{Logical, whether to use entropy similarity during database searching (default FALSE).}
+
 \item{databaseOptions}{Options of database for searching.}
 }
 \value{

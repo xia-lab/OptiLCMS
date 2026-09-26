@@ -30,9 +30,21 @@ PerformLipidsAnalysis(
 
 \item{top_n}{Integer, number of top-scoring hits kept for each feature.}
 
-\item{parameter}{Optional search parameter list produced by \code{new_ms_ref_search_parameter()}.}
+\item{parameter}{Optional search parameter list used by \code{calculate_score}.
+When omitted, \code{new_ms_ref_search_parameter()} is used. To select the
+collision-energy spectrum model for generated lipid candidates, set its
+\code{CollisionType} field to \code{"OAD"}, \code{"EID"}, or \code{"EIEIO"}; for example,
+\code{parameter <- new_ms_ref_search_parameter(); parameter$CollisionType <- "EID"}.
+The collision type is used for real-time spectrum generation only when
+\code{source_type = "GeneratedLipid"}.}
 
-\item{source_type}{Character source tag passed to \code{calculate_score}.}
+\item{source_type}{Character source tag passed to \code{calculate_score}.
+Use \code{"GeneratedLipid"} together with \code{parameter$CollisionType}
+set to \code{"OAD"}, \code{"EID"}, or \code{"EIEIO"} to select the corresponding
+reference spectrum during analysis; other source types keep the database
+spectrum unchanged.}
+
+\item{use_isotopes}{Logical, whether to extract scan isotope envelope around precursor and fetch reference isotope patterns (default FALSE).}
 }
 \value{
 Updated \code{mSet} object with:
@@ -50,4 +62,16 @@ This function queries a large sqlite lipidomics database by precursor m/z
 \details{
 Expected upstream steps:
 \code{PerformMSnImport()} -> \code{PerformDDADeconvolution()}/\code{PerformDIADeconvolution()} -> \code{PerformSpectrumConsenus()}.
+
+To use OAD-generated references:
+\preformatted{
+parameter <- new_ms_ref_search_parameter()
+parameter$CollisionType <- "OAD"
+mSet <- PerformLipidsAnalysis(mSet, parameter = parameter,
+                              source_type = "GeneratedLipid")
+}
+Replace \code{"OAD"} with \code{"EID"} to use EID-generated references.
+EIEIO and EID use distinct scoring paths. EIEIO uses the translated
+EIEIO diagnostic-fragment scorer; EID uses the EID scorer. Set
+\code{parameter$CollisionType} to \code{"EIEIO"} for EIEIO scoring.
 }

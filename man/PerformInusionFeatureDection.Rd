@@ -28,6 +28,8 @@ PerformInusionFeatureDection(
 
 \item{scales}{Numeric vector, wavelet scales for CWT method.}
 
+\item{groups}{Character vector or list specifying sample grouping (default NULL).}
+
 \item{ncores}{Integer, number of CPU cores to use.}
 }
 \value{
@@ -35,7 +37,4 @@ mSet Object
 }
 \description{
 PerformInusionFeatureDection
-}
-\examples{
-todo
 }

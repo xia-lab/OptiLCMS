@@ -16,6 +16,26 @@ PerformLipidsDBSearchingBatch(
   useEntropy = FALSE
 )
 }
+\arguments{
+\item{mSet}{mSet Object contains raw spectral data after results consensus from \code{PerformSpectrumConsenus}.}
+
+\item{ppm1}{Numeric, MS1 precursor tolerance in ppm (default 5).}
+
+\item{ppm2}{Numeric, MS2 fragment tolerance in ppm (default 15).}
+
+\item{rt_tol}{Numeric, retention time tolerance in seconds (default 0).}
+
+\item{database_path}{Character, path to the lipidomics SQLite database.}
+
+\item{use_rt}{Logical, whether to use retention time during searching (default FALSE).}
+
+\item{ncores}{Integer, number of CPU cores to use (default 1L).}
+
+\item{useEntropy}{Logical, whether to use spectral entropy similarity in database matching (default FALSE).}
+}
+\value{
+Updated mSet object with database search results stored in \code{mSet@MSnResults$LipidDBMatchRes}.
+}
 \description{
 Batch database searching for lipidomics DB (sqlite). Stores results in mSet@MSnResults$LipidDBMatchRes
 }

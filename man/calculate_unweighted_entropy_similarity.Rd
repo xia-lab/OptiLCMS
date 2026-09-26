@@ -25,7 +25,7 @@ calculate_unweighted_entropy_similarity(
 
 \item{ms2_tolerance_in_ppm}{The MS2 tolerance in ppm, set to -1 to disable}
 
-\item{clean_spectra}{Whether to clean the spectra before calculating the entropy similarity, see \code{\link{clean_spectrum}}}
+\item{clean_spectra}{Whether to clean the spectra before calculating the entropy similarity, see \code{\link{CleanSpectrum}}}
 
 \item{min_mz}{The minimum mz value to keep, set to -1 to disable}
 

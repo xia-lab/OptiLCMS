@@ -29,6 +29,3 @@ mSet Object
 \description{
 PerformMSnImport
 }
-\examples{
-to add
-}

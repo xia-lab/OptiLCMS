@@ -31,6 +31,8 @@ PerformMirrorPlotting(
 
 \item{dpi}{dpi value, default is 300}
 
+\item{format}{Character, output image format, e.g. "png" (default "png").}
+
 \item{interactive}{to make figure interactive, default is FALSE. TRUE or FALSE.}
 }
 \description{
