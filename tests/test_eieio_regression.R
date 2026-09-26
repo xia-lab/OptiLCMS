@@ -1,6 +1,23 @@
-source(file.path("R", "GetEidBasedLipidomicsMatchedPeaksScores.R"))
-source(file.path("R", "GetEieioBasedLipidomicsMatchedPeaksScores.R"))
-source(file.path("R", "LipidsScoring.R"))
+if (requireNamespace("OptiLCMS", quietly = TRUE) &&
+    exists("get_eieio_based_lipidomics_matched_peaks_scores", envir = asNamespace("OptiLCMS"))) {
+  ns <- asNamespace("OptiLCMS")
+  get_eieio_based_lipidomics_matched_peaks_scores <- get("get_eieio_based_lipidomics_matched_peaks_scores", envir = ns)
+  .eieio_dgta_fragment_masses <- get(".eieio_dgta_fragment_masses", envir = ns)
+  new_ms_ref_search_parameter <- get("new_ms_ref_search_parameter", envir = ns)
+  calculate_score <- get("calculate_score", envir = ns)
+} else {
+  find_r_dir <- function() {
+    for (cand in c(".", "..", "../..")) {
+      p <- file.path(cand, "R")
+      if (dir.exists(p) && file.exists(file.path(p, "GetEieioBasedLipidomicsMatchedPeaksScores.R"))) return(p)
+    }
+    stop("Cannot find R source directory")
+  }
+  r_dir <- find_r_dir()
+  source(file.path(r_dir, "GetEidBasedLipidomicsMatchedPeaksScores.R"))
+  source(file.path(r_dir, "GetEieioBasedLipidomicsMatchedPeaksScores.R"))
+  source(file.path(r_dir, "LipidsScoring.R"))
+}
 
 make_peak <- function(mass, intensity, comment, spectrum_comment,
                       resolution = intensity, charge = intensity) {
