@@ -131,6 +131,15 @@ PerformLipidsAnalysis <- function(
 
   .matrix_to_peak_list <- function(spec_mtx) {
     if (is.null(spec_mtx) || length(spec_mtx) == 0) return(list())
+    if (is.data.frame(spec_mtx)) {
+      if (nrow(spec_mtx) == 0 || !all(c("Mass", "Intensity") %in% names(spec_mtx))) return(list())
+      return(lapply(seq_len(nrow(spec_mtx)), function(i) {
+        peak <- list(Mass = as.numeric(spec_mtx$Mass[i]), Intensity = as.numeric(spec_mtx$Intensity[i]))
+        if ("Comment" %in% names(spec_mtx)) peak$Comment <- as.character(spec_mtx$Comment[i])
+        if ("SpectrumComment" %in% names(spec_mtx)) peak$SpectrumComment <- as.character(spec_mtx$SpectrumComment[i])
+        peak
+      }))
+    }
     spec_mtx <- as.matrix(spec_mtx)
     if (nrow(spec_mtx) == 0 || ncol(spec_mtx) < 2) return(list())
     lapply(seq_len(nrow(spec_mtx)), function(i) {
@@ -138,12 +147,16 @@ PerformLipidsAnalysis <- function(
     })
   }
 
-  .generate_realtime_oad_reference <- function(reference, candidate) {
+  .generate_realtime_collision_reference <- function(reference, candidate) {
+    collision_type <- as.character(parameter$CollisionType)
     if (!identical(source_type, "GeneratedLipid") ||
-        !identical(parameter$CollisionType, "OAD") ||
-        !exists("generate_oad_lipid_spectrum", mode = "function", inherits = TRUE)) {
+        !collision_type %in% c("OAD", "EID")) {
       return(reference)
     }
+    generator_name <- if (collision_type == "OAD") "generate_oad_lipid_spectrum" else "generate_eid_lipid_spectrum"
+    can_generate_name <- if (collision_type == "OAD") "can_generate_oad_lipid_spectrum" else "can_generate_eid_lipid_spectrum"
+    if (!exists(generator_name, mode = "function", inherits = TRUE) ||
+        !exists(can_generate_name, mode = "function", inherits = TRUE)) return(reference)
 
     lipid_name <- if (!is.null(candidate$AbbreName) &&
                       nzchar(as.character(candidate$AbbreName))) {
@@ -166,16 +179,22 @@ PerformLipidsAnalysis <- function(
     }
     if (!is.finite(neutral_mass)) {
       precursor <- suppressWarnings(as.numeric(reference$PrecursorMz))
+      eid_mass <- function(carbon = 0, hydrogen = 0, nitrogen = 0, oxygen = 0) {
+        carbon * 12 + hydrogen * 1.00782503223 + nitrogen * 14.00307400443 + oxygen * 15.99491461957
+      }
+      eid_proton <- 1.007276466621
+      eid_electron <- 0.00054858026
+      eid_h2o <- eid_mass(hydrogen = 2, oxygen = 1)
       neutral_mass <- switch(adduct,
-        "[M+H]+" = precursor - .oad_sg_proton,
-        "[M+Na]+" = precursor - .oad_sg_na,
-        "[M+NH4]+" = precursor - .oad_sg_nh4,
-        "[M+H-H2O]+" = precursor - .oad_sg_proton + .oad_sg_water,
-        "[M-H2O+H]+" = precursor - .oad_sg_proton + .oad_sg_water,
-        "[M-H]-" = precursor + .oad_sg_proton,
-        "[M+HCOO]-" = precursor - .oad_sg_formate + .oad_sg_proton,
-        "[M+CH3COO]-" = precursor - .oad_sg_acetate + .oad_sg_proton,
-        "[M+HCO3]-" = precursor - .oad_sg_bicarbonate + .oad_sg_proton,
+        "[M+H]+" = if (collision_type == "OAD") precursor - .oad_sg_proton else precursor - eid_proton,
+        "[M+Na]+" = if (collision_type == "OAD") precursor - .oad_sg_na else precursor - eid_mass(hydrogen = -1) - 22.989218,
+        "[M+NH4]+" = if (collision_type == "OAD") precursor - .oad_sg_nh4 else precursor - eid_mass(hydrogen = 3, nitrogen = 1) - eid_proton,
+        "[M+H-H2O]+" = if (collision_type == "OAD") precursor - .oad_sg_proton + .oad_sg_water else precursor - eid_proton + eid_h2o,
+        "[M-H2O+H]+" = if (collision_type == "OAD") precursor - .oad_sg_proton + .oad_sg_water else precursor - eid_proton + eid_h2o,
+        "[M-H]-" = if (collision_type == "OAD") precursor + .oad_sg_proton else precursor + eid_mass(hydrogen = 1) - eid_electron,
+        "[M+HCOO]-" = if (collision_type == "OAD") precursor - .oad_sg_formate + .oad_sg_proton else precursor - eid_mass(carbon = 1, hydrogen = 1, oxygen = 2) + eid_electron,
+        "[M+CH3COO]-" = if (collision_type == "OAD") precursor - .oad_sg_acetate + .oad_sg_proton else precursor - eid_mass(carbon = 2, hydrogen = 3, oxygen = 2) + eid_electron,
+        "[M+HCO3]-" = if (collision_type == "OAD") precursor - .oad_sg_bicarbonate + .oad_sg_proton else NA_real_,
         NA_real_
       )
     }
@@ -186,10 +205,12 @@ PerformLipidsAnalysis <- function(
       Mass = neutral_mass,
       InChIKey = reference$InChIKey
     )
-    if (!isTRUE(can_generate_oad_lipid_spectrum(lipid, adduct))) return(reference)
+    can_generate <- get(can_generate_name, mode = "function", inherits = TRUE)
+    generator <- get(generator_name, mode = "function", inherits = TRUE)
+    if (!isTRUE(can_generate(lipid, adduct))) return(reference)
 
     generated <- tryCatch(
-      generate_oad_lipid_spectrum(lipid, adduct),
+      generator(lipid, adduct),
       error = function(e) NULL
     )
     if (is.null(generated) || is.null(generated$Spectrum) ||
@@ -412,7 +433,7 @@ PerformLipidsAnalysis <- function(
         CollisionCrossSection = as.numeric(candidates$CollisionCrossSection[[j]])
       )
 
-      reference <- .generate_realtime_oad_reference(reference, candidates[j, , drop = FALSE])
+      reference <- .generate_realtime_collision_reference(reference, candidates[j, , drop = FALSE])
       if (length(reference$Spectrum) == 0) {
         scored[[j]] <- NULL
         next
