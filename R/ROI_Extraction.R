@@ -145,6 +145,87 @@ PerformROIExtraction <-
     
     start.time <- Sys.time();
     function.name <- "ROI_extract";
+    parallel_param <- BiocParallel::bpparam();
+    
+    combine_msnexp_list <- function(msnexp_list) {
+      if (length(msnexp_list) == 1) {
+        return(msnexp_list[[1]])
+      }
+      
+      assayData_env <- new.env(parent = emptyenv())
+      feature_data_list <- list()
+      pheno_data_list <- list()
+      assay_name_vec <- character()
+      
+      for (idx in seq_along(msnexp_list)) {
+        obj <- msnexp_list[[idx]]
+        ad_names <- ls(obj@assayData)
+        new_ad_names <- sprintf("F%d.S%03d", idx, seq_along(ad_names))
+        assay_name_vec <- c(assay_name_vec, new_ad_names)
+        
+        pheno_row <- obj@phenoData@data
+        if (is.null(rownames(pheno_row))) {
+          rownames(pheno_row) <- pheno_row$sample_name
+        }
+        pheno_data_list[[idx]] <- pheno_row
+        
+        fd <- obj@featureData@data
+        if (nrow(fd) == length(new_ad_names)) {
+          rownames(fd) <- new_ad_names
+        }
+        feature_data_list[[idx]] <- fd
+        
+        for (nm_idx in seq_along(ad_names)) {
+          spectrum_obj <- obj@assayData[[ad_names[nm_idx]]]
+          if (!is.null(slotNames(spectrum_obj)) && "fromFile" %in% slotNames(spectrum_obj)) {
+            spectrum_obj@fromFile <- as.integer(idx)
+          }
+          assign(new_ad_names[nm_idx], spectrum_obj, envir = assayData_env)
+        }
+      }
+      
+      pd_data <- do.call(rbind, pheno_data_list)
+      pd_data <- data.frame(pd_data,
+                            row.names = as.character(seq_len(nrow(pd_data))),
+                            stringsAsFactors = FALSE)
+      combined_pd <- new("AnnotatedDataFrame", data = pd_data)
+      attr(combined_pd@data, "row.names") <- seq_len(nrow(pd_data))
+      
+      combined_fd <- new("AnnotatedDataFrame",
+                         data = do.call(rbind, feature_data_list),
+                         varMetadata = msnexp_list[[1]]@featureData@varMetadata)
+      combined_fd <- combined_fd[assay_name_vec, , drop = FALSE]
+      
+      processing_data <- msnexp_list[[1]]@processingData
+      processing_data@files <- unname(unlist(lapply(msnexp_list, function(x) x@processingData@files)))
+      
+      combined_experiment <- msnexp_list[[1]]@experimentData
+      exp_slots <- slotNames(combined_experiment)
+      file_count <- length(processing_data@files)
+      replicate_slots <- c("analyser", "detectorType",
+                           "instrumentManufacturer", "instrumentModel", "ionSource")
+      for (sn in exp_slots) {
+        val <- slot(combined_experiment, sn)
+        if (sn %in% replicate_slots && is.vector(val) && length(val) == 1 && file_count > 1) {
+          slot(combined_experiment, sn) <- rep(val[1], file_count)
+        }
+      }
+      
+      protocol_df <- data.frame(row.names = character(0),
+                                stringsAsFactors = FALSE)
+      protocol_data <- new("AnnotatedDataFrame",
+                           data = protocol_df,
+                           dimLabels = c("sampleNames", "sampleColumns"))
+      attr(protocol_data@data, "row.names") <- integer(0)
+      
+      new("MSnExp",
+          assayData = assayData_env,
+          phenoData = combined_pd,
+          featureData = combined_fd,
+          experimentData = combined_experiment,
+          protocolData = protocol_data,
+          processingData = processing_data)
+    }
     
     if (is.null(running.controller)) {
       c1 <- c2 <- c3 <- c4 <- c5 <- TRUE;
@@ -285,31 +366,41 @@ PerformROIExtraction <-
       
       pd <-
         data.frame(
-          sample_name = sub(
-            basename(dda_file1),
-            pattern = ".mzXML",
-            replacement = "",
-            fixed = TRUE
-          ),
+          sample_name = tools::file_path_sans_ext(basename(dda_file1)),
           stringsAsFactors = FALSE
         )
+      pdata_class <- if (isClass("NAnnotatedDataFrame")) "NAnnotatedDataFrame" else "AnnotatedDataFrame"
       
-      MessageOutput("Data Loading...", "\n", NULL)
+      MessageOutput("Data Loading in parallel...", "\n", NULL)
       
-      raw_data <-
-        tryCatch(read.MSdata(
-          dda_file1,
-          pdata = new("NAnnotatedDataFrame", pd),
-          msLevel. = 1L,
-          mode = "inMemory"
-        ), error = function(e) {e})
+      raw_data_list <-
+        BiocParallel::bplapply(seq_along(dda_file1),
+                               FUN = function(idx) {
+                                 tryCatch(
+                                   read.MSdata(
+                                     dda_file1[idx],
+                                     pdata = new(pdata_class, pd[idx, , drop = FALSE]),
+                                     msLevel. = 1L,
+                                     mode = "inMemory"
+                                   ),
+                                   error = function(e) {
+                                     e
+                                   }
+                                 )
+                               },
+                               BPPARAM = parallel_param)
       
-      if (!is(raw_data,"MSnExp")) {
+      invalid_data <- which(!vapply(raw_data_list, function(x) {
+        is(x, "MSnExp")
+      }, logical(1)))
+      
+      if (length(invalid_data)) {
+        first_error <- raw_data_list[[invalid_data[1]]]
         MessageOutput(
           mes = paste0(
             "<font color=\"red\">",
             "\nERROR:",
-            raw_data$message,
+            first_error$message,
             "</font>"
           ),
           ecol = "\n",
@@ -321,53 +412,25 @@ PerformROIExtraction <-
       MessageOutput("Data Loaded !", "\n", NULL)
 
       if (.running.as.plan) {
-        cache.save(raw_data, paste0(function.name, "_c1"));
+        cache.save(raw_data_list, paste0(function.name, "_c1"));
         marker_record(paste0(function.name, "_c1"));
       }
       
     } else {
       mSet <- new("mSet");
       mSet@rawfiles <- files;
-      raw_data <- cache.read(function.name, "c1");
+      raw_data_list <- cache.read(function.name, "c1");
+      pd <-
+        data.frame(
+          sample_name = tools::file_path_sans_ext(basename(mSet@rawfiles)),
+          stringsAsFactors = FALSE
+        )
+      pdata_class <- if (isClass("NAnnotatedDataFrame")) "NAnnotatedDataFrame" else "AnnotatedDataFrame"
       marker_record(paste0(function.name, "_c1"));
     }
     
     if (c2) {
       if (!mode == "none") {
-        ## Data Trim
-        # a <-
-        #   suppressMessages(unlist(lapply(
-        #     ls(raw_data@assayData),
-        #     FUN = function(x) {
-        #       unlockBinding(sym = x, env = raw_data@assayData)
-        #     }
-        #   )));
-
-        ms_list <-
-          sapply(
-            ls(raw_data@assayData),
-            FUN = function(x)
-              raw_data@assayData[[x]]@mz
-          );
-        
-        MessageOutput("Empty Scan detecting...", "\n", NULL)
-        emptyScan <- vector()
-        
-        for (i in seq_along(ms_list)) {
-          if (identical(ms_list[[i]], numeric(0))) {
-            emptyScan <- c(emptyScan, i)
-          }
-        }
-        
-        if (!identical(emptyScan, logical(0))) {
-          MessageOutput(paste0("Empty Scans Found. Removing..."), "\n", NULL);
-          raw_data <- .emptyscan.remove(raw_data, ms_list);
-        } else {
-          MessageOutput(paste0("No Empty scan found !"), "\n", NULL);
-        }
-        
-        MessageOutput("Identifying regions of interest (ROI)...", "\n", NULL);
-        
         if (missing(rt.idx)) {
           rt.idx <- 0.9
           # include the 90% RT range
@@ -379,63 +442,213 @@ PerformROIExtraction <-
           tmp_mes <- try(suppressWarnings(load("params.rda")),silent = TRUE);
         } else {
           tmp_mes <- 0;
+          peakParams <- NULL;
         }
         
-        if(c5){
+        MessageOutput("Empty Scan detecting...", "\n", NULL)
+
+        prepare_single_file <- function(raw_data_single) {
+          ms_list <-
+            sapply(
+              ls(raw_data_single@assayData),
+              FUN = function(x)
+                raw_data_single@assayData[[x]]@mz
+            );
+          
+          emptyScan <- vector()
+          
+          for (i in seq_along(ms_list)) {
+            if (identical(ms_list[[i]], numeric(0))) {
+              emptyScan <- c(emptyScan, i)
+            }
+          }
+          
+          if (!identical(emptyScan, logical(0))) {
+            raw_data_single <- .emptyscan.remove(raw_data_single, ms_list);
+            ms_list <-
+              sapply(
+                ls(raw_data_single@assayData),
+                FUN = function(x)
+                  raw_data_single@assayData[[x]]@mz
+              );
+          }
           
           if(is(tmp_mes,"try-error") | rmConts){
-            raw_data <- ContaminatsRemoval(raw_data, ms_list);
-            raw_data <- .emptyscan.remove(raw_data, ms_list);
+            raw_data_single <- ContaminatsRemoval(raw_data_single, ms_list);
+            raw_data_single <- .emptyscan.remove(raw_data_single, ms_list);
           } else if (.on.public.web()) {
             
             if(exists("peakParams")){
               if(peakParams[["rmConts"]]){
-                raw_data <- ContaminatsRemoval(raw_data, ms_list);
-                raw_data <- .emptyscan.remove(raw_data, ms_list);
+                raw_data_single <- ContaminatsRemoval(raw_data_single, ms_list);
+                raw_data_single <- .emptyscan.remove(raw_data_single, ms_list);
               }
             } else {
-              raw_data <- ContaminatsRemoval(raw_data, ms_list);
-              raw_data <- .emptyscan.remove(raw_data, ms_list);
+              raw_data_single <- ContaminatsRemoval(raw_data_single, ms_list);
+              raw_data_single <- .emptyscan.remove(raw_data_single, ms_list);
             }
           }
           
+          return(raw_data_single)
+        }
+        
+        if(c5){
+          raw_data_list <- BiocParallel::bplapply(raw_data_list,
+                                                  FUN = prepare_single_file,
+                                                  BPPARAM = parallel_param)
+          
           if (.running.as.plan) {
-            cache.save(raw_data, paste0(function.name, "_c5"));
+            cache.save(raw_data_list, paste0(function.name, "_c5"));
             marker_record(paste0(function.name, "_c5"));
           }
           
         } else {
-          raw_data <- cache.read(function.name, "c5");
+          raw_data_list <- cache.read(function.name, "c5");
           marker_record(paste0(function.name, "_c5"));
         }
 
+        compute_global_params <- function(raw_list, rt.idx) {
+          spectra_mz_all <- unlist(lapply(raw_list, function(rd) unlist(lapply(MSnbase::spectra(rd), function(sp) MSnbase::mz(sp)))))
+          spectra_int_all <- unlist(lapply(raw_list, function(rd) unlist(lapply(MSnbase::spectra(rd), function(sp) MSnbase::intensity(sp)))))
+          
+          bins.boundary <- seq(from = min(spectra_mz_all), to = max(spectra_mz_all), length.out = 5)
+          
+          if (length(spectra_mz_all) > 1000000) {
+            rannum <- seq(from = 1, to = length(spectra_mz_all), by = 50)
+          } else if (length(spectra_mz_all) > 100000) {
+            rannum <- seq(from = 1, to = length(spectra_mz_all), by = 5)
+          } else {
+            rannum <- seq(length(spectra_mz_all))
+          }
+          
+          spectra_mz_sample <- spectra_mz_all[rannum]
+          spectra_abundance_sample <- spectra_int_all[rannum]
+          
+          spectra_mz_set <- lapply(seq_len(4), function(ii) {
+            spectra_mz_sample[spectra_mz_sample > bins.boundary[ii] & spectra_mz_sample < bins.boundary[ii + 1]]
+          })
+          
+          spectra_abundance_set <- lapply(seq_len(4), function(ii) {
+            spectra_abundance_sample[spectra_mz_sample > bins.boundary[ii] & spectra_mz_sample < bins.boundary[ii + 1]]
+          })
+          
+          good.bins.list <- lapply(
+            seq_len(4),
+            function(i) {
+              binsb.low <- bins.boundary[i]
+              binsb.high <- bins.boundary[i + 1]
+              w <- 1
+              bins.width <- (binsb.high - binsb.low) * 0.1
+              wind.up <- wind.down <- 0
+              inten.sum.set <- numeric()
+              
+              while (!wind.up > binsb.high) {
+                wind.down <- binsb.low + (w - 1)
+                wind.up <- binsb.low + bins.width + (w - 1)
+                
+                inten.sum.set <- c(
+                  inten.sum.set,
+                  sum(spectra_abundance_set[[i]][spectra_mz_set[[i]] > wind.down &
+                                                  spectra_mz_set[[i]] < wind.up])
+                )
+                w <- w + 1
+              }
+              
+              selected.bin.down <- binsb.low + which(max(inten.sum.set) == inten.sum.set) - 1
+              selected.bin.up <- binsb.low + which(max(inten.sum.set) == inten.sum.set) - 1 + bins.width
+              
+              list(selected.bin.down, selected.bin.up)
+            }
+          )
+          
+          rt_vec <- unlist(lapply(raw_list, function(rd) {
+            scan_names <- ls(rd@assayData)
+            sapply(scan_names, function(nm) rd@assayData[[nm]]@rt)
+          }))
+          
+          tic_vec <- unlist(lapply(raw_list, function(rd) {
+            scan_names <- ls(rd@assayData)
+            sapply(scan_names, function(nm) rd@assayData[[nm]]@tic)
+          }))
+          
+          rt.bin.width <- (max(rt_vec) - min(rt_vec)) * rt.idx
+          w <- 0
+          rt.window.min <- min(rt_vec)
+          tic.sum <- numeric()
+          
+          while (!rt.window.min > max(rt_vec)) {
+            rt.window.min <- min(rt_vec) + w * 0.75
+            rt.window.max <- min(rt_vec) + rt.bin.width + w * 0.75
+            idx <- which(rt_vec > rt.window.min & rt_vec < rt.window.max)
+            if (length(idx)) {
+              tic.sum <- c(tic.sum, sum(tic_vec[idx]))
+            }
+            w <- w + 1
+          }
+          
+          rt.boundary.lowlimit <- min(rt_vec) + which(max(tic.sum) == tic.sum)[ceiling(length(which(max(tic.sum) == tic.sum)) / 2)] * 0.75
+          rt.boundary.uplimit <- min(rt_vec) + which(max(tic.sum) == tic.sum)[ceiling(length(which(max(tic.sum) == tic.sum)) / 2)] * 0.75 + rt.bin.width
+          
+          list(good.bins.list = good.bins.list,
+               rt.boundary = c(rt.boundary.lowlimit, rt.boundary.uplimit))
+        }
+
+        global_params <- compute_global_params(raw_data_list, rt.idx)
         
-        if (mode == "ssm") {
-          trimed_MSnExp <- ssm_trim(raw_data, ms_list, rt.idx = rt.idx);
+        MessageOutput("Identifying regions of interest (ROI)...", "\n", NULL);
+        
+        trim_single_file <- function(raw_data_single) {
+          ms_list <-
+            sapply(
+              ls(raw_data_single@assayData),
+              FUN = function(x)
+                raw_data_single@assayData[[x]]@mz
+            );
+          
+          if (mode == "ssm") {
+            trimed_MSnExp <- ssm_trim(raw_data_single,
+                                      ms_list,
+                                      rt.idx = rt.idx,
+                                      good.bins.list = global_params$good.bins.list,
+                                      rt.boundary = global_params$rt.boundary);
+          }
+          
+          if (mode == "mz_random") {
+            try(trimed_MSnExp <- mz.trim_random(raw_data_single, ms_list), silent = TRUE);
+          }
+          
+          if (mode == "rt_random") {
+            try(trimed_MSnExp <- rt.trim_random(raw_data_single, ms_list), silent = TRUE)
+          }
+          
+          if (mode == "mz_specific") {
+            trimed_MSnExp <- mz.trim_specific(raw_data_single, ms_list, mz, mzdiff = mzdiff)
+          }
+          
+          if (mode == "rt_specific") {
+            trimed_MSnExp <- rt.trim_specific(raw_data_single, ms_list, rt, rtdiff = rtdiff)
+          }
+          
+          trimed_MSnExp <- .emptyscan.remove(trimed_MSnExp, ms_list);
+          return(trimed_MSnExp)
         }
         
-        if (mode == "mz_random") {
-          try(trimed_MSnExp <- mz.trim_random(raw_data, ms_list), silent = TRUE);
+        trimed_list <- BiocParallel::bplapply(raw_data_list,
+                                              FUN = trim_single_file,
+                                              BPPARAM = parallel_param)
+        
+        invalid_trim <- which(!vapply(trimed_list, function(x) {
+          is(x, "MSnExp")
+        }, logical(1)))
+        
+        if (length(invalid_trim)) {
+          stop("EXCEPTION POINT CODE: TRIM1")
         }
         
-        if (mode == "rt_random") {
-          try(trimed_MSnExp <- rt.trim_random(raw_data, ms_list), silent = TRUE)
-        }
-        
-        if (mode == "mz_specific") {
-          trimed_MSnExp <- mz.trim_specific(raw_data, ms_list, mz, mzdiff = mzdiff)
-        }
-        
-        if (mode == "rt_specific") {
-          trimed_MSnExp <- rt.trim_specific(raw_data, ms_list, rt, rtdiff = rtdiff)
-        }
-        
-        # remove the empty scans in the ms data
-        trimed_MSnExp <- .emptyscan.remove(trimed_MSnExp, ms_list);
+        trimed_MSnExp <- combine_msnexp_list(trimed_list);
         
       } else{
-        # keep the data without trimming.
-        trimed_MSnExp <- raw_data;
+        trimed_MSnExp <- combine_msnexp_list(raw_data_list);
       }
       
       if (.running.as.plan) {
@@ -492,7 +705,7 @@ PerformROIExtraction <-
       }
       
     }
-    
+
     MessageOutput(paste0("Identification on ROIs Finished!"),
                   ecol = "\n",
                   NULL);
@@ -500,6 +713,18 @@ PerformROIExtraction <-
       MessageOutput("Optimization will be started soon...", "\n", NULL);
     }
 
+    pheno_tmp <- new("AnnotatedDataFrame",
+                     data = pData(trimed_MSnExp),
+                     varMetadata = varMetadata(phenoData(trimed_MSnExp)),
+                     dimLabels = phenoData(trimed_MSnExp)@dimLabels)
+    attr(pheno_tmp@data, "row.names") <- seq_len(nrow(pData(trimed_MSnExp)))
+    trimed_MSnExp@phenoData <- pheno_tmp
+    protocol_tmp <- new("AnnotatedDataFrame",
+                        data = data.frame(row.names = character(0),
+                                          stringsAsFactors = FALSE),
+                        dimLabels = c("sampleNames", "sampleColumns"))
+    trimed_MSnExp@protocolData <- protocol_tmp
+    attr(trimed_MSnExp@protocolData@data, "row.names") <- integer(0)
     mSet@rawInMemory <- trimed_MSnExp;
     
     if(.on.public.web()){
@@ -527,7 +752,7 @@ PerformROIExtraction <-
 #' Mcgill University
 #' License: GNU GPL (>= 2)
 
-ssm_trim <- function(raw_data, ms_list, rt.idx){
+ssm_trim <- function(raw_data, ms_list, rt.idx, good.bins.list = NULL, rt.boundary = NULL){
   
   # mzdata_points<-unique(unlist(ms_list))  
   
@@ -547,91 +772,76 @@ ssm_trim <- function(raw_data, ms_list, rt.idx){
     ms_list <- ms_list[-empty_toRemove];
   }
   
-  spectra_mz <- unlist(lapply(MSnbase::spectra(raw_data),mz))
-  
-  highestmz<-max(spectra_mz)
-  lowestmz<-min(spectra_mz)
-  
-  # Split MS into 5 large districts
-  bins.boundary<-seq(from=lowestmz, to= highestmz,length.out = 5)
-  
-  
-  if (length(spectra_mz)>1000000){
-    # set.seed(222);
-    # rannum<- sort(sample(length(spectra_mz),
-    #                      ceiling(length(spectra_mz)/50)),
-    #               decreasing = FALSE)
-    rannum <- seq(from = 1, 
-                  to = length(spectra_mz), 
-                  by = 50)
-  } else if (length(spectra_mz)>100000){
-    # set.seed(222)
-    # rannum<-sort(sample(length(spectra_mz),
-    #                     ceiling(length(spectra_mz)/5)),
-    #              decreasing = FALSE)
-    rannum <- seq(from = 1, 
-                  to = length(spectra_mz), 
-                  by = 5)
-  } else {
-    rannum<-seq(length(spectra_mz))
+  if (is.null(good.bins.list)) {
+    spectra_mz <- unlist(lapply(MSnbase::spectra(raw_data),mz))
+    
+    highestmz<-max(spectra_mz)
+    lowestmz<-min(spectra_mz)
+    
+    # Split MS into 5 large districts
+    bins.boundary<-seq(from=lowestmz, to= highestmz,length.out = 5)
+    
+    
+    if (length(spectra_mz)>1000000){
+      rannum <- seq(from = 1, 
+                    to = length(spectra_mz), 
+                    by = 50)
+    } else if (length(spectra_mz)>100000){
+      rannum <- seq(from = 1, 
+                    to = length(spectra_mz), 
+                    by = 5)
+    } else {
+      rannum<-seq(length(spectra_mz))
+    }
+    
+    spectra_abundance <- unlist(lapply(MSnbase::spectra(raw_data),intensity))[rannum]
+    spectra_mz <- spectra_mz[rannum]
+    
+    spectra_mz_set <- sapply(seq_len(4),FUN=function(ii){
+      
+      spectra_mz[spectra_mz > bins.boundary[ii] & spectra_mz <  bins.boundary[ii+1]]
+      
+    })
+    
+    spectra_abundance_set <- sapply(seq_len(4),FUN=function(ii){
+      
+      spectra_abundance[spectra_mz > bins.boundary[ii] &  spectra_mz  <  bins.boundary[ii+1]]
+      
+    })
+    
+    rm(spectra_abundance); rm(spectra_mz)
+    
+    good.bins.list<-bplapply(seq_len(4),
+                             FUN = function(i, spectra_abundance_set, spectra_mz_set, bins.boundary){
+                               
+                               binsb.low<-bins.boundary[i];                             
+                               binsb.high<-bins.boundary[i+1];                             
+                               w<-1;                             
+                               bins.width<-(binsb.high-binsb.low)*0.1;                             
+                               wind.up<-wind.down<-0;
+                               inten.sum.set<-numeric();
+                               
+                               while (!wind.up>binsb.high) {                               
+                                 wind.down<-binsb.low+(w-1);                               
+                                 wind.up<-binsb.low+bins.width+(w-1);                               
+                                 
+                                 inten.sum.set<-c(inten.sum.set,
+                                                  sum (spectra_abundance_set[[i]]
+                                                       [spectra_mz_set[[i]] > wind.down & spectra_mz_set[[i]] < wind.up]));
+                                 w<-w+1;
+                               }
+                               
+                               selected.bin.down<-binsb.low+which(max(inten.sum.set)==inten.sum.set)-1;
+                               selected.bin.up<-binsb.low+which(max(inten.sum.set)==inten.sum.set)-1+bins.width
+                               
+                               return(list(selected.bin.down,selected.bin.up))
+                               
+                             },
+                             spectra_abundance_set=spectra_abundance_set,
+                             spectra_mz_set=spectra_mz_set,
+                             bins.boundary=bins.boundary,
+                             BPPARAM = MulticoreParam(4L))
   }
-  
-  spectra_abundance <- unlist(lapply(MSnbase::spectra(raw_data),intensity))[rannum]
-  spectra_mz <- spectra_mz[rannum]
-  
-  spectra_mz_set <- sapply(seq_len(4),FUN=function(ii){
-    
-    spectra_mz[spectra_mz > bins.boundary[ii] & spectra_mz <  bins.boundary[ii+1]]
-    
-  })
-  
-  spectra_abundance_set <- sapply(seq_len(4),FUN=function(ii){
-    
-    spectra_abundance[spectra_mz > bins.boundary[ii] &  spectra_mz  <  bins.boundary[ii+1]]
-    
-  })
-  
-  rm(spectra_abundance); rm(spectra_mz)
-  
-  good.bins.list<-bplapply(seq_len(4),
-                           FUN = function(i, spectra_abundance_set, spectra_mz_set, bins.boundary){
-                             
-                             binsb.low<-bins.boundary[i];                             
-                             binsb.high<-bins.boundary[i+1];                             
-                             w<-1;                             
-                             bins.width<-(binsb.high-binsb.low)*0.1;                             
-                             wind.up<-wind.down<-0;
-                             inten.sum.set<-numeric();
-                             
-                             while (!wind.up>binsb.high) {                               
-                               wind.down<-binsb.low+(w-1);                               
-                               wind.up<-binsb.low+bins.width+(w-1);                               
-                               #inten.sum<-numeric()
-                               
-                               inten.sum.set<-c(inten.sum.set,
-                                                sum (spectra_abundance_set[[i]]
-                                                     [spectra_mz_set[[i]] > wind.down & spectra_mz_set[[i]] < wind.up]));
-                               
-                               #for (j in 1:length(ms_list_s)){
-                               #  mz.set<-raw_data@assayData[[ms_list_s[j]]]@mz
-                               #  a1<-which(sapply(mz.set, FUN=function(x){x>wind.down && x<wind.up}))
-                               #  inten.sum<-c(inten.sum,sum(raw_data@assayData[[ms_list_s[j]]]@intensity[a1]))
-                               #}
-                               
-                               #inten.sum.set<-c(inten.sum.set,sum(inten.sum))
-                               w<-w+1;
-                             }
-                             
-                             selected.bin.down<-binsb.low+which(max(inten.sum.set)==inten.sum.set)-1;
-                             selected.bin.up<-binsb.low+which(max(inten.sum.set)==inten.sum.set)-1+bins.width
-                             
-                             return(list(selected.bin.down,selected.bin.up))
-                             
-                           },
-                           spectra_abundance_set=spectra_abundance_set,
-                           spectra_mz_set=spectra_mz_set,
-                           bins.boundary=bins.boundary,
-                           BPPARAM = MulticoreParam(4L))
   
   MessageOutput("MS Data ready !", "\n", NULL);
   
@@ -656,26 +866,30 @@ ssm_trim <- function(raw_data, ms_list, rt.idx){
   MessageOutput("Identifying ROIs in m/z dimensions Done !", "\n", NULL);
   
   ## Trimed data outside the RT bins
-  rt_set<-sapply(names(ms_list),FUN=function(x) raw_data@assayData[[x]]@rt)
-  rt.bin.width<-(max(rt_set)-min(rt_set))*rt.idx
-  
-  # Slide window to determin the location of the RT trim boundary
-  tic<-1;w<-0;rt.window.min<-min(rt_set);tic.sum<-numeric()
-  
-  while (!rt.window.min>max(rt_set)) {
-    rt.window.min<-min(rt_set)+w*0.75
-    rt.window.max<-min(rt_set)+rt.bin.width+w*0.75
-    rt.name.set<-names(which(sapply(rt_set,FUN = function(x){x>rt.window.min && x<rt.window.max})))
+  if (is.null(rt.boundary)) {
+    rt_set<-sapply(names(ms_list),FUN=function(x) raw_data@assayData[[x]]@rt)
+    rt.bin.width<-(max(rt_set)-min(rt_set))*rt.idx
     
-    if(!identical(rt.name.set,character(0))){
-      tic.sum<-c(tic.sum,sum(sapply(rt.name.set,FUN=function(x){raw_data@assayData[[x]]@tic})))
+    w<-0;rt.window.min<-min(rt_set);tic.sum<-numeric()
+    
+    while (!rt.window.min>max(rt_set)) {
+      rt.window.min<-min(rt_set)+w*0.75
+      rt.window.max<-min(rt_set)+rt.bin.width+w*0.75
+      rt.name.set<-names(which(sapply(rt_set,FUN = function(x){x>rt.window.min && x<rt.window.max})))
+      
+      if(!identical(rt.name.set,character(0))){
+        tic.sum<-c(tic.sum,sum(sapply(rt.name.set,FUN=function(x){raw_data@assayData[[x]]@tic})))
+      }
+      
+      w<-w+1
     }
     
-    w<-w+1
+    rt.boundary.lowlimit<-min(rt_set)+which(max(tic.sum)==tic.sum)[ceiling(length(which(max(tic.sum)==tic.sum))/2)]*0.75
+    rt.boundary.uplimit<-min(rt_set)+which(max(tic.sum)==tic.sum)[ceiling(length(which(max(tic.sum)==tic.sum))/2)]*0.75+rt.bin.width
+  } else {
+    rt.boundary.lowlimit <- rt.boundary[1]
+    rt.boundary.uplimit <- rt.boundary[2]
   }
-  
-  rt.boundary.lowlimit<-min(rt_set)+which(max(tic.sum)==tic.sum)[ceiling(length(which(max(tic.sum)==tic.sum))/2)]*0.75
-  rt.boundary.uplimit<-min(rt_set)+which(max(tic.sum)==tic.sum)[ceiling(length(which(max(tic.sum)==tic.sum))/2)]*0.75+rt.bin.width
   
   MessageOutput("Identifying ROIs in RT dimensions...", "\n", NULL);
  

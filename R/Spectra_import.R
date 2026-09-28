@@ -270,7 +270,7 @@ ImportRawMSData <-
       raw_data <-
         tryCatch(read.MSdata(
           files = files,
-          pdata = new("NAnnotatedDataFrame", pd),
+          pdata = new("AnnotatedDataFrame", pd),
           mode = mode,
           msLevel. = 1
         ), error = function(e) {e})
