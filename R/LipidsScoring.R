@@ -1058,7 +1058,8 @@ new_ms_ref_search_parameter <- function(
     squared_simple_dot_product_cutoff   = 0.36,
     squared_reverse_dot_product_cutoff  = 0.36,
     matched_peaks_percentage_cutoff     = 0.0,
-    minimum_spectrum_match              = 0
+    minimum_spectrum_match              = 0,
+    collision_type                      = "CID"
 ) {
   list(
     Ms1Tolerance                       = ms1_tolerance,
@@ -1073,6 +1074,7 @@ new_ms_ref_search_parameter <- function(
     SquaredSimpleDotProductCutOff      = squared_simple_dot_product_cutoff,
     SquaredReverseDotProductCutOff     = squared_reverse_dot_product_cutoff,
     MatchedPeaksPercentageCutOff       = matched_peaks_percentage_cutoff,
-    MinimumSpectrumMatch               = minimum_spectrum_match
+    MinimumSpectrumMatch               = minimum_spectrum_match,
+    CollisionType                      = collision_type
   )
 }
