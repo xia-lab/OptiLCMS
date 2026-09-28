@@ -96,7 +96,7 @@ PerformMSnImport <- function(mSet = NULL,
       pseduInts <- lapply(noPreIntData_idx, function(x){
         vapply(scan_ms2_List[[x]], function(y) {max(y[,2])}, double(1L))
       })
-      for(i in noPreIntData_idx){prec_mzs_List[[i]][,2] == pseduInts[[i]]}
+      for(i in noPreIntData_idx){prec_mzs_List[[i]][,2] <- pseduInts[[i]]}
     }
     
   } else if(acquisitionMode == "DIA"){
