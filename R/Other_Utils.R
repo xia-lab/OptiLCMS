@@ -14,10 +14,16 @@ GeneratePeakList <- function(userPath) {
              stringsAsFactors = FALSE)
   
   groups <- as.character(as.matrix(sample_data[1, ]))[-1]
-  
+
   sample_data <- sample_data[-1, -1]
-  
-  
+
+  ## Defensive guard: an empty feature table (0 rows) means retention-time
+  ## alignment produced no aligned peaks. Without this, matrix(nrow = 0) below
+  ## throws the cryptic "data is too long". Fail clearly instead.
+  if (is.null(nrow(sample_data)) || nrow(sample_data) == 0) {
+    stop("No features detected - retention-time alignment may have failed; try the centWave-enhanced workflow (obiwarp)")
+  }
+
   if (length(unique(groups)) == 1) {
     sample_data_mean  <-
       apply(
@@ -329,7 +335,14 @@ generatePvals_SigFeatures <- function(sample_data){
 
   groups <- as.character(as.matrix(sample_data[1, ]))[-1]
   sample_data <- sample_data[-1, -1]
-  
+
+  ## Defensive guard: an empty feature table (0 rows) means retention-time
+  ## alignment produced no aligned peaks. Without this, matrix(nrow = 0) below
+  ## throws the cryptic "data is too long". Fail clearly instead.
+  if (is.null(nrow(sample_data)) || nrow(sample_data) == 0) {
+    stop("No features detected - retention-time alignment may have failed; try the centWave-enhanced workflow (obiwarp)")
+  }
+
   if (length(unique(groups)) == 1) {
     sample_data_mean  <-
       apply(

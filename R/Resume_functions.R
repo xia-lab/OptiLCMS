@@ -894,16 +894,26 @@ controller.modifier <- function(new_command_set, last_command_set, plan){
   }
 
   if(.on.public.web()){
-    
+
     # load params.rda and params_last.rda and do a comparison
     peakParams <- NULL;
+    # Guard (mirrors the ROI-extract section above): the centWave-enhanced default
+    # plan can enter this resume path without a prior run (homeDir reused across
+    # runs + running.controller set), so params_last.rda may not exist yet — seed
+    # it from params.rda so the load below never errors with
+    # "cannot open compressed file 'params_last.rda'" and halts ExecutePlan.
+    if(!file.exists("params_last.rda")){
+      if(file.exists("params.rda")){
+        file.copy("params.rda", "params_last.rda")
+      }
+    }
     load("params_last.rda");
     last_param <-peakParams;
-    
+
     peakParams <- NULL;
     load("params.rda");
     new_param <- peakParams;
-    
+
     # Compare the difference
     if(is(new_command_set,"OptiCommandSet")){
       # For auto web pipeline

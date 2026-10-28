@@ -1359,7 +1359,15 @@ PerformRTcorrection <- function(mSet){
                   ecol = "\n",
                   progress = 60)
   }
-  
+
+  ## Preserve the pre-alignment mSet so the loess->obiwarp fallback (below) can
+  ## retry from a clean object even if the loess path raised an error (in which
+  ## case the dispatched mSet variable is overwritten with an error object).
+  if(!exists(".SwapEnv")){
+    .SwapEnv <<- new.env(parent = .GlobalEnv);
+  }
+  .SwapEnv[["mSet_before_RTadjust"]] <- mSet;
+
   if (param[["RT_method"]] == "obiwarp"){
     if (!.optimize_switch){
       MessageOutput(mes = paste("obiwarp is used for retention time correction. \n"),
@@ -1374,10 +1382,49 @@ PerformRTcorrection <- function(mSet){
                     ecol = "",
                     progress = NULL)
     }
-    
+
     mSet <- tryCatch(adjustRtime_peakGroup(mSet, param, msLevel = 1L), error = function(e){e});
+
+    ## Automatic fallback to obiwarp when loess (peakGroup) RT alignment fails.
+    ## On datasets with severe RT drift the peakGroup path either raises an error
+    ## (e.g. "No peak groups found in the data for the provided settings",
+    ## caught above as an error object) or returns without populating a usable RT
+    ## adjustment (empty adjustedRT / empty chromPeaks). Either way the downstream
+    ## feature table ends up empty, which triggers the cryptic "data is too long"
+    ## crash in Other_Utils.R. Detect both cases and retry with obiwarp, which
+    ## completes on drifted data. Mirror the existing error detection below
+    ## (is(mSet, "simpleError")) so we don't change how genuine errors are reported.
+    .loess_failed <- is(mSet, "simpleError");
+    if (!.loess_failed) {
+      .adjRT <- tryCatch(mSet@peakRTcorrection[["adjustedRT"]], error = function(e){NULL});
+      .adjPks <- tryCatch(mSet@peakRTcorrection[["chromPeaks"]], error = function(e){NULL});
+      if (is.null(.adjRT) || length(.adjRT) == 0 ||
+          is.null(.adjPks) || nrow(.adjPks) == 0) {
+        .loess_failed <- TRUE;
+      }
+    }
+
+    if (.loess_failed) {
+      if (!.optimize_switch){
+        MessageOutput(mes = paste("Retention-time alignment with loess failed (likely severe RT drift) - retrying with obiwarp..."),
+                      ecol = "\n",
+                      progress = NULL)
+      }
+      ## Keep param[["RT_method"]] in sync so downstream code that reads it sees obiwarp.
+      param[["RT_method"]] <- "obiwarp";
+      ## If loess raised an error, mSet is an error object here, so the original
+      ## mSet (with its params slot) is no longer available to retry from. Recover
+      ## it from the last good state before alignment so obiwarp has a real object.
+      if (is(mSet, "simpleError")) {
+        mSet <- .SwapEnv[["mSet_before_RTadjust"]];
+      }
+      if (!is(mSet, "simpleError") && !is.null(mSet)) {
+        mSet@params[["RT_method"]] <- "obiwarp";
+        mSet <- tryCatch(adjustRtime_obiwarp(mSet, param, msLevel = 1L), error = function(e){e});
+      }
+    }
   }
-  
+
   if (is(mSet,"simpleError") & !.optimize_switch){
    
     MessageOutput(
