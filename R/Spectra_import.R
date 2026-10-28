@@ -513,6 +513,27 @@ read.MSdata <- function(files,
 }
 
 #' @import utils
+## Waters lock-mass reference scans. A Waters file (nativeID "function=N process=P scan=S") with a
+## second MS1 function holding far fewer scans than the main MS1 function (under a quarter) carries
+## the LockSpray reference channel: the calibrant sprayed every ~30 s, not the sample. Its scans must
+## not enter peak picking. Returns their rows in an mzR header, integer(0) when there are none.
+.lockMassScans <- function(hd) {
+  id <- if ("spectrumId" %in% names(hd)) as.character(hd$spectrumId) else character(0)
+  waters <- grepl("^function=[0-9]+", id)
+  if (!any(waters)) return(integer(0))
+  fn <- ifelse(waters, sub("^function=([0-9]+).*$", "\\1", id), NA_character_)
+  n <- table(fn[hd$msLevel == 1L & waters])
+  if (length(n) < 2) return(integer(0))
+  lock <- names(n)[n < max(n) / 4]
+  which(hd$msLevel == 1L & fn %in% lock)
+}
+
+.lockMassMessage <- function(hd, lock, f) {
+  fn <- unique(sub("^function=([0-9]+).*$", "\\1", as.character(hd$spectrumId[lock])))
+  MessageOutput(paste0("Waters lock-mass scans (function ", paste(fn, collapse = ", "), ", ", length(lock),
+                       " scans) are left out of ", basename(f), "."))
+}
+
 read.InMemMSd.data <- function(files, 
                                pdata, 
                                msLevel., 
@@ -571,6 +592,11 @@ read.InMemMSd.data <- function(files,
     if (!is.na(centroided.))
       fullhd$centroided <- as.logical(centroided.)
     spidx <- which(fullhd$msLevel == msLevel.)
+    lock <- .lockMassScans(fullhd)
+    if (length(lock) > 0 && msLevel. == 1) {
+      .lockMassMessage(fullhd, lock, f)
+      spidx <- setdiff(spidx, lock)
+    }
     ## increase vectors as needed
     ioncount <- c(ioncount, numeric(length(spidx)))
     fullhdorder <- c(fullhdorder, numeric(length(spidx)))
@@ -891,6 +917,11 @@ read.OnDiskMS.data <- function(files,
     
     fullhd <- mzR::header(msdata)
     spidx <- seq_len(nrow(fullhd))
+    lock <- .lockMassScans(fullhd)
+    if (length(lock) > 0) {
+      .lockMassMessage(fullhd, lock, f)
+      spidx <- setdiff(spidx, lock)
+    }
     
     ## Don't read the individual spectra, just define the names of
     ## the spectra.
