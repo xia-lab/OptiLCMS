@@ -1204,12 +1204,20 @@ UpdateRawfiles <- function(mSet = NULL, filesIncluded = NULL){
 }
 
 #' @title CentroidCheck
-#' @description Verify the data is centroid or not
+#' @description Verify the data is centroid or not. Only the MS1 spectra are judged:
+#' they are what peak picking reads, and the MS2 scans of a DDA/DIA file must not decide
+#' it. Up to 50 MS1 spectra spread over the run are judged by PEAK SHAPE: in profile data
+#' the apex of an intense peak has an adjacent point (within 0.1 Da or 100 ppm, the
+#' peak's own sampling) holding a large share of its intensity; in centroid data each
+#' peak is one point and its neighbours are tiny, however dense the noise centroids are.
+#' The shape decides, because a file's own label (mzML MS:1000127 centroid / MS:1000128
+#' profile, mzXML centroided="1|0") can be wrong - a ~1 GB file labelled centroid is
+#' usually profile. The label is used only when the shape cannot be read (too few peaks).
 #' @param filename single file name, should contain the absolute path
 #' @author Zhiqiang Pang \email{zhiqiang.pang@mail.mcgill.ca} and Jeff Xia \email{jeff.xia@mcgill.ca}
 #' McGill University, Canada
 #' License: GNU GPL (>= 2)
-#' @importFrom stats quantile
+#' @importFrom stats median
 #' @export
 #' @return will output a logical value to indicate centroid (TRUE) or not (FALSE)
 #' @examples
@@ -1219,32 +1227,50 @@ UpdateRawfiles <- function(mSet = NULL, filesIncluded = NULL){
 #' 
 
 CentroidCheck <- function(filename) {
-  # fileh <- MSnbase:::.openMSfile(filename)
   fileh <- mzR::openMSfile(filename, backend = NULL)
-  allSpect <- mzR::peaks(fileh, seq_len(50))
-  
-  nValues <- base::lengths(allSpect, use.names = FALSE) / 2
+  on.exit(try(mzR::close(fileh), silent = TRUE))
+  hd <- mzR::header(fileh)
+  ms1 <- which(hd$msLevel == 1L)
+  if (length(ms1) == 0) ms1 <- seq_len(nrow(hd))   # an MS2-only file: judge what it has
+  if (length(ms1) == 0) return(FALSE)
 
-  mzR::close(fileh)
-  rm(fileh)
-  
-  res <- lapply(
-    allSpect,
-    FUN = function(z, APPLF, ...) {
-      pk <- as.data.frame(z)
-      
-      k = 0.025
-      qtl = 0.9
-      .qtl <- quantile(pk[, 2], qtl)
-      x <- pk[pk[, 2] > .qtl, 1]
-      quantile(diff(x), 0.25) > k
-      
-    }
-  )
-  
-  res <- unlist(res[!is.na(res)]);
-  return(sum(res) > 0.6*length(res))
-  
+  # the file's own label: the answer only when the shape below cannot be read
+  decl <- as.logical(hd$centroided[ms1])
+  labelled <- if (!anyNA(decl) && length(unique(decl)) == 1L) decl[1] else NA
+
+  # peak shape over up to 50 MS1 spectra spread across the run
+  idx <- ms1[unique(round(seq(1, length(ms1), length.out = min(50L, length(ms1)))))]
+  allSpect <- mzR::peaks(fileh, idx)
+  if (is.matrix(allSpect)) allSpect <- list(allSpect)
+
+  # median, over the 20 most intense apexes, of the larger adjacent point's share of the apex where the points around it are evenly spaced, of the
+  # apex (an adjacent point counts within 0.1 Da or 100 ppm, whichever is wider: a profile peak's own samples are
+  # closer than that, and the isotopes of a doubly or triply charged ion, 0.5 and 0.33 Da apart, are not its shoulder)
+  shoulder <- function(pk) {
+    if (is.null(pk) || NROW(pk) < 5) return(NA_real_)
+    o <- order(pk[, 1])
+    mz <- pk[o, 1]
+    it <- pk[o, 2]
+    n <- length(mz)
+    i <- 3:(n - 2)
+    apex <- i[it[i] > 0 & it[i] >= it[i - 1] & it[i] >= it[i + 1]]
+    if (length(apex) == 0) return(NA_real_)
+    apex <- apex[order(it[apex], decreasing = TRUE)][seq_len(min(20L, length(apex)))]
+    tol <- pmax(1e-4 * mz[apex], 0.1)
+    lo <- ifelse(mz[apex] - mz[apex - 1] <= tol, it[apex - 1], 0)
+    hi <- ifelse(mz[apex + 1] - mz[apex] <= tol, it[apex + 1], 0)
+    # a shoulder counts only on a regular sampling grid: profile points are evenly spaced (the four steps around an apex within
+    # 1.5x of each other; 1.00-1.02 measured on profile files), centroids are not (3-30x: low-intensity DIA MS1 centroids 0.02-0.08 Da
+    # apart kept 30% of an apex in a neighbour and read as profile on a few spectra)
+    d <- cbind(mz[apex - 1] - mz[apex - 2], mz[apex] - mz[apex - 1], mz[apex + 1] - mz[apex], mz[apex + 2] - mz[apex + 1])
+    regular <- apply(d, 1, function(x) min(x) > 0 && max(x) / min(x) < 1.5)
+    median(ifelse(regular, pmax(lo, hi) / it[apex], 0))
+  }
+  res <- vapply(allSpect, shoulder, numeric(1))
+  res <- res[!is.na(res)]
+  if (length(res) == 0) return(if (is.na(labelled)) FALSE else labelled)
+  # a spectrum is profile when its apexes keep over 30% of their height in a neighbour
+  return(sum(res > 0.3) < 0.5 * length(res))
 }
 
 #' @title CentroidMSData

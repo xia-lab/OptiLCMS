@@ -13,7 +13,13 @@ CentroidCheck(filename)
 will output a logical value to indicate centroid (TRUE) or not (FALSE)
 }
 \description{
-Verify the data is centroid or not
+Verify the data is centroid or not. Only the MS1 spectra are judged, and up to 50 of
+them spread over the run are judged by peak shape: in profile data the apex of an
+intense peak has an adjacent point, on a regular sampling grid and within 0.1 Da or
+100 ppm, holding a large share of its intensity; in centroid data each peak is one
+point and its neighbours are small, however dense the noise centroids are. The shape
+decides; the file's own label (MS:1000127 / MS:1000128, centroided="1|0") is used
+only when the shape cannot be read.
 }
 \examples{
 DataFiles <- dir(system.file("mzData", package = "mtbls2"), full.names = TRUE,
